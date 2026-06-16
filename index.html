@@ -241,11 +241,11 @@
     /* ── GRID ── */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
     }
 
-    /* ── CARD ── */
+    /* ── CARD (tile) ── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -254,8 +254,13 @@
       text-decoration: none;
       display: flex;
       flex-direction: column;
+      align-items: center;
       transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
       position: relative;
+      aspect-ratio: 1;
+      justify-content: center;
+      padding: 1.5rem 1rem 1.2rem;
+      text-align: center;
     }
 
     .card:hover {
@@ -276,100 +281,37 @@
     }
     .card:hover::before { opacity: 1; }
 
-    .card-preview {
-      width: 100%;
-      height: 185px;
-      background: var(--surface2);
-      overflow: hidden;
-      position: relative;
-      border-bottom: 1px solid var(--border);
+    /* ── TILE ICON ── */
+    .card-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.9rem;
+      flex-shrink: 0;
     }
-
-    .card-preview iframe {
-      width: 200%;
-      height: 200%;
-      transform: scale(0.5);
-      transform-origin: top left;
-      border: none;
-      pointer-events: none;
-    }
-
-    .card-preview::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-    }
-
-    .card-body {
-      padding: 1.2rem 1.4rem 1.4rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.45rem;
-      flex: 1;
-    }
-
-    .card-tags {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-    }
-
-    .card-tag {
-      font-size: 0.64rem;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--accent);
-      background: var(--accent-lt);
-      border: 1px solid #b8caf0;
-      padding: 0.18rem 0.55rem;
-      border-radius: 20px;
-      letter-spacing: 0.04em;
-    }
-
-    .card-tag.cyan {
-      color: #006a9e;
-      background: var(--cyan-lt);
-      border-color: #a0dff5;
-    }
-
-    .card-tag.green {
-      color: #006b4f;
-      background: #e6fbf4;
-      border-color: #a8f0d6;
+    .card-icon svg {
+      width: 28px; height: 28px;
     }
 
     .card-name {
-      font-size: 1rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--text);
       line-height: 1.35;
-      margin-top: 0.2rem;
     }
 
-    .card-desc {
-      font-size: 0.8rem;
-      color: var(--text-mid);
-      line-height: 1.55;
-      margin-top: 0.1rem;
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: auto;
-      padding-top: 0.9rem;
-      border-top: 1px solid var(--border);
-      margin-top: 0.9rem;
-    }
-
-    .card-meta {
-      font-size: 0.67rem;
+    .card-tag {
+      font-size: 0.6rem;
       font-family: 'JetBrains Mono', monospace;
       color: var(--muted);
+      margin-top: 0.3rem;
+      letter-spacing: 0.04em;
     }
 
     .card-arrow {
-      font-size: 0.72rem;
+      position: absolute;
+      bottom: 0.7rem; right: 0.9rem;
+      font-size: 0.68rem;
       color: var(--cyan);
       font-family: 'JetBrains Mono', monospace;
       font-weight: 600;
@@ -383,13 +325,7 @@
     .card-add {
       border-style: dashed;
       border-color: var(--border);
-      align-items: center;
-      justify-content: center;
-      min-height: 280px;
       cursor: default;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
       background: transparent;
     }
     .card-add:hover { transform: none; box-shadow: none; border-color: var(--border); }
@@ -486,93 +422,48 @@
     <div class="grid" id="projects-grid">
 
       <a class="card" href="./cargabilidad-transformadores/" target="_blank">
-        <div class="card-preview">
-          <iframe src="./cargabilidad-transformadores/" loading="lazy" scrolling="no" title="Cargabilidad Transformadores preview"></iframe>
+        <div class="card-icon" style="background:#e0f7ff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0077aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="card-tag">HTML</span>
-            <span class="card-tag cyan">Grid Monitoring</span>
-          </div>
-          <div class="card-name">Cargabilidad Transformadores</div>
-          <div class="card-desc">Monitoreo de carga y capacidad en transformadores de distribución. Análisis en tiempo real con alertas de sobrecarga.</div>
-          <div class="card-footer">
-            <span class="card-meta">UbiVu® Analytics</span>
-            <span class="card-arrow">abrir →</span>
-          </div>
-        </div>
+        <div class="card-name">Cargabilidad Transformadores</div>
+        <div class="card-tag">Grid Monitoring</div>
+        <span class="card-arrow">abrir →</span>
       </a>
 
       <a class="card" href="./informe-ubicell/" target="_blank">
-        <div class="card-preview">
-          <iframe src="./informe-ubicell/" loading="lazy" scrolling="no" title="Informe Ubicell preview"></iframe>
+        <div class="card-icon" style="background:#e6fbf4;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#006b4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49m-8.49-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14"/></svg>
         </div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="card-tag">HTML</span>
-            <span class="card-tag green">Conectividad</span>
-          </div>
-          <div class="card-name">Informe Ubicell</div>
-          <div class="card-desc">Reporte de conectividad y rendimiento de nodos UbiCell. Cobertura de red, latencia y estado de dispositivos.</div>
-          <div class="card-footer">
-            <span class="card-meta">UbiVu® Analytics</span>
-            <span class="card-arrow">abrir →</span>
-          </div>
-        </div>
+        <div class="card-name">Informe Ubicell</div>
+        <div class="card-tag">Conectividad</div>
+        <span class="card-arrow">abrir →</span>
       </a>
 
       <a class="card" href="./simulacion-sistemas-mesh/" target="_blank">
-        <div class="card-preview">
-          <iframe src="./simulacion-sistemas-mesh/" loading="lazy" scrolling="no" title="Simulación Sistemas Mesh preview"></iframe>
+        <div class="card-icon" style="background:#e0f7ff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0077aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><path d="M6 6h4M14 6h4M6 18h4M14 18h4M12 10v4M5.5 7.5l5 3M13.5 7.5l5 3M5.5 16.5l5-3M13.5 16.5l5-3"/></svg>
         </div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="card-tag">HTML</span>
-            <span class="card-tag cyan">Simulación</span>
-          </div>
-          <div class="card-name">Simulación Sistemas Mesh</div>
-          <div class="card-desc">Modelo interactivo de topología mesh para redes de alumbrado inteligente. Propagación de señal y redundancia de nodos.</div>
-          <div class="card-footer">
-            <span class="card-meta">UbiVu® Analytics</span>
-            <span class="card-arrow">abrir →</span>
-          </div>
-        </div>
+        <div class="card-name">Simulación Sistemas Mesh</div>
+        <div class="card-tag">Simulación</div>
+        <span class="card-arrow">abrir →</span>
       </a>
 
       <a class="card" href="./reporte-personalizado-ubicquia/" target="_blank">
-        <div class="card-preview">
-          <iframe src="./reporte-personalizado-ubicquia/" loading="lazy" scrolling="no" title="Reportes personalizados Ubicquia"></iframe>
+        <div class="card-icon" style="background:#e6fbf4;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#006b4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/><circle cx="17" cy="12" r="3"/><path d="M20 15l2 2"/></svg>
         </div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="card-tag">HTML</span>
-            <span class="card-tag green">Custom Report</span>
-          </div>
-          <div class="card-name">Reportes Personalizados Ubicquia</div>
-          <div class="card-desc">Generador de informes configurables con métricas seleccionables, exportación y visualización adaptada por cliente.</div>
-          <div class="card-footer">
-            <span class="card-meta">UbiVu® Analytics</span>
-            <span class="card-arrow">abrir →</span>
-          </div>
-        </div>
+        <div class="card-name">Reportes Personalizados</div>
+        <div class="card-tag">Custom Report</div>
+        <span class="card-arrow">abrir →</span>
       </a>
 
-<a class="card" href="./reporte-obra-emblema/" target="_blank">
-        <div class="card-preview">
-          <iframe src="./reporte-obra-emblema/" loading="lazy" scrolling="no" title="Reporte Obra Emblema - Ubicell"></iframe>
+      <a class="card" href="./reporte-obra-emblema/" target="_blank">
+        <div class="card-icon" style="background:#e0f7ff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0077aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 21V7l3-4 3 4v14M9 12h6M12 7v5"/></svg>
         </div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="card-tag">HTML</span>
-            <span class="card-tag cyan">Reporte Obra Emblema</span>
-          </div>
-          <div class="card-name">Reporte Obra Emblema</div>
-          <div class="card-desc">Modelo interactivo para la personalizacion de logos y personalizacion de informacion a presentar para clientes.</div>
-          <div class="card-footer">
-            <span class="card-meta">UbiVu® Analytics</span>
-            <span class="card-arrow">abrir →</span>
-          </div>
-        </div>
+        <div class="card-name">Reporte Obra Emblema</div>
+        <div class="card-tag">Obra Emblema</div>
+        <span class="card-arrow">abrir →</span>
       </a>
 
 
