@@ -3,24 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ubicell Report Builder</title>
+<title>Ubicell Report - Obra Emblema</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
-    --bg: #f0f4f8;
+    --bg: #eef1f8;
     --surface: #ffffff;
-    --surface2: #f4f6f9;
-    --border: #dde2ea;
-    --accent: #4b87c0;
-    --accent2: #2563eb;
-    --green: #16a34a;
+    --surface2: #f4f6fb;
+    --border: #d5dded;
+    --accent: #1e3a7b;
+    --accent2: #00bfff;
+    --green: #00c98b;
     --yellow: #d97706;
     --red: #dc2626;
-    --text: #1a2332;
-    --muted: #64748b;
+    --text: #0a1628;
+    --muted: #7a8fb5;
     --radius: 12px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,8 +33,8 @@
 
   /* HEADER */
   header {
-    background: linear-gradient(135deg, #4b87c0 0%, #2563eb 100%);
-    border-bottom: 1px solid #3a76b0;
+    background: linear-gradient(135deg, #0a1628 0%, #1e3a7b 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
     padding: 20px 40px;
     display: flex;
     align-items: center;
@@ -120,7 +120,7 @@
   }
   .drop-zone:hover, .drop-zone.drag-over {
     border-color: var(--accent);
-    background: rgba(75,135,192,.06);
+    background: rgba(30,58,123,.06);
   }
   .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .drop-icon { font-size: 40px; margin-bottom: 12px; }
@@ -163,11 +163,11 @@
   /* TABLE */
   .tbl-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  thead { position: sticky; top: 0; background: #eef2f7; }
+  thead { position: sticky; top: 0; background: #eef1f8; }
   th { padding: 10px 12px; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 9px 12px; border-bottom: 1px solid #edf0f4; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(75,135,192,.06); }
+  tr:hover td { background: rgba(30,58,123,.06); }
 
   /* TABS */
   .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -233,9 +233,9 @@
     cursor: pointer;
     transition: all .25s;
     position: relative;
-    background: rgba(75,135,192,.04);
+    background: rgba(30,58,123,.04);
   }
-  .img-drop:hover { border-color: var(--accent); background: rgba(75,135,192,.09); }
+  .img-drop:hover { border-color: var(--accent); background: rgba(30,58,123,.09); }
   .img-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .img-preview { max-width: 100%; max-height: 120px; object-fit: contain; border-radius: 6px; }
 
@@ -268,8 +268,8 @@
 
   /* ALERTS */
   .alert { padding: 12px 16px; border-radius: 9px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-  .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-  .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  .alert-info { background: #dde5f8; border: 1px solid #b3c3ee; color: #1e3a7b; }
+  .alert-success { background: #e0fdf4; border: 1px solid #99f0d5; color: #00a06f; }
   .alert-warn { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
 
   /* SECTION HIDDEN */
@@ -289,7 +289,7 @@
   .palette-swatch {
     width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: .2s;
   }
-  .palette-swatch.selected { border-color: #1a2332; box-shadow: 0 0 0 1px #fff inset; }
+  .palette-swatch.selected { border-color: #0a1628; box-shadow: 0 0 0 1px #fff inset; }
 
   .img-size-btn {
     padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
@@ -313,7 +313,7 @@
 <header>
   <div class="logo-dot">⚡</div>
   <div>
-    <h1>Ubicell Report Builder</h1>
+    <h1>Ubicell Report - Obra Emblema</h1>
     <p>Procesamiento white-label de reportes de despliegue inteligente</p>
   </div>
 </header>
@@ -419,14 +419,14 @@
             <div class="field-group">
               <label>COLOR PRIMARIO</label>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-                <input type="color" id="wlColor" value="#4b87c0" style="width:40px;flex-shrink:0;">
-                <input type="text" id="wlColorHex" value="#4b87c0" style="font-family:monospace;">
+                <input type="color" id="wlColor" value="#1e3a7b" style="width:40px;flex-shrink:0;">
+                <input type="text" id="wlColorHex" value="#1e3a7b" style="font-family:monospace;">
               </div>
               <div class="palette-pick" id="colorPalette">
-                <div class="palette-swatch selected" style="background:#4b87c0" data-color="#4b87c0"></div>
-                <div class="palette-swatch" style="background:#2563eb" data-color="#2563eb"></div>
-                <div class="palette-swatch" style="background:#7c5cfc" data-color="#7c5cfc"></div>
-                <div class="palette-swatch" style="background:#16a34a" data-color="#16a34a"></div>
+                <div class="palette-swatch selected" style="background:#1e3a7b" data-color="#1e3a7b"></div>
+                <div class="palette-swatch" style="background:#0a1628" data-color="#0a1628"></div>
+                <div class="palette-swatch" style="background:#00bfff" data-color="#00bfff"></div>
+                <div class="palette-swatch" style="background:#00c98b" data-color="#00c98b"></div>
                 <div class="palette-swatch" style="background:#d97706" data-color="#d97706"></div>
                 <div class="palette-swatch" style="background:#dc2626" data-color="#dc2626"></div>
               </div>
@@ -781,7 +781,7 @@ function drawWlPreview() {
   ctx.scale(S, S);
 
   const PW = CW, PH = CH;
-  const color  = document.getElementById('wlColor').value || '#4b87c0';
+  const color  = document.getElementById('wlColor').value || '#1e3a7b';
   const [r,g,b] = hexToRgb(color);
   const company = document.getElementById('wlCompany').value || '';
   const client  = document.getElementById('wlClient').value || '';
@@ -908,7 +908,7 @@ function drawWlPreview() {
         nLines.slice(0,2).forEach((ln,li) => ctx.fillText(ln, cx+5, textY + li*7*scale));
 
         // Count
-        let countColor = '#16a34a';
+        let countColor = '#00c98b';
         if(cnt>20) countColor='#dc2626';
         else if(cnt>0) countColor='#d97706';
         ctx.fillStyle = countColor;
@@ -1011,7 +1011,7 @@ async function generateAndDownloadPDF() {
 
   try {
     const { jsPDF } = window.jspdf;
-    const color   = document.getElementById('wlColor').value || '#4b87c0';
+    const color   = document.getElementById('wlColor').value || '#1e3a7b';
     const company = document.getElementById('wlCompany').value || '';
     const client  = document.getElementById('wlClient').value || '';
     const footer  = document.getElementById('wlFooter').value || 'Confidencial · Generado por Ubicquia Platform';
