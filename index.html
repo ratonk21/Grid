@@ -3,83 +3,205 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GRID-DATA</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet" />
+  <title>Ubicquia® — Reportes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #f5f5f3;
-      --surface:   #ffffff;
-      --border:    #e0e0e0;
-      --accent:    #1a1a1a;
-      --text:      #1a1a1a;
-      --muted:     #999;
-      --radius:    6px;
+      /* ── Paleta UbiVu real (extraída de la app) ── */
+      --bg:         #eef1f8;      /* fondo gris-azulado claro */
+      --surface:    #ffffff;
+      --surface2:   #f4f6fb;
+      --border:     #d5dded;
+      --text:       #0a1628;      /* navy oscuro texto principal */
+      --text-mid:   #3a4f75;      /* navy medio */
+      --muted:      #7a8fb5;      /* azul grisáceo */
+      --navy:       #0a1628;      /* sidebar / nav */
+      --navy-mid:   #1e3a7b;      /* elementos activos */
+      --accent:     #1e3a7b;      /* acento principal */
+      --accent-lt:  #dde5f8;      /* chip/tag bg */
+      --cyan:       #00bfff;      /* cyan brillante UbiVu */
+      --cyan-lt:    #e0f7ff;
+      --green:      #00c98b;
+      --radius:     8px;
+      --radius-lg:  14px;
     }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Inter', sans-serif;
       min-height: 100vh;
     }
 
+    /* ── HEADER ── */
     header {
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 2rem 3rem;
-      border-bottom: 1px solid var(--border);
+      padding: 0 3rem;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
-    .logo {
-      font-family: 'Space Mono', monospace;
-      font-size: 1.1rem;
-      letter-spacing: 0.15em;
-      color: #1a1a1a;
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    .header-meta {
-      font-size: 0.78rem;
-      color: var(--muted);
-      font-family: 'Space Mono', monospace;
+    .logomark {
+      width: 38px;
+      height: 46px;
+      flex-shrink: 0;
     }
 
-    .hero {
-      padding: 5rem 3rem 3rem;
-      max-width: 700px;
+    .logo-text {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+    }
+    .logo-text sup {
+      font-size: 0.55rem;
+      vertical-align: super;
+      color: var(--cyan);
+      font-weight: 600;
     }
 
-    .hero-label {
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .badge-env {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--navy);
+      background: var(--cyan);
+      padding: 0.25rem 0.7rem;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .header-date {
       font-size: 0.72rem;
-      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.45);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 4.5rem 3rem 3.5rem;
+      max-width: 780px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--cyan) 60%, var(--green) 100%);
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      color: #888;
-      font-family: 'Space Mono', monospace;
-      margin-bottom: 1.2rem;
+      color: var(--accent);
+      margin-bottom: 1.4rem;
+    }
+    .hero-eyebrow .dot {
+      width: 6px; height: 6px;
+      background: var(--cyan);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
     }
 
     .hero h1 {
-      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
       font-weight: 700;
       line-height: 1.1;
-      color: #1a1a1a;
+      letter-spacing: -0.03em;
+      color: var(--text);
     }
 
-    .hero h1 span {
-      color: #1a1a1a;
-      text-decoration: underline;
-      text-underline-offset: 6px;
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
     }
 
     .hero p {
       margin-top: 1.2rem;
-      color: var(--muted);
+      color: var(--text-mid);
       font-size: 0.95rem;
       line-height: 1.7;
+      max-width: 520px;
     }
 
+    /* ── STATS BAR ── */
+    .stats-bar {
+      margin: 0 3rem;
+      background: var(--navy);
+      border-radius: var(--radius-lg);
+      display: flex;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(10,22,40,0.18);
+    }
+
+    .stat-item {
+      flex: 1;
+      padding: 1.3rem 1.8rem;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      position: relative;
+    }
+    .stat-item:last-child { border-right: none; }
+
+    .stat-label {
+      font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 0.45rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+    .stat-value .unit {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      font-weight: 500;
+      margin-left: 0.2rem;
+    }
+    .stat-sub {
+      font-size: 0.7rem;
+      color: var(--cyan);
+      margin-top: 0.2rem;
+      font-weight: 500;
+    }
+
+    /* ── SECTION ── */
     .section {
       padding: 3rem;
     }
@@ -91,12 +213,13 @@
       margin-bottom: 2rem;
     }
 
-    .section-title {
-      font-size: 0.72rem;
-      letter-spacing: 0.2em;
+    .section-label {
+      font-size: 0.68rem;
+      font-family: 'JetBrains Mono', monospace;
       text-transform: uppercase;
+      letter-spacing: 0.18em;
       color: var(--muted);
-      font-family: 'Space Mono', monospace;
+      white-space: nowrap;
     }
 
     .section-line {
@@ -105,34 +228,61 @@
       background: var(--border);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
+    .section-count {
+      font-size: 0.68rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      background: var(--accent-lt);
+      border: 1px solid #b8caf0;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
     }
 
+    /* ── GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── CARD ── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-lg);
       overflow: hidden;
       text-decoration: none;
       display: flex;
       flex-direction: column;
-      transition: border-color 0.2s, transform 0.2s;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+      position: relative;
     }
 
     .card:hover {
-      border-color: #1a1a1a;
+      box-shadow: 0 8px 32px rgba(30,58,123,0.13);
       transform: translateY(-3px);
+      border-color: #a8bcf0;
     }
 
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 1;
+    }
+    .card:hover::before { opacity: 1; }
+
     .card-preview {
-      position: relative;
       width: 100%;
-      height: 180px;
+      height: 185px;
+      background: var(--surface2);
       overflow: hidden;
-      background: #111;
+      position: relative;
+      border-bottom: 1px solid var(--border);
     }
 
     .card-preview iframe {
@@ -144,98 +294,193 @@
       pointer-events: none;
     }
 
+    .card-preview::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
     .card-body {
-      padding: 1.2rem 1.4rem;
+      padding: 1.2rem 1.4rem 1.4rem;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.45rem;
       flex: 1;
-      background: #1a1a1a;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .card-tag {
+      font-size: 0.64rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      background: var(--accent-lt);
+      border: 1px solid #b8caf0;
+      padding: 0.18rem 0.55rem;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    .card-tag.cyan {
+      color: #006a9e;
+      background: var(--cyan-lt);
+      border-color: #a0dff5;
+    }
+
+    .card-tag.green {
+      color: #006b4f;
+      background: #e6fbf4;
+      border-color: #a8f0d6;
     }
 
     .card-name {
       font-size: 1rem;
       font-weight: 600;
-      color: #fff;
+      color: var(--text);
+      line-height: 1.35;
+      margin-top: 0.2rem;
     }
 
-    .card-tag {
-      font-size: 0.7rem;
-      font-family: 'Space Mono', monospace;
-      color: #1a1a1a;
-      background: #f0f0f0;
-      display: inline-block;
-      padding: 0.15rem 0.5rem;
-      border-radius: 3px;
-      width: fit-content;
+    .card-desc {
+      font-size: 0.8rem;
+      color: var(--text-mid);
+      line-height: 1.55;
+      margin-top: 0.1rem;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border);
+      margin-top: 0.9rem;
+    }
+
+    .card-meta {
+      font-size: 0.67rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
     }
 
     .card-arrow {
-      margin-top: auto;
-      padding-top: 0.8rem;
-      font-size: 0.75rem;
-      color: #666;
-      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 0.2s, transform 0.2s;
     }
+    .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
 
-    .card:hover .card-arrow {
-      color: #fff;
-    }
-
+    /* ── ADD CARD ── */
     .card-add {
       border-style: dashed;
+      border-color: var(--border);
       align-items: center;
       justify-content: center;
-      min-height: 260px;
-      color: var(--muted);
-      gap: 0.5rem;
+      min-height: 280px;
       cursor: default;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      background: transparent;
     }
+    .card-add:hover { transform: none; box-shadow: none; border-color: var(--border); }
+    .card-add:hover::before { opacity: 0; }
 
-    .card-add .add-icon {
-      font-size: 2rem;
-      color: var(--border);
-    }
+    .add-icon { font-size: 2rem; color: var(--border); font-weight: 300; }
+    .add-text { font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
 
-    .card-add .add-text {
-      font-size: 0.8rem;
-      font-family: 'Space Mono', monospace;
-    }
-
+    /* ── FOOTER ── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 2rem 3rem;
+      padding: 1.5rem 3rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       color: var(--muted);
-      font-size: 0.75rem;
-      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface);
     }
 
-    @media (max-width: 600px) {
-      header, .hero, .section, footer { padding-left: 1.5rem; padding-right: 1.5rem; }
-      .hero { padding-top: 3rem; }
+    .footer-brand { display: flex; align-items: center; gap: 0.5rem; }
+    .footer-dot { color: var(--border); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      header { padding: 0 1.5rem; }
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .section { padding: 2rem 1.5rem; }
+      .stats-bar { margin: 0 1.5rem; flex-direction: column; }
+      .stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
+      .stat-item:last-child { border-bottom: none; }
+      footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
     }
   </style>
 </head>
 <body>
 
+  <!-- HEADER -->
   <header>
-    <div class="logo">GRIDDATA.CL</div>
-    <div class="header-meta">proyectos / index</div>
+    <div class="logo-wrap">
+      <svg class="logomark" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Pin cyan -->
+        <path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#00bfff"/>
+        <!-- U navy -->
+        <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#0a1628"/>
+      </svg>
+      <span class="logo-text">Ubicquia<sup>®</sup></span>
+    </div>
+    <div class="header-right">
+      <span class="badge-env">REPORTS / GRIDDATA.CL</span>
+      <span class="header-date" id="header-date"></span>
+    </div>
   </header>
 
+  <!-- HERO -->
   <div class="hero">
-    <div class="hero-label">// colección personal</div>
-    <h1>Mis <span>proyectos</span><br>HTML</h1>
-    <p>Un espacio personal donde guardo los experimentos, herramientas y páginas que construyo con el tiempo.</p>
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      Colección de reportes activos
+    </div>
+    <h1>Reportes<br><em>Ubicquia®</em></h1>
+    <p>Panel centralizado de informes, simulaciones y herramientas de análisis para infraestructura inteligente. Datos en tiempo real, disponibles siempre.</p>
   </div>
 
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-label">Reportes activos</div>
+      <div class="stat-value" id="stat-count">4</div>
+      <div class="stat-sub">↑ disponibles ahora</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Tecnología</div>
+      <div class="stat-value">UbiVu<span class="unit">®</span></div>
+      <div class="stat-sub">AI Core activo</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Plataforma</div>
+      <div class="stat-value">Web<span class="unit">/ HTML</span></div>
+      <div class="stat-sub">Sin instalación</div>
+    </div>
+
+  </div>
+
+  <!-- PROJECTS SECTION -->
   <section class="section">
     <div class="section-header">
-      <span class="section-title">proyectos</span>
+      <span class="section-label">proyectos</span>
       <div class="section-line"></div>
+      <span class="section-count" id="section-count">04 reportes</span>
     </div>
 
     <div class="grid" id="projects-grid">
@@ -245,9 +490,16 @@
           <iframe src="./cargabilidad-transformadores/" loading="lazy" scrolling="no" title="Cargabilidad Transformadores preview"></iframe>
         </div>
         <div class="card-body">
-          <span class="card-tag">HTML</span>
+          <div class="card-tags">
+            <span class="card-tag">HTML</span>
+            <span class="card-tag cyan">Grid Monitoring</span>
+          </div>
           <div class="card-name">Cargabilidad Transformadores</div>
-          <div class="card-arrow">abrir →</div>
+          <div class="card-desc">Monitoreo de carga y capacidad en transformadores de distribución. Análisis en tiempo real con alertas de sobrecarga.</div>
+          <div class="card-footer">
+            <span class="card-meta">UbiGrid™ DTM+</span>
+            <span class="card-arrow">abrir →</span>
+          </div>
         </div>
       </a>
 
@@ -256,9 +508,16 @@
           <iframe src="./informe-ubicell/" loading="lazy" scrolling="no" title="Informe Ubicell preview"></iframe>
         </div>
         <div class="card-body">
-          <span class="card-tag">HTML</span>
+          <div class="card-tags">
+            <span class="card-tag">HTML</span>
+            <span class="card-tag green">Conectividad</span>
+          </div>
           <div class="card-name">Informe Ubicell</div>
-          <div class="card-arrow">abrir →</div>
+          <div class="card-desc">Reporte de conectividad y rendimiento de nodos UbiCell. Cobertura de red, latencia y estado de dispositivos.</div>
+          <div class="card-footer">
+            <span class="card-meta">UbiCell™</span>
+            <span class="card-arrow">abrir →</span>
+          </div>
         </div>
       </a>
 
@@ -267,28 +526,64 @@
           <iframe src="./simulacion-sistemas-mesh/" loading="lazy" scrolling="no" title="Simulación Sistemas Mesh preview"></iframe>
         </div>
         <div class="card-body">
-          <span class="card-tag">HTML</span>
+          <div class="card-tags">
+            <span class="card-tag">HTML</span>
+            <span class="card-tag cyan">Simulación</span>
+          </div>
           <div class="card-name">Simulación Sistemas Mesh</div>
-          <div class="card-arrow">abrir →</div>
+          <div class="card-desc">Modelo interactivo de topología mesh para redes de alumbrado inteligente. Propagación de señal y redundancia de nodos.</div>
+          <div class="card-footer">
+            <span class="card-meta">UbiHub™ AI+</span>
+            <span class="card-arrow">abrir →</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="card" href="./reporte-personalizado-ubicquia/" target="_blank">
+        <div class="card-preview">
+          <iframe src="./reporte-personalizado-ubicquia/" loading="lazy" scrolling="no" title="Reportes personalizados Ubicquia"></iframe>
+        </div>
+        <div class="card-body">
+          <div class="card-tags">
+            <span class="card-tag">HTML</span>
+            <span class="card-tag green">Custom Report</span>
+          </div>
+          <div class="card-name">Reportes Personalizados Ubicquia</div>
+          <div class="card-desc">Generador de informes configurables con métricas seleccionables, exportación y visualización adaptada por cliente.</div>
+          <div class="card-footer">
+            <span class="card-meta">UbiVu® Analytics</span>
+            <span class="card-arrow">abrir →</span>
+          </div>
         </div>
       </a>
 
       <div class="card card-add">
         <div class="add-icon">+</div>
-        <div class="add-text">// próximo proyecto</div>
+        <div class="add-text">// próximo reporte</div>
       </div>
 
     </div>
   </section>
 
+  <!-- FOOTER -->
   <footer>
-    <span>griddata.cl</span>
+    <div class="footer-brand">
+      <span>Ubicquia®</span>
+      <span class="footer-dot">·</span>
+      <span>griddata.cl</span>
+    </div>
     <span id="footer-count"></span>
   </footer>
 
   <script>
+    const now = new Date();
+    document.getElementById('header-date').textContent =
+      now.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+
     const count = document.querySelectorAll('.grid .card:not(.card-add)').length;
-    document.getElementById('footer-count').textContent = count + ' proyecto' + (count !== 1 ? 's' : '');
+    document.getElementById('footer-count').textContent = count + ' reporte' + (count !== 1 ? 's' : '') + ' disponibles';
+    document.getElementById('stat-count').textContent = count;
+    document.getElementById('section-count').textContent = String(count).padStart(2, '0') + ' reportes';
   </script>
 
 </body>

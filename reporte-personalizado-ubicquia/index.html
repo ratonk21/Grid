@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ubicell Report Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f4f6f9;
+    --border: #dde2ea;
+    --accent: #4b87c0;
+    --accent2: #2563eb;
+    --green: #16a34a;
+    --yellow: #d97706;
+    --red: #dc2626;
+    --text: #1a2332;
+    --muted: #64748b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #4b87c0 0%, #2563eb 100%);
+    border-bottom: 1px solid #3a76b0;
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo-dot { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; color: white; }
+  header p { color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 2px; }
+
+  /* LAYOUT */
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  /* STEPPER */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    overflow-x: auto;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    color: var(--muted);
+    transition: all .3s;
+  }
+  .step.active .step-num { background: var(--accent); border-color: var(--accent); color: white; }
+  .step.done .step-num { background: var(--green); border-color: var(--green); color: white; }
+  .step-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .step.active .step-label { color: var(--text); font-weight: 600; }
+  .step.done .step-label { color: var(--green); }
+  .step-line { flex: 1; min-width: 24px; height: 2px; background: var(--border); margin: 0 8px; }
+  .step-line.done { background: var(--green); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  .card-title {
+    font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .badge {
+    background: var(--accent);
+    color: white;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+  }
+  .badge.green { background: var(--green); }
+  .badge.yellow { background: var(--yellow); color: #1a1a1a; }
+
+  /* DROP ZONE */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .25s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(75,135,192,.06);
+  }
+  .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .drop-icon { font-size: 40px; margin-bottom: 12px; }
+  .drop-zone h3 { font-size: 15px; margin-bottom: 6px; }
+  .drop-zone p { font-size: 13px; color: var(--muted); }
+
+  /* FILE INFO */
+  .file-info {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .file-icon { font-size: 28px; }
+  .file-details { flex: 1; }
+  .file-details strong { font-size: 14px; }
+  .file-details span { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+
+  /* GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* STATS */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 16px; }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat-card .val { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .stat-card .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.3; }
+  .stat-card.warn .val { color: var(--yellow); }
+  .stat-card.danger .val { color: var(--red); }
+  .stat-card.ok .val { color: var(--green); }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead { position: sticky; top: 0; background: #eef2f7; }
+  th { padding: 10px 12px; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid #edf0f4; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(75,135,192,.06); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: inherit;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+
+  /* PDF PREVIEW */
+  .pdf-preview-wrap {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .pdf-canvas-box {
+    flex-shrink: 0;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+  #pdfPreviewCanvas { display: block; max-width: 320px; width: 100%; }
+
+  /* WHITE LABEL EDITOR */
+  .wl-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .field-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; letter-spacing: .4px; }
+  input[type="text"], input[type="color"], textarea, select {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .2s;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input[type="color"] { height: 40px; padding: 4px 8px; cursor: pointer; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* IMAGE UPLOAD */
+  .img-drop {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .25s;
+    position: relative;
+    background: rgba(75,135,192,.04);
+  }
+  .img-drop:hover { border-color: var(--accent); background: rgba(75,135,192,.09); }
+  .img-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .img-preview { max-width: 100%; max-height: 120px; object-fit: contain; border-radius: 6px; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 11px 22px;
+    border-radius: 9px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+  .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+  .btn-secondary { background: #ffffff; border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { opacity: .9; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+  /* PROGRESS */
+  .progress-bar { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; margin: 8px 0; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width .4s; }
+
+  /* ALERTS */
+  .alert { padding: 12px 16px; border-radius: 9px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+  .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  .alert-warn { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
+
+  /* SECTION HIDDEN */
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  /* CHART */
+  .chart-bars { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+  .bar-label { width: 180px; flex-shrink: 0; color: var(--muted); }
+  .bar-bg { flex: 1; background: #e9edf2; border-radius: 99px; height: 22px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 700; color: white; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .bar-count { width: 40px; text-align: right; font-weight: 700; }
+
+  /* COLOR PALETTE */
+  .palette-pick { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .palette-swatch {
+    width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: .2s;
+  }
+  .palette-swatch.selected { border-color: #1a2332; box-shadow: 0 0 0 1px #fff inset; }
+
+  .img-size-btn {
+    padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: #fff; color: var(--muted); font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .15s; font-family: inherit;
+  }
+  .img-size-btn:hover { border-color: var(--accent); color: var(--text); }
+  .img-size-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  textarea { resize: vertical; min-height: 72px; }
+  .hidden { display: none !important; }
+  .mt4 { margin-top: 4px; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt20 { margin-top: 20px; }
+  .muted { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot">⚡</div>
+  <div>
+    <h1>Ubicell Report Builder</h1>
+    <p>Procesamiento white-label de reportes de despliegue inteligente</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- STEPPER (3 pasos: sin paso 2) -->
+  <div class="stepper">
+    <div class="step active" id="stp1"><div class="step-num">1</div><div class="step-label">Cargar ZIP</div></div>
+    <div class="step-line" id="line1"></div>
+    <div class="step" id="stp2"><div class="step-num">2</div><div class="step-label">White Label PDF</div></div>
+    <div class="step-line" id="line2"></div>
+    <div class="step" id="stp3"><div class="step-num">3</div><div class="step-label">Exportar</div></div>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="section visible" id="step1">
+    <div class="card">
+      <div class="card-title">📦 Cargar archivo ZIP <span class="badge">Paso 1</span></div>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" accept=".zip" id="zipInput">
+        <div class="drop-icon">📂</div>
+        <h3>Arrastra tu ZIP aquí o haz clic para seleccionar</h3>
+        <p>Debe contener un archivo PDF y un archivo Excel (.xlsx)</p>
+      </div>
+      <div id="fileInfo" class="hidden mt12"></div>
+      <div id="parseProgress" class="hidden mt12">
+        <p class="muted mt4" id="parseMsg">Leyendo archivos...</p>
+        <div class="progress-bar mt8"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: WHITE LABEL (ex step 3) -->
+  <div class="section" id="step2">
+    <div class="card" style="padding:20px 24px;">
+      <div class="card-title" style="margin-bottom:16px;">🎨 Editor White Label — Página 2 del PDF</div>
+
+      <!-- SIDE BY SIDE: preview left (narrow), controls right -->
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+
+        <!-- LEFT: narrow A4 preview -->
+        <div>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.4px;">VISTA PREVIA</p>
+          <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+            <canvas id="wlPreviewCanvas" style="display:block;width:100%;"></canvas>
+          </div>
+          <p style="font-size:10px;color:var(--muted);margin-top:5px;text-align:center;">Tiempo real</p>
+        </div>
+
+        <!-- RIGHT: controls -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+
+          <!-- Image upload + size selector -->
+          <!-- Image upload + size -->
+          <div class="field-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="margin-bottom:0;">IMAGEN DE FONDO</label>
+              <div style="display:flex;gap:5px;">
+                <button class="img-size-btn active" data-size="small"  onclick="setImgSize('small',this)"  title="Centrada con espacio">⬜ Pequeña</button>
+                <button class="img-size-btn"        data-size="medium" onclick="setImgSize('medium',this)" title="Cubre ~75%">▪ Mediana</button>
+                <button class="img-size-btn"        data-size="full"   onclick="setImgSize('full',this)"   title="Llena toda la zona">■ Completa</button>
+              </div>
+            </div>
+            <div class="img-drop" id="logoDropZone">
+              <input type="file" accept="image/*" id="logoInput">
+              <div id="logoPlaceholder">
+                <div style="font-size:24px;margin-bottom:4px;">🖼️</div>
+                <p style="font-size:12px;color:var(--muted);">Arrastra tu imagen aquí</p>
+                <p style="font-size:11px;color:var(--muted);">PNG, JPG — foto o fondo de marca</p>
+              </div>
+              <div id="logoPreviewWrap" class="hidden" style="position:relative;display:inline-block;width:100%;">
+                <img id="logoPreview" class="img-preview" alt="Logo preview">
+                <button onclick="removeImg('logo')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;line-height:1;cursor:pointer;z-index:10;" title="Quitar imagen">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Company + client -->
+          <div class="grid2">
+            <div class="field-group">
+              <label>NOMBRE DE EMPRESA</label>
+              <input type="text" id="wlCompany" placeholder="Mi Empresa S.A." value="">
+            </div>
+            <div class="field-group">
+              <label>CIUDAD / CLIENTE</label>
+              <input type="text" id="wlClient" placeholder="Ciudad, País" value="">
+            </div>
+          </div>
+
+          <!-- Intro -->
+          <div class="field-group">
+            <label>DESCRIPCIÓN / TEXTO INTRODUCTORIO</label>
+            <textarea id="wlIntro" rows="2" placeholder="Estimado cliente, le presentamos el reporte semanal..."></textarea>
+          </div>
+
+          <!-- Footer + color in a row -->
+          <div class="grid2">
+            <div class="field-group">
+              <label>NOTA AL PIE</label>
+              <input type="text" id="wlFooter" placeholder="Confidencial · Generado por Ubicquia Platform · © 2026" value="">
+            </div>
+            <div class="field-group">
+              <label>COLOR PRIMARIO</label>
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                <input type="color" id="wlColor" value="#4b87c0" style="width:40px;flex-shrink:0;">
+                <input type="text" id="wlColorHex" value="#4b87c0" style="font-family:monospace;">
+              </div>
+              <div class="palette-pick" id="colorPalette">
+                <div class="palette-swatch selected" style="background:#4b87c0" data-color="#4b87c0"></div>
+                <div class="palette-swatch" style="background:#2563eb" data-color="#2563eb"></div>
+                <div class="palette-swatch" style="background:#7c5cfc" data-color="#7c5cfc"></div>
+                <div class="palette-swatch" style="background:#16a34a" data-color="#16a34a"></div>
+                <div class="palette-swatch" style="background:#d97706" data-color="#d97706"></div>
+                <div class="palette-swatch" style="background:#dc2626" data-color="#dc2626"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logo overlay -->
+          <div class="grid2">
+            <div class="field-group">
+              <label>POSICIÓN DEL LOGO EN LA IMAGEN</label>
+              <select id="wlLogoPos">
+                <option value="none">Sin logo superpuesto</option>
+                <option value="top-left">Arriba izquierda</option>
+                <option value="top-center">Arriba centro</option>
+                <option value="top-right">Arriba derecha</option>
+                <option value="center">Centro</option>
+                <option value="bottom-left">Abajo izquierda</option>
+                <option value="bottom-center">Abajo centro</option>
+                <option value="bottom-right">Abajo derecha</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>LOGO SUPERPUESTO (PNG transparente)</label>
+              <div class="img-drop" id="logoOverlayDropZone" style="padding:10px;">
+                <input type="file" accept="image/*" id="logoOverlayInput">
+                <div id="logoOverlayPlaceholder">
+                  <p style="font-size:11px;color:var(--muted);">🏷️ Arrastra logo aquí</p>
+                </div>
+                <div id="logoOverlayPreviewWrap" class="hidden" style="position:relative;display:inline-block;width:100%;text-align:center;">
+                  <img id="logoOverlayPreview" class="img-preview" style="max-height:50px;" alt="">
+                  <button onclick="removeImg('overlay')" style="position:absolute;top:0;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1;cursor:pointer;z-index:10;" title="Quitar logo">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end controls -->
+      </div><!-- end side-by-side grid -->
+
+      <!-- Buttons -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+        <button class="btn btn-secondary" onclick="goStep(1)">← Volver</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Generar Reporte Final ➡</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: EXPORT (ex step 4) -->
+  <div class="section" id="step3">
+    <div class="card">
+      <div class="card-title">🚀 Reporte Final Listo</div>
+      <div class="alert alert-success" id="exportStatus">✅ Todo listo para exportar</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <div style="font-size:24px;margin-bottom:8px;">📄</div>
+          <strong>PDF White-Label</strong>
+          <p class="muted mt4">Pág. 1 original + Pág. 2 con tu marca + resto del informe</p>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-primary" id="downloadPdfBtn" onclick="generateAndDownloadPDF()">⬇ Descargar PDF</button>
+          </div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <div style="font-size:24px;margin-bottom:8px;">📊</div>
+          <strong>Reporte Excel Consolidado</strong>
+          <p class="muted mt4">Todas las hojas + hoja resumen con métricas + formato</p>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-green" onclick="generateAndDownloadExcel()">⬇ Descargar Excel</button>
+          </div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <div style="font-size:24px;margin-bottom:8px;">📦</div>
+          <strong>ZIP Completo</strong>
+          <p class="muted mt4">PDF white-label + Excel consolidado en un solo archivo ZIP</p>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-secondary" id="downloadZipBtn" onclick="generateAndDownloadZip()">⬇ Descargar ZIP</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+        <button class="btn btn-secondary" onclick="goStep(2)">← Editar White Label</button>
+        <button class="btn btn-secondary" onclick="resetAll()">🔄 Procesar nuevo ZIP</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── PDF.js setup ───────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── State ──────────────────────────────────────────────────────
+let state = {
+  zipFile: null,
+  pdfBytes: null,
+  xlsxBytes: null,
+  pdfFilename: '',
+  xlsxFilename: '',
+  pdfDoc: null,
+  workbook: null,
+  summaryData: {},
+  logoDataUrl: null,
+  logoOverlayDataUrl: null,
+  imgSize: 'small',
+};
+
+function setImgSize(size, btn) {
+  state.imgSize = size;
+  document.querySelectorAll('.img-size-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  drawWlPreview();
+}
+
+function removeImg(which) {
+  if(which === 'logo') {
+    state.logoDataUrl = null;
+    document.getElementById('logoPreview').src = '';
+    document.getElementById('logoPreviewWrap').classList.add('hidden');
+    document.getElementById('logoPlaceholder').classList.remove('hidden');
+    document.getElementById('logoInput').value = '';
+  } else {
+    state.logoOverlayDataUrl = null;
+    document.getElementById('logoOverlayPreview').src = '';
+    document.getElementById('logoOverlayPreviewWrap').classList.add('hidden');
+    document.getElementById('logoOverlayPlaceholder').classList.remove('hidden');
+    document.getElementById('logoOverlayInput').value = '';
+  }
+  drawWlPreview();
+}
+
+// ─── Stepper (3 pasos) ──────────────────────────────────────────
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i).classList.toggle('visible', i===n);
+    const s = document.getElementById('stp'+i);
+    s.classList.remove('active','done');
+    if(i===n) s.classList.add('active');
+    if(i<n) { s.classList.add('done'); if(i<3) document.getElementById('line'+i).classList.add('done'); }
+    else { if(i<3) document.getElementById('line'+i).classList.remove('done'); }
+  });
+  if(n===2) setTimeout(drawWlPreview, 50);
+}
+
+// ─── DROP ZONE ──────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const zipInput = document.getElementById('zipInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleZip(e.dataTransfer.files[0]); });
+zipInput.addEventListener('change', e => { if(e.target.files[0]) handleZip(e.target.files[0]); });
+
+async function handleZip(file) {
+  if (!file || !file.name.endsWith('.zip')) { alert('Por favor selecciona un archivo .zip'); return; }
+  state.zipFile = file;
+
+  // Show file info
+  const fi = document.getElementById('fileInfo');
+  fi.classList.remove('hidden');
+  fi.innerHTML = `<div class="file-info"><div class="file-icon">📦</div><div class="file-details"><strong>${file.name}</strong><span>${(file.size/1024/1024).toFixed(2)} MB</span></div></div>`;
+
+  // Progress
+  const prog = document.getElementById('parseProgress');
+  const fill = document.getElementById('progressFill');
+  const msg  = document.getElementById('parseMsg');
+  prog.classList.remove('hidden');
+
+  try {
+    msg.textContent = 'Abriendo ZIP...'; fill.style.width = '10%';
+    const zip = await JSZip.loadAsync(file);
+    const files = Object.keys(zip.files).filter(n => !zip.files[n].dir);
+
+    let pdfEntry = null, xlsxEntry = null;
+    files.forEach(name => {
+      const lower = name.toLowerCase();
+      if(lower.endsWith('.pdf')) pdfEntry = name;
+      else if(lower.endsWith('.xlsx') || lower.endsWith('.xls')) xlsxEntry = name;
+    });
+
+    if(!pdfEntry) throw new Error('No se encontró archivo PDF en el ZIP');
+    if(!xlsxEntry) throw new Error('No se encontró archivo Excel en el ZIP');
+
+    state.pdfFilename = pdfEntry.split('/').pop();
+    state.xlsxFilename = xlsxEntry.split('/').pop();
+
+    msg.textContent = 'Extrayendo PDF...'; fill.style.width = '30%';
+    state.pdfBytes = await zip.files[pdfEntry].async('uint8array');
+
+    msg.textContent = 'Extrayendo Excel...'; fill.style.width = '55%';
+    state.xlsxBytes = await zip.files[xlsxEntry].async('uint8array');
+
+    msg.textContent = 'Cargando PDF...'; fill.style.width = '70%';
+    state.pdfDoc = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
+
+    msg.textContent = 'Leyendo Excel...'; fill.style.width = '85%';
+    state.workbook = XLSX.read(state.xlsxBytes, { type: 'array' });
+
+    msg.textContent = 'Procesando datos...'; fill.style.width = '95%';
+    parseSummary();
+
+    fill.style.width = '100%';
+    msg.textContent = '✅ Archivos procesados correctamente';
+
+    setTimeout(() => {
+      goStep(2);
+    }, 400);
+
+  } catch(err) {
+    prog.innerHTML = `<div class="alert alert-warn">⚠️ ${err.message}</div>`;
+  }
+}
+
+// ─── DATE UTILS ─────────────────────────────────────────────────
+// Excel stores dates as days since 1899-12-30 (serial numbers ~40000-60000)
+const DATE_COLS = ['install date', 'last comm date', 'fecha', 'date'];
+
+function isExcelDateSerial(val) {
+  return typeof val === 'number' && val > 40000 && val < 60000;
+}
+
+function excelSerialToDate(serial) {
+  const base = new Date(1899, 11, 30);
+  const wholeDays = Math.floor(serial);
+  const fraction  = serial - wholeDays;
+  const d = new Date(base.getTime() + wholeDays * 86400000);
+  const day   = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year  = d.getFullYear();
+  const totalSec = Math.round(fraction * 86400);
+  const hh = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  return fraction > 0.0001
+    ? `${day}-${month}-${year} ${hh}:${mm}:${ss}`
+    : `${day}-${month}-${year}`;
+}
+
+function formatCellValue(val, headerName) {
+  if (val === null || val === undefined) return '';
+  const h = String(headerName || '').toLowerCase();
+  const isDateCol = DATE_COLS.some(dc => h.includes(dc));
+  if (isDateCol && isExcelDateSerial(val)) return excelSerialToDate(val);
+  return String(val).substring(0, 60);
+}
+
+// ─── PARSE SUMMARY ──────────────────────────────────────────────
+function parseSummary() {
+  const d = {};
+  const wb = state.workbook;
+  wb.SheetNames.forEach(name => {
+    const ws = wb.Sheets[name];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1 });
+    d[name] = { rows: rows.slice(1).filter(r => r.some(c => c !== null && c !== undefined && c !== '')), headers: rows[0] || [] };
+  });
+  state.summaryData = d;
+}
+
+
+// ─── LOGO UPLOAD (imagen de fondo) ──────────────────────────────
+document.getElementById('logoInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.logoDataUrl = ev.target.result;
+    document.getElementById('logoPlaceholder').classList.add('hidden');
+    document.getElementById('logoPreview').src = ev.target.result;
+    document.getElementById('logoPreviewWrap').classList.remove('hidden');
+    drawWlPreview();
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─── LOGO OVERLAY UPLOAD ────────────────────────────────────────
+document.getElementById('logoOverlayInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.logoOverlayDataUrl = ev.target.result;
+    document.getElementById('logoOverlayPlaceholder').classList.add('hidden');
+    document.getElementById('logoOverlayPreview').src = ev.target.result;
+    document.getElementById('logoOverlayPreviewWrap').classList.remove('hidden');
+    drawWlPreview();
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─── COLOR PALETTE ──────────────────────────────────────────────
+document.getElementById('colorPalette').addEventListener('click', e => {
+  const sw = e.target.closest('.palette-swatch');
+  if(!sw) return;
+  document.querySelectorAll('.palette-swatch').forEach(s=>s.classList.remove('selected'));
+  sw.classList.add('selected');
+  const c = sw.dataset.color;
+  document.getElementById('wlColor').value = c;
+  document.getElementById('wlColorHex').value = c;
+  drawWlPreview();
+});
+document.getElementById('wlColor').addEventListener('input', e => {
+  document.getElementById('wlColorHex').value = e.target.value;
+  drawWlPreview();
+});
+document.getElementById('wlColorHex').addEventListener('input', e => {
+  document.getElementById('wlColor').value = e.target.value;
+  drawWlPreview();
+});
+
+// Live preview on text/select changes
+['wlCompany','wlClient','wlFooter','wlLogoPos','wlIntro'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', drawWlPreview);
+  if(el) el.addEventListener('change', drawWlPreview);
+});
+
+// ─── LIVE PREVIEW CANVAS ────────────────────────────────────────
+// Renders a proportional A4 preview of page 2 in the canvas element
+function hexToRgb(hex) {
+  const c = hex.replace('#','');
+  return [parseInt(c.slice(0,2),16), parseInt(c.slice(2,4),16), parseInt(c.slice(4,6),16)];
+}
+
+function drawWlPreview() {
+  const canvas = document.getElementById('wlPreviewCanvas');
+  if(!canvas) return;
+
+  // A4 ratio: 210 × 297  →  scale to canvas display width
+  const CW = canvas.offsetWidth || 280;
+  const CH = Math.round(CW * 297 / 210);
+  canvas.width  = CW * 2;   // retina
+  canvas.height = CH * 2;
+  const S = 2; // scale factor
+  const ctx = canvas.getContext('2d');
+  ctx.scale(S, S);
+
+  const PW = CW, PH = CH;
+  const color  = document.getElementById('wlColor').value || '#4b87c0';
+  const [r,g,b] = hexToRgb(color);
+  const company = document.getElementById('wlCompany').value || '';
+  const client  = document.getElementById('wlClient').value || '';
+  const footer  = document.getElementById('wlFooter').value || 'Confidencial · Generado por Ubicquia Platform';
+  const logoPos = document.getElementById('wlLogoPos').value || 'none';
+
+  const IMG_H = Math.round(PH * 0.5);  // top half
+  const accentColor = `rgb(${r},${g},${b})`;
+
+  // ── White background ──
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, PW, PH);
+
+  // ── Top half: background image or accent block ──
+  const drawBottomHalf = () => {
+    // Accent separator
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(0, IMG_H, PW, 2);
+
+    // ── Bottom half layout ──
+    const MARGIN = PW * 0.067;
+    const IW = PW - MARGIN*2;
+    const FOOTER_H = PH * 0.034;
+    const FOOTER_Y = PH - FOOTER_H;
+    const scale = PW / 210; // mm→px scale
+
+    let y = IMG_H + PH * 0.024;
+
+    // Company name — 22pt
+    ctx.fillStyle = accentColor;
+    ctx.font = `bold ${Math.round(22*scale)}px Segoe UI, sans-serif`;
+    ctx.textAlign = 'center';
+    const compLines = wrapText(ctx, company || '', IW);
+    compLines.forEach(line => { ctx.fillText(line, PW/2, y); y += 24*scale; });
+    y += 2*scale;
+
+    // Client / city — 16pt
+    if(client) {
+      ctx.fillStyle = '#888';
+      ctx.font = `${Math.round(16*scale)}px Segoe UI, sans-serif`;
+      ctx.fillText(client, PW/2, y);
+      y += 20*scale;
+    }
+
+    // Thin rule
+    y += 4*scale;
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(MARGIN + IW*0.05, y);
+    ctx.lineTo(MARGIN + IW*0.95, y);
+    ctx.stroke();
+    y += 5*scale;
+
+    // Report title
+    ctx.fillStyle = '#333';
+    ctx.font = `bold ${Math.round(8.5*scale)}px Segoe UI, sans-serif`;
+    ctx.fillText('Informe de Perspectivas de Despliegue UbiCell', PW/2, y);
+    y += 11*scale;
+
+    // Date
+    ctx.fillStyle = '#aaa';
+    ctx.font = `${Math.round(7.5*scale)}px Segoe UI, sans-serif`;
+    ctx.fillText(new Date().toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'}), PW/2, y);
+    y += 10*scale;
+
+    // Intro text (if present)
+    const intro = document.getElementById('wlIntro') ? document.getElementById('wlIntro').value : '';
+    if(intro && intro.trim()) {
+      ctx.fillStyle = '#555';
+      ctx.font = `${Math.round(7.5*scale)}px Segoe UI, sans-serif`;
+      ctx.textAlign = 'left';
+      const introLines = wrapText(ctx, intro.trim(), IW - 4);
+      introLines.slice(0, 4).forEach(ln => { ctx.fillText(ln, MARGIN + 2, y); y += 8*scale; });
+      y += 2*scale;
+    }
+
+    // ── Summary table ──
+    if(state.summaryData && Object.keys(state.summaryData).length) {
+      const sheets = Object.keys(state.summaryData);
+      const total  = sheets.reduce((s,k)=>s+state.summaryData[k].rows.length,0);
+      const nRows  = Math.ceil(sheets.length/2);
+      const avail  = FOOTER_Y - y - 16*scale - 2*scale;
+      const cellH  = Math.min(12*scale, avail/nRows);
+      const HDR_H  = 8*scale;
+      const colW   = IW/2;
+
+      // Header
+      ctx.fillStyle = accentColor;
+      roundRect(ctx, MARGIN, y, IW, HDR_H, 3);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${Math.round(7*scale)}px Segoe UI, sans-serif`;
+      ctx.fillText('RESUMEN DE PROBLEMAS DETECTADOS', PW/2, y + HDR_H*0.68);
+      y += HDR_H;
+
+      sheets.forEach((name, idx) => {
+        const cnt  = state.summaryData[name].rows.length;
+        const col  = idx % 2;
+        const row  = Math.floor(idx/2);
+        const cx   = MARGIN + col*colW;
+        const cy   = y + row*cellH;
+        const shade = row%2===0 ? '#ffffff' : '#ffffff';
+
+        ctx.fillStyle = shade;
+        ctx.fillRect(cx, cy, colW, cellH);
+
+        // Left stripe
+        ctx.fillStyle = accentColor;
+        ctx.fillRect(cx, cy, 2, cellH);
+
+        // Cell border
+        ctx.strokeStyle = '#d5d8de';
+        ctx.lineWidth = 0.3;
+        ctx.strokeRect(cx, cy, colW, cellH);
+
+        // Name
+        ctx.fillStyle = '#374151';
+        ctx.textAlign = 'left';
+        ctx.font = `${Math.round(6.5*scale)}px Segoe UI, sans-serif`;
+        const maxNW = colW - 20*scale;
+        const nLines = wrapText(ctx, name, maxNW);
+        const textY = cy + cellH/2 - (nLines.length > 1 ? 3*scale : 0);
+        nLines.slice(0,2).forEach((ln,li) => ctx.fillText(ln, cx+5, textY + li*7*scale));
+
+        // Count
+        let countColor = '#16a34a';
+        if(cnt>20) countColor='#dc2626';
+        else if(cnt>0) countColor='#d97706';
+        ctx.fillStyle = countColor;
+        ctx.font = `bold ${Math.round(10*scale)}px Segoe UI, sans-serif`;
+        ctx.textAlign = 'right';
+        ctx.fillText(String(cnt), cx+colW-4, cy+cellH/2+3*scale);
+      });
+
+      const totY = y + nRows*cellH;
+      ctx.fillStyle = accentColor;
+      ctx.fillRect(MARGIN, totY, IW, 8*scale);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = `bold ${Math.round(7.5*scale)}px Segoe UI, sans-serif`;
+      ctx.fillText(`Total de registros detectados: ${total}`, PW/2, totY + 5.5*scale);
+    }
+
+    // ── Footer ──
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(0, FOOTER_Y, PW, FOOTER_H);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = `${Math.round(6.5*scale)}px Segoe UI, sans-serif`;
+    ctx.fillText(footer, PW/2, FOOTER_Y + FOOTER_H*0.65);
+
+    // ── Logo overlay ──
+    if(state.logoOverlayDataUrl && logoPos !== 'none') {
+      const img = new Image();
+      img.onload = () => {
+        const LW = PW * 0.28, LH = LW * (img.height/img.width);
+        const pad = PW * 0.03;
+        let lx, ly;
+        if(logoPos==='top-left')      { lx=pad;          ly=pad; }
+        else if(logoPos==='top-center')   { lx=(PW-LW)/2;    ly=pad; }
+        else if(logoPos==='top-right')    { lx=PW-LW-pad;    ly=pad; }
+        else if(logoPos==='center')       { lx=(PW-LW)/2;    ly=(IMG_H-LH)/2; }
+        else if(logoPos==='bottom-left')  { lx=pad;          ly=IMG_H-LH-pad; }
+        else if(logoPos==='bottom-center'){ lx=(PW-LW)/2;    ly=IMG_H-LH-pad; }
+        else                              { lx=PW-LW-pad;    ly=IMG_H-LH-pad; }
+        ctx.drawImage(img, lx, ly, LW, LH);
+      };
+      img.src = state.logoOverlayDataUrl;
+    }
+  };
+
+  if(state.logoDataUrl) {
+    const img = new Image();
+    img.onload = () => {
+      // Always white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, PW, IMG_H);
+      // Draw image at chosen size, centered, cover-cropped into its box
+      const frac = state.imgSize === 'full' ? 1.0 : state.imgSize === 'medium' ? 0.78 : 0.55;
+      const drawW = PW * frac, drawH = IMG_H * frac;
+      const drawX = (PW - drawW) / 2, drawY = (IMG_H - drawH) / 2;
+      const imgAR = img.width/img.height, boxAR = drawW/drawH;
+      let sx=0,sy=0,sw=img.width,sh=img.height;
+      if(imgAR>boxAR){sw=sh*boxAR;sx=(img.width-sw)/2;}
+      else{sh=sw/boxAR;sy=(img.height-sh)/2;}
+      ctx.drawImage(img,sx,sy,sw,sh,drawX,drawY,drawW,drawH);
+      drawBottomHalf();
+    };
+    img.src = state.logoDataUrl;
+  } else {
+    // No image — white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, PW, IMG_H);
+    drawBottomHalf();
+  }
+}
+
+function wrapText(ctx, text, maxW) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  words.forEach(w => {
+    const test = line ? line+' '+w : w;
+    if(ctx.measureText(test).width > maxW && line) { lines.push(line); line=w; }
+    else line = test;
+  });
+  if(line) lines.push(line);
+  return lines.length ? lines : [''];
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// ─── GENERATE PDF ───────────────────────────────────────────────
+async function generateAndDownloadPDF() {
+  const btn = document.getElementById('downloadPdfBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando PDF...';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const color   = document.getElementById('wlColor').value || '#4b87c0';
+    const company = document.getElementById('wlCompany').value || '';
+    const client  = document.getElementById('wlClient').value || '';
+    const footer  = document.getElementById('wlFooter').value || 'Confidencial · Generado por Ubicquia Platform';
+    const logoPos = document.getElementById('wlLogoPos').value || 'none';
+
+    const [r, g, b] = [
+      parseInt(color.slice(1,3),16),
+      parseInt(color.slice(3,5),16),
+      parseInt(color.slice(5,7),16)
+    ];
+
+    // Render all original pages to images using PDF.js
+    const totalPages = state.pdfDoc.numPages;
+    const pageImages = [];
+    for(let p = 1; p <= totalPages; p++) {
+      const page = await state.pdfDoc.getPage(p);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      pageImages.push(canvas.toDataURL('image/jpeg', 0.85));
+    }
+
+    // Create jsPDF (A4)
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const PW = 210, PH = 297;
+
+    // PAGE 1: Original page 1
+    pdf.addImage(pageImages[0], 'JPEG', 0, 0, PW, PH);
+
+    // PAGE 2: White label page
+    pdf.addPage();
+
+    // ── Full white background ──
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(0, 0, PW, PH, 'F');
+
+    // ── TOP HALF: image zone (0 → 148mm) ──
+    const IMG_ZONE_H = 148;
+    const imgSz   = state.imgSize || 'small';
+    const imgFrac = imgSz === 'full' ? 1.0 : imgSz === 'medium' ? 0.78 : 0.55;
+
+    // Always white background
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(0, 0, PW, IMG_ZONE_H, 'F');
+
+    if(state.logoDataUrl) {
+      try {
+        const isPng = state.logoDataUrl.startsWith('data:image/png');
+        const drawW = PW * imgFrac;
+        const drawH = IMG_ZONE_H * imgFrac;
+        const drawX = (PW - drawW) / 2;
+        const drawY = (IMG_ZONE_H - drawH) / 2;
+        pdf.addImage(state.logoDataUrl, isPng ? 'PNG' : 'JPEG', drawX, drawY, drawW, drawH, '', 'FAST');
+      } catch(e) { /* white bg already set */ }
+    } else {
+      // No image — leave white (already set above)
+    }
+
+    // Thin accent separator line between halves
+    pdf.setFillColor(r, g, b);
+    pdf.rect(0, IMG_ZONE_H, PW, 2, 'F');
+
+    // ── Logo overlay on top-half image ──
+    if(state.logoOverlayDataUrl && logoPos !== 'none') {
+      const LW = 55, LH = 27;
+      const PAD = 8;
+      let lx, ly;
+      if(logoPos==='top-left')       { lx=PAD;              ly=PAD; }
+      else if(logoPos==='top-center'){ lx=(PW-LW)/2;        ly=PAD; }
+      else if(logoPos==='top-right') { lx=PW-LW-PAD;        ly=PAD; }
+      else if(logoPos==='center')    { lx=(PW-LW)/2;        ly=(IMG_ZONE_H-LH)/2; }
+      else if(logoPos==='bottom-left'){ lx=PAD;             ly=IMG_ZONE_H-LH-PAD; }
+      else if(logoPos==='bottom-center'){ lx=(PW-LW)/2;     ly=IMG_ZONE_H-LH-PAD; }
+      else                            { lx=PW-LW-PAD;       ly=IMG_ZONE_H-LH-PAD; }
+      try { pdf.addImage(state.logoOverlayDataUrl, lx, ly, LW, LH, '', 'FAST'); } catch(e) {}
+    }
+
+    // ══════════════════════════════════════════════════════
+    // BOTTOM HALF  (IMG_ZONE_H → PH)  = 149 mm available
+    // Layout budget:
+    //   separator bar      2 mm   (already drawn)
+    //   top padding        5 mm
+    //   company block     ~14 mm  (up to 2 lines @ 7pt + subtitle)
+    //   thin rule          1 mm
+    //   report title       6 mm
+    //   date               5 mm
+    //   gap                3 mm
+    //   table header       8 mm
+    //   10 rows × 10mm   100 mm   (2 cols → 5 rows)
+    //   total bar          8 mm
+    //   gap to footer      3 mm
+    //   footer            10 mm
+    //   ──────────────────────────
+    //   Total ~165 mm  → tight but fits; reduce row to 9mm if needed
+    // ══════════════════════════════════════════════════════
+
+    const MARGIN   = 14;          // left/right margin mm
+    const INNER_W  = PW - MARGIN * 2;   // 182 mm
+    const B_START  = IMG_ZONE_H + 2;    // 150 mm from top
+    const FOOTER_H = 10;
+    const FOOTER_Y = PH - FOOTER_H;     // 287 mm
+    const now = new Date();
+
+    // ── 1. COMPANY NAME ─────────────────────────────────
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(22);
+    pdf.setTextColor(r, g, b);
+    const companyLines = pdf.splitTextToSize(company, INNER_W);
+    const LINE_H_CO = 10;
+    let curY = B_START + 12;
+    pdf.text(companyLines, PW / 2, curY, { align: 'center' });
+    curY += (companyLines.length - 1) * LINE_H_CO;
+
+    // ── 2. CLIENT / CITY ────────────────────────────────
+    if (client) {
+      curY += 6;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(16);
+      pdf.setTextColor(120, 120, 120);
+      const clientLines = pdf.splitTextToSize(client, INNER_W);
+      pdf.text(clientLines, PW / 2, curY, { align: 'center' });
+      curY += (clientLines.length - 1) * 8;
+    }
+
+    // ── 3. THIN RULE ────────────────────────────────────
+    curY += 5;
+    pdf.setDrawColor(r, g, b);
+    pdf.setLineWidth(0.4);
+    pdf.line(MARGIN + 10, curY, PW - MARGIN - 10, curY);
+
+    // ── 4. REPORT LABEL + DATE ──────────────────────────
+    curY += 5;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(50, 50, 50);
+    pdf.text('Informe de Perspectivas de Despliegue UbiCell', PW / 2, curY, { align: 'center' });
+
+    curY += 4.5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(160, 160, 160);
+    pdf.text(
+      now.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }),
+      PW / 2, curY, { align: 'center' }
+    );
+
+    // ── 4b. INTRO TEXT ──────────────────────────────────
+    const intro = document.getElementById('wlIntro') ? document.getElementById('wlIntro').value.trim() : '';
+    if (intro) {
+      curY += 5;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(80, 80, 80);
+      const introLines = pdf.splitTextToSize(intro, INNER_W - 4);
+      pdf.text(introLines, MARGIN + 2, curY);
+      curY += introLines.length * 4;
+    }
+
+    // ── 5. SUMMARY TABLE ────────────────────────────────
+    const sheets = state.workbook.SheetNames;
+    const total  = Object.values(state.summaryData).reduce((s, v) => s + v.rows.length, 0);
+
+    curY += 5;
+    const TABLE_TOP = curY;
+
+    // How much vertical space is left between TABLE_TOP and footer?
+    // We need: 8 (header) + nRows*cellH + 8 (total bar)
+    // nRows = ceil(10/2) = 5  →  5*cellH
+    const nRows   = Math.ceil(sheets.length / 2);
+    const AVAIL   = FOOTER_Y - TABLE_TOP - 8 - 8 - 2;   // minus header, total bar, small gap
+    const cellH   = Math.min(12, Math.floor(AVAIL / nRows)); // max 12 mm per row
+
+    // Header bar — full accent, rounded
+    const HDR_H = 8;
+    pdf.setFillColor(r, g, b);
+    pdf.roundedRect(MARGIN, TABLE_TOP, INNER_W, HDR_H, 2, 2, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7.5);
+    pdf.text('RESUMEN DE PROBLEMAS DETECTADOS', PW / 2, TABLE_TOP + 5.5, { align: 'center' });
+
+    // 2-column cells
+    const colW = INNER_W / 2;
+    let rowIdx = 0, colIdx = 0;
+
+    sheets.forEach(name => {
+      const cnt = state.summaryData[name].rows.length;
+      const cx  = MARGIN + colIdx * colW;
+      const cy  = TABLE_TOP + HDR_H + rowIdx * cellH;
+
+      // Pure white background
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(cx, cy, colW, cellH, 'F');
+
+      // Hairline border
+      pdf.setDrawColor(210, 215, 220);
+      pdf.setLineWidth(0.15);
+      pdf.rect(cx, cy, colW, cellH);
+
+      // Left accent stripe (thin vertical bar in accent colour)
+      pdf.setFillColor(r, g, b);
+      pdf.rect(cx, cy, 2, cellH, 'F');
+
+      // Category name — 7.5pt, fits full text in 2 lines max
+      // Available width: colW - 2(stripe) - 3(pad) - 16(number zone) - 2(pad)
+      const nameMaxW = colW - 23;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(55, 65, 80);
+      const nameLines = pdf.splitTextToSize(name, nameMaxW);
+
+      // Vertical centering of text block within cell
+      const textBlockH = nameLines.length === 1 ? 0 : (nameLines.length - 1) * 4;
+      const textBaseY  = cy + (cellH - textBlockH) / 2 + 1.5;
+
+      nameLines.slice(0, 2).forEach((ln, li) => {
+        pdf.text(ln, cx + 5, textBaseY + li * 4);
+      });
+
+      // Count — large, right-aligned, vertically centred
+      let cr2 = 22, cg2 = 163, cb2 = 74;          // green  (0 issues)
+      if      (cnt > 20) { cr2 = 220; cg2 = 53;  cb2 = 53;  }  // red
+      else if (cnt >  0) { cr2 = 217; cg2 = 119; cb2 = 6;   }  // amber
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.setTextColor(cr2, cg2, cb2);
+      pdf.text(String(cnt), cx + colW - 4, cy + cellH / 2 + 2.5, { align: 'right' });
+
+      colIdx++;
+      if (colIdx >= 2) { colIdx = 0; rowIdx++; }
+    });
+
+    // ── 6. TOTAL BAR ────────────────────────────────────
+    const TOT_Y = TABLE_TOP + HDR_H + nRows * cellH;
+    pdf.setFillColor(r, g, b);
+    pdf.rect(MARGIN, TOT_Y, INNER_W, 8, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8.5);
+    pdf.text(`Total de registros detectados: ${total}`, PW / 2, TOT_Y + 5.5, { align: 'center' });
+
+    // ── 7. FOOTER ───────────────────────────────────────
+    pdf.setFillColor(r, g, b);
+    pdf.rect(0, FOOTER_Y, PW, FOOTER_H, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.text(
+      footer || 'Confidencial · Generado por Ubicquia Platform',
+      PW / 2, FOOTER_Y + 6.5, { align: 'center' }
+    );
+
+    // REMAINING PAGES (page 2 onwards of original)
+    for(let p = 1; p < pageImages.length; p++) {
+      pdf.addPage();
+      pdf.addImage(pageImages[p], 'JPEG', 0, 0, PW, PH);
+    }
+
+    // Store bytes in state for ZIP reuse, then download
+    state._lastPdfBytes = pdf.output('arraybuffer');
+    const outName = state.pdfFilename.replace('.pdf','') + '_whitelabel.pdf';
+    pdf.save(outName);
+
+  } catch(err) {
+    console.error(err);
+    alert('Error al generar PDF: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Descargar PDF';
+}
+
+// ─── GENERATE EXCEL ─────────────────────────────────────────────
+function generateAndDownloadExcel() {
+  try {
+    const wb = XLSX.utils.book_new();
+    const company = document.getElementById('wlCompany').value || 'Mi Empresa';
+    const color = document.getElementById('wlColor').value;
+
+    // Summary sheet
+    const summaryRows = [
+      ['REPORTE DE PERSPECTIVAS DE DESPLIEGUE UBICELL'],
+      [company],
+      [new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'})],
+      [],
+      ['Categoría', 'Total Registros', 'Estado'],
+    ];
+    const sheets = state.workbook.SheetNames;
+    sheets.forEach(name => {
+      const cnt = state.summaryData[name].rows.length;
+      summaryRows.push([name, cnt, cnt===0?'✅ Sin problemas':cnt>20?'🔴 Crítico':'🟡 Requiere atención']);
+    });
+    const totalCnt = Object.values(state.summaryData).reduce((s,v)=>s+v.rows.length,0);
+    summaryRows.push([], ['TOTAL', totalCnt, '']);
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+    // Column widths
+    wsSummary['!cols'] = [{wch:50},{wch:20},{wch:25}];
+    XLSX.utils.book_append_sheet(wb, wsSummary, '📊 Resumen');
+
+    // Copy all original sheets — with date conversion
+    sheets.forEach(name => {
+      const data = state.summaryData[name];
+      if(data.headers.length === 0 && data.rows.length === 0) return;
+      // Convert date serials in each row
+      const convertedRows = data.rows.map(row =>
+        row.map((val, i) => {
+          const h = String(data.headers[i] || '').toLowerCase();
+          const isDateCol = DATE_COLS.some(dc => h.includes(dc));
+          if (isDateCol && isExcelDateSerial(val)) return excelSerialToDate(val);
+          return val;
+        })
+      );
+      const aoa = [data.headers, ...convertedRows];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const maxCols = Math.max(...aoa.map(r=>r.length));
+      ws['!cols'] = Array(maxCols).fill({ wch: 22 });
+      XLSX.utils.book_append_sheet(wb, ws, name.substring(0,31));
+    });
+
+    const outName = state.xlsxFilename.replace('.xlsx','') + '_reporte.xlsx';
+    XLSX.writeFile(wb, outName);
+
+  } catch(err) {
+    console.error(err);
+    alert('Error al generar Excel: ' + err.message);
+  }
+}
+
+// Returns Excel as Uint8Array without triggering download
+function buildExcelBytes() {
+  const wb = XLSX.utils.book_new();
+  const company = document.getElementById('wlCompany').value || '';
+  const sheets = state.workbook.SheetNames;
+
+  const summaryRows = [
+    ['REPORTE DE PERSPECTIVAS DE DESPLIEGUE UBICELL'],
+    [company],
+    [new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'})],
+    [],
+    ['Categoría', 'Total Registros', 'Estado'],
+  ];
+  sheets.forEach(name => {
+    const cnt = state.summaryData[name].rows.length;
+    summaryRows.push([name, cnt, cnt===0?'✅ Sin problemas':cnt>20?'🔴 Crítico':'🟡 Requiere atención']);
+  });
+  summaryRows.push([], ['TOTAL', sheets.reduce((s,n)=>s+state.summaryData[n].rows.length,0), '']);
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+  wsSummary['!cols'] = [{wch:50},{wch:20},{wch:25}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, '📊 Resumen');
+
+  sheets.forEach(name => {
+    const data = state.summaryData[name];
+    if(data.headers.length === 0 && data.rows.length === 0) return;
+    const convertedRows = data.rows.map(row =>
+      row.map((val, i) => {
+        const h = String(data.headers[i] || '').toLowerCase();
+        const isDateCol = DATE_COLS.some(dc => h.includes(dc));
+        if (isDateCol && isExcelDateSerial(val)) return excelSerialToDate(val);
+        return val;
+      })
+    );
+    const aoa = [data.headers, ...convertedRows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const maxCols = Math.max(...aoa.map(r=>r.length));
+    ws['!cols'] = Array(maxCols).fill({ wch: 22 });
+    XLSX.utils.book_append_sheet(wb, ws, name.substring(0,31));
+  });
+
+  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+}
+
+// ─── GENERATE ZIP ───────────────────────────────────────────────
+async function generateAndDownloadZip() {
+  const btn = document.getElementById('downloadZipBtn');
+  btn.disabled = true;
+
+  try {
+    const zip = new JSZip();
+    const baseName = state.pdfFilename.replace(/\.pdf$/i,'');
+
+    // ── PDF: use cached bytes if available, else generate fresh ──
+    btn.textContent = '⏳ Generando PDF...';
+    let pdfData = state._lastPdfBytes;
+    if(!pdfData) {
+      // Build fresh by calling the PDF generator and capturing output
+      await generateAndDownloadPDF();   // this sets state._lastPdfBytes
+      pdfData = state._lastPdfBytes;
+    }
+    if(pdfData) zip.file(baseName + '_whitelabel.pdf', pdfData);
+
+    // ── Excel ─────────────────────────────────────────────────────
+    btn.textContent = '⏳ Generando Excel...';
+    const xlsxData = buildExcelBytes();
+    zip.file(state.xlsxFilename.replace(/\.xlsx$/i,'') + '_reporte.xlsx', xlsxData);
+
+    // ── Bundle ────────────────────────────────────────────────────
+    btn.textContent = '⏳ Comprimiendo...';
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = baseName + '_whitelabel.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+
+  } catch(err) {
+    console.error(err);
+    alert('Error al generar ZIP: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Descargar ZIP';
+}
+
+// ─── RESET ──────────────────────────────────────────────────────
+function resetAll() {
+  state = { zipFile:null, pdfBytes:null, xlsxBytes:null, pdfFilename:'', xlsxFilename:'', pdfDoc:null, workbook:null, summaryData:{}, logoDataUrl:null, logoOverlayDataUrl:null, imgSize:'small', _lastPdfBytes:null };
+  document.querySelectorAll('.img-size-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('parseProgress').classList.add('hidden');
+  document.getElementById('zipInput').value = '';
+  document.getElementById('logoPreviewWrap').classList.add('hidden');
+  document.getElementById('logoPlaceholder').classList.remove('hidden');
+  document.getElementById('logoOverlayPreviewWrap').classList.add('hidden');
+  document.getElementById('logoOverlayPlaceholder').classList.remove('hidden');
+  document.getElementById('wlCompany').value = '';
+  document.getElementById('wlClient').value = '';
+  document.getElementById('wlFooter').value = '';
+  goStep(1);
+}
+</script>
+</body>
+</html>
