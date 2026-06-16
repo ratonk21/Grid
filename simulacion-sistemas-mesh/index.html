@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa Unificado v12 · Simulador Físico de Redes de Telegestión</title>
+<style>
+:root{
+  --bg:#0a0f1c;--panel:#111827;--panel2:#1e293b;--line:#334155;
+  --ink:#e2e8f0;--muted:#94a3b8;--dim:#64748b;
+  --zb:#60a5fa;--rpl:#4ade80;--lw:#c084fc;--lte:#38bdf8;
+  --blue:#2563eb;--green:#16a34a;--orange:#f97316;--red:#dc2626;--amber:#f59e0b;--purple:#a855f7;--cyan:#0ea5e9;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;}
+.app{display:flex;flex-direction:column;height:100vh;}
+.topbar{flex:0 0 auto;background:var(--panel);border-bottom:1px solid var(--line);padding:7px 12px;}
+.topbar-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap;}
+.brand{font-size:14px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#c084fc,#4ade80,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap;}
+.ctrl-inline{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.ctrl-inline .v{color:#60a5fa;font-weight:800;font-family:monospace;min-width:30px;}
+.ctrl-inline input[type=range]{width:80px;accent-color:var(--blue);cursor:pointer;}
+.ctrl-inline select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:3px 6px;font-size:11px;cursor:pointer;}
+.btn{border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;color:#fff;white-space:nowrap;}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1);}
+.btn-play{background:linear-gradient(135deg,#2563eb,#1d4ed8);}
+.btn-reset{background:var(--panel2);color:var(--muted);border:1px solid var(--line);}
+.btn-cfg{background:linear-gradient(135deg,#7c3aed,#9333ea);}
+.state-tag{font-size:11px;color:var(--dim);} .state-tag b{color:var(--ink);}
+.scnbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.scnbar .lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;}
+.scn{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;}
+.scn:hover{border-color:var(--blue);color:var(--ink);}
+.scn.active{background:linear-gradient(135deg,#1e3a5f,#2d1b4e);border-color:var(--blue);color:#fff;}
+.tech-tog{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border:2px solid var(--line);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.tech-tog .sw{width:10px;height:10px;border-radius:3px;}
+.tech-tog.off{opacity:.38;}
+.opt-tog{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+
+/* day/night clock pill */
+.clock-pill{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:4px 11px;font-size:12px;font-weight:700;font-family:monospace;}
+.clock-icon{font-size:14px;}
+
+.stage{flex:1 1 auto;position:relative;min-height:0;}
+#mapCanvas{width:100%;height:100%;display:block;cursor:grab;}
+.map-zoombtns{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px;z-index:10;}
+.zbtn{width:34px;height:34px;background:rgba(15,23,42,.88);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:17px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.zbtn:hover{border-color:var(--blue);}
+.map-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.78);color:var(--dim);font-size:10px;padding:4px 11px;border-radius:20px;pointer-events:none;z-index:10;}
+.maptip{position:absolute;background:rgba(10,15,28,.97);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:11px;line-height:1.6;pointer-events:none;z-index:50;min-width:180px;display:none;}
+.maptip b{color:#fff;}
+
+/* heatmap mode legend */
+.heat-legend{position:absolute;bottom:10px;right:10px;background:rgba(15,23,42,.9);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:10px;z-index:10;display:none;}
+.heat-legend.on{display:block;}
+.heat-bar{height:10px;width:140px;border-radius:5px;background:linear-gradient(90deg,#0a3d2e,#16a34a,#eab308,#f97316,#dc2626);margin:4px 0;}
+.heat-labels{display:flex;justify-content:space-between;color:var(--muted);}
+
+.sidepanel{position:absolute;top:10px;left:10px;width:300px;max-height:calc(100% - 20px);overflow-y:auto;background:rgba(17,24,39,.94);border:1px solid var(--line);border-radius:12px;padding:12px;z-index:20;backdrop-filter:blur(6px);transition:transform .25s;}
+.sidepanel.collapsed{transform:translateX(-320px);}
+.sidepanel h3{font-size:12px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.sp-toggle{position:absolute;top:14px;left:10px;z-index:21;background:rgba(15,23,42,.88);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:13px;padding:6px 9px;cursor:pointer;display:none;}
+.sidepanel.collapsed + .sp-toggle{display:block;}
+#availChart{width:100%;height:120px;display:block;margin-bottom:10px;}
+.leaderboard{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.lb-row{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--panel2);border-radius:8px;}
+.lb-rank{font-size:14px;font-weight:900;width:20px;text-align:center;}
+.lb-name{font-size:11px;font-weight:700;flex:1;}
+.lb-stat{font-size:10px;font-family:monospace;color:var(--muted);text-align:right;}
+.lb-stat b{font-size:12px;color:var(--ink);display:block;}
+table.cmp-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px;}
+table.cmp-table th{color:var(--muted);padding:3px 4px;text-align:left;font-size:9px;text-transform:uppercase;}
+table.cmp-table td{border-top:1px solid var(--line);padding:4px;}
+table.cmp-table td:first-child{font-weight:800;}
+.sp-close{float:right;cursor:pointer;color:var(--dim);font-size:14px;}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;}
+.metric{background:var(--panel2);border-radius:7px;padding:6px 8px;}
+.metric .ml{font-size:9px;color:var(--dim);text-transform:uppercase;}
+.metric .mv{font-size:14px;font-weight:800;font-family:monospace;}
+.legend-mini{font-size:9px;color:var(--muted);line-height:1.7;border-top:1px solid var(--line);padding-top:7px;}
+.legend-mini .row{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
+.sym{width:14px;height:14px;flex-shrink:0;display:inline-block;}
+
+/* CONFIG MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:980px;width:100%;padding:20px 22px;}
+.modal h2{font-size:17px;font-weight:900;margin-bottom:4px;}
+.modal .sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.modal-close{float:right;font-size:22px;color:var(--dim);cursor:pointer;line-height:1;}
+.cfg-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.cfg-tab{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);}
+.cfg-tab.active{background:linear-gradient(135deg,#1e3a5f,#2d1b4e);border-color:var(--blue);color:#fff;}
+.cfg-section{display:none;}
+.cfg-section.active{display:block;}
+table.cfg-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px;}
+table.cfg-table th{background:var(--panel2);color:var(--muted);padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--line);}
+table.cfg-table td{border-bottom:1px solid var(--line);padding:6px 9px;vertical-align:middle;}
+table.cfg-table td:first-child{font-weight:700;color:var(--ink);}
+table.cfg-table .desc{color:var(--dim);font-size:10px;}
+table.cfg-table input{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12px;width:90px;font-family:monospace;}
+table.cfg-table input:focus{border-color:var(--blue);outline:none;}
+table.cfg-table .unit{color:var(--dim);font-size:11px;margin-left:4px;}
+.modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+.cfg-note{background:var(--panel2);border-left:3px solid var(--blue);border-radius:6px;padding:8px 11px;font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+
+.bottombar{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);padding:8px 14px 10px;}
+.bottombar-title{font-size:12px;font-weight:800;margin-bottom:5px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.bb-legend{display:flex;gap:14px;}
+.bb-li{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--muted);}
+.bb-dot{width:11px;height:3px;border-radius:2px;}
+#availChart{width:100%;height:150px;display:block;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <span class="brand">🗺️ Mapa Unificado v12</span>
+      <button class="btn btn-play" id="btn_play" onclick="toggleRun()">▶ Iniciar</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reiniciar</button>
+      <button class="btn btn-cfg" onclick="openConfig()">⚙ Parámetros</button>
+      <span class="clock-pill"><span class="clock-icon" id="clock_icon">🌙</span><span id="clock_time">21:00</span></span>
+      <span class="ctrl-inline">Nodos/tec <input type="range" id="cfg_n" min="200" max="5000" step="200" value="1000"><span class="v" id="cfg_n_v">1000</span></span>
+      <span class="ctrl-inline">Intensidad <input type="range" id="cfg_int" min="10" max="100" step="10" value="50"><span class="v" id="cfg_int_v">50%</span></span>
+      <span class="ctrl-inline">Velocidad <input type="range" id="cfg_spd" min="2" max="60" step="2" value="10"><span class="v" id="cfg_spd_v">1.0×</span></span>
+      <span class="ctrl-inline">Densidad <select id="cfg_density"><option value="sparse">Dispersa</option><option value="medium" selected>Media</option><option value="dense">Densa</option></select></span>
+      <span class="state-tag">· <b id="run_state">detenido</b> · <b id="fps_tag">—</b></span>
+    </div>
+    <div class="scnbar">
+      <span class="lbl">Vista:</span>
+      <span class="opt-tog"><input type="checkbox" id="opt_hex" checked onchange="setView()"> Raster hex</span>
+      <span class="opt-tog"><input type="checkbox" id="opt_heat" onchange="setView()"> Heatmap densidad/saturación</span>
+      <span class="opt-tog"><input type="checkbox" id="opt_rf" onchange="setView()"> Ondas RF</span>
+      <span class="opt-tog"><input type="checkbox" id="opt_daynight" checked onchange="setView()"> Ciclo día/noche</span>
+      <span class="opt-tog"><input type="checkbox" id="opt_hops" onchange="setView()"> Saltos mesh</span>
+      <span class="opt-tog"><input type="checkbox" id="opt_cov" onchange="setView()"> Radio cobertura</span>
+      <span class="lbl" style="margin-left:6px">Evento:</span>
+      <div class="scn" onclick="fireScenario('apagon',this)">⚡ Apagón circuito</div>
+      <div class="scn" onclick="fireScenario('gwfail',this)">💀 Caída gateway</div>
+      <div class="scn" onclick="fireScenario('storm',this)">🌩️ Interferencia</div>
+      <div class="scn" onclick="fireScenario('surge',this)">📈 Pico tráfico</div>
+      <div class="scn" onclick="fireScenario('command',this)">📢 Comando masivo</div>
+      <div class="scn" onclick="fireScenario('cyber',this)">🛡️ Ataque</div>
+      <div class="scn" onclick="fireScenario('growth',this)">➕ Expansión</div>
+      <div class="scn" style="border-color:#16a34a;color:#4ade80" onclick="recommissionAll(this)">🛠️ Re-comisionar red</div>
+      <span class="lbl" style="margin-left:6px">Mostrar:</span>
+      <div class="tech-tog" data-tech="zb"  onclick="toggleTech('zb',this)"><span class="sw" style="background:var(--zb)"></span>▲ Zigbee</div>
+      <div class="tech-tog" data-tech="rpl" onclick="toggleTech('rpl',this)"><span class="sw" style="background:var(--rpl)"></span>◆ 6LoWPAN</div>
+      <div class="tech-tog" data-tech="lw"  onclick="toggleTech('lw',this)"><span class="sw" style="background:var(--lw)"></span>● LoRaWAN</div>
+      <div class="tech-tog" data-tech="lte" onclick="toggleTech('lte',this)"><span class="sw" style="background:var(--lte)"></span>✚ LTE</div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="mapCanvas"></canvas>
+    <div class="map-zoombtns">
+      <button class="zbtn" onclick="zoomBtn(1.3)">+</button>
+      <button class="zbtn" onclick="zoomBtn(0.77)">−</button>
+      <button class="zbtn" onclick="resetView()" title="Centrar">⊙</button>
+    </div>
+    <div class="heat-legend" id="heatLegend">
+      <div><b>Heatmap densidad/saturación</b></div>
+      <div class="heat-bar"></div>
+      <div class="heat-labels"><span>baja</span><span>óptima</span><span>saturada</span></div>
+      <div style="color:var(--dim);margin-top:4px">nodos/celda hex · rojo = riesgo de colisión</div>
+    </div>
+    <div class="sidepanel" id="sidepanel">
+      <span class="sp-close" onclick="toggleSidePanel()">✕</span>
+      <h3>📊 Métricas físicas (media)</h3>
+      <div class="metric-grid">
+        <div class="metric"><div class="ml">Latencia mesh</div><div class="mv" id="m_latency">—</div></div>
+        <div class="metric"><div class="ml">Airtime LoRa</div><div class="mv" id="m_airtime">—</div></div>
+        <div class="metric"><div class="ml">Colisiones/s</div><div class="mv" id="m_coll">—</div></div>
+        <div class="metric"><div class="ml">Batería ZB rtr</div><div class="mv" id="m_batt">—</div></div>
+      </div>
+      <h3>🏆 Resiliencia</h3>
+      <div class="leaderboard" id="leaderboard"></div>
+      <h3>⏱️ Recuperación</h3>
+      <table class="cmp-table">
+        <thead><tr><th>Tec</th><th>Afect.</th><th>95%</th><th>99%</th><th>Disp</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--zb)">▲ZB</td><td id="rt_zb_aff">—</td><td id="rt_zb_t95">—</td><td id="rt_zb_t99">—</td><td id="rt_zb_av">—</td></tr>
+          <tr><td style="color:var(--rpl)">◆6L</td><td id="rt_rpl_aff">—</td><td id="rt_rpl_t95">—</td><td id="rt_rpl_t99">—</td><td id="rt_rpl_av">—</td></tr>
+          <tr><td style="color:var(--lw)">●LW</td><td id="rt_lw_aff">—</td><td id="rt_lw_t95">—</td><td id="rt_lw_t99">—</td><td id="rt_lw_av">—</td></tr>
+          <tr><td style="color:var(--lte)">✚LTE</td><td id="rt_lte_aff">—</td><td id="rt_lte_t95">—</td><td id="rt_lte_t99">—</td><td id="rt_lte_av">—</td></tr>
+        </tbody>
+      </table>
+      <div class="legend-mini">
+        <div class="row"><b>Símbolos (GW = cuadrado grande):</b></div>
+        <div class="row"><svg class="sym" viewBox="0 0 14 14"><polygon points="7,2 12,12 2,12" fill="#60a5fa"/></svg> Zigbee — triángulo</div>
+        <div class="row"><svg class="sym" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="#4ade80"/></svg> 6LoWPAN — rombo</div>
+        <div class="row"><svg class="sym" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="#c084fc"/></svg> LoRaWAN — círculo</div>
+        <div class="row"><svg class="sym" viewBox="0 0 14 14"><path d="M5,1 h4 v4 h4 v4 h-4 v4 h-4 v-4 h-4 v-4 h4 z" fill="#38bdf8"/></svg> LTE — cruz</div>
+        <div class="row" style="margin-top:4px"><span class="sym" style="background:#6b7280;border-radius:50%"></span> caído · <span class="sym" style="background:#f59e0b;border-radius:2px"></span> circuito en falla</div>
+      </div>
+    </div>
+    <button class="sp-toggle" onclick="toggleSidePanel()">📊</button>
+    <div class="maptip" id="maptip"></div>
+    <div class="map-hint">🖱 Scroll: zoom · Drag: mover · Click nodo (Zigbee/6LoWPAN): apagar/encender y ver nuevo camino · Click vacío: enfocar cuadrante</div>
+  </div>
+  <div class="bottombar" id="bottombar">
+    <div class="bottombar-title">📈 Disponibilidad en vivo (% nodos online)
+      <span class="bb-legend">
+        <span class="bb-li"><span class="bb-dot" style="background:var(--zb)"></span>Zigbee</span>
+        <span class="bb-li"><span class="bb-dot" style="background:var(--rpl)"></span>6LoWPAN</span>
+        <span class="bb-li"><span class="bb-dot" style="background:var(--lw)"></span>LoRaWAN</span>
+        <span class="bb-li"><span class="bb-dot" style="background:var(--lte)"></span>LTE</span>
+      </span>
+    </div>
+    <canvas id="availChart"></canvas>
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-bg" id="cfgModal">
+  <div class="modal">
+    <span class="modal-close" onclick="closeConfig()">✕</span>
+    <h2>⚙ Parámetros físicos de simulación</h2>
+    <div class="sub">Edita los valores para ajustar el modelo a tu escenario real. Los cambios se aplican al reconstruir la red.</div>
+    <div class="cfg-note">Estos valores controlan la física de cada tecnología: propagación RF, duty cycle, batería, latencia por salto y umbrales de colisión. Los valores por defecto son representativos de despliegues típicos de alumbrado público.</div>
+    <div class="cfg-tabs">
+      <div class="cfg-tab active" onclick="cfgTab('lw',this)">📙 LoRaWAN</div>
+      <div class="cfg-tab" onclick="cfgTab('zb',this)">📘 Zigbee</div>
+      <div class="cfg-tab" onclick="cfgTab('rpl',this)">📗 6LoWPAN</div>
+      <div class="cfg-tab" onclick="cfgTab('lte',this)">📶 LTE</div>
+      <div class="cfg-tab" onclick="cfgTab('env',this)">🌍 Entorno/RF</div>
+    </div>
+    <div id="cfgBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-reset" onclick="resetParams()">↺ Restaurar por defecto</button>
+      <button class="btn btn-play" onclick="applyConfig()">✓ Aplicar y reconstruir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════ UTILITIES ════
+function rnd(a,b){return a+Math.random()*(b-a);}
+function rint(a,b){return Math.floor(rnd(a,b+1));}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function lerp(a,b,t){return a+(b-a)*t;}
+function dist(ax,ay,bx,by){return Math.hypot(ax-bx,ay-by);}
+function hexToRgb(hex){hex=hex.replace('#','');return parseInt(hex.slice(0,2),16)+','+parseInt(hex.slice(2,4),16)+','+parseInt(hex.slice(4,6),16);}
+
+const LTE_LAYERS=['Energía','Radio','SIM/APN','PDP/Ruta','Plataforma'];
+const LTE_COLORS=['#f59e0b','#22d3ee','#a78bfa','#34d399','#60a5fa'];
+const GW_PALETTE=['#f59e0b','#a855f7','#0ea5e9','#f43f5e','#10b981','#fb923c','#6366f1','#14b8a6','#eab308','#ec4899','#22c55e','#3b82f6','#f97316','#8b5cf6'];
+
+// ════ PHYSICS PARAMETERS (editable via config modal) ════
+const PARAMS_DEFAULT={
+  lw:{
+    txPowerDbm:{v:14,unit:'dBm',desc:'Potencia de transmisión del nodo',min:2,max:20},
+    sensitivityDbm:{v:-137,unit:'dBm',desc:'Sensibilidad del receptor (SF12)',min:-140,max:-110},
+    pathLossExp:{v:2.8,unit:'',desc:'Exponente de pérdida (2=libre, 4=urbano denso)',min:2,max:4.5},
+    dutyCyclePct:{v:1,unit:'%',desc:'Duty cycle regulatorio (EU868=1%)',min:0.1,max:10},
+    nodesPerGw:{v:350,unit:'nodos',desc:'Nodos por gateway al construir',min:50,max:1000},
+    confirmedPct:{v:30,unit:'%',desc:'% de uplinks confirmados (piden ACK)',min:0,max:100},
+    collisionThresh:{v:55,unit:'%',desc:'Ocupación de canal donde empiezan colisiones',min:20,max:90},
+  },
+  zb:{
+    covRadius:{v:260,unit:'px',desc:'Radio de cobertura RF (menor = más saltos mesh)',min:40,max:400},
+    routerPct:{v:40,unit:'%',desc:'% de nodos que son routers (relays mesh)',min:5,max:60},
+    permPoweredPct:{v:60,unit:'%',desc:'% de routers con energía 24/7',min:0,max:100},
+    maxHops:{v:10,unit:'saltos',desc:'Máximo de saltos permitidos',min:2,max:15},
+    hopLatencyMs:{v:30,unit:'ms',desc:'Latencia añadida por salto',min:5,max:100},
+    nodesPerGw:{v:180,unit:'nodos',desc:'Nodos por coordinador',min:30,max:500},
+    routerBattHrs:{v:0,unit:'h',desc:'Autonomía batería router (0=alimentado)',min:0,max:200},
+  },
+  rpl:{
+    covRadius:{v:240,unit:'px',desc:'Radio de cobertura RF (menor = más saltos DODAG)',min:40,max:400},
+    maxHops:{v:10,unit:'saltos',desc:'Profundidad máxima del DODAG',min:2,max:15},
+    nodesPerBr:{v:220,unit:'nodos',desc:'Nodos por Border Router',min:40,max:600},
+    parentSetSize:{v:2,unit:'',desc:'Padres candidatos por nodo (redundancia)',min:1,max:4},
+    etxThreshold:{v:3,unit:'',desc:'ETX máximo aceptable (>3 = enlace pobre)',min:1.5,max:6},
+    reconvergeMaxS:{v:5,unit:'s',desc:'Tiempo máx. de reconvergencia DODAG',min:1,max:20},
+    hopLatencyMs:{v:25,unit:'ms',desc:'Latencia por salto IPv6',min:5,max:100},
+  },
+  lte:{
+    nodesPerCell:{v:300,unit:'nodos',desc:'Nodos por torre eNodeB',min:50,max:1000},
+    rsrpMinDbm:{v:-110,unit:'dBm',desc:'RSRP mínimo para servicio',min:-120,max:-80},
+    handoverMs:{v:2500,unit:'ms',desc:'Tiempo de handover entre celdas',min:500,max:8000},
+    batteryYears:{v:10,unit:'años',desc:'Autonomía NB-IoT (PSM/eDRX)',min:1,max:15},
+    attachStormS:{v:14,unit:'s',desc:'Ventana de reconexión masiva (attach storm)',min:2,max:60},
+  },
+  env:{
+    shadowingDb:{v:6,unit:'dB',desc:'Desv. estándar de sombras (log-normal)',min:0,max:12},
+    obstacleDensity:{v:30,unit:'%',desc:'Densidad de obstáculos urbanos',min:0,max:100},
+    dayStartHr:{v:7,unit:'h',desc:'Hora de apagado de alumbrado (amanece)',min:4,max:9},
+    nightStartHr:{v:19,unit:'h',desc:'Hora de encendido (anochece)',min:16,max:22},
+    clockSpeedMin:{v:30,unit:'min/s',desc:'Velocidad del reloj simulado',min:1,max:120},
+    interferenceFloor:{v:10,unit:'%',desc:'Ruido RF de fondo (Wi-Fi, etc.)',min:0,max:60},
+  },
+};
+// deep clone into live PARAMS
+let PARAMS=JSON.parse(JSON.stringify(PARAMS_DEFAULT));
+function P(tech,key){return PARAMS[tech][key].v;}
+
+const CFG={n:1000,intensity:0.5,speed:1.0,density:'medium'};
+const VIEW={hex:true,heat:false,rf:false,daynight:true,hops:false,cov:false};
+let RUNNING=false,RAF=null,focusQuad=null;
+const TECH_ON={zb:true,rpl:true,lw:true,lte:true};
+
+// simulated clock (minutes since midnight)
+let simClock=21*60; // start 21:00 (night, lights on)
+
+const QW=1400,QH=1050,WORLD_W=2800,WORLD_H=2100;
+const QUAD={zb:{x:0,y:0},rpl:{x:QW,y:0},lw:{x:0,y:QH},lte:{x:QW,y:QH}};
+const QUAD_META={zb:{name:'📘 Zigbee Mesh',color:'#60a5fa',sym:'tri'},rpl:{name:'📗 6LoWPAN/RPL',color:'#4ade80',sym:'dia'},lw:{name:'📙 LoRaWAN',color:'#c084fc',sym:'cir'},lte:{name:'📶 LTE / NB-IoT',color:'#38bdf8',sym:'cross'}};
+
+const cam={x:0,y:0,zoom:1,drag:{active:false,lx:0,ly:0}};
+const histLen=110;
+const HIST={zb:[],rpl:[],lw:[],lte:[]};
+
+const SIM={
+  zb:{gws:[],nodes:[],circuits:[],packets:[],waves:[],rfRings:[],trails:[],eventStart:0,t95:null,t99:null,avgLatency:0,avgBatt:100},
+  rpl:{gws:[],nodes:[],circuits:[],packets:[],waves:[],dio:[],rfRings:[],trails:[],eventStart:0,t95:null,t99:null,avgLatency:0},
+  lw:{gws:[],nodes:[],circuits:[],packets:[],waves:[],rfRings:[],eventStart:0,t95:null,t99:null,domSf:7,avgAirtime:0,collPerS:0,collAccum:0},
+  lte:{gws:[],nodes:[],circuits:[],packets:[],waves:[],rfRings:[],trails:[],eventStart:0,t95:null,t99:null,faultLayer:-1},
+};
+
+// ════ DAY / NIGHT ════
+function isNight(){const h=simClock/60;return h>=P('env','nightStartHr')||h<P('env','dayStartHr');}
+function tickClock(dt){
+  if(!VIEW.daynight)return;
+  simClock=(simClock+dt*CFG.speed*P('env','clockSpeedMin'))%1440;
+  const h=Math.floor(simClock/60),m=Math.floor(simClock%60);
+  document.getElementById('clock_time').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+  document.getElementById('clock_icon').textContent=isNight()?'🌙':'☀️';
+}
+
+// ════ RF PROPAGATION ════
+// log-distance path loss; returns received power dBm
+function rxPower(txDbm,d,exp){
+  if(d<1)d=1;
+  // log-distance path loss model (returns received power dBm) — used for tooltips/realism
+  const pl=74+10*exp*Math.log10(d/40);
+  const shadow=rnd(-P('env','shadowingDb'),P('env','shadowingDb'));
+  return txDbm-pl-shadow;
+}
+// estimate SF needed for LoRa node at distance d (urban path loss + obstacles + shadowing)
+// SF rises with link budget consumed: distance, path-loss exponent, obstacles all push SF up.
+function estimateSf(d){
+  const exp=P('lw','pathLossExp');                 // 2..4.5
+  const obst=P('env','obstacleDensity')/100;       // 0..1
+  const shadow=rnd(0,P('env','shadowingDb'))/6;    // 0..~2 random penalty
+  // normalized "difficulty": distance scaled, amplified by exponent and clutter
+  const norm=(d/820)*(exp/2.8)*(1+obst*0.7)+shadow*0.1;
+  const sf=clamp(Math.round(7+norm*5.2),7,12);
+  return sf;
+}
+
+// ════ BUILDERS (circuits + RF-aware placement) ════
+function pad(q){return {x0:q.x+56,y0:q.y+64,x1:q.x+QW-56,y1:q.y+QH-56};}
+function densFactor(){return CFG.density==='dense'?0.7:CFG.density==='sparse'?1.45:1;}
+function makeCircuits(p,count){const cs=[];const cols=Math.ceil(Math.sqrt(count*1.2)),rows=Math.ceil(count/cols);let id=0;
+  for(let r=0;r<rows&&id<count;r++)for(let c=0;c<cols&&id<count;c++){cs.push({id:id++,cx:lerp(p.x0+40,p.x1-40,cols>1?c/(cols-1):0.5)+rnd(-30,30),cy:lerp(p.y0+40,p.y1-40,rows>1?r/(rows-1):0.5)+rnd(-30,30),r:rnd(70,120),failed:false,apagable:Math.random()<0.5});}return cs;}
+function placeGWs(p,nGW){const gws=[];const cols=Math.ceil(Math.sqrt(nGW)),rows=Math.ceil(nGW/cols);
+  for(let i=0;i<nGW;i++){const c=i%cols,r=Math.floor(i/cols);gws.push({x:lerp(p.x0+70,p.x1-70,cols>1?c/(cols-1):0.5)+rnd(-25,25),y:lerp(p.y0+70,p.y1-70,rows>1?r/(rows-1):0.5)+rnd(-25,25),color:GW_PALETTE[i%GW_PALETTE.length],id:i,alive:true,rxT:0,load:0});}return gws;}
+function nodeInCircuit(circ,dF){const a=rnd(0,Math.PI*2),d=rnd(0,circ.r)*dF;return {x:circ.cx+Math.cos(a)*d,y:circ.cy+Math.sin(a)*d};}
+function nearestGw(gws,x,y){return gws.reduce((b,g)=>dist(x,y,g.x,g.y)<dist(x,y,b.x,b.y)?g:b,gws[0]);}
+
+function buildZb(){
+  const s=SIM.zb,q=QUAD.zb,p=pad(q);
+  const nGW=clamp(Math.round(CFG.n/P('zb','nodesPerGw')),2,10);
+  s.gws=placeGWs(p,nGW);
+  s.circuits=makeCircuits(p,clamp(Math.round(CFG.n/40),6,80));
+  s.nodes=[];s.packets=[];s.waves=[];s.rfRings=[];s.trails=[];s.eventStart=0;s.t95=null;s.t99=null;
+  const dF=densFactor(),rpct=P('zb','routerPct')/100,perm=P('zb','permPoweredPct')/100;
+  for(let i=0;i<CFG.n;i++){
+    const circ=s.circuits[i%s.circuits.length];const pos=nodeInCircuit(circ,dF);
+    const isRouter=Math.random()<rpct;
+    const px=clamp(pos.x,p.x0,p.x1),py=clamp(pos.y,p.y0,p.y1);
+    // Zigbee: each node belongs to ONE fixed PAN (coordinator) — the nearest at commissioning.
+    // It never migrates to another coordinator (that would be a different PAN ID).
+    const homePan=nearestGw(s.gws,px,py);
+    s.nodes.push({x:px,y:py,homeGw:homePan,homePan,gw:null,color:'#16a34a',circuit:circ,
+      isRouter,perm:isRouter&&Math.random()<perm,alive:true,noRoute:true,hops:Infinity,next:null,selected:false,manualOff:false,
+      latency:0,batt:100,r:isRouter?5:3,pulseT:rnd(0,6),txT:rnd(0,4)});
+  }
+  buildMeshRoutes(s,'zb'); // multi-hop routing within each PAN (does NOT cross coordinators)
+}
+function buildRpl(){
+  const s=SIM.rpl,q=QUAD.rpl,p=pad(q);
+  const nBR=clamp(Math.round(CFG.n/P('rpl','nodesPerBr')),2,8);
+  s.gws=placeGWs(p,nBR);s.gws.forEach(g=>g.label='BR'+(g.id+1));
+  s.circuits=makeCircuits(p,clamp(Math.round(CFG.n/40),6,80));
+  s.nodes=[];s.packets=[];s.waves=[];s.dio=[];s.rfRings=[];s.trails=[];s.eventStart=0;s.t95=null;s.t99=null;
+  const dF=densFactor();
+  for(let i=0;i<CFG.n;i++){
+    const circ=s.circuits[i%s.circuits.length];const pos=nodeInCircuit(circ,dF);
+    const etx=clamp(1+rnd(0,0.5),1,P('rpl','etxThreshold')+1);
+    s.nodes.push({x:clamp(pos.x,p.x0,p.x1),y:clamp(pos.y,p.y0,p.y1),homeGw:null,gw:null,color:'#16a34a',circuit:circ,
+      alive:true,orphan:true,migrating:false,hops:Infinity,next:null,etx,latency:0,selected:false,manualOff:false,
+      r:3.5,pulseT:rnd(0,6),txT:rnd(0,4),reconvT:0,migrate:null});
+  }
+  buildMeshRoutes(s,'rpl'); // real DODAG multi-hop routing via coverage radius
+}
+function buildLw(){
+  const s=SIM.lw,q=QUAD.lw,p=pad(q);
+  const nGW=clamp(Math.round(CFG.n/P('lw','nodesPerGw')),1,6);
+  s.gws=placeGWs(p,nGW);
+  s.circuits=makeCircuits(p,clamp(Math.round(CFG.n/40),6,80));
+  s.nodes=[];s.packets=[];s.waves=[];s.rfRings=[];s.eventStart=0;s.t95=null;s.t99=null;s.collAccum=0;
+  const dF=densFactor();
+  for(let i=0;i<CFG.n;i++){
+    const circ=s.circuits[i%s.circuits.length];const pos=nodeInCircuit(circ,dF);const gw=nearestGw(s.gws,pos.x,pos.y);
+    const dd=dist(pos.x,pos.y,gw.x,gw.y);
+    const sf=estimateSf(dd);
+    const airtime=[0,0,0,0,0,0,46,82,148,266,490,900][sf]; // ms approx for SF7..12
+    s.nodes.push({x:clamp(pos.x,p.x0,p.x1),y:clamp(pos.y,p.y0,p.y1),homeGw:gw,gw,
+      color:sf<=9?'#2563eb':sf<=11?'#f97316':'#dc2626',circuit:circ,sf,airtime,
+      joined:true,joiningT:0,offline:false,confirmed:Math.random()<P('lw','confirmedPct')/100,
+      r:3.5,pulseT:rnd(0,6),txT:rnd(0,5),hasDiversity:dd<300&&nGW>1,migrate:null});
+  }
+}
+function buildLte(){
+  const s=SIM.lte,q=QUAD.lte,p=pad(q);
+  const nCell=clamp(Math.round(CFG.n/P('lte','nodesPerCell')),2,8);
+  s.gws=placeGWs(p,nCell);s.gws.forEach(g=>{g.color='#38bdf8';g.label='eNB'+(g.id+1);});
+  s.circuits=makeCircuits(p,clamp(Math.round(CFG.n/40),6,80));
+  s.nodes=[];s.packets=[];s.waves=[];s.rfRings=[];s.trails=[];s.eventStart=0;s.t95=null;s.t99=null;s.faultLayer=-1;
+  const dF=densFactor();
+  for(let i=0;i<CFG.n;i++){
+    const circ=s.circuits[i%s.circuits.length];const pos=nodeInCircuit(circ,dF);const cell=nearestGw(s.gws,pos.x,pos.y);
+    const dd=dist(pos.x,pos.y,cell.x,cell.y);
+    const rsrp=clamp(Math.round(-60-dd/8-rnd(0,P('env','shadowingDb'))),-125,-55);
+    s.nodes.push({x:clamp(pos.x,p.x0,p.x1),y:clamp(pos.y,p.y0,p.y1),homeGw:cell,gw:cell,color:'#16a34a',circuit:circ,
+      state:rsrp<P('lte','rsrpMinDbm')?'fail':'ok',faultLayer:rsrp<P('lte','rsrpMinDbm')?1:-1,rsrp,
+      reconnectT:rnd(0,3),r:3.5,pulseT:rnd(0,6),dataT:rnd(0,3),migrate:null});
+  }
+}
+function buildAll(){
+  buildZb();buildRpl();buildLw();buildLte();
+  HIST.zb=[];HIST.rpl=[];HIST.lw=[];HIST.lte=[];
+  draw();drawChart();updateStats();
+  document.querySelectorAll('.tech-tog').forEach(t=>t.classList.toggle('off',!TECH_ON[t.dataset.tech]));
+}
+
+// ════ FAILOVER ════
+function nearestAliveGw(gws,x,y,ex){let best=null,bd=1e9;gws.forEach(g=>{if(!g.alive||g===ex)return;const d=dist(x,y,g.x,g.y);if(d<bd){bd=d;best=g;}});return best;}
+function startMigration(nd,toGw){nd.migrate={t:0,fromX:nd.gw.x,fromY:nd.gw.y};nd.gw=toGw;nd.color=toGw.color;}
+function pushTrail(s,x1,y1,x2,y2,col){if(s.trails&&s.trails.length<200)s.trails.push({x1,y1,x2,y2,t:0,col});}
+function spawnRf(s,x,y,col){if(VIEW.rf&&s.rfRings.length<120)s.rfRings.push({x,y,r:0,maxR:rnd(40,80),col});}
+
+
+// ════ MESH ROUTING (Gateway-Designer style: coverage radius forces multi-hop) ════
+// Builds a spatial grid, then BFS from each GW through nodes within coverage radius.
+// Each node gets .next (next-hop toward GW), .hops, .gw. Nodes beyond reach => noRoute/orphan.
+function buildMeshRoutes(s,key){
+  const cov=key==='zb'?P('zb','covRadius'):P('rpl','covRadius');
+  const covSq=cov*cov;
+  const nodes=s.nodes, N=nodes.length;
+  const maxHops=key==='zb'?P('zb','maxHops'):P('rpl','maxHops');
+  const hopLat=key==='zb'?P('zb','hopLatencyMs'):P('rpl','hopLatencyMs');
+  // spatial hash grid for neighbor lookup within coverage radius
+  const cell=Math.max(1,cov);
+  const grid=new Map();
+  for(let i=0;i<N;i++){const n=nodes[i];const gx=Math.floor(n.x/cell),gy=Math.floor(n.y/cell);const k=gx*100003+gy;let b=grid.get(k);if(!b){b=[];grid.set(k,b);}b.push(i);}
+  function nearbyNodes(x,y){const gx=Math.floor(x/cell),gy=Math.floor(y/cell);const out=[];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const b=grid.get((gx+dx)*100003+(gy+dy));if(b)for(const j of b)out.push(j);}return out;}
+  // reset routing state
+  for(let i=0;i<N;i++){const n=nodes[i];n.next=null;n.hops=Infinity;n.gw=null;n._routed=false;
+    if(key==='zb')n.noRoute=true; else n.orphan=true;}
+  // ── Seed frontier from gateways ──
+  // ZIGBEE: a node may ONLY attach to its OWN coordinator (homePan). One PAN per coordinator;
+  //         nodes never roam to a different coordinator. If homePan is down, the node has no route.
+  // 6LoWPAN/RPL: a node attaches to ANY reachable Border Router (DODAG reconverges across BRs).
+  let frontier=[];
+  for(let i=0;i<N;i++){
+    const n=nodes[i];if(!n.alive&&key==='zb')continue;if(n.dead)continue;
+    if(key==='zb'){
+      const g=n.homePan;
+      if(g&&g.alive){const dx=n.x-g.x,dy=n.y-g.y;if(dx*dx+dy*dy<=covSq){n.gw=g;n.hops=1;n.next=g;n._routed=true;n.noRoute=false;frontier.push(i);}}
+    } else {
+      // nearest alive BR within coverage (any DODAG root)
+      let bestG=null,bd=covSq;
+      for(const g of s.gws){if(!g.alive)continue;const dx=n.x-g.x,dy=n.y-g.y,d=dx*dx+dy*dy;if(d<=bd){bd=d;bestG=g;}}
+      if(bestG){n.gw=bestG;n.hops=1;n.next=bestG;n._routed=true;n.orphan=false;frontier.push(i);}
+    }
+  }
+  // ── BFS relay expansion ──
+  let guard=0;
+  while(frontier.length&&guard++<60){
+    const nf=[];
+    for(const fi of frontier){
+      const fn=nodes[fi];
+      const canRelay=(key==='zb')?(fn.isRouter&&fn.alive):(fn.alive!==false);
+      if(!canRelay)continue;
+      if(fn.hops>=maxHops)continue;
+      for(const j of nearbyNodes(fn.x,fn.y)){
+        const nj=nodes[j];if(nj._routed)continue;
+        if(key==='zb'&&!nj.alive)continue;if(nj.dead)continue;
+        // ZIGBEE: relay only to nodes of the SAME PAN (same coordinator)
+        if(key==='zb'&&nj.homePan!==fn.gw)continue;
+        const dx=nj.x-fn.x,dy=nj.y-fn.y;if(dx*dx+dy*dy>covSq)continue;
+        nj.gw=fn.gw;nj.hops=fn.hops+1;nj.next=fn;nj._routed=true;
+        if(key==='zb')nj.noRoute=false;else nj.orphan=false;
+        nf.push(j);
+      }
+    }
+    frontier=nf;
+  }
+  for(let i=0;i<N;i++){const n=nodes[i];if(n._routed){n.latency=n.hops*hopLat;if(n.gw)n.color=n.gw.color;}}
+}
+
+// recompute routes after a toggle/outage; animate re-routing
+function reroute(key){
+  const s=SIM[key];
+  buildMeshRoutes(s,key);
+  // spawn a brief pulse on each node that changed its next-hop path
+  // (visual handled by existing trail/dio systems on next frames)
+}
+
+// trace full multi-hop path from a node up to its GW (for highlight)
+// GWs are distinguishable because they lack a 'hops' property; nodes always have one.
+function isGwObj(o){return o&&o.hops===undefined&&o.color!==undefined;}
+function tracePath(n){
+  const segs=[];        // array of {x1,y1,x2,y2}
+  let cur=n,guard=0;
+  while(cur&&cur.next&&guard++<40){
+    segs.push({x1:cur.x,y1:cur.y,x2:cur.next.x,y2:cur.next.y});
+    if(isGwObj(cur.next))break;   // reached the gateway
+    cur=cur.next;                 // hop to the next relay node
+  }
+  return segs;
+}
+
+// ════ STEP ════
+function stepZb(dt){
+  const s=SIM.zb,sp=CFG.speed,night=isNight();
+  s.gws.forEach(g=>g.rxT=Math.max(0,g.rxT-dt*sp));
+  stepInfra(s,'zb',dt); // revive coordinators whose power/hardware is restored
+  const cap=Math.min(s.nodes.length,400);let spawned=0,latSum=0,latN=0,battSum=0,battN=0;
+  // DAY/NIGHT: toggle apagable routers and reroute when the set of alive relays changes
+  if(VIEW.daynight){
+    let changed=false;
+    s.nodes.forEach(nd=>{if(nd.isRouter&&!nd.perm&&!nd.manualOff){const want=night;if(nd.alive!==want){nd.alive=want;changed=true;}}});
+    if(changed&&s._dnReroute===undefined)s._dnReroute=0.4;
+  }
+  if(s._dnReroute!==undefined){s._dnReroute-=dt*sp;if(s._dnReroute<=0){s._dnReroute=undefined;reroute('zb');}}
+  if(s._needReroute!==undefined){s._needReroute-=dt*sp;if(s._needReroute<=0){s._needReroute=undefined;reroute('zb');}}
+  s.nodes.forEach(nd=>{
+    nd.pulseT+=0.05*sp;
+    if(nd.migrate){nd.migrate.t+=dt*sp*0.8;if(nd.migrate.t>=1)nd.migrate=null;}
+    // transient link jamming recovery: a router downed by interference/attack comes back when it ceases
+    if(nd.linkDownT!==undefined){nd.linkDownT-=dt*sp;if(nd.linkDownT<=0){nd.linkDownT=undefined;if(!nd.manualOff)nd.alive=true;if(s._needReroute===undefined)s._needReroute=0.4;}}
+    // battery drain for routers with finite battery
+    if(nd.isRouter&&P('zb','routerBattHrs')>0&&nd.alive&&!nd.manualOff){nd.batt=Math.max(0,nd.batt-dt*sp*(100/(P('zb','routerBattHrs')*3600)));if(nd.batt<=0){nd.alive=false;if(s._needReroute===undefined)s._needReroute=0.4;}battSum+=nd.batt;battN++;}
+    if(nd.noRoute||!nd.alive)return;
+    latSum+=nd.latency;latN++;
+    nd.txT-=dt*sp;
+    if(nd.txT<=0){nd.txT=rnd([0,3,2,1][2]*0.7,[0,3,2,1][2]*1.6);const tgt=nd.next||nd.gw;if(tgt&&spawned<cap){spawned++;s.packets.push({x:nd.x,y:nd.y,tx:tgt.x,ty:tgt.y,t:0,gw:nd.gw,hop:0});spawnRf(s,nd.x,nd.y,'#4ade80');}}
+  });
+  s.avgLatency=latN?latSum/latN:0;s.avgBatt=battN?battSum/battN:100;
+  stepPackets(s,sp);stepWaves(s,sp);stepRfRings(s,sp);stepTrails(s,sp,dt);
+  if(s.eventStart>0)track('zb',s,s.nodes.length,s.nodes.filter(n=>!n.noRoute&&n.alive).length);
+}
+function stepRpl(dt){
+  const s=SIM.rpl,sp=CFG.speed;
+  s.gws.forEach(g=>g.rxT=Math.max(0,g.rxT-dt*sp));
+  stepInfra(s,'rpl',dt); // revive border routers when restored
+  const cap=Math.min(s.nodes.length,400);let spawned=0,latSum=0,latN=0;
+  // debounced reconvergence: if any orphan has waited, recompute DODAG routes once
+  if(s._needReroute!==undefined){s._needReroute-=dt*sp;if(s._needReroute<=0){s._needReroute=undefined;reroute('rpl');}}
+  s.nodes.forEach(nd=>{
+    nd.pulseT+=0.05*sp;
+    if(nd.migrate){nd.migrate.t+=dt*sp*0.8;if(nd.migrate.t>=1)nd.migrate=null;}
+    if(nd.orphan){
+      // schedule a reroute attempt (a downed parent may have an alternate path)
+      if(s._needReroute===undefined)s._needReroute=rnd(1,P('rpl','reconvergeMaxS'));
+      return;
+    }
+    latSum+=nd.latency;latN++;
+    nd.txT-=dt*sp;
+    if(nd.txT<=0){nd.txT=rnd(1.4,3.2);const tgt=nd.next||nd.gw;if(tgt&&spawned<cap){spawned++;s.packets.push({x:nd.x,y:nd.y,tx:tgt.x,ty:tgt.y,t:0,gw:nd.gw});spawnRf(s,nd.x,nd.y,'#4ade80');}}
+  });
+  s.avgLatency=latN?latSum/latN:0;
+  stepPackets(s,sp);stepDio(s,sp);stepWaves(s,sp);stepRfRings(s,sp);stepTrails(s,sp,dt);
+  if(s.eventStart>0)track('rpl',s,s.nodes.length,s.nodes.filter(n=>!n.orphan).length);
+}
+function stepLw(dt){
+  const s=SIM.lw,sp=CFG.speed;
+  // duty cycle: gateway can only TX dutyCyclePct of the time -> downlink budget
+  s.gws.forEach(g=>{g.load=Math.max(0,(g.load||0)-1.8*sp);});
+  stepInfra(s,'lw',dt); // concentrators come back online when restored
+  const cap=Math.min(s.nodes.length,350);let spawned=0,airSum=0,airN=0,collThisFrame=0;
+  const dcBudget=P('lw','dutyCyclePct')/100;
+  // model channel occupancy per gw from airtime
+  s.gws.forEach(g=>g._busy=0);
+  s.nodes.forEach(nd=>{
+    nd.pulseT+=0.04*sp;
+    if(nd.migrate){nd.migrate.t+=dt*sp*0.8;if(nd.migrate.t>=1)nd.migrate=null;}
+    if(nd.offline){
+      // LoRaWAN star: an offline device keeps re-scanning; rejoins the nearest AUDIBLE live gateway
+      nd.rejoinT=(nd.rejoinT||rnd(3,9))-dt*sp;
+      if(nd.rejoinT<=0){const ng=nearestAliveGw(s.gws,nd.x,nd.y,null);if(ng){nd.offline=false;nd.gw=ng;nd.joined=false;nd.joiningT=rnd(2,10);nd.sf=estimateSf(dist(nd.x,nd.y,ng.x,ng.y));nd.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][nd.sf];nd.color='#fbbf24';}else{nd.rejoinT=rnd(4,10);}}
+      return;
+    }
+    if(!nd.joined){nd.joiningT-=dt*sp;if(nd.joiningT<=0){nd.joined=true;nd.sf=Math.max(7,nd.sf-1);nd.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][nd.sf];nd.color=nd.sf<=9?'#2563eb':nd.sf<=11?'#f97316':'#dc2626';}return;}
+    airSum+=(nd.airtime||0);airN++;
+    nd.txT-=dt*sp;
+    if(nd.txT<=0){nd.txT=rnd(1.2,3);
+      // channel occupancy contributed by this node's airtime
+      nd.gw.load=(nd.gw.load||0)+nd.airtime/30*(nd.confirmed?1.8:1);
+      // ALOHA collision: probability rises with channel occupancy + interference floor
+      const occ=Math.min(1,(nd.gw.load||0)/100);
+      const collP=Math.max(0,occ-P('lw','collisionThresh')/100)*1.5+P('env','interferenceFloor')/100*0.3+(nd.sf-7)*0.025;
+      const lost=Math.random()<collP;
+      if(lost){collThisFrame++;if(nd.sf<12){nd.sf++;nd.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][nd.sf];}}
+      else{if(nd.sf>7&&Math.random()<0.05){nd.sf--;nd.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][nd.sf];}}
+      nd.color=nd.sf<=9?'#2563eb':nd.sf<=11?'#f97316':'#dc2626';
+      if(spawned<cap){spawned++;s.packets.push({x:nd.x,y:nd.y,tx:nd.gw.x,ty:nd.gw.y,t:0,lost,gwcol:nd.gw.color});spawnRf(s,nd.x,nd.y,lost?'#dc2626':'#4ade80');}
+    }
+  });
+  s.avgAirtime=airN?airSum/airN:0;
+  s.collAccum+=collThisFrame;
+  // update collisions/sec roughly every frame
+  s.collPerS=Math.round(collThisFrame/Math.max(dt*sp,0.001)*0.1);
+  const sfc=[0,0,0,0,0,0];s.nodes.forEach(n=>{if(n.joined&&!n.offline)sfc[n.sf-7]++;});s.domSf=sfc.indexOf(Math.max(...sfc))+7;
+  stepPackets(s,sp);stepWaves(s,sp);stepRfRings(s,sp);
+  if(s.eventStart>0)track('lw',s,s.nodes.length,s.nodes.filter(n=>n.joined&&!n.offline).length);
+}
+function stepLte(dt){
+  const s=SIM.lte,sp=CFG.speed;
+  s.gws.forEach(g=>g.rxT=Math.max(0,g.rxT-dt*sp));
+  stepInfra(s,'lte',dt); // eNodeB restored by operator (fast)
+  s.nodes.forEach(nd=>{
+    nd.pulseT+=0.05*sp;nd.dataT-=dt*sp;
+    if(nd.migrate){nd.migrate.t+=dt*sp*0.8;if(nd.migrate.t>=1)nd.migrate=null;}
+    if(nd.dataT<=0&&nd.state==='ok'){nd.dataT=rnd(1.5,4);if(nd.gw.alive)nd.gw.rxT=0.3;spawnRf(s,nd.x,nd.y,'#38bdf8');}
+    if(nd.state==='fail'){nd.reconnectT-=dt*sp;if(nd.reconnectT<=0){
+      if(nd.faultLayer===1&&!nd.gw.alive){const ng=nearestAliveGw(s.gws,nd.x,nd.y,null);if(ng){const fx=nd.gw.x,fy=nd.gw.y;startMigration(nd,ng);pushTrail(s,nd.x,nd.y,ng.x,ng.y,'#f97316');nd.state='reconn';nd.reconnectT=P('lte','handoverMs')/1000;nd.color='#f97316';return;}}
+      nd.state='reconn';nd.reconnectT=rnd(1,3);}}
+    else if(nd.state==='reconn'){nd.reconnectT-=dt*sp;if(nd.reconnectT<=0){nd.state='ok';nd.faultLayer=-1;nd.color='#16a34a';}}
+  });
+  stepWaves(s,sp);stepRfRings(s,sp);stepTrails(s,sp,dt);
+  if(s.eventStart>0)track('lte',s,s.nodes.length,s.nodes.filter(n=>n.state==='ok').length);
+}
+
+// shared particle steppers
+function stepPackets(s,sp){if(!s.packets)return;s.packets=s.packets.filter(p=>p.t<1);s.packets.forEach(p=>{const v=0.045*sp;p.t+=v;p.x=lerp(p.x,p.tx,v);p.y=lerp(p.y,p.ty,v);if(p.t>=0.9&&p.gw){p.gw.rxT=0.4;p.gw=null;}});}
+function stepDio(s,sp){if(!s.dio)return;s.dio=s.dio.filter(p=>p.t<1);s.dio.forEach(p=>{const v=0.035*sp;p.t+=v;p.x=lerp(p.x,p.tx,v);p.y=lerp(p.y,p.ty,v);});}
+function stepWaves(s,sp){if(!s.waves)return;s.waves=s.waves.filter(w=>w.r<w.maxR);s.waves.forEach(w=>w.r+=4*sp);}
+function stepRfRings(s,sp){if(!s.rfRings)return;s.rfRings=s.rfRings.filter(r=>r.r<r.maxR);s.rfRings.forEach(r=>r.r+=2.5*sp);}
+function stepTrails(s,sp,dt){if(!s.trails)return;s.trails=s.trails.filter(t=>t.t<1.4);s.trails.forEach(t=>t.t+=dt*sp);}
+function track(key,s,total,online){if(s.eventStart<=0)return;const pct=total>0?online/total:1;const el=(Date.now()-s.eventStart)/1000*CFG.speed;if(pct>=0.95&&s.t95===null)s.t95=el;if(pct>=0.99&&s.t99===null)s.t99=el;}
+
+// ════ CANVAS / CAMERA ════
+function setupCanvas(){const c=document.getElementById('mapCanvas');const dpr=window.devicePixelRatio||1;const W=c.parentElement.offsetWidth,H=c.parentElement.offsetHeight;if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);c.style.width=W+'px';c.style.height=H+'px';}return {c,ctx:c.getContext('2d'),W,H,dpr};}
+function resetView(){const {W,H}=setupCanvas();const zf=Math.min(W/WORLD_W,H/WORLD_H)*0.98;cam.zoom=zf;cam.x=(W-WORLD_W*zf)/2;cam.y=(H-WORLD_H*zf)/2;focusQuad=null;if(!RUNNING)draw();}
+function focusOnQuad(k){const q=QUAD[k];const {W,H}=setupCanvas();const zf=Math.min(W/QW,H/QH)*0.95;cam.zoom=zf;cam.x=-q.x*zf+(W-QW*zf)/2;cam.y=-q.y*zf+(H-QH*zf)/2;focusQuad=k;if(!RUNNING)draw();}
+function zoomBtn(f){const {W,H}=setupCanvas();const cx=W/2,cy=H/2;const nz=clamp(cam.zoom*f,0.15,8);cam.x=cx-(cx-cam.x)*(nz/cam.zoom);cam.y=cy-(cy-cam.y)*(nz/cam.zoom);cam.zoom=nz;if(!RUNNING)draw();}
+
+// ════ SYMBOLS ════
+function symPath(ctx,sym,x,y,r){if(sym==='cir'){ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,7);}else if(sym==='tri'){ctx.moveTo(x,y-r);ctx.lineTo(x+r*0.92,y+r*0.7);ctx.lineTo(x-r*0.92,y+r*0.7);ctx.closePath();}else if(sym==='dia'){ctx.moveTo(x,y-r);ctx.lineTo(x+r,y);ctx.lineTo(x,y+r);ctx.lineTo(x-r,y);ctx.closePath();}else if(sym==='cross'){const a=r*0.42;ctx.moveTo(x-a,y-r);ctx.lineTo(x+a,y-r);ctx.lineTo(x+a,y-a);ctx.lineTo(x+r,y-a);ctx.lineTo(x+r,y+a);ctx.lineTo(x+a,y+a);ctx.lineTo(x+a,y+r);ctx.lineTo(x-a,y+r);ctx.lineTo(x-a,y+a);ctx.lineTo(x-r,y+a);ctx.lineTo(x-r,y-a);ctx.lineTo(x-a,y-a);ctx.closePath();}}
+function drawGwSquare(ctx,gw,size,z,alive){const h=size/2;ctx.save();if(alive){ctx.shadowColor=gw.color;ctx.shadowBlur=(gw.rxT>0?22:13)/z;}ctx.fillStyle=alive?gw.color:'#6b7280';ctx.beginPath();ctx.rect(gw.x-h,gw.y-h,size,size);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2/z;ctx.strokeRect(gw.x-h-2/z,gw.y-h-2/z,size+4/z,size+4/z);ctx.restore();}
+
+// ════ HEX RASTER + DENSITY HEATMAP ════
+const HEX_SIZE=58;
+function hexCells(q){const wid=HEX_SIZE*Math.sqrt(3),vert=HEX_SIZE*1.5;const cells=[];let row=0;
+  for(let cy=q.y+10;cy<q.y+QH-10+vert;cy+=vert){const off=(row%2)*(wid/2);for(let cx=q.x+10;cx<q.x+QW-10+wid;cx+=wid){cells.push({cx:cx+off,cy});}row++;}return cells;}
+function hexPathAt(ctx,cx,cy,size){ctx.beginPath();for(let i=0;i<6;i++){const ang=Math.PI/180*(60*i-30);const px=cx+size*Math.cos(ang),py=cy+size*Math.sin(ang);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();}
+// density per hex for heatmap
+function heatColor(count,optimal){
+  const r=count/optimal; // 1 = optimal
+  if(r<0.25)return'rgba(10,61,46,0.55)';
+  if(r<0.6)return'rgba(22,163,74,0.5)';
+  if(r<1.0)return'rgba(234,179,8,0.5)';
+  if(r<1.6)return'rgba(249,115,22,0.55)';
+  return'rgba(220,38,38,0.6)';
+}
+function drawHexLayer(ctx,key,z){
+  const q=QUAD[key],s=SIM[key];
+  const cells=hexCells(q);
+  const optimal=Math.max(2,Math.round(s.nodes.length/cells.length*1.1));
+  // bin nodes into nearest hex (approx by grid math for perf)
+  if(VIEW.heat){
+    // compute counts
+    const counts=new Map();
+    const wid=HEX_SIZE*Math.sqrt(3),vert=HEX_SIZE*1.5;
+    s.nodes.forEach(nd=>{
+      const ry=Math.round((nd.y-(q.y+10))/vert);const off=(ry%2)*(wid/2);
+      const rx=Math.round((nd.x-(q.x+10)-off)/wid);
+      const kk=rx+','+ry;counts.set(kk,(counts.get(kk)||0)+1);
+    });
+    ctx.save();ctx.beginPath();ctx.rect(q.x+6,q.y+6,QW-12,QH-12);ctx.clip();
+    let row=0;
+    for(let cy=q.y+10;cy<q.y+QH-10+vert;cy+=vert){const offv=(row%2)*(wid/2);let col=0;
+      for(let cx=q.x+10;cx<q.x+QW-10+wid;cx+=wid){
+        const kk=col+','+row;const cnt=counts.get(kk)||0;
+        if(cnt>0){hexPathAt(ctx,cx+offv,cy,HEX_SIZE*0.96);ctx.fillStyle=heatColor(cnt,optimal);ctx.fill();}
+        col++;
+      }row++;
+    }
+    ctx.restore();
+  } else if(VIEW.hex&&z>0.18){
+    ctx.save();ctx.beginPath();ctx.rect(q.x+6,q.y+6,QW-12,QH-12);ctx.clip();
+    ctx.strokeStyle=QUAD_META[key].color+'10';ctx.lineWidth=0.6/z;ctx.beginPath();
+    cells.forEach(c=>{for(let i=0;i<6;i++){const ang=Math.PI/180*(60*i-30);const px=c.cx+HEX_SIZE*Math.cos(ang),py=c.cy+HEX_SIZE*Math.sin(ang);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();});
+    ctx.stroke();ctx.restore();
+  }
+}
+
+// ════ MAIN DRAW ════
+function draw(){
+  const {ctx,W,H}=setupCanvas();
+  ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);
+  ctx.fillStyle='#0a0f1c';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.translate(cam.x,cam.y);ctx.scale(cam.zoom,cam.zoom);
+  const z=cam.zoom;const night=isNight();
+  Object.keys(QUAD).forEach(k=>{
+    const q=QUAD[k],meta=QUAD_META[k],on=TECH_ON[k];
+    // day/night background tint
+    let bg=on?'rgba(17,24,39,0.55)':'rgba(17,24,39,0.12)';
+    if(VIEW.daynight&&on){bg=night?'rgba(15,23,42,0.7)':'rgba(40,38,28,0.5)';}
+    ctx.fillStyle=bg;ctx.fillRect(q.x+6,q.y+6,QW-12,QH-12);
+    if(on)drawHexLayer(ctx,k,z);
+    ctx.strokeStyle=meta.color+(on?'66':'18');ctx.lineWidth=2.5/z;ctx.strokeRect(q.x+6,q.y+6,QW-12,QH-12);
+    ctx.fillStyle=on?meta.color:'#475569';ctx.font=`bold ${Math.round(30/Math.max(z,0.35))}px Arial`;ctx.textAlign='left';ctx.globalAlpha=on?1:0.4;ctx.fillText(meta.name,q.x+22,q.y+50);ctx.globalAlpha=1;
+  });
+  if(TECH_ON.zb)drawTech('zb',ctx,z);
+  if(TECH_ON.rpl)drawTech('rpl',ctx,z);
+  if(TECH_ON.lw)drawTech('lw',ctx,z);
+  if(TECH_ON.lte)drawTech('lte',ctx,z);
+  // re-commissioning sweep: a green expanding front rolling across each quadrant
+  if(RECOM){
+    ['zb','rpl','lw','lte'].forEach(k=>{if(!TECH_ON[k])return;const s=SIM[k];const c=recomCentroid(s);
+      ctx.strokeStyle='rgba(34,197,94,0.85)';ctx.lineWidth=3/z;ctx.shadowColor='#22c55e';ctx.shadowBlur=16/z;
+      ctx.beginPath();ctx.arc(c.x,c.y,RECOM.radius,0,7);ctx.stroke();ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(34,197,94,0.06)';ctx.beginPath();ctx.arc(c.x,c.y,RECOM.radius,0,7);ctx.fill();
+    });
+  }
+  ctx.restore();
+  ctx.fillStyle='rgba(148,163,184,.4)';ctx.font='10px monospace';ctx.textAlign='right';
+  ctx.fillText('zoom '+(z*100).toFixed(0)+'%'+(focusQuad?' · '+QUAD_META[focusQuad].name:''),W-8,H-8);
+}
+
+function drawTech(key,ctx,z){
+  const s=SIM[key],sym=QUAD_META[key].sym;
+  const showLinks=z>0.5&&s.nodes.length<=2500&&!VIEW.heat;
+  // failed circuits
+  s.circuits.forEach(c=>{if(c.failed){ctx.fillStyle='rgba(245,158,11,0.12)';ctx.beginPath();ctx.arc(c.cx,c.cy,c.r,0,7);ctx.fill();ctx.strokeStyle='rgba(245,158,11,0.5)';ctx.lineWidth=1.5/z;ctx.setLineDash([7/z,5/z]);ctx.beginPath();ctx.arc(c.cx,c.cy,c.r,0,7);ctx.stroke();ctx.setLineDash([]);}});
+  if(!VIEW.heat)s.gws.forEach(gw=>{if(!gw.alive)return;const rad=key==='lw'?560:340;const g=ctx.createRadialGradient(gw.x,gw.y,0,gw.x,gw.y,rad);g.addColorStop(0,gw.color+'10');g.addColorStop(1,gw.color+'00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(gw.x,gw.y,rad,0,7);ctx.fill();});
+  // RF rings
+  if(VIEW.rf)s.rfRings.forEach(r=>{const a=Math.max(0,0.4-r.r/r.maxR);ctx.strokeStyle=`rgba(${hexToRgb(r.col)},${a})`;ctx.lineWidth=1.2/z;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,7);ctx.stroke();});
+  // waves
+  s.waves.forEach(w=>{const a=Math.max(0,0.5-w.r/w.maxR);ctx.strokeStyle=`rgba(220,38,38,${a})`;ctx.lineWidth=2.5/z;ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,7);ctx.stroke();});
+  // mesh hop links — follow .next (real multi-hop relay chain) for zb/rpl
+  if((key==='zb'||key==='rpl')){
+    const emphasize=VIEW.hops&&z>0.4;
+    if(emphasize||showLinks){
+      ctx.lineWidth=(emphasize?0.7:0.4)/z;
+      s.nodes.forEach(nd=>{if(isDead(key,nd)||!nd.next)return;const col=(nd.gw&&nd.gw.color)||'#888';ctx.strokeStyle=col+(emphasize?'44':'22');ctx.beginPath();ctx.moveTo(nd.x,nd.y);ctx.lineTo(nd.next.x,nd.next.y);ctx.stroke();});
+    }
+  } else if(showLinks){ctx.lineWidth=0.4/z;s.nodes.forEach(nd=>{if(isDead(key,nd))return;ctx.strokeStyle=((nd.gw&&nd.gw.color)||'#888')+'22';ctx.beginPath();ctx.moveTo(nd.x,nd.y);ctx.lineTo(nd.gw.x,nd.gw.y);ctx.stroke();});}
+  // migration trails
+  if(s.trails)s.trails.forEach(t=>{const a=Math.max(0,1-t.t/1.4)*0.7;ctx.strokeStyle=`rgba(${hexToRgb(t.col)},${a})`;ctx.lineWidth=2/z;ctx.beginPath();ctx.moveTo(t.x1,t.y1);ctx.lineTo(t.x2,t.y2);ctx.stroke();});
+  if(key==='rpl'||key==='lte')s.nodes.forEach(nd=>{if(nd.migrate){const a=1-nd.migrate.t;ctx.strokeStyle=key==='rpl'?`rgba(124,58,237,${a*0.9})`:`rgba(249,115,22,${a*0.8})`;ctx.lineWidth=2.5/z;ctx.beginPath();ctx.moveTo(nd.x,nd.y);ctx.lineTo(nd.gw.x,nd.gw.y);ctx.stroke();}});
+  // packets
+  s.packets&&s.packets.forEach(p=>{const a=1-p.t;ctx.fillStyle=p.lost?`rgba(220,38,38,${a})`:`rgba(74,222,128,${a})`;ctx.beginPath();ctx.arc(p.x,p.y,2.2/z,0,7);ctx.fill();});
+  s.dio&&s.dio.forEach(p=>{const a=1-p.t;ctx.fillStyle=`rgba(168,85,247,${a})`;ctx.beginPath();ctx.arc(p.x,p.y,2.5/z,0,7);ctx.fill();});
+  // coverage radius circles (show how small radius forces multi-hop mesh)
+  if(VIEW.cov&&(key==='zb'||key==='rpl')){
+    const cov=key==='zb'?P('zb','covRadius'):P('rpl','covRadius');
+    ctx.lineWidth=1/z;
+    // GW coverage
+    s.gws.forEach(g=>{if(!g.alive)return;ctx.strokeStyle=g.color+'55';ctx.setLineDash([4/z,4/z]);ctx.beginPath();ctx.arc(g.x,g.y,cov,0,7);ctx.stroke();});
+    ctx.setLineDash([]);
+    // router coverage (only routers relay) — light, capped for perf
+    let shown=0;
+    s.nodes.forEach(nd=>{if(nd.isRouter&&nd.alive&&shown<120){shown++;ctx.strokeStyle='rgba(148,163,184,0.12)';ctx.beginPath();ctx.arc(nd.x,nd.y,cov,0,7);ctx.stroke();}});
+  }
+  // nodes
+  const nr=s.nodes.length>3000?2.6:s.nodes.length>1500?3:3.6;
+  const simpleDots=z<0.45||s.nodes.length>2500;
+  s.nodes.forEach(nd=>{ctx.fillStyle=nodeColor(key,nd);const pl=Math.sin(nd.pulseT)*0.1+0.9;const r=nr*pl;if(simpleDots){ctx.beginPath();ctx.arc(nd.x,nd.y,r,0,7);ctx.fill();}else{ctx.beginPath();symPath(ctx,sym,nd.x,nd.y,r+0.6);ctx.fill();}
+    // manually powered-off node: red ring + X
+    if(nd.manualOff){ctx.strokeStyle='#ef4444';ctx.lineWidth=1.6/z;ctx.beginPath();ctx.arc(nd.x,nd.y,r+4/z,0,7);ctx.stroke();}
+    // selected node: cyan highlight ring + traced path to GW
+    if(nd.selected){ctx.strokeStyle='#22d3ee';ctx.lineWidth=2/z;ctx.beginPath();ctx.arc(nd.x,nd.y,r+6/z,0,7);ctx.stroke();}
+  });
+  // highlight traced path of selected nodes (their route to the GW)
+  if(key==='zb'||key==='rpl'){s.nodes.forEach(nd=>{if(!nd.selected||isDead(key,nd))return;const segs=tracePath(nd);ctx.strokeStyle='rgba(34,211,238,0.9)';ctx.lineWidth=2.5/z;ctx.shadowColor='#22d3ee';ctx.shadowBlur=6/z;segs.forEach(sg=>{ctx.beginPath();ctx.moveTo(sg.x1,sg.y1);ctx.lineTo(sg.x2,sg.y2);ctx.stroke();});ctx.shadowBlur=0;});}
+  const gwSize=key==='rpl'||key==='lte'?30:28;
+  s.gws.forEach(gw=>drawGwSquare(ctx,gw,gwSize,z,gw.alive));
+  if(key==='lw'&&z>0.3)s.gws.forEach(gw=>{if(!gw.alive)return;const busy=(gw.load||0)>30;ctx.fillStyle='#1e293b';ctx.fillRect(gw.x-16/z,gw.y+18/z,32/z,4/z);ctx.fillStyle=busy?'#dc2626':'#22c55e';ctx.fillRect(gw.x-16/z,gw.y+18/z,Math.min(32/z,(gw.load||0)*0.32/z),4/z);});
+}
+function isDead(key,nd){if(key==='zb')return nd.noRoute||!nd.alive;if(key==='rpl')return nd.orphan;if(key==='lw')return nd.offline||!nd.joined;return nd.state!=='ok';}
+function nodeColor(key,nd){if(key==='zb')return nd.noRoute?'#6b7280':(nd.isRouter&&!nd.alive?'#dc2626':nd.color);if(key==='rpl')return nd.orphan?'#6b7280':(nd.migrating?'#7c3aed':nd.color);if(key==='lw')return nd.offline?'#6b7280':(!nd.joined?'#fbbf24':nd.color);return nd.state==='ok'?'#16a34a':nd.state==='reconn'?'#f97316':nd.faultLayer>=0?LTE_COLORS[nd.faultLayer]:'#dc2626';}
+
+// ════ EVENTS — circuit-based ════
+function startEvent(){const now=Date.now();[SIM.zb,SIM.rpl,SIM.lw,SIM.lte].forEach(s=>{s.eventStart=now;s.t95=null;s.t99=null;});}
+function pickCircuits(s,frac){const cs=s.circuits.slice();const k=Math.max(1,Math.round(cs.length*frac));const chosen=[];for(let i=0;i<k&&cs.length;i++){chosen.push(cs.splice(rint(0,cs.length-1),1)[0]);}return chosen;}
+function waveAt(s,c){s.waves.push({x:c.cx,y:c.cy,r:0,maxR:c.r*2.4});}
+
+// ── Infrastructure recovery model ──
+// Each technology's gateway/coordinator comes back according to how it really recovers.
+// recoveryProfile returns mean seconds-to-restore for a (tech,cause).
+function recoveryProfile(key,cause){
+  // electrical blackout: depends on the power grid -> same order for all, fairly long
+  if(cause==='power')return rnd(30,70);
+  // hardware/backhaul gateway loss:
+  if(cause==='gw'){
+    if(key==='lte')return rnd(6,16);    // operator core: redundancy, auto-restart, fast
+    if(key==='rpl')return rnd(25,55);   // border router reboot / backhaul
+    if(key==='zb')return rnd(35,75);    // coordinator reboot, manual-ish
+    if(key==='lw')return rnd(20,45);    // concentrator reboot
+  }
+  return rnd(15,40);
+}
+// mark a gateway down with an automatic restore timer (sim-seconds)
+function downGw(s,key,gw,cause){gw.alive=false;gw.downT=recoveryProfile(key,cause);}
+// advance restore timers; when a GW revives, schedule a reroute so nodes re-associate
+function stepInfra(s,key,dt){
+  let revived=false;
+  s.gws.forEach(g=>{if(!g.alive&&g.downT!==undefined){g.downT-=dt*CFG.speed;if(g.downT<=0){g.alive=true;g.downT=undefined;revived=true;}}});
+  if(revived&&(key==='zb'||key==='rpl')){if(s._needReroute===undefined)s._needReroute=0.3;}
+  return revived;
+}
+
+// ════ RE-COMMISSIONING (manual restoration of the whole network, all techs at once) ════
+// A maintenance crew sweeps the territory. We model an expanding "restored" front per quadrant;
+// infrastructure and nodes within the front are re-commissioned according to each tech's mechanism.
+// This runs progressively so the operator watches the recovery roll out in real time.
+let RECOM=null; // {progress:0..1, perTech:{}}
+function recommissionAll(el){
+  if(!RUNNING)toggleRun();
+  if(el){el.classList.add('active');setTimeout(()=>el.classList.remove('active'),600);}
+  // sweep originates from each quadrant's gateway centroid and expands outward
+  RECOM={progress:0, radius:0};
+  // clear failed-circuit markers immediately (power is being restored)
+  [SIM.zb,SIM.rpl,SIM.lw,SIM.lte].forEach(s=>s.circuits.forEach(c=>c.failed=false));
+}
+// maximum sweep radius needed to cover a quadrant from its centre
+function recomMaxRadius(){return Math.hypot(QW,QH)*1.02;} // full diagonal from the corner
+function recomCentroid(s){const q=QUAD[s===SIM.zb?'zb':s===SIM.rpl?'rpl':s===SIM.lw?'lw':'lte'];return {x:q.x+10,y:q.y+10};} // sweep starts from top-left corner of the quadrant
+
+function stepRecommission(dt){
+  if(!RECOM)return;
+  const maxR=recomMaxRadius();
+  RECOM.radius+=maxR*0.7*dt*CFG.speed/ ( /*spread over ~1.4s of sim time*/ 1.4 );
+  RECOM.progress=clamp(RECOM.radius/maxR,0,1);
+  const within=(s,obj)=>{const c=recomCentroid(s);return dist(obj.x,obj.y,c.x,c.y)<=RECOM.radius;};
+
+  // ZIGBEE: restore coordinators + routers within the front; PAN nodes re-associate (reroute)
+  {const s=SIM.zb;let touched=false;
+    s.gws.forEach(g=>{if(!g.alive&&within(s,g)){g.alive=true;g.downT=undefined;touched=true;}});
+    s.nodes.forEach(n=>{if(within(s,n)){if(n.linkDownT!==undefined){n.linkDownT=undefined;}if(!n.manualOff&&!n.alive){n.alive=true;touched=true;}if(n.isRouter)n.batt=100;}});
+    // reroute frequently during the sweep so the restoration rolls out progressively (not all at once)
+    if(touched||s.nodes.some(n=>n.noRoute&&n.homePan&&n.homePan.alive&&within(s,n)))s._needReroute=0.05;
+  }
+  // 6LoWPAN: restore border routers; orphaned nodes reconverge (reroute)
+  {const s=SIM.rpl;let touched=false;
+    s.gws.forEach(g=>{if(!g.alive&&within(s,g)){g.alive=true;g.downT=undefined;touched=true;}});
+    if(touched||s.nodes.some(n=>n.orphan&&within(s,n)))s._needReroute=0.05;
+  }
+  // LoRaWAN: restore gateways; offline/SF12 nodes rejoin and reset SF to their distance-based value
+  {const s=SIM.lw;
+    s.gws.forEach(g=>{if(!g.alive&&within(s,g)){g.alive=true;g.downT=undefined;g.load=0;}});
+    s.nodes.forEach(n=>{if(!within(s,n))return;
+      const gw=nearestAliveGw(s.gws,n.x,n.y,null);
+      if(gw){if(n.offline||!n.joined){n.offline=false;n.gw=gw;n.joined=true;n.joiningT=rnd(0.3,1.5);}
+        // re-commission resets the radio plan: SF back to the clean distance-based value
+        n.sf=estimateSf(dist(n.x,n.y,gw.x,gw.y));n.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][n.sf];n.color='#fbbf24';}
+    });
+  }
+  // LTE: restore cells; nodes reattach to OK
+  {const s=SIM.lte;
+    s.gws.forEach(g=>{if(!g.alive&&within(s,g)){g.alive=true;g.downT=undefined;}});
+    s.nodes.forEach(n=>{if(!within(s,n))return;if(n.state!=='ok'){const gw=nearestAliveGw(s.gws,n.x,n.y,null);if(gw){n.gw=gw;n.state='ok';n.faultLayer=-1;n.color='#16a34a';}}});
+  }
+  if(RECOM.progress>=1){RECOM=null;}
+}
+
+function fireScenario(type,el){
+  if(!RUNNING)toggleRun();
+  document.querySelectorAll('.scn').forEach(x=>x.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const I=CFG.intensity;startEvent();
+  [SIM.zb,SIM.rpl,SIM.lw,SIM.lte].forEach(s=>s.circuits.forEach(c=>c.failed=false));
+
+  if(type==='apagon'){
+    [['zb',SIM.zb],['rpl',SIM.rpl],['lw',SIM.lw],['lte',SIM.lte]].forEach(([k,s])=>{
+      const circs=pickCircuits(s,I);circs.forEach(c=>{c.failed=true;waveAt(s,c);
+        // a gateway physically inside a blacked-out circuit loses power too (grid-dependent recovery)
+        s.gws.forEach(g=>{if(g.alive&&dist(g.x,g.y,c.cx,c.cy)<c.r)downGw(s,k,g,'power');});
+        s.nodes.filter(n=>n.circuit===c).forEach(n=>{
+          if(k==='zb'){if(n.isRouter)n.alive=false;n.noRoute=true;}
+          else if(k==='rpl'){n.orphan=true;n.reconvT=rnd(0,2);}
+          else if(k==='lw'){n.joined=false;n.joiningT=rnd(2,18);n.sf=12;n.airtime=900;}
+          else{n.state='fail';n.faultLayer=0;n.reconnectT=rnd(2,P('lte','attachStormS'));}
+        });});});
+    SIM.lte.faultLayer=0;
+  }
+  else if(type==='gwfail'){
+    const zg=SIM.zb.gws[rint(0,SIM.zb.gws.length-1)];downGw(SIM.zb,'zb',zg,'gw');SIM.zb.waves.push({x:zg.x,y:zg.y,r:0,maxR:360});
+    SIM.zb.nodes.filter(n=>n.homePan===zg).forEach(n=>n.noRoute=true); // whole PAN down — Zigbee nodes do NOT roam to another coordinator
+    const rb=SIM.rpl.gws[rint(0,SIM.rpl.gws.length-1)];downGw(SIM.rpl,'rpl',rb,'gw');SIM.rpl.waves.push({x:rb.x,y:rb.y,r:0,maxR:360});
+    SIM.rpl.nodes.filter(n=>n.gw===rb).forEach(n=>{n.orphan=true;n.reconvT=rnd(0,2);}); // RPL nodes will reconverge to another BR if reachable
+    const lg=SIM.lw.gws[rint(0,SIM.lw.gws.length-1)];downGw(SIM.lw,'lw',lg,'gw');SIM.lw.waves.push({x:lg.x,y:lg.y,r:0,maxR:420});
+    SIM.lw.nodes.filter(n=>n.gw===lg).forEach(n=>{if(n.hasDiversity){const ng=nearestAliveGw(SIM.lw.gws,n.x,n.y,lg);if(ng){startMigration(n,ng);n.sf=Math.min(12,n.sf+2);n.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][n.sf];}else{n.offline=true;n.joined=false;}}else{n.offline=true;n.joined=false;}});
+    const cl=SIM.lte.gws[rint(0,SIM.lte.gws.length-1)];downGw(SIM.lte,'lte',cl,'gw');SIM.lte.faultLayer=1;SIM.lte.waves.push({x:cl.x,y:cl.y,r:0,maxR:360});
+    SIM.lte.nodes.filter(n=>n.gw===cl).forEach(n=>{n.state='fail';n.faultLayer=1;n.reconnectT=rnd(1,5);});
+  }
+  else if(type==='storm'){
+    [['zb',SIM.zb],['rpl',SIM.rpl],['lw',SIM.lw],['lte',SIM.lte]].forEach(([k,s])=>{
+      const circs=pickCircuits(s,I*0.6);circs.forEach(c=>{c.failed=true;
+        s.nodes.filter(n=>n.circuit===c).forEach(n=>{
+          // interference is a TRANSIENT link impairment (no hardware loss)
+          if(k==='zb'){if(n.isRouter&&Math.random()<0.5){n.alive=false;n.linkDownT=rnd(8,22);}}
+          else if(k==='rpl'){if(Math.random()<0.7){n.orphan=true;n.reconvT=rnd(0,2);}}
+          else if(k==='lw'){n.sf=Math.min(12,n.sf+2);n.airtime=[0,0,0,0,0,0,46,82,148,266,490,900][n.sf];n.gw.load=(n.gw.load||0)+5;}
+          else{n.state='fail';n.faultLayer=1;n.reconnectT=rnd(1,7);}
+        });});});
+    SIM.lte.faultLayer=1;
+    SIM.zb._needReroute=0.4;
+  }
+  else if(type==='surge'){
+    SIM.lw.gws.forEach(g=>g.load=(g.load||0)+90*I);SIM.lw.nodes.forEach(n=>n.txT=rnd(0,0.4));
+    SIM.rpl.nodes.forEach(n=>n.txT=rnd(0,0.4));SIM.zb.nodes.forEach(n=>n.txT=rnd(0,0.4));
+    SIM.lte.faultLayer=3;SIM.lte.nodes.filter(n=>Math.random()<I*0.4).forEach(n=>{n.state='fail';n.faultLayer=3;n.reconnectT=rnd(1,6);});
+  }
+  else if(type==='command'){
+    SIM.lw.nodes.forEach(n=>{n.joined=false;n.joiningT=rnd(0.5,22)*I;});
+    SIM.zb.nodes.forEach(n=>n.txT=0);
+    SIM.rpl.nodes.filter(n=>Math.random()<I*0.12).forEach(n=>{n.orphan=true;n.reconvT=rnd(0,2);});
+    SIM.lte.faultLayer=4;SIM.lte.nodes.filter(n=>Math.random()<I*0.12).forEach(n=>{n.state='fail';n.faultLayer=4;n.reconnectT=rnd(1,4);});
+  }
+  else if(type==='cyber'){
+    [['zb',SIM.zb],['rpl',SIM.rpl],['lw',SIM.lw],['lte',SIM.lte]].forEach(([k,s])=>{
+      const circs=pickCircuits(s,I*0.7);circs.forEach(c=>{c.failed=true;waveAt(s,c);
+        s.nodes.filter(n=>n.circuit===c).forEach(n=>{
+          if(k==='zb'){if(n.isRouter){n.alive=false;n.linkDownT=rnd(15,45);}n.noRoute=true;}
+          else if(k==='rpl'){n.orphan=true;n.reconvT=rnd(0,3);}
+          else if(k==='lw'){n.sf=12;n.airtime=900;n.gw.load=(n.gw.load||0)+20;}
+          else{n.state='fail';n.faultLayer=2;n.reconnectT=rnd(4,15);}
+        });});});
+    SIM.lte.faultLayer=2;
+  }
+  else if(type==='growth'){CFG.n=Math.min(5000,Math.round(CFG.n*1.3));document.getElementById('cfg_n').value=CFG.n;document.getElementById('cfg_n_v').textContent=CFG.n;buildAll();return;}
+  // Recompute routes for the IMMEDIATE topology change (nodes/relays just downed) so the
+  // degradation shows at once. Recovery (coordinators/BRs coming back, DODAG reconvergence,
+  // LoRa re-join, LTE reattach) then happens GRADUALLY in each step function per its own theory.
+  reroute('zb'); // Zigbee: immediate re-route WITHIN each surviving PAN
+  // 6LoWPAN: do NOT reroute now — orphaned nodes stay down until DODAG reconverges (delayed)
+  SIM.rpl._needReroute=rnd(1.5,P('rpl','reconvergeMaxS'));
+}
+
+// ════ CHART + STATS ════
+function pctOnline(k){const s=SIM[k],t=s.nodes.length;if(!t)return 100;if(k==='zb')return s.nodes.filter(n=>!n.noRoute&&n.alive).length/t*100;if(k==='rpl')return s.nodes.filter(n=>!n.orphan).length/t*100;if(k==='lw')return s.nodes.filter(n=>n.joined&&!n.offline).length/t*100;return s.nodes.filter(n=>n.state==='ok').length/t*100;}
+function pushHist(){HIST.zb.push(pctOnline('zb'));HIST.rpl.push(pctOnline('rpl'));HIST.lw.push(pctOnline('lw'));HIST.lte.push(pctOnline('lte'));['zb','rpl','lw','lte'].forEach(k=>{if(HIST[k].length>histLen)HIST[k].shift();});}
+function drawChart(){const c=document.getElementById('availChart');const dpr=window.devicePixelRatio||1;const W=c.offsetWidth,H=c.offsetHeight;if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#0a0f1c';ctx.fillRect(0,0,W,H);
+  const padL=34,padR=8,padT=8,padB=10;const gw=W-padL-padR,gh=H-padT-padB;
+  ctx.strokeStyle='rgba(51,65,85,.35)';ctx.lineWidth=1;ctx.fillStyle='#64748b';ctx.font='9px monospace';ctx.textAlign='right';
+  [0,25,50,75,100].forEach(p=>{const y=padT+gh-(p/100)*gh;ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText(p+'%',padL-4,y+3);});
+  // fill + line per tech
+  [['zb','#60a5fa'],['rpl','#4ade80'],['lw','#c084fc'],['lte','#38bdf8']].forEach(([k,col])=>{
+    if(!TECH_ON[k])return;const d=HIST[k];if(d.length<2)return;
+    const xt=i=>padL+(i/(histLen-1))*gw, yt=v=>padT+gh-(v/100)*gh;
+    // area fill
+    ctx.beginPath();ctx.moveTo(xt(0),yt(d[0]));d.forEach((v,i)=>ctx.lineTo(xt(i),yt(v)));ctx.lineTo(xt(d.length-1),padT+gh);ctx.lineTo(xt(0),padT+gh);ctx.closePath();ctx.fillStyle=`rgba(${hexToRgb(col)},0.07)`;ctx.fill();
+    // line
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();d.forEach((v,i)=>{const x=xt(i),y=yt(v);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+    // last value dot + label
+    const lv=d[d.length-1],lx=xt(d.length-1),ly=yt(lv);ctx.fillStyle=col;ctx.beginPath();ctx.arc(lx,ly,3,0,7);ctx.fill();
+    ctx.font='bold 10px monospace';ctx.textAlign='left';ctx.fillText(Math.round(lv)+'%',Math.min(lx+6,W-padR-26),ly+3);
+  });
+}
+function updateStats(){
+  const data=[{k:'zb',name:'▲ Zigbee',color:'#60a5fa'},{k:'rpl',name:'◆ 6LoWPAN',color:'#4ade80'},{k:'lw',name:'● LoRaWAN',color:'#c084fc'},{k:'lte',name:'✚ LTE',color:'#38bdf8'}];
+  data.forEach(d=>{const s=SIM[d.k],tot=s.nodes.length,av=Math.round(pctOnline(d.k));d.av=av;d.aff=Math.round(tot*(1-av/100));const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};set('rt_'+d.k+'_aff',d.aff);set('rt_'+d.k+'_t95',s.t95!==null?s.t95.toFixed(0)+'s':'—');set('rt_'+d.k+'_t99',s.t99!==null?s.t99.toFixed(0)+'s':'—');set('rt_'+d.k+'_av',av+'%');});
+  const sorted=[...data].filter(d=>TECH_ON[d.k]).sort((a,b)=>b.av-a.av);const medals=['🥇','🥈','🥉','4️⃣'];
+  document.getElementById('leaderboard').innerHTML=sorted.map((d,i)=>`<div class="lb-row"><div class="lb-rank">${medals[i]}</div><div class="lb-name" style="color:${d.color}">${d.name}</div><div class="lb-stat"><b>${d.av}%</b>${d.aff} caídos</div></div>`).join('');
+  // physics metrics
+  document.getElementById('m_latency').textContent=Math.round((SIM.zb.avgLatency+SIM.rpl.avgLatency)/2)+' ms';
+  document.getElementById('m_airtime').textContent=Math.round(SIM.lw.avgAirtime||0)+' ms';
+  document.getElementById('m_coll').textContent=(SIM.lw.collPerS||0);
+  document.getElementById('m_batt').textContent=P('zb','routerBattHrs')>0?Math.round(SIM.zb.avgBatt)+'%':'∞';
+}
+
+// ════ LOOP ════
+let tick=0,lastFps=performance.now();
+function loop(){
+  if(!RUNNING)return;const dt=0.016;
+  tickClock(dt);
+  stepRecommission(dt);
+  if(TECH_ON.zb)stepZb(dt);if(TECH_ON.rpl)stepRpl(dt);if(TECH_ON.lw)stepLw(dt);if(TECH_ON.lte)stepLte(dt);
+  draw();
+  tick++;if(tick%6===0){pushHist();drawChart();updateStats();const now=performance.now();const fps=Math.round(6000/(now-lastFps));lastFps=now;document.getElementById('fps_tag').textContent=fps+' fps';}
+  RAF=requestAnimationFrame(loop);
+}
+function toggleRun(){if(!RUNNING){RUNNING=true;document.getElementById('btn_play').textContent='⏸ Pausar';document.getElementById('run_state').textContent='corriendo';lastFps=performance.now();loop();}else{RUNNING=false;document.getElementById('btn_play').textContent='▶ Iniciar';document.getElementById('run_state').textContent='pausado';if(RAF)cancelAnimationFrame(RAF);}}
+function resetAll(){RUNNING=false;if(RAF)cancelAnimationFrame(RAF);document.getElementById('btn_play').textContent='▶ Iniciar';document.getElementById('run_state').textContent='detenido';document.querySelectorAll('.scn').forEach(s=>s.classList.remove('active'));simClock=21*60;buildAll();}
+function toggleTech(k,el){TECH_ON[k]=!TECH_ON[k];el.classList.toggle('off',!TECH_ON[k]);if(!RUNNING){draw();drawChart();updateStats();}}
+function setView(){VIEW.hex=document.getElementById('opt_hex').checked;VIEW.heat=document.getElementById('opt_heat').checked;VIEW.rf=document.getElementById('opt_rf').checked;VIEW.daynight=document.getElementById('opt_daynight').checked;VIEW.hops=document.getElementById('opt_hops').checked;VIEW.cov=document.getElementById('opt_cov').checked;document.getElementById('heatLegend').classList.toggle('on',VIEW.heat);if(!RUNNING)draw();}
+function toggleSidePanel(){document.getElementById('sidepanel').classList.toggle('collapsed');}
+
+// ════ CONFIG MODAL ════
+let cfgCurrentTab='lw';
+const CFG_TAB_NAMES={lw:'📙 LoRaWAN',zb:'📘 Zigbee',rpl:'📗 6LoWPAN',lte:'📶 LTE',env:'🌍 Entorno/RF'};
+function openConfig(){document.getElementById('cfgModal').classList.add('open');renderCfgTable(cfgCurrentTab);}
+function closeConfig(){document.getElementById('cfgModal').classList.remove('open');}
+function cfgTab(t,el){cfgCurrentTab=t;document.querySelectorAll('.cfg-tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderCfgTable(t);}
+function renderCfgTable(tech){
+  const g=PARAMS[tech];
+  let html='<table class="cfg-table"><thead><tr><th>Parámetro</th><th>Valor</th><th>Descripción</th></tr></thead><tbody>';
+  Object.keys(g).forEach(key=>{
+    const p=g[key];
+    html+=`<tr><td>${key}</td><td><input type="number" id="cfgin_${tech}_${key}" value="${p.v}" min="${p.min}" max="${p.max}" step="${(p.max-p.min)/100<1?0.1:1}"><span class="unit">${p.unit}</span></td><td class="desc">${p.desc} <span style="color:#475569">[${p.min}–${p.max}]</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('cfgBody').innerHTML=html;
+}
+function applyConfig(){
+  // read all tabs' inputs that exist in DOM (only current tab rendered, so read current + keep others)
+  const tech=cfgCurrentTab;const g=PARAMS[tech];
+  Object.keys(g).forEach(key=>{const el=document.getElementById(`cfgin_${tech}_${key}`);if(el){const v=parseFloat(el.value);if(!isNaN(v))g[key].v=clamp(v,g[key].min,g[key].max);}});
+  closeConfig();buildAll();
+}
+function resetParams(){PARAMS=JSON.parse(JSON.stringify(PARAMS_DEFAULT));renderCfgTable(cfgCurrentTab);}
+
+// ════ INTERACTION ════
+function wEvt(e){const c=document.getElementById('mapCanvas');const r=c.getBoundingClientRect();return {x:(e.clientX-r.left-cam.x)/cam.zoom,y:(e.clientY-r.top-cam.y)/cam.zoom,sx:e.clientX-r.left,sy:e.clientY-r.top};}
+function quadAt(x,y){for(const k of Object.keys(QUAD)){const q=QUAD[k];if(x>=q.x&&x<q.x+QW&&y>=q.y&&y<q.y+QH)return k;}return null;}
+function hitGw(x,y){for(const k of Object.keys(SIM)){for(const gw of SIM[k].gws){if(Math.abs(x-gw.x)<20&&Math.abs(y-gw.y)<20)return{key:k,gw};}}return null;}
+function hitCircuit(x,y){const k=quadAt(x,y);if(!k)return null;for(const c of SIM[k].circuits){if(dist(x,y,c.cx,c.cy)<c.r)return{key:k,c};}return null;}
+function hitNode(x,y){
+  // only mesh techs (zb/rpl) are individually selectable
+  const k=quadAt(x,y);if(k!=='zb'&&k!=='rpl')return null;
+  const s=SIM[k];let best=null,bd=12*12; // 12px pick radius (world units)
+  for(const n of s.nodes){const dx=n.x-x,dy=n.y-y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=n;}}
+  return best?{key:k,n:best}:null;
+}
+function toggleNodePower(key,n){
+  const s=SIM[key];
+  n.manualOff=!n.manualOff;
+  if(n.manualOff){n.alive=false;if(key==='zb')n.noRoute=true;else n.orphan=true;s.waves.push({x:n.x,y:n.y,r:0,maxR:90});}
+  else{n.alive=true;}
+  reroute(key); // recompute the mesh -> nodes find a NEW path around the downed node
+}
+function clearSelection(){['zb','rpl'].forEach(k=>SIM[k].nodes.forEach(n=>n.selected=false));}
+function wire(){
+  const c=document.getElementById('mapCanvas');
+  c.addEventListener('wheel',e=>{e.preventDefault();const r=c.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;const f=e.deltaY<0?1.13:0.88;const nz=clamp(cam.zoom*f,0.15,8);cam.x=mx-(mx-cam.x)*(nz/cam.zoom);cam.y=my-(my-cam.y)*(nz/cam.zoom);cam.zoom=nz;if(!RUNNING)draw();},{passive:false});
+  let moved=false;
+  c.addEventListener('mousedown',e=>{cam.drag.active=true;cam.drag.lx=e.clientX;cam.drag.ly=e.clientY;moved=false;c.style.cursor='grabbing';});
+  c.addEventListener('mousemove',e=>{
+    if(cam.drag.active){const dx=e.clientX-cam.drag.lx,dy=e.clientY-cam.drag.ly;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;cam.x+=dx;cam.y+=dy;cam.drag.lx=e.clientX;cam.drag.ly=e.clientY;if(!RUNNING)draw();}
+    else{const w=wEvt(e);const tip=document.getElementById('maptip');
+      const hn=hitNode(w.x,w.y);
+      if(hn&&cam.zoom>0.5){const n=hn.n;const st=hn.key==='zb'?(n.manualOff?'🔴 apagado (manual)':n.noRoute?'⚫ sin ruta':!n.alive?'🔴 caído':'🟢 con ruta'):(n.manualOff?'🔴 apagado (manual)':n.orphan?'⚫ orphan':'🟢 con ruta');
+        tip.style.display='block';tip.style.left=(w.sx+14)+'px';tip.style.top=(w.sy-10)+'px';
+        tip.innerHTML=`<b>Nodo ${hn.key==='zb'?(n.isRouter?'Router':'End-device'):'RPL'}</b><br>${st}<br>Saltos a GW: ${isFinite(n.hops)?n.hops:'—'}<br>Latencia: ${Math.round(n.latency)} ms<br><span style="color:#22d3ee">click: apagar/encender</span>`;
+        return;}
+      const g=hitGw(w.x,w.y);
+      if(g){const s=SIM[g.key];const own=s.nodes.filter(n=>n.gw===g.gw);let onl;if(g.key==='zb')onl=own.filter(n=>!n.noRoute&&n.alive).length;else if(g.key==='rpl')onl=own.filter(n=>!n.orphan).length;else if(g.key==='lw')onl=own.filter(n=>n.joined&&!n.offline).length;else onl=own.filter(n=>n.state==='ok').length;
+        let extra='';if(g.key==='lw')extra=`<br>Carga canal: ${Math.round(Math.min(100,g.gw.load||0))}%`;
+        tip.style.display='block';tip.style.left=(w.sx+14)+'px';tip.style.top=(w.sy-10)+'px';tip.innerHTML=`<b>${g.gw.label||(QUAD_META[g.key].name.split(' ')[1]+' GW'+(g.gw.id+1))}</b><br>${g.gw.alive?'🟢 activo':'🔴 caído'}<br>Nodos: ${own.length}<br>✓ ${onl} · ✗ ${own.length-onl}${extra}`;}
+      else{const ci=hitCircuit(w.x,w.y);if(ci){const own=SIM[ci.key].nodes.filter(n=>n.circuit===ci.c);tip.style.display='block';tip.style.left=(w.sx+14)+'px';tip.style.top=(w.sy-10)+'px';tip.innerHTML=`<b>Circuito #${ci.c.id} · ${QUAD_META[ci.key].name.split(' ')[1]}</b><br>${ci.c.failed?'🔴 en falla':'🟢 normal'}${ci.c.apagable?' · ⚡apagable':''}<br>Nodos: ${own.length}`;}else tip.style.display='none';}}
+  });
+  window.addEventListener('mouseup',e=>{
+    if(cam.drag.active&&!moved){
+      const w=wEvt(e);
+      const hn=hitNode(w.x,w.y);
+      if(hn){ // clicked a mesh node -> toggle its power (simulate energy loss / restore)
+        if(!e.shiftKey)clearSelection();
+        hn.n.selected=true;
+        toggleNodePower(hn.key,hn.n);
+        if(!RUNNING)draw();
+      } else {
+        const k=quadAt(w.x,w.y);
+        if(e.shiftKey){clearSelection();if(!RUNNING)draw();}
+        else if(k){if(focusQuad===k)resetView();else focusOnQuad(k);}
+      }
+    }
+    cam.drag.active=false;c.style.cursor='grab';});
+  c.style.cursor='grab';
+  c.addEventListener('mouseleave',()=>{document.getElementById('maptip').style.display='none';});
+}
+function wireControls(){
+  const bind=(id,fn)=>{const e=document.getElementById(id);e.addEventListener('input',fn);e.addEventListener('change',fn);};
+  bind('cfg_n',()=>{CFG.n=+document.getElementById('cfg_n').value;document.getElementById('cfg_n_v').textContent=CFG.n;if(!RUNNING)buildAll();});
+  bind('cfg_int',()=>{CFG.intensity=+document.getElementById('cfg_int').value/100;document.getElementById('cfg_int_v').textContent=document.getElementById('cfg_int').value+'%';});
+  bind('cfg_spd',()=>{CFG.speed=+document.getElementById('cfg_spd').value/10;document.getElementById('cfg_spd_v').textContent=CFG.speed.toFixed(1)+'×';});
+  bind('cfg_density',()=>{CFG.density=document.getElementById('cfg_density').value;if(!RUNNING)buildAll();});
+}
+window.addEventListener('load',()=>{CFG.n=+document.getElementById('cfg_n').value;CFG.speed=+document.getElementById('cfg_spd').value/10;document.getElementById('cfg_spd_v').textContent=CFG.speed.toFixed(1)+'×';wireControls();wire();setTimeout(()=>{resetView();buildAll();},80);});
+window.addEventListener('resize',()=>{if(!RUNNING){resetView();drawChart();}});
+</script>
+</body>
+</html>
