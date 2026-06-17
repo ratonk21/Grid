@@ -223,6 +223,39 @@
     .exec{border:0; box-shadow:none; padding:0}
     .wrap{max-width:none; padding:0}
   }
+  /* ===== Guía integrada ===== */
+  #view-guia{max-width:880px}
+  #view-guia .gl-eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:28px 0 14px}
+  #view-guia .gl-eyebrow:first-child{margin-top:2px}
+  #view-guia .gl-lede{font-size:16px; color:var(--muted); max-width:64ch; margin:0 0 18px}
+  #view-guia .gl-band{background:var(--ink); color:#fff; border-radius:14px; padding:18px 20px; margin:0 0 8px; box-shadow:var(--shadow)}
+  #view-guia .gl-band h3{color:#fff; font-size:15px; margin:0 0 6px}
+  #view-guia .gl-band p{margin:0; color:#C5CEE6; font-size:14px}
+  #view-guia .gl-band .m{font-family:var(--mono); color:#FFCE7A}
+  #view-guia .gl-step{display:grid; grid-template-columns:54px 1fr; gap:16px; padding:0 0 22px; position:relative}
+  #view-guia .gl-rail{display:flex; justify-content:center; position:relative}
+  #view-guia .gl-num{width:40px; height:40px; border-radius:11px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:600; font-size:15px; color:var(--indigo); box-shadow:var(--shadow); z-index:1}
+  #view-guia .gl-step:not(:last-child) .gl-rail::after{content:""; position:absolute; top:42px; bottom:-22px; left:50%; width:2px; background:var(--line); transform:translateX(-50%)}
+  #view-guia .gl-card{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:16px 18px; box-shadow:var(--shadow)}
+  #view-guia .gl-card h3{font-size:17px; margin:0 0 6px}
+  #view-guia .gl-where{display:inline-block; font-family:var(--mono); font-size:11px; background:var(--indigo-soft); color:var(--indigo); padding:3px 9px; border-radius:999px; margin-bottom:9px}
+  #view-guia .gl-card p{margin:0 0 6px} #view-guia .gl-card ul{margin:6px 0 0; padding-left:18px} #view-guia .gl-card li{margin:3px 0}
+  #view-guia .gl-tip{margin-top:11px; font-size:13px; color:var(--muted); background:var(--surface2); border-left:3px solid var(--amber); border-radius:0 8px 8px 0; padding:8px 11px}
+  #view-guia .gl-tip b{color:var(--ink)}
+  #view-guia code{font-family:var(--mono); font-size:.88em; background:var(--surface2); border:1px solid var(--line); padding:1px 6px; border-radius:6px}
+  #view-guia .gl-sgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px}
+  #view-guia .gl-scn{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:14px 16px; box-shadow:var(--shadow)}
+  #view-guia .gl-scn .d{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; vertical-align:1px}
+  #view-guia .gl-scn h4{font-family:var(--disp); font-size:14px; margin:0 0 5px; font-weight:600}
+  #view-guia .gl-scn p{margin:0; font-size:13.5px; color:var(--muted)}
+  #view-guia .gl-scn.a{border-top:3px solid var(--indigo)} #view-guia .gl-scn.a .d{background:var(--indigo)}
+  #view-guia .gl-scn.c{border-top:3px solid var(--teal)} #view-guia .gl-scn.c .d{background:var(--teal)}
+  #view-guia .gl-scn.b{border-top:3px solid var(--rose)} #view-guia .gl-scn.b .d{background:var(--rose)}
+  #view-guia .gl-gloss{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:4px 18px; box-shadow:var(--shadow)}
+  #view-guia .gl-gloss dt{font-family:var(--disp); font-weight:600; font-size:14px; margin-top:14px}
+  #view-guia .gl-gloss dd{margin:3px 0 12px; color:var(--muted); font-size:14px}
+  #view-guia .gl-foot{margin:26px 0 8px; padding-top:16px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint)}
+  #view-guia .gl-cta{margin-top:8px; font-size:13px; padding:10px 18px}
 </style>
 </head>
 <body>
@@ -293,7 +326,8 @@
 
     <main>
       <div class="tabs" id="tabs">
-        <div class="tab active" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
+        <div class="tab active" data-tab="guia" data-i18n="t_guia">Guía</div>
+        <div class="tab" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
         <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
         <div class="tab" data-tab="perfil" data-i18n="t_perfil">Perfil diario</div>
         <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
@@ -302,8 +336,147 @@
         <div class="tab" data-tab="exec" data-i18n="t_exec">Resumen ejecutivo</div>
       </div>
 
+      <!-- GUIA -->
+      <section class="view active" id="view-guia">
+       <div class="gl gl-es">
+        <div class="gl-eyebrow">Guía de uso</div>
+        <p class="gl-lede">Esta herramienta estima el consumo de energía y el ahorro de tu red de alumbrado público a partir del amanecer y atardecer reales de cada día, tu perfil de dimerización y la comparación con un horario fijo.</p>
+        <div class="gl-band"><h3>Cómo funciona, en una frase</h3><p>El motor calcula el <span class="m">amanecer y atardecer reales</span> de tu ubicación y año (modelo NOAA), aplica tu perfil de dimerización <span class="m">media hora a media hora</span>, lo multiplica por la potencia instalada de tu inventario y compara hasta tres escenarios.</p></div>
+
+        <div class="gl-eyebrow">Secuencia recomendada · 8 pasos</div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">1</div></div><div class="gl-card">
+          <span class="gl-where">Barra lateral · Ubicación</span><h3>Define la ubicación y el año</h3>
+          <p>Elige el país: se cargan su latitud, longitud, zona horaria y regla de cambio de hora. Si tu sitio no está en la lista, ingresa las coordenadas. Fija el año a evaluar.</p>
+          <div class="gl-tip"><b>Verifica el chip "Cambios de hora".</b> De esas fechas dependen los saltos de atardecer y amanecer.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">2</div></div><div class="gl-card">
+          <span class="gl-where">Barra lateral · Tarifa y referencia</span><h3>Configura tarifa, unidad y moneda</h3>
+          <p>Ingresa la tarifa en <code>US$/kWh</code> y la potencia de la luminaria de referencia. Luego elige la <b>unidad de energía</b> (Auto, kWh o MWh) y, si quieres, activa <b>"Usar moneda local"</b> para ver los importes en la moneda del país.</p>
+          <div class="gl-tip">Las tasas de cambio vienen precargadas como referencia. <b>Ajústalas al valor del día</b> antes de presentar cifras en dinero.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">3</div></div><div class="gl-card">
+          <span class="gl-where">Pestaña · Inventario</span><h3>Carga el inventario de luminarias</h3>
+          <p>Agrega un grupo por cada tipo de luminaria con su cantidad y potencia (W). La suma define la potencia instalada de la flota.</p>
+          <ul><li>Marca <b>"Dimerizable"</b> en los grupos cuya potencia admite regulación.</li><li>Los grupos <b>sin marcar</b> operan a potencia plena toda la noche y no reciben ahorro por dimerización.</li></ul>
+          <div class="gl-tip">Así puedes mezclar tecnologías: por ejemplo, LED regulables junto a otras que no lo son.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">4</div></div><div class="gl-card">
+          <span class="gl-where">Pestaña · Dimerización</span><h3>Ajusta el perfil de dimerización</h3>
+          <p>Escribe el porcentaje de potencia en cada tramo de 30 minutos (48 tramos). El color resalta cuánto se baja. Hay un perfil precargado que puedes usar de base.</p>
+          <ul><li><b>Restablecer perfil</b> vuelve al perfil base; <b>Todo 100%</b> desactiva la regulación.</li><li><b>Aplicar a un rango</b> escribe el mismo porcentaje entre dos horas de golpe.</li></ul></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">5</div></div><div class="gl-card">
+          <span class="gl-where">Pestaña · Escenarios</span><h3>Configura los escenarios a comparar</h3>
+          <ul><li><b>Astronómico c/dim</b> — base: sigue el sol y aplica tu dimerización.</li><li><b>Astronómico s/dim</b> — sigue el sol a plena potencia, con sus propias ventanas.</li><li><b>Horario fijo</b> — reloj fijo igual todo el año.</li></ul>
+          <div class="gl-tip">Usa <b>"Incluir en comparaciones"</b> para activar o quitar escenarios. Si dejas uno solo, la vista pasa a ser descriptiva.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">6</div></div><div class="gl-card">
+          <span class="gl-where">Pestañas de resultados</span><h3>Revisa los resultados</h3>
+          <ul><li><b>Resumen</b> — tarjetas de energía y ahorro, y consumo mes a mes con el % de ahorro por mes.</li><li><b>Escenarios</b> — tabla comparativa y curva anual de amanecer/atardecer.</li><li><b>Perfil diario</b> — un día hora por hora, con mapa de calor del año.</li><li><b>Tabla anual</b> — horas de encendido acumuladas, minutos ahorrados y detalle de los 365 días.</li></ul>
+          <div class="gl-tip">Elige la <b>"Base del %"</b>: horario fijo o astronómico s/dim, según con qué quieras comparar.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">7</div></div><div class="gl-card">
+          <span class="gl-where">Resumen · Tabla anual</span><h3>Interpreta el ahorro</h3>
+          <ul><li><b>Ahorro por dimerización</b> — por bajar potencia (solo grupos dimerizables).</li><li><b>Ahorro astronómico vs fijo</b> — por seguir el sol, también en <b>minutos ahorrados por día</b>.</li></ul>
+          <div class="gl-tip">Un <b>% negativo en verde</b> = consume menos que la base (ahorra); positivo en rojo = consume más.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">8</div></div><div class="gl-card">
+          <span class="gl-where">Pestaña · Resumen ejecutivo</span><h3>Exporta el informe</h3>
+          <p>Genera el documento para presentar: configuración, resultados, ahorros, estrategia de dimerización, comparación, gráficos y tablas mensuales.</p>
+          <ul><li><b>Descargar PDF</b> — dos páginas: resumen + consumos mensuales y ahorros.</li><li><b>Tabla anual → Descargar CSV</b> — el perfil completo para Excel.</li></ul></div></div>
+
+        <div class="gl-eyebrow">Los tres escenarios</div>
+        <div class="gl-sgrid">
+          <div class="gl-scn a"><h4><span class="d"></span>Astronómico c/dim</h4><p>Sigue el amanecer/atardecer reales y aplica tu dimerización. Escenario recomendado y base de los cálculos.</p></div>
+          <div class="gl-scn c"><h4><span class="d"></span>Astronómico s/dim</h4><p>Sigue el sol a plena potencia. Sirve para ver cuánto aporta solo la dimerización.</p></div>
+          <div class="gl-scn b"><h4><span class="d"></span>Horario fijo</h4><p>Encendido y apagado a horas fijas todo el año. La operación tradicional a superar.</p></div>
+        </div>
+
+        <div class="gl-eyebrow">Glosario rápido</div>
+        <div class="gl-gloss"><dl>
+          <dt>Horas de operación</dt><dd>Horas reales que la luminaria está encendida en el día (la duración de la noche según el sol).</dd>
+          <dt>Horas equivalentes</dt><dd>Horas de operación ya ajustadas por la dimerización: el tiempo a plena potencia que produciría el mismo consumo.</dd>
+          <dt>Dimerizable</dt><dd>Grupo cuya potencia admite regulación. Solo estos reciben el ahorro por dimerización.</dd>
+          <dt>Base del %</dt><dd>Escenario contra el que se mide la diferencia porcentual: horario fijo o astronómico sin dimerización.</dd>
+        </dl></div>
+
+        <button class="btn primary gl-cta">Abrir la calculadora →</button>
+
+        <div class="gl-foot"><b>Notas.</b> El amanecer y el atardecer se calculan con un modelo astronómico estándar (NOAA) para la latitud, longitud, zona horaria y año indicados. Las tasas de cambio de moneda son referenciales y editables. Herramienta de apoyo a la planificación; valida los parámetros con tu inventario y tarifa reales.</div>
+       </div>
+
+       <div class="gl gl-en" style="display:none">
+        <div class="gl-eyebrow">User guide</div>
+        <p class="gl-lede">This tool estimates the energy use and savings of your street-lighting network from the real sunrise and sunset of each day, your dimming profile, and a comparison against a fixed schedule.</p>
+        <div class="gl-band"><h3>How it works, in one sentence</h3><p>The engine computes the <span class="m">real sunrise and sunset</span> for your location and year (NOAA model), applies your dimming profile <span class="m">half hour by half hour</span>, multiplies it by your inventory's installed power, and compares up to three scenarios.</p></div>
+
+        <div class="gl-eyebrow">Recommended sequence · 8 steps</div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">1</div></div><div class="gl-card">
+          <span class="gl-where">Sidebar · Location</span><h3>Set location and year</h3>
+          <p>Pick the country: its latitude, longitude, time zone and DST rule load automatically. If your site isn't listed, enter the coordinates. Set the year to evaluate.</p>
+          <div class="gl-tip"><b>Check the "DST changes" chip.</b> Those dates drive the sunset/sunrise shifts.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">2</div></div><div class="gl-card">
+          <span class="gl-where">Sidebar · Tariff & reference</span><h3>Set tariff, unit and currency</h3>
+          <p>Enter the tariff in <code>US$/kWh</code> and the reference luminaire power. Then choose the <b>energy unit</b> (Auto, kWh or MWh) and optionally enable <b>"Use local currency"</b> to show amounts in the country's currency.</p>
+          <div class="gl-tip">Exchange rates are preloaded as a reference. <b>Adjust them to today's rate</b> before presenting money figures.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">3</div></div><div class="gl-card">
+          <span class="gl-where">Tab · Inventory</span><h3>Load the luminaire inventory</h3>
+          <p>Add one group per luminaire type with its quantity and power (W). The sum defines the fleet's installed power.</p>
+          <ul><li>Tick <b>"Dimmable"</b> for groups whose power supports dimming.</li><li>Unticked groups run at full power all night and get no dimming savings.</li></ul>
+          <div class="gl-tip">You can mix technologies: e.g. dimmable LEDs alongside non-dimmable ones.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">4</div></div><div class="gl-card">
+          <span class="gl-where">Tab · Dimming</span><h3>Adjust the dimming profile</h3>
+          <p>Type the power percentage for each 30-minute slot (48 slots). Color shows how much you dim. There is a preloaded profile to start from.</p>
+          <ul><li><b>Reset profile</b> restores the base profile; <b>All 100%</b> turns dimming off.</li><li><b>Apply to a range</b> writes the same percentage between two hours at once.</li></ul></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">5</div></div><div class="gl-card">
+          <span class="gl-where">Tab · Scenarios</span><h3>Set the scenarios to compare</h3>
+          <ul><li><b>Astronomical w/dim</b> — base: tracks the sun and applies your dimming.</li><li><b>Astronomical no-dim</b> — tracks the sun at full power, with its own windows.</li><li><b>Fixed schedule</b> — fixed clock all year.</li></ul>
+          <div class="gl-tip">Use <b>"Include in comparisons"</b> to add or remove scenarios. With only one active, the view becomes descriptive.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">6</div></div><div class="gl-card">
+          <span class="gl-where">Result tabs</span><h3>Review the results</h3>
+          <ul><li><b>Summary</b> — energy & savings cards, and month-by-month use with monthly % savings.</li><li><b>Scenarios</b> — comparison table and annual sunrise/sunset curve.</li><li><b>Daily profile</b> — one day hour by hour, with a year heatmap.</li><li><b>Annual table</b> — cumulative operating hours, minutes saved and the 365-day detail.</li></ul>
+          <div class="gl-tip">Choose the <b>"% base"</b>: fixed schedule or astronomical no-dim.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">7</div></div><div class="gl-card">
+          <span class="gl-where">Summary · Annual table</span><h3>Read the savings</h3>
+          <ul><li><b>Dimming savings</b> — from lowering power (dimmable groups only).</li><li><b>Astronomical vs fixed</b> — from tracking the sun, also as <b>minutes saved per day</b>.</li></ul>
+          <div class="gl-tip">A <b>negative % in green</b> = consumes less than the base (saves); positive in red = consumes more.</div></div></div>
+
+        <div class="gl-step"><div class="gl-rail"><div class="gl-num">8</div></div><div class="gl-card">
+          <span class="gl-where">Tab · Executive summary</span><h3>Export the report</h3>
+          <p>Generate the document to present: configuration, results, savings, dimming strategy, comparison, charts and monthly tables.</p>
+          <ul><li><b>Download PDF</b> — two pages: summary + monthly consumption and savings.</li><li><b>Annual table → Download CSV</b> — the full profile for Excel.</li></ul></div></div>
+
+        <div class="gl-eyebrow">The three scenarios</div>
+        <div class="gl-sgrid">
+          <div class="gl-scn a"><h4><span class="d"></span>Astronomical w/dim</h4><p>Tracks real sunrise/sunset and applies your dimming. Recommended scenario and calculation base.</p></div>
+          <div class="gl-scn c"><h4><span class="d"></span>Astronomical no-dim</h4><p>Tracks the sun at full power. Shows how much dimming alone contributes.</p></div>
+          <div class="gl-scn b"><h4><span class="d"></span>Fixed schedule</h4><p>On/off at fixed hours all year. The traditional operation to beat.</p></div>
+        </div>
+
+        <div class="gl-eyebrow">Quick glossary</div>
+        <div class="gl-gloss"><dl>
+          <dt>Operating hours</dt><dd>Real hours the luminaire is on per day (the length of the night, per the sun).</dd>
+          <dt>Equivalent hours</dt><dd>Operating hours already adjusted for dimming: the full-power time that would produce the same consumption.</dd>
+          <dt>Dimmable</dt><dd>A group whose power supports dimming. Only these receive dimming savings.</dd>
+          <dt>% base</dt><dd>The scenario the percentage difference is measured against: fixed schedule or astronomical no-dim.</dd>
+        </dl></div>
+
+        <button class="btn primary gl-cta">Open the calculator →</button>
+
+        <div class="gl-foot"><b>Notes.</b> Sunrise and sunset are computed with a standard astronomical model (NOAA) for the given latitude, longitude, time zone and year. Exchange rates are indicative and editable. A planning-support tool; validate the parameters against your real inventory and tariff.</div>
+       </div>
+      </section>
+
       <!-- RESUMEN -->
-      <section class="view active" id="view-resumen">
+      <section class="view" id="view-resumen">
         <div class="cards">
           <div class="card astro"><span class="tag astro" data-i18n="tag_astro">Astronómico</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rA">—</div><div class="s" id="rAs">—</div></div>
           <div class="card" id="cardC" style="border-top:3px solid var(--teal)"><span class="tag" style="background:var(--teal-soft);color:var(--teal)" data-i18n="tag_nodim">Astro s/dim</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rC" style="color:var(--teal)">—</div><div class="s" id="rCs">—</div></div>
@@ -498,7 +671,7 @@ const DICT={
   eu_unit:"Unidad de energía", eu_auto:"Auto", use_local:"Usar moneda local", cur_sym:"Moneda (símbolo)", cur_rate:"Tasa (local por US$)", cur_hint:"Tasas aproximadas, edítalas según el cambio real.", base_pref:"Base del %:",
   ref_hint:"Referencia para el perfil y la tabla diaria. El consumo de la flota usa el Inventario.",
   dimming:"Dimerización", dim_side:"Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.",
-  t_resumen:"Resumen", t_escenarios:"Escenarios", t_perfil:"Perfil diario", t_dim:"Dimerización", t_inv:"Inventario", t_tabla:"Tabla anual", t_exec:"Resumen ejecutivo",
+  t_guia:"Guía", t_resumen:"Resumen", t_escenarios:"Escenarios", t_perfil:"Perfil diario", t_dim:"Dimerización", t_inv:"Inventario", t_tabla:"Tabla anual", t_exec:"Resumen ejecutivo",
   tag_astro:"Astronómico", tag_fixed:"Horario fijo", tag_nodim:"Astro s/dim", energy_year:"Energía / año",
   sc_nodim:"Astronómico sin dimerización", sc_nodim_d:"Sigue el sol pero a plena potencia, con sus propias ventanas. Útil para aislar el efecto de la dimerización.", ena_C:"Incluir en comparaciones", lyr_nodim:"Astro sin dim", c_astro_dim:"Astronómico c/dim", c_astro_nodim:"Astronómico s/dim", desc_only:"Mostrando solo", desc_addmore:"Activa otro perfil para comparar.", v_dimv:"La dimerización ahorra:", hrs_title:"Horas de encendido acumuladas", hrs_sub:"Horas que las luminarias están encendidas, por día y acumulado en el año.", th_dia:"Día", th_hday:"Horas (día)", th_acc:"Acumulado (año)", pct_base:"% vs base", base:"base", pct_month:"% ahorro mensual", grid_title:"Detalle horario por día",
   exp_config:"Parámetros usados para todos los cálculos del informe.", exp_dim_title:"Estrategia de dimerización", exp_dim:"Porcentaje de potencia aplicado en cada franja; se combina con la ventana de encendido astronómica.", nodim_txt:"Sin dimerización: potencia plena durante toda la ventana de encendido.", dim_off:"apagada", exp_key:"Resultado principal: el reloj astronómico con tu perfil de dimerización (escenario recomendado).", exp_save:"Cuánto se ahorra: por dimerización (bajar potencia) y por seguir el sol en vez de un horario fijo.", exp_detail:"Mismos indicadores lado a lado para cada escenario activo.", exp_month:"Energía de la flota mes a mes por escenario; la última fila es el % de ahorro mensual frente a la base.", exp_oper:"Horas que las luminarias están encendidas y minutos que se ahorran por día al seguir el sol.", exp_hours:"Horas de operación y minutos ahorrados, desglosados por mes.", pdf_p2_title:"Consumos mensuales y ahorros", pdf_energy_m:"Energía mensual de la flota", pdf_cost_m:"Costo mensual de la flota", ex_hours_title:"Horas de operación y minutos por mes", avg_hpn:"Prom. h/noche", min_vs_fix:"Min vs fijo/día", acc_min:"Acum. min", avg_min:"Promedio", ex_oper_title:"Operación y minutos ahorrados", ex_oper_hours:"Horas de operación / año", min_saved_day:"Minutos ahorrados / día", hrs_saved_year:"Horas ahorradas / año", min_day:"min/día",
@@ -558,7 +731,7 @@ const DICT={
   eu_unit:"Energy unit", eu_auto:"Auto", use_local:"Use local currency", cur_sym:"Currency (symbol)", cur_rate:"Rate (local per US$)", cur_hint:"Approximate rates, edit to match the real exchange rate.", base_pref:"% base:",
   ref_hint:"Reference for the profile and daily table. Fleet consumption uses the Inventory.",
   dimming:"Dimming", dim_side:"Edit it per half hour in the Dimming tab. Here is a preview.",
-  t_resumen:"Summary", t_escenarios:"Scenarios", t_perfil:"Daily profile", t_dim:"Dimming", t_inv:"Inventory", t_tabla:"Annual table", t_exec:"Executive summary",
+  t_guia:"Guide", t_resumen:"Summary", t_escenarios:"Scenarios", t_perfil:"Daily profile", t_dim:"Dimming", t_inv:"Inventory", t_tabla:"Annual table", t_exec:"Executive summary",
   tag_astro:"Astronomical", tag_fixed:"Fixed schedule", tag_nodim:"Astro no-dim", energy_year:"Energy / year",
   sc_nodim:"Astronomical, no dimming", sc_nodim_d:"Tracks the sun at full power, with its own windows. Useful to isolate the dimming effect.", ena_C:"Include in comparisons", lyr_nodim:"Astro no-dim", c_astro_dim:"Astronomical w/dim", c_astro_nodim:"Astronomical no-dim", desc_only:"Showing only", desc_addmore:"Enable another profile to compare.", v_dimv:"Dimming saves:", hrs_title:"Accumulated operating hours", hrs_sub:"Hours luminaires are on, per day and cumulative over the year.", th_dia:"Day", th_hday:"Hours (day)", th_acc:"Cumulative (yr)", pct_base:"% vs base", base:"base", pct_month:"% monthly savings", grid_title:"Hourly detail per day",
   exp_config:"Parameters used for every calculation in the report.", exp_dim_title:"Dimming strategy", exp_dim:"Power percentage applied in each slot; it is combined with the astronomical on-window.", nodim_txt:"No dimming: full power during the whole on-window.", dim_off:"off", exp_key:"Headline result: the astronomical clock with your dimming profile (recommended scenario).", exp_save:"How much is saved: by dimming (lowering power) and by tracking the sun instead of a fixed schedule.", exp_detail:"Same indicators side by side for each active scenario.", exp_month:"Fleet energy month by month per scenario; the last row is the monthly % savings vs the base.", exp_oper:"Hours the luminaires are on and minutes saved per day by tracking the sun.", exp_hours:"Operating hours and minutes saved, broken down by month.", pdf_p2_title:"Monthly consumption & savings", pdf_energy_m:"Monthly fleet energy", pdf_cost_m:"Monthly fleet cost", ex_hours_title:"Operating hours & minutes per month", avg_hpn:"Avg h/night", min_vs_fix:"Min vs fixed/day", acc_min:"Cum. min", avg_min:"Average", ex_oper_title:"Operation & minutes saved", ex_oper_hours:"Operating hours / year", min_saved_day:"Minutes saved / day", hrs_saved_year:"Hours saved / year", min_day:"min/day",
@@ -615,6 +788,8 @@ function applyI18n(){
   document.title=t("docTitle");
   document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=t(el.getAttribute("data-i18n"));});
   document.querySelectorAll(".lang span").forEach(s=>s.classList.toggle("on",s.dataset.lang===LANG));
+  document.querySelectorAll(".gl-es").forEach(e=>e.style.display=LANG==="es"?"":"none");
+  document.querySelectorAll(".gl-en").forEach(e=>e.style.display=LANG==="en"?"":"none");
 }
 
 /* ============ motor NOAA ============ */
@@ -689,7 +864,7 @@ const S={
   B:{type:"fixed", on:18, off:6, useDim:false, enabled:true},
   C:{type:"solar", offEnc:0, offApag:0, useDim:false, enabled:true},
   inventory:[{name:"Vial 100 W",qty:2000,power:100,dim:true},{name:"Vial 150 W",qty:800,power:150,dim:true},{name:"Peatonal 70 W",qty:1200,power:70,dim:true},{name:"LED 250 W avenida",qty:300,power:250,dim:false}],
-  selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"resumen",
+  selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"guia",
   yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true}, monthLayers:{a:true,c:true,b:true,money:false},
   energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B",
 };
@@ -1278,6 +1453,9 @@ function refreshAll(){recalc();renderTop();const sl=document.getElementById("day
 document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.closest(".tab");if(!tb)return;
   S.tab=tb.dataset.tab;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===tb));
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));renderActive();});
+document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{S.tab="resumen";
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab==="resumen"));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-resumen"));renderActive();window.scrollTo({top:0,behavior:"smooth"});}));
 
 function wireSeg(id,key,after){document.getElementById(id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   S[key]=b.dataset.s;b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));after();});}
