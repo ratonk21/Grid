@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E" />
+  <title>Sistema de Movilidad — ubicquia®</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #EEF0F5;
+      --surface:    #ffffff;
+      --surface2:   #f5f7fb;
+      --border:     #d8dde9;
+      --text:       #1E2445;
+      --text-mid:   #464D63;
+      --muted:      #99A0B4;
+      --navy:       #1E2445;
+      --navy-mid:   #2a3258;
+      --accent:     #22B0E1;
+      --accent-lt:  #d6eefa;
+      --blue:       #22B0E1;
+      --blue-lt:    #e3f4fb;
+      --green:      #005B59;
+      --lime:       #AECC53;
+      --green-lt:   #eef6e0;
+      --gold:       #C9A227;
+      --gold-lt:    #f7efd6;
+      --radius:     8px;
+      --radius-lg:  14px;
+      --label-font: 'Lato', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 3rem;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 0.75rem; }
+    .logomark { width: 38px; height: 46px; flex-shrink: 0; }
+    .logo-text {
+      font-size: 1.15rem; font-weight: 900; letter-spacing: -0.02em;
+      color: #ffffff; text-transform: lowercase;
+    }
+    .logo-text .wm-blue { color: var(--blue); }
+    .logo-text sup { font-size: 0.5rem; vertical-align: super; color: rgba(255,255,255,0.55); font-weight: 700; margin-left: 1px; }
+
+    .header-right { display: flex; align-items: center; gap: 1.5rem; }
+    .badge-env {
+      font-size: 0.7rem; color: var(--navy); background: var(--blue);
+      padding: 0.25rem 0.7rem; border-radius: 20px; letter-spacing: 0.04em; font-weight: 600;
+    }
+    .header-date { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.8rem 3rem 0;
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .breadcrumb a {
+      color: var(--accent); text-decoration: none; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      transition: opacity 0.2s;
+    }
+    .breadcrumb a:hover { opacity: 0.7; }
+    .breadcrumb .sep { color: var(--border); }
+
+    /* ── HERO ── */
+    .hero { padding: 0.9rem 3rem 1rem; max-width: 820px; position: relative; }
+    .hero::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--green) 0%, var(--lime) 100%);
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.5rem;
+    }
+    .hero-eyebrow .dot { width: 6px; height: 6px; background: var(--lime); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+    .hero h1 {
+      font-size: clamp(1.3rem, 3vw, 1.8rem); font-weight: 700; line-height: 1.1;
+      letter-spacing: -0.03em; color: var(--text);
+    }
+    .hero h1 em { font-style: normal; color: var(--green); }
+    .hero p { margin-top: 0.5rem; color: var(--text-mid); font-size: 0.82rem; line-height: 1.5; max-width: 640px; }
+    .hero .req {
+      margin-top: 0.7rem; font-size: 0.74rem; color: var(--text-mid);
+      background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--green);
+      border-radius: var(--radius); padding: 0.6rem 0.8rem; max-width: 660px; line-height: 1.45;
+    }
+    .hero .req b { color: var(--green); }
+
+    /* ── CONFIDENTIAL BADGE ── */
+    .confidential {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      margin-left: 0.6rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #7a5d00; background: var(--gold-lt);
+      border: 1px solid #e6d28a; padding: 0.22rem 0.6rem; border-radius: 6px;
+    }
+    .confidential svg { width: 11px; height: 11px; }
+
+    /* ── SECTION ── */
+    .section { padding: 1rem 3rem 0.5rem; }
+    .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.9rem; }
+    .section-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); white-space: nowrap; }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+    .section-count {
+      font-size: 0.68rem; color: var(--accent); background: var(--accent-lt);
+      border: 1px solid #b8caf0; padding: 0.2rem 0.6rem; border-radius: 20px;
+    }
+
+    /* ── GRID (2 opciones grandes) ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      max-width: 820px;
+    }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      overflow: hidden; text-decoration: none; display: flex; flex-direction: column;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s; position: relative;
+      padding: 1.3rem 1.3rem 1.1rem;
+    }
+    .card:hover { box-shadow: 0 8px 32px rgba(30,58,123,0.13); transform: translateY(-3px); border-color: #a8bcf0; }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--blue), var(--lime));
+      opacity: 0; transition: opacity 0.2s; z-index: 1;
+    }
+    .card:hover::before { opacity: 1; }
+
+    .card-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 0.85rem;
+    }
+    .card-icon svg { width: 24px; height: 24px; }
+
+    .card-kicker {
+      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--muted); font-weight: 700; margin-bottom: 0.25rem;
+    }
+    .card-name { font-size: 1rem; font-weight: 700; color: var(--text); line-height: 1.25; letter-spacing: -0.01em; }
+    .card-desc { font-size: 0.76rem; color: var(--text-mid); line-height: 1.45; margin-top: 0.45rem; }
+
+    .card-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.8rem; }
+    .chip {
+      font-size: 0.6rem; color: var(--text-mid); background: var(--surface2);
+      border: 1px solid var(--border); padding: 0.2rem 0.5rem; border-radius: 20px; letter-spacing: 0.02em;
+    }
+
+    .card-arrow {
+      margin-top: 1rem; align-self: flex-start;
+      font-size: 0.72rem; color: var(--blue); font-weight: 700;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      transition: gap 0.2s;
+    }
+    .card:hover .card-arrow { gap: 0.6rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 0.8rem 3rem; margin-top: 1.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      color: var(--muted); font-size: 0.72rem; background: var(--surface);
+    }
+    .footer-brand { display: flex; align-items: center; gap: 0.5rem; }
+    .footer-wm { font-weight: 900; text-transform: lowercase; letter-spacing: -0.02em; color: var(--text); font-size: 0.85rem; }
+    .footer-wm .wm-blue { color: var(--blue); }
+    .footer-wm sup { font-size: 0.45rem; vertical-align: super; color: var(--muted); }
+    .footer-dot { color: var(--border); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      header { padding: 0 1.5rem; }
+      .breadcrumb { padding: 0.8rem 1.5rem 0; }
+      .hero { padding: 0.9rem 1.5rem 1rem; }
+      .section { padding: 1rem 1.5rem; }
+      .grid { grid-template-columns: 1fr; }
+      footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-wrap">
+      <svg class="logomark" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#22B0E1"/>
+        <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#ffffff"/>
+      </svg>
+      <span class="logo-text"><span class="wm-blue">ubi</span>cquia<sup>®</sup></span>
+    </div>
+    <div class="header-right">
+      <span class="badge-env">MOVILIDAD</span>
+      <span class="header-date" id="header-date"></span>
+    </div>
+  </header>
+
+  <!-- BREADCRUMB -->
+  <nav class="breadcrumb">
+    <a href="../">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Reportes
+    </a>
+    <span class="sep">/</span>
+    <span>Sistema de Movilidad</span>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      Sistema de movilidad
+    </div>
+    <h1>Fallas y <em>mantenimientos</em>
+      <span class="confidential">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        Confidencial
+      </span>
+    </h1>
+    <p>Selecciona la versión de la herramienta que quieres abrir. Ambas cubren puntos con telegestión y puntos georreferenciados sin telegestión.</p>
+    <div class="req">
+      <b>Solicitud de complemento de información</b> para funcionalidades del sistema de movilidad: fallas y mantenimientos para puntos con telegestión y puntos georreferenciados sin telegestión.
+    </div>
+  </div>
+
+  <!-- OPTIONS -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label">versiones disponibles</span>
+      <div class="section-line"></div>
+      <span class="section-count">02 apps</span>
+    </div>
+
+    <div class="grid">
+
+      <!-- SIMPLY -->
+      <a class="card" href="./simply/">
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>
+        </div>
+        <div class="card-kicker">versión simple</div>
+        <div class="card-name">Simply</div>
+        <div class="card-desc">Vista directa y rápida para revisar fallas y mantenimientos en campo. Pensada para consulta inmediata.</div>
+        <div class="card-meta">
+          <span class="chip">Telegestión</span>
+          <span class="chip">Georreferenciados</span>
+          <span class="chip">Operación</span>
+        </div>
+        <span class="card-arrow">abrir Simply →</span>
+      </a>
+
+      <!-- SOFISTICADA -->
+      <a class="card" href="./sofisticada/">
+        <div class="card-icon" style="background:var(--green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7 16l3.5-4 3 2.5L20 7"/><circle cx="20" cy="7" r="1.1" fill="#ffffff" stroke="none"/></svg>
+        </div>
+        <div class="card-kicker">versión sofisticada</div>
+        <div class="card-name">Sofisticada</div>
+        <div class="card-desc">Versión completa con análisis ampliado, capas de detalle y el complemento de información solicitado.</div>
+        <div class="card-meta">
+          <span class="chip">Telegestión</span>
+          <span class="chip">Georreferenciados</span>
+          <span class="chip">Análisis</span>
+        </div>
+        <span class="card-arrow">abrir Sofisticada →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">
+      <span class="footer-wm"><span class="wm-blue">ubi</span>cquia<sup>®</sup></span>
+      <span class="footer-dot">·</span>
+      <span>Documento confidencial</span>
+    </div>
+    <span>2 versiones disponibles</span>
+  </footer>
+
+  <script>
+    const now = new Date();
+    document.getElementById('header-date').textContent =
+      now.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  </script>
+
+</body>
+</html>
