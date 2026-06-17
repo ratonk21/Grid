@@ -3,36 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ubicquia® — Reportes</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E" />
+  <title>ubicquia® — Reportes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* ── Paleta UbiVu real (extraída de la app) ── */
-      --bg:         #eef1f8;      /* fondo gris-azulado claro */
+      /* ── Paleta oficial Ubicquia® (Brand & Style Guide 9101 v2) ── */
+      --bg:         #EEF0F5;      /* Light Gray  — fondo preferido de marca */
       --surface:    #ffffff;
-      --surface2:   #f4f6fb;
-      --border:     #d5dded;
-      --text:       #0a1628;      /* navy oscuro texto principal */
-      --text-mid:   #3a4f75;      /* navy medio */
-      --muted:      #7a8fb5;      /* azul grisáceo */
-      --navy:       #0a1628;      /* sidebar / nav */
-      --navy-mid:   #1e3a7b;      /* elementos activos */
-      --accent:     #1e3a7b;      /* acento principal */
-      --accent-lt:  #dde5f8;      /* chip/tag bg */
-      --cyan:       #00bfff;      /* cyan brillante UbiVu */
-      --cyan-lt:    #e0f7ff;
-      --green:      #00c98b;
+      --surface2:   #f5f7fb;
+      --border:     #d8dde9;
+      --text:       #1E2445;      /* Ubicquia Dark Blue — texto principal */
+      --text-mid:   #464D63;      /* Deep Gray */
+      --muted:      #99A0B4;      /* Gray */
+      --navy:       #1E2445;      /* Dark Blue — header / nav / superficies oscuras */
+      --navy-mid:   #2a3258;      /* Dark Blue aclarado — elementos activos */
+      --accent:     #22B0E1;      /* Ubicquia Blue — acento principal */
+      --accent-lt:  #d6eefa;      /* tinte claro azul */
+      --blue:       #22B0E1;      /* Ubicquia Blue */
+      --blue-lt:    #e3f4fb;
+      --green:      #005B59;      /* Ubicquia Dark Green */
+      --lime:       #AECC53;      /* Ubicquia Lime Green */
+      --green-lt:   #eef6e0;      /* tinte claro lima */
       --radius:     8px;
       --radius-lg:  14px;
+      --label-font: 'Lato', 'Helvetica Neue', Arial, sans-serif;
     }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* ── HEADER ── */
@@ -62,16 +69,19 @@
     }
 
     .logo-text {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
       color: #ffffff;
+      text-transform: lowercase;
     }
+    .logo-text .wm-blue { color: var(--blue); }
     .logo-text sup {
-      font-size: 0.55rem;
+      font-size: 0.5rem;
       vertical-align: super;
-      color: var(--cyan);
-      font-weight: 600;
+      color: rgba(255,255,255,0.55);
+      font-weight: 700;
+      margin-left: 1px;
     }
 
     .header-right {
@@ -82,9 +92,9 @@
 
     .badge-env {
       font-size: 0.7rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       color: var(--navy);
-      background: var(--cyan);
+      background: var(--blue);
       padding: 0.25rem 0.7rem;
       border-radius: 20px;
       letter-spacing: 0.04em;
@@ -94,7 +104,7 @@
     .header-date {
       font-size: 0.72rem;
       color: rgba(255,255,255,0.45);
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
     }
 
     /* ── HERO ── */
@@ -109,7 +119,7 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--accent) 0%, var(--cyan) 60%, var(--green) 100%);
+      background: linear-gradient(90deg, var(--blue) 0%, var(--lime) 100%);
     }
 
     .hero-eyebrow {
@@ -117,7 +127,7 @@
       align-items: center;
       gap: 0.5rem;
       font-size: 0.7rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--accent);
@@ -125,7 +135,7 @@
     }
     .hero-eyebrow .dot {
       width: 6px; height: 6px;
-      background: var(--cyan);
+      background: var(--blue);
       border-radius: 50%;
       animation: pulse 2s ease-in-out infinite;
     }
@@ -155,6 +165,18 @@
       max-width: 520px;
     }
 
+    .hero-tagline {
+      margin-top: 0.7rem;
+      font-size: 0.78rem;
+      font-weight: 300;
+      letter-spacing: 0.01em;
+      color: var(--text-mid);
+    }
+    .hero-tagline b {
+      font-weight: 700;
+      color: var(--blue);
+    }
+
     /* ── STATS BAR ── */
     .stats-bar {
       margin: 0 3rem;
@@ -175,7 +197,7 @@
 
     .stat-label {
       font-size: 0.6rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       text-transform: uppercase;
       letter-spacing: 0.14em;
       color: rgba(255,255,255,0.4);
@@ -196,7 +218,7 @@
     }
     .stat-sub {
       font-size: 0.65rem;
-      color: var(--cyan);
+      color: var(--blue);
       margin-top: 0.1rem;
       font-weight: 500;
     }
@@ -215,7 +237,7 @@
 
     .section-label {
       font-size: 0.68rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       text-transform: uppercase;
       letter-spacing: 0.18em;
       color: var(--muted);
@@ -230,7 +252,7 @@
 
     .section-count {
       font-size: 0.68rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       color: var(--accent);
       background: var(--accent-lt);
       border: 1px solid #b8caf0;
@@ -274,7 +296,7 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 3px;
-      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      background: linear-gradient(90deg, var(--blue), var(--lime));
       opacity: 0;
       transition: opacity 0.2s;
       z-index: 1;
@@ -302,7 +324,7 @@
 
     .card-tag {
       font-size: 0.56rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       color: var(--muted);
       margin-top: 0.2rem;
       letter-spacing: 0.04em;
@@ -312,8 +334,8 @@
       position: absolute;
       bottom: 0.45rem; right: 0.6rem;
       font-size: 0.6rem;
-      color: var(--cyan);
-      font-family: 'JetBrains Mono', monospace;
+      color: var(--blue);
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       font-weight: 600;
       opacity: 0;
       transform: translateX(-4px);
@@ -332,7 +354,7 @@
     .card-add:hover::before { opacity: 0; }
 
     .add-icon { font-size: 2rem; color: var(--border); font-weight: 300; }
-    .add-text { font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+    .add-text { font-size: 0.75rem; font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif; color: var(--muted); }
 
     /* ── FOOTER ── */
     footer {
@@ -343,11 +365,20 @@
       align-items: center;
       color: var(--muted);
       font-size: 0.72rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
       background: var(--surface);
     }
 
     .footer-brand { display: flex; align-items: center; gap: 0.5rem; }
+    .footer-wm {
+      font-weight: 900;
+      text-transform: lowercase;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+    .footer-wm .wm-blue { color: var(--blue); }
+    .footer-wm sup { font-size: 0.45rem; vertical-align: super; color: var(--muted); }
     .footer-dot { color: var(--border); }
 
     /* ── RESPONSIVE ── */
@@ -368,12 +399,12 @@
   <header>
     <div class="logo-wrap">
       <svg class="logomark" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Pin cyan -->
-        <path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#00bfff"/>
-        <!-- U navy -->
-        <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#0a1628"/>
+        <!-- UbiPin — Ubicquia Blue -->
+        <path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#22B0E1"/>
+        <!-- U hueca (blanca) -->
+        <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#ffffff"/>
       </svg>
-      <span class="logo-text">Ubicquia<sup>®</sup></span>
+      <span class="logo-text"><span class="wm-blue">ubi</span>cquia<sup>®</sup></span>
     </div>
     <div class="header-right">
       <span class="badge-env">REPORTS / GRIDDATA.CL</span>
@@ -389,6 +420,7 @@
     </div>
     <h1>Reportes<br><em>Ubicquia®</em></h1>
     <p>Panel centralizado de informes, simulaciones y herramientas de análisis para infraestructura inteligente. Datos en tiempo real, disponibles siempre.</p>
+    <div class="hero-tagline">simply <b>connected</b> simply <b>smart.</b></div>
   </div>
 
   <!-- STATS BAR -->
@@ -422,8 +454,8 @@
     <div class="grid" id="projects-grid">
 
       <a class="card" href="./cargabilidad-transformadores/" target="_blank">
-        <div class="card-icon" style="background:#e0f7ff;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#0077aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5a8 8 0 0 1 16 0"/><path d="M12 17.5l4-3.2"/><circle cx="12" cy="17.5" r="1.2" fill="#ffffff" stroke="none"/><path d="M4.4 16.2h1.3M18.3 16.2h1.3"/></svg>
         </div>
         <div class="card-name">Cargabilidad Transformadores</div>
         <div class="card-tag">Grid Monitoring</div>
@@ -431,8 +463,8 @@
       </a>
 
   <a class="card" href="./ahorro-energia/" target="_blank">
-        <div class="card-icon" style="background:#e0f7ff;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#0077aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 21V7l3-4 3 4v14M9 12h6M12 7v5"/></svg>
+        <div class="card-icon" style="background:var(--green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.2"/><rect x="7.6" y="4.8" width="8.8" height="5.2" rx="0.7"/><path d="M13 5.6 10.7 8.4h1.7l-1.4 2"/><path d="M8.6 13.6h0M12 13.6h0M15.4 13.6h0M8.6 17.6h0M12 17.6h0M15.4 17.6h0"/></svg>
         </div>
         <div class="card-name">Calculadora Ahorro de Energia Ubicell</div>
         <div class="card-tag">Ahorro Energia</div>
@@ -441,8 +473,8 @@
 
 
       <a class="card" href="./informe-ubicell/" target="_blank">
-        <div class="card-icon" style="background:#e6fbf4;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#006b4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49m-8.49-.01a6 6 0 010-8.49m11.31-2.82a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14"/></svg>
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21h4"/><path d="M8.5 21V8.5"/><path d="M8.5 8.5h5"/><path d="M13.5 8.5v1.3"/><path d="M12 9.8h3l-1.5 2.6z"/><path d="M16.4 6.4a3.2 3.2 0 0 1 0 4.2"/><path d="M14.9 7.7a1.3 1.3 0 0 1 0 1.6"/></svg>
         </div>
         <div class="card-name">Informe Ubicell</div>
         <div class="card-tag">Conectividad</div>
@@ -450,8 +482,8 @@
       </a>
 
       <a class="card" href="./reporte-personalizado-ubicquia/" target="_blank">
-        <div class="card-icon" style="background:#e6fbf4;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#006b4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/><circle cx="17" cy="12" r="3"/><path d="M20 15l2 2"/></svg>
+        <div class="card-icon" style="background:var(--navy);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h9"/><path d="M17 6.5h3"/><circle cx="15" cy="6.5" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 17.5h9"/><path d="M17 17.5h3"/><circle cx="15" cy="17.5" r="2"/></svg>
         </div>
         <div class="card-name">Reportes Personalizados</div>
         <div class="card-tag">Custom Report</div>
@@ -459,8 +491,8 @@
       </a>
 
       <a class="card" href="./reporte-obra-emblema/" target="_blank">
-        <div class="card-icon" style="background:#e0f7ff;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#0077aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M9 21V7l3-4 3 4v14M9 12h6M12 7v5"/></svg>
+        <div class="card-icon" style="background:var(--navy);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21V3"/><path d="M6.5 4h11l-2.5 3.3 2.5 3.3h-11z"/></svg>
         </div>
         <div class="card-name">Reporte Obra Emblema</div>
         <div class="card-tag">Obra Emblema</div>
@@ -481,7 +513,7 @@
   <!-- FOOTER -->
   <footer>
     <div class="footer-brand">
-      <span>Ubicquia®</span>
+      <span class="footer-wm"><span class="wm-blue">ubi</span>cquia<sup>®</sup></span>
       <span class="footer-dot">·</span>
       <span>griddata.cl</span>
     </div>

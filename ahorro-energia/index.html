@@ -6,30 +6,31 @@
 <title>Alumbrado público — calculadora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#EEF1F8; --surface:#FFFFFF; --surface2:#F6F8FC; --raise:#EDF1FA;
-    --ink:#16213F; --muted:#5C6788; --faint:#94A0BE; --line:#DDE3F0; --line-soft:#E9EDF6;
-    --amber:#E08600; --amber-hi:#F6A91E; --amber-soft:#FFE6B8;
-    --indigo:#3A4CC0; --indigo-soft:#DEE3FB; --violet:#7A52B3;
-    --rose:#D14B36; --rose-soft:#FBE0DA; --teal:#0E9B72; --teal-soft:#D6F2E8;
-    --disp:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
-    --shadow:0 1px 2px rgba(20,33,63,.04),0 8px 24px rgba(20,33,63,.06);
+    --bg:#EEF0F5; --surface:#FFFFFF; --surface2:#F5F7FB; --raise:#E6EAF2;
+    --ink:#1E2445; --muted:#464D63; --faint:#99A0B4; --line:#E2E6EF; --line-soft:#EEF0F5;
+    --amber:#FAB512; --amber-hi:#FFC53D; --amber-soft:#FDEFC9;
+    --indigo:#22B0E1; --indigo-soft:#D8F0FA; --violet:#59509D;
+    --rose:#EA561B; --rose-soft:#FBE0D4; --teal:#4EB270; --teal-soft:#DDF1E5;
+    --disp:"Lato",system-ui,sans-serif; --body:"Lato",system-ui,sans-serif; --mono:"Lato",ui-monospace,monospace;
+    --shadow:0 1px 2px rgba(30,36,69,.05),0 6px 20px rgba(30,36,69,.06);
   }
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased}
+  body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums}
   h1,h2,h3{font-family:var(--disp); margin:0; letter-spacing:-.01em}
   .mono{font-family:var(--mono)}
   .wrap{max-width:1320px; margin:0 auto; padding:22px 20px 56px}
   .top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px}
   .brand{display:flex; align-items:center; gap:14px}
-  .logo{width:42px; height:42px; border-radius:12px; flex:none; background:radial-gradient(circle at 32% 32%, var(--amber-hi), var(--amber) 60%, #b46c00); box-shadow:0 6px 16px rgba(224,134,0,.35); position:relative}
-  .logo::after{content:""; position:absolute; inset:-6px; border-radius:16px; border:1.5px solid var(--amber-soft)}
-  .brand .t .eyebrow{font-family:var(--mono); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--amber)}
+  .logo{width:42px; height:42px; border-radius:12px; flex:none; background:radial-gradient(circle at 32% 32%, #5BC7EE, var(--indigo) 62%, #1E2445); box-shadow:0 6px 16px rgba(34,176,225,.30); position:relative}
+  .logo::after{content:""; position:absolute; inset:-6px; border-radius:16px; border:1.5px solid var(--indigo-soft)}
+  .brand .t .eyebrow{font-family:var(--mono); font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--indigo)}
   .brand .t h1{font-size:20px; font-weight:600; line-height:1.1}
   .topright{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .chips{display:flex; gap:8px; flex-wrap:wrap}
@@ -38,7 +39,7 @@
   /* language switch */
   .lang{display:inline-flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:4px; box-shadow:var(--shadow); cursor:pointer; user-select:none}
   .lang span{font-size:12px; font-weight:600; padding:4px 10px; border-radius:18px; color:var(--muted)}
-  .lang span.on{background:var(--amber); color:#fff}
+  .lang span.on{background:var(--indigo); color:#fff}
 
   .shell{display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start}
   @media (max-width:980px){ .shell{grid-template-columns:1fr} }
@@ -54,30 +55,40 @@
   input[type=number]{width:96px; text-align:right}
   input[type=time]{width:104px}
   select{font-family:var(--body); cursor:pointer; max-width:180px}
-  input:focus,select:focus{outline:2px solid var(--amber); outline-offset:1px; border-color:var(--amber)}
+  input:focus,select:focus{outline:2px solid var(--indigo); outline-offset:1px; border-color:var(--indigo)}
   .dstchip{display:inline-flex; align-items:center; gap:6px; margin-top:8px; font-size:11px; font-family:var(--mono); background:var(--indigo-soft); color:var(--indigo); border-radius:8px; padding:5px 9px; line-height:1.3}
   .dstchip.none{background:var(--surface2); color:var(--faint)}
   .dimmini{display:grid; grid-template-columns:repeat(48,1fr); gap:1px; height:34px; margin-top:8px; align-items:end}
   .dimmini i{display:block; width:100%; background:var(--amber); border-radius:1px}
 
   .btn{background:var(--raise); color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:7px 12px; font-size:12px; font-family:var(--body); cursor:pointer}
-  .btn:hover{border-color:var(--amber); color:var(--amber)}
-  .btn.primary{background:var(--amber); border-color:var(--amber); color:#fff; font-weight:600}
-  .btn.primary:hover{background:var(--amber-hi)}
+  .btn:hover{border-color:var(--indigo); color:var(--indigo)}
+  .btn.primary{background:var(--indigo); border-color:var(--indigo); color:#fff; font-weight:700}
+  .btn.primary:hover{background:#1C9BC7; border-color:#1C9BC7}
   .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
 
+  .ptabs{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap}
+  .ptab{padding:9px 20px; border-radius:11px; font-family:var(--disp); font-size:14px; font-weight:700; color:var(--muted); cursor:pointer; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow); transition:color .12s,background .12s}
+  .ptab:hover{color:var(--ink)}
+  .ptab.active{background:var(--indigo); color:#fff; border-color:var(--indigo)}
   .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:5px; box-shadow:var(--shadow); margin-bottom:16px; overflow:auto}
   .tab{flex:1; min-width:max-content; text-align:center; padding:9px 13px; border-radius:10px; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; white-space:nowrap; border:1px solid transparent}
   .tab:hover{color:var(--ink)}
   .tab.active{background:linear-gradient(180deg,#fff,var(--surface2)); color:var(--indigo); border-color:var(--line); box-shadow:var(--shadow); font-weight:600}
+  .tabgroup{flex:none; align-self:center; display:flex; align-items:center; font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); font-weight:700; padding:0 4px 0 11px; margin-left:2px; white-space:nowrap; border-left:1px solid var(--line)}
   .view{display:none} .view.active{display:block}
 
   .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:14px}
   @media (max-width:760px){ .cards{grid-template-columns:repeat(2,1fr)} }
   .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:15px 16px; box-shadow:var(--shadow); position:relative; overflow:hidden}
   .card .k{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted)}
-  .card .v{font-family:var(--mono); font-size:24px; font-weight:600; margin-top:8px; line-height:1; color:var(--ink)}
-  .card .s{font-size:12px; color:var(--faint); margin-top:6px}
+  .card .v{font-family:var(--mono); font-size:21px; font-weight:600; margin-top:8px; line-height:1; color:var(--ink)}
+  .card .vm{font-family:var(--mono); font-size:19px; font-weight:700; margin-top:5px; line-height:1; color:var(--ink); letter-spacing:-.01em}
+  .card .s{font-size:11px; color:var(--faint); margin-top:7px}
+  .card.pay{border-top:3px solid var(--indigo)}
+  aside{counter-reset:cfg}
+  aside .panel h2{counter-increment:cfg}
+  aside .panel h2::before{content:counter(cfg) " · "; color:var(--indigo); font-weight:700; font-family:var(--mono)}
   .card .tag{position:absolute; top:12px; right:12px; font-size:10px; font-family:var(--mono); padding:2px 7px; border-radius:20px}
   .card.astro{border-top:3px solid var(--indigo)} .card.astro .v{color:var(--indigo)}
   .card.fixed{border-top:3px solid var(--rose)} .card.fixed .v{color:var(--rose)}
@@ -112,8 +123,8 @@
   td.mplus{color:var(--teal); font-weight:600} td.mminus{color:var(--rose); font-weight:600}
 
   .verdict{margin-top:14px; padding:14px 16px; border-radius:12px; font-size:14px}
-  .verdict.s{background:var(--teal-soft); border:1px solid #aee3d2; color:#0a6b50}
-  .verdict.c{background:var(--rose-soft); border:1px solid #f3c4ba; color:#9c3322}
+  .verdict.s{background:var(--teal-soft); border:1px solid #BCE3CB; color:#1E6B45}
+  .verdict.c{background:var(--rose-soft); border:1px solid #F7CDB8; color:#B33E12}
   .verdict b{font-weight:700}
 
   .scn2{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px}
@@ -148,7 +159,7 @@
   .brow:last-child{border-bottom:0}
   .brow .lab{color:var(--muted)} .brow .val{font-family:var(--mono)}
   .edge{color:var(--rose)}
-  .callout{background:var(--amber-soft); border:1px solid #f0d292; border-radius:10px; padding:10px 12px; font-size:12px; color:#8a5b00; margin-top:12px}
+  .callout{background:var(--amber-soft); border:1px solid #F7DE9A; border-radius:10px; padding:10px 12px; font-size:12px; color:#8a5b00; margin-top:12px}
 
   .dimtables{display:grid; grid-template-columns:1fr 1fr; gap:18px}
   @media (max-width:680px){ .dimtables{grid-template-columns:1fr} }
@@ -200,7 +211,7 @@
   .exec .kbox .k{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em}
   .exec .kbox .v{font-family:var(--mono); font-size:22px; font-weight:600; margin-top:6px}
   .exec .kbox .s{font-size:11px; color:var(--faint); margin-top:4px}
-  .exec .kbox.hl{background:var(--teal-soft); border-color:#aee3d2}
+  .exec .kbox.hl{background:var(--teal-soft); border-color:#BCE3CB}
   .exec .kbox.hl .v{color:var(--teal)}
   .exec table.rep{width:100%; border-collapse:collapse; font-size:13px}
   .exec table.rep th,.exec table.rep td{padding:8px 10px; border-bottom:1px solid var(--line-soft); text-align:right}
@@ -217,7 +228,7 @@
   @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
   @media print{
     body{background:#fff}
-    .top .topright .lang, .tabs, aside, .view:not(#view-exec), .exec .noprint, .printbtn{display:none!important}
+    .top .topright .lang, .ptabs, .tabs, aside, .view:not(#view-exec), .exec .noprint, .printbtn{display:none!important}
     #view-exec{display:block!important}
     .shell{grid-template-columns:1fr}
     .exec{border:0; box-shadow:none; padding:0}
@@ -225,36 +236,36 @@
   }
   /* ===== Guía integrada ===== */
   #view-guia{max-width:880px}
-  #view-guia .gl-eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:28px 0 14px}
+  #view-guia .gl-eyebrow{font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:15px 0 8px}
   #view-guia .gl-eyebrow:first-child{margin-top:2px}
-  #view-guia .gl-lede{font-size:16px; color:var(--muted); max-width:64ch; margin:0 0 18px}
-  #view-guia .gl-band{background:var(--ink); color:#fff; border-radius:14px; padding:18px 20px; margin:0 0 8px; box-shadow:var(--shadow)}
+  #view-guia .gl-lede{font-size:14.5px; color:var(--muted); max-width:72ch; margin:0 0 12px}
+  #view-guia .gl-band{background:var(--ink); color:#fff; border-radius:12px; padding:12px 16px; margin:0 0 6px; box-shadow:var(--shadow)}
   #view-guia .gl-band h3{color:#fff; font-size:15px; margin:0 0 6px}
-  #view-guia .gl-band p{margin:0; color:#C5CEE6; font-size:14px}
-  #view-guia .gl-band .m{font-family:var(--mono); color:#FFCE7A}
-  #view-guia .gl-step{display:grid; grid-template-columns:54px 1fr; gap:16px; padding:0 0 22px; position:relative}
+  #view-guia .gl-band p{margin:0; color:#C6CCDA; font-size:14px}
+  #view-guia .gl-band .m{font-family:var(--mono); color:#22B0E1}
+  #view-guia .gl-step{display:grid; grid-template-columns:42px 1fr; gap:13px; padding:0 0 13px; position:relative}
   #view-guia .gl-rail{display:flex; justify-content:center; position:relative}
-  #view-guia .gl-num{width:40px; height:40px; border-radius:11px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:600; font-size:15px; color:var(--indigo); box-shadow:var(--shadow); z-index:1}
-  #view-guia .gl-step:not(:last-child) .gl-rail::after{content:""; position:absolute; top:42px; bottom:-22px; left:50%; width:2px; background:var(--line); transform:translateX(-50%)}
-  #view-guia .gl-card{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:16px 18px; box-shadow:var(--shadow)}
-  #view-guia .gl-card h3{font-size:17px; margin:0 0 6px}
-  #view-guia .gl-where{display:inline-block; font-family:var(--mono); font-size:11px; background:var(--indigo-soft); color:var(--indigo); padding:3px 9px; border-radius:999px; margin-bottom:9px}
-  #view-guia .gl-card p{margin:0 0 6px} #view-guia .gl-card ul{margin:6px 0 0; padding-left:18px} #view-guia .gl-card li{margin:3px 0}
-  #view-guia .gl-tip{margin-top:11px; font-size:13px; color:var(--muted); background:var(--surface2); border-left:3px solid var(--amber); border-radius:0 8px 8px 0; padding:8px 11px}
+  #view-guia .gl-num{width:32px; height:32px; border-radius:9px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:600; font-size:14px; color:var(--indigo); box-shadow:var(--shadow); z-index:1}
+  #view-guia .gl-step:not(:last-child) .gl-rail::after{content:""; position:absolute; top:34px; bottom:-13px; left:50%; width:2px; background:var(--line); transform:translateX(-50%)}
+  #view-guia .gl-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 14px; box-shadow:var(--shadow)}
+  #view-guia .gl-card h3{font-size:15px; margin:0 0 4px}
+  #view-guia .gl-where{display:inline-block; font-family:var(--mono); font-size:10.5px; background:var(--indigo-soft); color:var(--indigo); padding:2px 8px; border-radius:999px; margin-bottom:6px}
+  #view-guia .gl-card p{margin:0 0 4px; font-size:13.5px} #view-guia .gl-card ul{margin:4px 0 0; padding-left:17px; font-size:13.5px} #view-guia .gl-card li{margin:2px 0}
+  #view-guia .gl-tip{margin-top:8px; font-size:12.5px; color:var(--muted); background:var(--surface2); border-left:3px solid var(--amber); border-radius:0 8px 8px 0; padding:7px 10px}
   #view-guia .gl-tip b{color:var(--ink)}
   #view-guia code{font-family:var(--mono); font-size:.88em; background:var(--surface2); border:1px solid var(--line); padding:1px 6px; border-radius:6px}
-  #view-guia .gl-sgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px}
-  #view-guia .gl-scn{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:14px 16px; box-shadow:var(--shadow)}
+  #view-guia .gl-sgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px}
+  #view-guia .gl-scn{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 13px; box-shadow:var(--shadow)}
   #view-guia .gl-scn .d{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; vertical-align:1px}
   #view-guia .gl-scn h4{font-family:var(--disp); font-size:14px; margin:0 0 5px; font-weight:600}
   #view-guia .gl-scn p{margin:0; font-size:13.5px; color:var(--muted)}
   #view-guia .gl-scn.a{border-top:3px solid var(--indigo)} #view-guia .gl-scn.a .d{background:var(--indigo)}
   #view-guia .gl-scn.c{border-top:3px solid var(--teal)} #view-guia .gl-scn.c .d{background:var(--teal)}
   #view-guia .gl-scn.b{border-top:3px solid var(--rose)} #view-guia .gl-scn.b .d{background:var(--rose)}
-  #view-guia .gl-gloss{background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:4px 18px; box-shadow:var(--shadow)}
-  #view-guia .gl-gloss dt{font-family:var(--disp); font-weight:600; font-size:14px; margin-top:14px}
-  #view-guia .gl-gloss dd{margin:3px 0 12px; color:var(--muted); font-size:14px}
-  #view-guia .gl-foot{margin:26px 0 8px; padding-top:16px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint)}
+  #view-guia .gl-gloss{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:2px 15px; box-shadow:var(--shadow)}
+  #view-guia .gl-gloss dt{font-family:var(--disp); font-weight:600; font-size:13.5px; margin-top:9px}
+  #view-guia .gl-gloss dd{margin:2px 0 8px; color:var(--muted); font-size:13.5px}
+  #view-guia .gl-foot{margin:14px 0 6px; padding-top:11px; border-top:1px solid var(--line); font-size:12px; color:var(--faint)}
   #view-guia .gl-cta{margin-top:8px; font-size:13px; padding:10px 18px}
 </style>
 </head>
@@ -318,6 +329,11 @@
         <div class="hint" style="margin-top:8px" data-i18n="ref_hint">Referencia para el perfil y la tabla diaria. El consumo de la flota usa el Inventario.</div>
       </div>
       <div class="panel">
+        <h2 data-i18n="invest_title">Inversión y payback</h2>
+        <div class="field"><label><span data-i18n="node_cost">Costo por nodo</span> <span class="u">US$</span></label><input type="number" id="nodeCost" step="1" value="" placeholder="—"></div>
+        <div class="hint" data-i18n="invest_hint">Costo del nodo inteligente por luminaria. El payback compara la inversión total con el ahorro anual frente a la base.</div>
+      </div>
+      <div class="panel">
         <h2 data-i18n="dimming">Dimerización</h2>
         <div class="hint" style="margin:0" data-i18n="dim_side">Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.</div>
         <div class="dimmini" id="dimMini"></div>
@@ -325,15 +341,20 @@
     </aside>
 
     <main>
-      <div class="tabs" id="tabs">
-        <div class="tab active" data-tab="guia" data-i18n="t_guia">Guía</div>
-        <div class="tab" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
-        <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
-        <div class="tab" data-tab="perfil" data-i18n="t_perfil">Perfil diario</div>
-        <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
-        <div class="tab" data-tab="inventario" data-i18n="t_inv">Inventario</div>
-        <div class="tab" data-tab="tabla" data-i18n="t_tabla">Tabla anual</div>
-        <div class="tab" data-tab="exec" data-i18n="t_exec">Resumen ejecutivo</div>
+      <div class="ptabs" id="ptabs">
+        <div class="ptab active" data-group="guia" data-i18n="t_guia">Guía</div>
+        <div class="ptab" data-group="cfg" data-i18n="cfg_group">Configurar</div>
+        <div class="ptab" data-group="res" data-i18n="res_group">Resultados</div>
+        <div class="ptab" data-group="ana" data-i18n="ana_group">Análisis</div>
+      </div>
+      <div class="tabs" id="tabs" style="display:none">
+        <div class="tab" data-tab="inventario" data-group="cfg" data-i18n="t_inv">Inventario</div>
+        <div class="tab" data-tab="escenarios" data-group="cfg" data-i18n="t_escenarios">Escenarios</div>
+        <div class="tab" data-tab="dim" data-group="cfg" data-i18n="t_dim">Dimerización</div>
+        <div class="tab" data-tab="resumen" data-group="res" data-i18n="t_resumen">Resumen</div>
+        <div class="tab" data-tab="exec" data-group="res" data-i18n="t_exec">Resumen ejecutivo</div>
+        <div class="tab" data-tab="perfil" data-group="ana" data-i18n="t_perfil">Perfil diario</div>
+        <div class="tab" data-tab="tabla" data-group="ana" data-i18n="t_tabla">Tabla anual</div>
       </div>
 
       <!-- GUIA -->
@@ -384,7 +405,7 @@
         <div class="gl-step"><div class="gl-rail"><div class="gl-num">8</div></div><div class="gl-card">
           <span class="gl-where">Pestaña · Resumen ejecutivo</span><h3>Exporta el informe</h3>
           <p>Genera el documento para presentar: configuración, resultados, ahorros, estrategia de dimerización, comparación, gráficos y tablas mensuales.</p>
-          <ul><li><b>Descargar PDF</b> — dos páginas: resumen + consumos mensuales y ahorros.</li><li><b>Tabla anual → Descargar CSV</b> — el perfil completo para Excel.</li></ul></div></div>
+          <ul><li><b>Descargar PDF</b> — dos páginas: resumen + consumos mensuales y ahorros.</li><li><b>Tabla anual → Descargar Excel/CSV</b> — horas de encendido y el perfil horario completo.</li></ul></div></div>
 
         <div class="gl-eyebrow">Los tres escenarios</div>
         <div class="gl-sgrid">
@@ -452,7 +473,7 @@
         <div class="gl-step"><div class="gl-rail"><div class="gl-num">8</div></div><div class="gl-card">
           <span class="gl-where">Tab · Executive summary</span><h3>Export the report</h3>
           <p>Generate the document to present: configuration, results, savings, dimming strategy, comparison, charts and monthly tables.</p>
-          <ul><li><b>Download PDF</b> — two pages: summary + monthly consumption and savings.</li><li><b>Annual table → Download CSV</b> — the full profile for Excel.</li></ul></div></div>
+          <ul><li><b>Download PDF</b> — two pages: summary + monthly consumption and savings.</li><li><b>Annual table → Download Excel/CSV</b> — operating hours and the full hourly profile.</li></ul></div></div>
 
         <div class="gl-eyebrow">The three scenarios</div>
         <div class="gl-sgrid">
@@ -478,11 +499,12 @@
       <!-- RESUMEN -->
       <section class="view" id="view-resumen">
         <div class="cards">
-          <div class="card astro"><span class="tag astro" data-i18n="tag_astro">Astronómico</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rA">—</div><div class="s" id="rAs">—</div></div>
-          <div class="card" id="cardC" style="border-top:3px solid var(--teal)"><span class="tag" style="background:var(--teal-soft);color:var(--teal)" data-i18n="tag_nodim">Astro s/dim</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rC" style="color:var(--teal)">—</div><div class="s" id="rCs">—</div></div>
-          <div class="card fixed" id="cardB"><span class="tag fixed" data-i18n="tag_fixed">Horario fijo</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rB">—</div><div class="s" id="rBs">—</div></div>
-          <div class="card save" id="cardSch"><div class="k" data-i18n="save_sched">Ahorro astronómico vs fijo</div><div class="v" id="rSch">—</div><div class="s" id="rSchs">—</div></div>
-          <div class="card save"><div class="k" data-i18n="save_dim">Ahorro por dimerización</div><div class="v" id="rDim">—</div><div class="s" id="rDims">—</div></div>
+          <div class="card astro"><span class="tag astro" data-i18n="tag_astro">Astronómico</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rA">—</div><div class="vm" id="rAm">—</div><div class="s" id="rAs">—</div></div>
+          <div class="card" id="cardC" style="border-top:3px solid var(--teal)"><span class="tag" style="background:var(--teal-soft);color:var(--teal)" data-i18n="tag_nodim">Astro s/dim</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rC" style="color:var(--teal)">—</div><div class="vm" id="rCm">—</div><div class="s" id="rCs">—</div></div>
+          <div class="card fixed" id="cardB"><span class="tag fixed" data-i18n="tag_fixed">Horario fijo</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rB">—</div><div class="vm" id="rBm">—</div><div class="s" id="rBs">—</div></div>
+          <div class="card save" id="cardSch"><div class="k" data-i18n="save_sched">Ahorro astronómico vs fijo</div><div class="v" id="rSch">—</div><div class="vm" id="rSchm">—</div><div class="s" id="rSchs">—</div></div>
+          <div class="card save"><div class="k" data-i18n="save_dim">Ahorro por dimerización</div><div class="v" id="rDim">—</div><div class="vm" id="rDimm">—</div><div class="s" id="rDims">—</div></div>
+          <div class="card pay" id="cardPay"><span class="tag" style="background:var(--indigo-soft);color:var(--indigo)" data-i18n="pay_tag">Payback</span><div class="k" data-i18n="pay_k">Recuperación de inversión</div><div class="v" id="rPay">—</div><div class="vm" id="rPaym">—</div><div class="s" id="rPays">—</div></div>
         </div>
         <div class="section">
           <div class="head"><h2 data-i18n="month_title">Consumo de energía mes a mes</h2><p data-i18n="month_sub">Energía de la flota por mes.</p></div>
@@ -512,6 +534,7 @@
             <div class="field"><label data-i18n="off_on">Encendido vs atardecer <span class="u">min</span></label><input type="number" id="offEnc" step="1" value="0"></div>
             <div class="field"><label data-i18n="off_off">Apagado vs amanecer <span class="u">min</span></label><input type="number" id="offApag" step="1" value="0"></div>
             <label class="toggle"><input type="checkbox" id="dimA" checked> <span data-i18n="apply_dim">Aplicar dimerización</span></label>
+            <div class="gl-tip" style="margin-top:10px" data-i18n="ast_offhint">Los minutos son un ajuste sobre el sol: 0 = enciende justo al atardecer y apaga al amanecer. Un valor positivo retrasa el encendido/apagado; uno negativo lo adelanta.</div>
           </div>
           <div class="scn fixed">
             <h3><span class="dot fixed"></span><span data-i18n="sc_fixed">Horario fijo (escenario a comparar)</span></h3>
@@ -568,7 +591,7 @@
             <div style="font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr);margin:0 0 4px" id="hourlbl"></div>
             <canvas id="heat" width="960" height="900"></canvas>
             <div class="legend">
-              <span><span class="sw" style="background:#EEF1F8;border:1px solid var(--line)"></span><span data-i18n="lg_off">Apagada</span></span>
+              <span><span class="sw" style="background:var(--line-soft);border:1px solid var(--line)"></span><span data-i18n="lg_off">Apagada</span></span>
               <span><span class="sw" style="background:var(--amber-soft)"></span><span data-i18n="lg_dim">Dimerizada</span></span>
               <span><span class="sw" style="background:var(--amber)"></span><span data-i18n="lg_full">Plena</span></span>
               <span><span class="sw" style="background:var(--rose)"></span><span data-i18n="lg_edge">Encendido/apagado (parcial)</span></span>
@@ -595,7 +618,7 @@
               </span>
             </div>
             <div class="legend" style="margin-top:12px">
-              <span><span class="sw" style="background:#EEF1F8;border:1px solid var(--line)"></span><span data-i18n="lg_zero">0% (apagada)</span></span>
+              <span><span class="sw" style="background:var(--line-soft);border:1px solid var(--line)"></span><span data-i18n="lg_zero">0% (apagada)</span></span>
               <span><span class="sw" style="background:var(--amber-soft)"></span><span data-i18n="lg_low">baja</span></span>
               <span><span class="sw" style="background:var(--amber)"></span><span data-i18n="lg_full100">plena (100%)</span></span>
             </div>
@@ -631,6 +654,7 @@
             <div class="note" id="hoursAvg" style="margin-top:8px"></div>
           </div>
           <div class="tablewrap" style="max-height:420px;margin-top:14px"><table class="grid" id="hoursTbl"><thead></thead><tbody></tbody></table></div>
+          <div class="foot"><span class="note" data-i18n="xls_hrs_note">Descarga las horas por día y acumuladas en Excel.</span><button class="btn primary" id="xlsHours" data-i18n="xls_btn">Descargar Excel</button></div>
         </div>
         <div class="section">
           <div class="head"><h2 data-i18n="grid_title">Detalle horario por día</h2><p data-i18n="tbl_note">Una fila por día · 24 columnas horarias · borde rojo = hora parcial de encendido/apagado.</p></div>
@@ -640,7 +664,8 @@
           <div class="tablewrap"><table class="grid" id="tbl"><thead></thead><tbody></tbody></table></div>
           <div class="foot">
             <span class="note" data-i18n="csv_note">Exporta el perfil completo para llevarlo a Excel.</span>
-            <button class="btn primary" id="csv" data-i18n="csv_btn">Descargar CSV</button>
+            <button class="btn" id="csv" data-i18n="csv_btn">Descargar CSV</button>
+            <button class="btn primary" id="xlsGrid" data-i18n="xls_btn">Descargar Excel</button>
           </div>
         </div>
       </section>
@@ -668,13 +693,13 @@ const DICT={
   country:"País / ciudad", lat:"Latitud", lon:"Longitud", tz:"Zona horaria", dst:"Cambio de horario",
   dst_none:"Ninguno", dst_eu:"Unión Europea", dst_us:"Norteamérica / Caribe", dst_chile:"Chile", dst_py:"Paraguay",
   tariff_ref:"Tarifa y referencia", tariff:"Tarifa", ref_lum:"Luminaria de referencia",
-  eu_unit:"Unidad de energía", eu_auto:"Auto", use_local:"Usar moneda local", cur_sym:"Moneda (símbolo)", cur_rate:"Tasa (local por US$)", cur_hint:"Tasas aproximadas, edítalas según el cambio real.", base_pref:"Base del %:",
+  eu_unit:"Unidad de energía", eu_auto:"Auto", invest_title:"Inversión y payback", cfg_group:"Configurar", res_group:"Resultados", ana_group:"Análisis", node_cost:"Costo por nodo", invest_hint:"Costo del nodo inteligente por luminaria. El payback compara la inversión total con el ahorro anual frente a la base.", pay_tag:"Payback", pay_k:"Recuperación de inversión", years:"años", pay_invest:"inversión", pay_nodes:"nodos", pay_setcost:"Ingresa el costo por nodo", pay_noinfo:"Sin ahorro frente a la base", use_local:"Usar moneda local", cur_sym:"Moneda (símbolo)", cur_rate:"Tasa (local por US$)", cur_hint:"Tasas aproximadas, edítalas según el cambio real.", base_pref:"Base del %:",
   ref_hint:"Referencia para el perfil y la tabla diaria. El consumo de la flota usa el Inventario.",
   dimming:"Dimerización", dim_side:"Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.",
   t_guia:"Guía", t_resumen:"Resumen", t_escenarios:"Escenarios", t_perfil:"Perfil diario", t_dim:"Dimerización", t_inv:"Inventario", t_tabla:"Tabla anual", t_exec:"Resumen ejecutivo",
   tag_astro:"Astronómico", tag_fixed:"Horario fijo", tag_nodim:"Astro s/dim", energy_year:"Energía / año",
-  sc_nodim:"Astronómico sin dimerización", sc_nodim_d:"Sigue el sol pero a plena potencia, con sus propias ventanas. Útil para aislar el efecto de la dimerización.", ena_C:"Incluir en comparaciones", lyr_nodim:"Astro sin dim", c_astro_dim:"Astronómico c/dim", c_astro_nodim:"Astronómico s/dim", desc_only:"Mostrando solo", desc_addmore:"Activa otro perfil para comparar.", v_dimv:"La dimerización ahorra:", hrs_title:"Horas de encendido acumuladas", hrs_sub:"Horas que las luminarias están encendidas, por día y acumulado en el año.", th_dia:"Día", th_hday:"Horas (día)", th_acc:"Acumulado (año)", pct_base:"% vs base", base:"base", pct_month:"% ahorro mensual", grid_title:"Detalle horario por día",
-  exp_config:"Parámetros usados para todos los cálculos del informe.", exp_dim_title:"Estrategia de dimerización", exp_dim:"Porcentaje de potencia aplicado en cada franja; se combina con la ventana de encendido astronómica.", nodim_txt:"Sin dimerización: potencia plena durante toda la ventana de encendido.", dim_off:"apagada", exp_key:"Resultado principal: el reloj astronómico con tu perfil de dimerización (escenario recomendado).", exp_save:"Cuánto se ahorra: por dimerización (bajar potencia) y por seguir el sol en vez de un horario fijo.", exp_detail:"Mismos indicadores lado a lado para cada escenario activo.", exp_month:"Energía de la flota mes a mes por escenario; la última fila es el % de ahorro mensual frente a la base.", exp_oper:"Horas que las luminarias están encendidas y minutos que se ahorran por día al seguir el sol.", exp_hours:"Horas de operación y minutos ahorrados, desglosados por mes.", pdf_p2_title:"Consumos mensuales y ahorros", pdf_energy_m:"Energía mensual de la flota", pdf_cost_m:"Costo mensual de la flota", ex_hours_title:"Horas de operación y minutos por mes", avg_hpn:"Prom. h/noche", min_vs_fix:"Min vs fijo/día", acc_min:"Acum. min", avg_min:"Promedio", ex_oper_title:"Operación y minutos ahorrados", ex_oper_hours:"Horas de operación / año", min_saved_day:"Minutos ahorrados / día", hrs_saved_year:"Horas ahorradas / año", min_day:"min/día",
+  sc_nodim:"Astronómico sin dimerización", sc_nodim_d:"Sigue el sol a plena potencia (sin bajar intensidad), como una fotocelda común: imita un sistema sin telegestión. Útil para aislar el efecto de la dimerización.", ena_C:"Incluir en comparaciones", lyr_nodim:"Astro sin dim", c_astro_dim:"Astronómico c/dim", c_astro_nodim:"Astronómico s/dim", desc_only:"Mostrando solo", desc_addmore:"Activa otro perfil para comparar.", v_dimv:"La dimerización ahorra:", hrs_title:"Horas de encendido acumuladas", hrs_sub:"Horas que las luminarias están encendidas, por día y acumulado en el año.", th_dia:"Día", th_hday:"Horas (día)", th_acc:"Acumulado (año)", pct_base:"% vs base", base:"base", pct_month:"% ahorro mensual", grid_title:"Detalle horario por día", xls_btn:"Descargar Excel", xls_hrs_note:"Descarga las horas por día y acumuladas en Excel.", ast_offhint:"Los minutos son un ajuste sobre el sol: 0 = enciende justo al atardecer y apaga al amanecer. Un valor positivo retrasa el encendido/apagado; uno negativo lo adelanta.", ex_astro_note:"Los horarios del reloj astronómico (atardecer → amanecer) son los del día seleccionado en el análisis y cambian cada día con el sol. El horario fijo se incluye solo como escenario de comparación cuando está activado.",
+  exp_config:"Parámetros usados para todos los cálculos del informe.", exp_dim_title:"Estrategia de dimerización", exp_dim:"Porcentaje de potencia aplicado en cada franja; se combina con la ventana de encendido astronómica.", nodim_txt:"Sin dimerización: potencia plena durante toda la ventana de encendido.", dim_off:"apagada", exp_key:"Resultado principal: el reloj astronómico con tu perfil de dimerización (escenario recomendado).", exp_save:"Cuánto se ahorra: por dimerización (bajar potencia) y por seguir el sol en vez de un horario fijo.", exp_detail:"Mismos indicadores lado a lado para cada escenario activo.", exp_month:"Energía de la flota mes a mes por escenario; la última fila es el % de ahorro mensual frente a la base.", exp_oper:"Cuántas horas al año permanecen encendidas las luminarias y cuántos minutos se ahorran cada día al encender/apagar con el sol en lugar de un horario fijo: el reloj astronómico evita encender con luz de día o apagar cuando aún es de noche.", exp_hours:"Horas de operación y minutos ahorrados, desglosados por mes.", pdf_p2_title:"Consumos mensuales y ahorros", pdf_energy_m:"Energía mensual de la flota", pdf_cost_m:"Costo mensual de la flota", ex_hours_title:"Horas de operación y minutos por mes", avg_hpn:"Prom. h/noche", min_vs_fix:"Min vs fijo/día", acc_min:"Acum. min", avg_min:"Promedio", ex_oper_title:"Operación y minutos ahorrados", ex_oper_hours:"Horas de operación / año", min_saved_day:"Minutos ahorrados / día", hrs_saved_year:"Horas ahorradas / año", min_day:"min/día",
   save_sched:"Ahorro astronómico vs fijo", save_dim:"Ahorro por dimerización",
   month_title:"Consumo de energía mes a mes", month_sub:"Energía de la flota por mes (kWh, cambia a MWh/GWh si es grande). Activa US$ para ver el costo.",
   lyr_astro:"Reloj astronómico", lyr_fixed:"Horario fijo", lyr_money:"Mostrar importe",
@@ -728,13 +753,13 @@ const DICT={
   country:"Country / city", lat:"Latitude", lon:"Longitude", tz:"Time zone", dst:"Daylight saving",
   dst_none:"None", dst_eu:"European Union", dst_us:"North America / Caribbean", dst_chile:"Chile", dst_py:"Paraguay",
   tariff_ref:"Tariff & reference", tariff:"Tariff", ref_lum:"Reference luminaire",
-  eu_unit:"Energy unit", eu_auto:"Auto", use_local:"Use local currency", cur_sym:"Currency (symbol)", cur_rate:"Rate (local per US$)", cur_hint:"Approximate rates, edit to match the real exchange rate.", base_pref:"% base:",
+  eu_unit:"Energy unit", eu_auto:"Auto", invest_title:"Investment & payback", cfg_group:"Configure", res_group:"Results", ana_group:"Analysis", node_cost:"Cost per node", invest_hint:"Smart-node cost per luminaire. Payback compares total investment with annual savings vs the base.", pay_tag:"Payback", pay_k:"Investment payback", years:"yrs", pay_invest:"investment", pay_nodes:"nodes", pay_setcost:"Enter cost per node", pay_noinfo:"No savings vs base", use_local:"Use local currency", cur_sym:"Currency (symbol)", cur_rate:"Rate (local per US$)", cur_hint:"Approximate rates, edit to match the real exchange rate.", base_pref:"% base:",
   ref_hint:"Reference for the profile and daily table. Fleet consumption uses the Inventory.",
   dimming:"Dimming", dim_side:"Edit it per half hour in the Dimming tab. Here is a preview.",
   t_guia:"Guide", t_resumen:"Summary", t_escenarios:"Scenarios", t_perfil:"Daily profile", t_dim:"Dimming", t_inv:"Inventory", t_tabla:"Annual table", t_exec:"Executive summary",
   tag_astro:"Astronomical", tag_fixed:"Fixed schedule", tag_nodim:"Astro no-dim", energy_year:"Energy / year",
-  sc_nodim:"Astronomical, no dimming", sc_nodim_d:"Tracks the sun at full power, with its own windows. Useful to isolate the dimming effect.", ena_C:"Include in comparisons", lyr_nodim:"Astro no-dim", c_astro_dim:"Astronomical w/dim", c_astro_nodim:"Astronomical no-dim", desc_only:"Showing only", desc_addmore:"Enable another profile to compare.", v_dimv:"Dimming saves:", hrs_title:"Accumulated operating hours", hrs_sub:"Hours luminaires are on, per day and cumulative over the year.", th_dia:"Day", th_hday:"Hours (day)", th_acc:"Cumulative (yr)", pct_base:"% vs base", base:"base", pct_month:"% monthly savings", grid_title:"Hourly detail per day",
-  exp_config:"Parameters used for every calculation in the report.", exp_dim_title:"Dimming strategy", exp_dim:"Power percentage applied in each slot; it is combined with the astronomical on-window.", nodim_txt:"No dimming: full power during the whole on-window.", dim_off:"off", exp_key:"Headline result: the astronomical clock with your dimming profile (recommended scenario).", exp_save:"How much is saved: by dimming (lowering power) and by tracking the sun instead of a fixed schedule.", exp_detail:"Same indicators side by side for each active scenario.", exp_month:"Fleet energy month by month per scenario; the last row is the monthly % savings vs the base.", exp_oper:"Hours the luminaires are on and minutes saved per day by tracking the sun.", exp_hours:"Operating hours and minutes saved, broken down by month.", pdf_p2_title:"Monthly consumption & savings", pdf_energy_m:"Monthly fleet energy", pdf_cost_m:"Monthly fleet cost", ex_hours_title:"Operating hours & minutes per month", avg_hpn:"Avg h/night", min_vs_fix:"Min vs fixed/day", acc_min:"Cum. min", avg_min:"Average", ex_oper_title:"Operation & minutes saved", ex_oper_hours:"Operating hours / year", min_saved_day:"Minutes saved / day", hrs_saved_year:"Hours saved / year", min_day:"min/day",
+  sc_nodim:"Astronomical, no dimming", sc_nodim_d:"Tracks the sun at full power (no dimming), like a standard photocell: it mimics a system without remote management. Useful to isolate the dimming effect.", ena_C:"Include in comparisons", lyr_nodim:"Astro no-dim", c_astro_dim:"Astronomical w/dim", c_astro_nodim:"Astronomical no-dim", desc_only:"Showing only", desc_addmore:"Enable another profile to compare.", v_dimv:"Dimming saves:", hrs_title:"Accumulated operating hours", hrs_sub:"Hours luminaires are on, per day and cumulative over the year.", th_dia:"Day", th_hday:"Hours (day)", th_acc:"Cumulative (yr)", pct_base:"% vs base", base:"base", pct_month:"% monthly savings", grid_title:"Hourly detail per day", xls_btn:"Download Excel", xls_hrs_note:"Download daily and cumulative hours to Excel.", ast_offhint:"The minutes are an offset from the sun: 0 = turns on right at sunset and off at sunrise. A positive value delays on/off; a negative one brings it earlier.", ex_astro_note:"The astronomical clock times (sunset → sunrise) are those of the day selected in the analysis and change every day with the sun. The fixed schedule is included only as a comparison scenario when enabled.",
+  exp_config:"Parameters used for every calculation in the report.", exp_dim_title:"Dimming strategy", exp_dim:"Power percentage applied in each slot; it is combined with the astronomical on-window.", nodim_txt:"No dimming: full power during the whole on-window.", dim_off:"off", exp_key:"Headline result: the astronomical clock with your dimming profile (recommended scenario).", exp_save:"How much is saved: by dimming (lowering power) and by tracking the sun instead of a fixed schedule.", exp_detail:"Same indicators side by side for each active scenario.", exp_month:"Fleet energy month by month per scenario; the last row is the monthly % savings vs the base.", exp_oper:"How many hours per year the luminaires stay on, and how many minutes are saved each day by switching with the sun instead of a fixed schedule: the astronomical clock avoids turning on in daylight or off while it is still dark.", exp_hours:"Operating hours and minutes saved, broken down by month.", pdf_p2_title:"Monthly consumption & savings", pdf_energy_m:"Monthly fleet energy", pdf_cost_m:"Monthly fleet cost", ex_hours_title:"Operating hours & minutes per month", avg_hpn:"Avg h/night", min_vs_fix:"Min vs fixed/day", acc_min:"Cum. min", avg_min:"Average", ex_oper_title:"Operation & minutes saved", ex_oper_hours:"Operating hours / year", min_saved_day:"Minutes saved / day", hrs_saved_year:"Hours saved / year", min_day:"min/day",
   save_sched:"Astronomical vs fixed savings", save_dim:"Dimming savings",
   month_title:"Monthly energy consumption", month_sub:"Fleet energy per month (kWh, switches to MWh/GWh when large). Toggle US$ for cost.",
   lyr_astro:"Astronomical clock", lyr_fixed:"Fixed schedule", lyr_money:"Show amount",
@@ -866,7 +891,7 @@ const S={
   inventory:[{name:"Vial 100 W",qty:2000,power:100,dim:true},{name:"Vial 150 W",qty:800,power:150,dim:true},{name:"Peatonal 70 W",qty:1200,power:70,dim:true},{name:"LED 250 W avenida",qty:300,power:250,dim:false}],
   selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"guia",
   yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true}, monthLayers:{a:true,c:true,b:true,money:false},
-  energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B",
+  energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B", nodeCost:0,
 };
 
 /* ============ cálculo ============ */
@@ -930,6 +955,16 @@ function energyUnit(max){if(S.energyUnit==="kWh")return{div:1,u:"kWh"};if(S.ener
 function moneyScale(max){const sy=curSym();if(max>=1e6)return{div:1e6,u:"M "+sy};if(max>=1e3)return{div:1e3,u:"k "+sy};return{div:1,u:sy};}
 function efmt(v){const a=Math.abs(v)||1;const u=energyUnit(a);const r=a/u.div;const d=r<10?2:(r<100?1:0);return nf(v/u.div,d)+" "+u.u;}
 function baseKeyFor(){const p=S.baseScn;if(p==="B"&&S.B.enabled)return "B";if(p==="C"&&S.C.enabled)return "C";if(S.B.enabled)return "B";if(S.C.enabled)return "C";return null;}
+function payback(){
+  const nodes=S.inventory.reduce((a,g)=>a+(+g.qty||0),0);
+  const invest=(+S.nodeCost||0)*nodes;
+  const bk=baseKeyFor();
+  const baseE = bk==="B"?eKWh("B") : bk==="C"?eKWh("C") : IKW*RA.onH;
+  const saveKWh=baseE-savings().kAstroDim;
+  const annual=saveKWh*S.tariff;
+  const years=annual>0?invest/annual:null;
+  return {nodes,invest,annual,saveKWh,years};
+}
 function dimRanges(){const segs=[];let start=0;for(let k=1;k<=48;k++){if(k===48||S.dim[k]!==S.dim[start]){segs.push({from:start,to:k-1,val:S.dim[start]});start=k;}}return segs;}
 function dimStrategyText(){if(!S.A.useDim)return t("nodim_txt");
   return dimRanges().map(sg=>{const f=hhmm(sg.from*0.5),tt=hhmm((sg.to+1)*0.5);const lvl=sg.val===0?t("dim_off"):sg.val+"%";return `${f}–${tt}: ${lvl}`;}).join(" · ");}
@@ -962,20 +997,30 @@ function renderCards(){
   const x=savings(); const kC=eKWh("C");
   const maxE=Math.max(x.kAstroDim,x.kFixed,kC,Math.abs(x.schedSave),x.dimSave,1);
   const eu=energyUnit(maxE); const rE=maxE/eu.div; const dE=rE<10?2:(rE<100?1:0); const ev=v=>nf(v/eu.div,dE)+" "+eu.u;
-  document.getElementById("rA").textContent=ev(x.kAstroDim);
-  document.getElementById("rAs").textContent=t("flota")+" · "+money(x.kAstroDim*S.tariff)+t("per_year");
-  document.getElementById("cardC").style.display=S.C.enabled?"":"none";
-  document.getElementById("cardB").style.display=S.B.enabled?"":"none";
-  document.getElementById("cardSch").style.display=S.B.enabled?"":"none";
-  document.getElementById("rC").textContent=ev(kC);
-  document.getElementById("rCs").textContent=t("flota")+" · "+money(kC*S.tariff)+t("per_year");
-  document.getElementById("rB").textContent=ev(x.kFixed);
-  document.getElementById("rBs").textContent=t("flota")+" · "+money(x.kFixed*S.tariff)+t("per_year");
-  const pos=x.schedSave>=0; const sch=document.getElementById("rSch");
-  sch.textContent=(pos?"":"−")+ev(Math.abs(x.schedSave)); sch.style.color=pos?"var(--teal)":"var(--rose)";
-  document.getElementById("rSchs").textContent=money(Math.abs(x.schedSave)*S.tariff)+t("per_year")+" · "+(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"%";
-  document.getElementById("rDim").textContent=ev(x.dimSave);
-  document.getElementById("rDims").textContent=money(x.dimSave*S.tariff)+t("per_year")+" · "+(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"% "+t("vs_nodim");
+  const G=id=>document.getElementById(id);
+  const setC=(v,m,sb,energy,cost,cap)=>{G(v).textContent=ev(energy);G(m).textContent=money(cost)+t("per_year");G(sb).textContent=cap;};
+  setC("rA","rAm","rAs",x.kAstroDim,x.kAstroDim*S.tariff,t("flota"));
+  G("cardC").style.display=S.C.enabled?"":"none";
+  G("cardB").style.display=S.B.enabled?"":"none";
+  G("cardSch").style.display=S.B.enabled?"":"none";
+  setC("rC","rCm","rCs",kC,kC*S.tariff,t("flota"));
+  setC("rB","rBm","rBs",x.kFixed,x.kFixed*S.tariff,t("flota"));
+  const pos=x.schedSave>=0;
+  G("rSch").textContent=(pos?"":"−")+ev(Math.abs(x.schedSave));
+  G("rSchm").textContent=(pos?"":"−")+money(Math.abs(x.schedSave)*S.tariff)+t("per_year"); G("rSchm").style.color=pos?"var(--teal)":"var(--rose)";
+  G("rSchs").textContent=(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"% "+t("vs_fixed");
+  G("rDim").textContent=ev(x.dimSave);
+  G("rDimm").textContent=money(x.dimSave*S.tariff)+t("per_year"); G("rDimm").style.color="var(--teal)";
+  G("rDims").textContent=(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"% "+t("vs_nodim");
+  const pb=payback();
+  if(pb.years!=null&&isFinite(pb.years)&&pb.years>0){
+    G("rPay").textContent=nf(pb.years,1)+" "+t("years");
+    G("rPaym").textContent=money(pb.invest)+" "+t("pay_invest"); G("rPaym").style.color="var(--indigo)";
+    G("rPays").textContent=nf(pb.nodes,0)+" "+t("pay_nodes")+" · "+money(pb.annual)+t("per_year");
+  } else {
+    G("rPay").textContent="—"; G("rPaym").style.color="var(--muted)";
+    G("rPaym").textContent=(+S.nodeCost>0)?t("pay_noinfo"):t("pay_setcost"); G("rPays").textContent="";
+  }
   // verdict
   const v=document.getElementById("verdict"); const act=activeScenarios(); const d=x.schedSave;
   if(act.length<=1){const k=IKW*act[0].res.equivH;v.className="verdict s";
@@ -997,13 +1042,13 @@ function barsChart(id,series,o){
   const W=cv.width,H=cv.height,padL=58,padR=12,padT=16,padB=28,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);
   const act=series.filter(s=>s.show); const vals=[]; act.forEach(s=>vals.push(...s.vals)); const max=Math.max(...vals,1)*1.08;
-  ctx.strokeStyle="#E9EDF6";ctx.fillStyle="#94A0BE";ctx.font="11px 'IBM Plex Mono'";ctx.textAlign="right";
+  ctx.strokeStyle="#E2E6EF";ctx.fillStyle="#99A0B4";ctx.font="11px 'Lato'";ctx.textAlign="right";
   for(let g=0;g<=4;g++){const y=padT+ph*(1-g/4);ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText(o.axisFmt(max*g/4),padL-8,y+3);}
-  if(o.unit){ctx.fillStyle="#5C6788";ctx.font="bold 11px 'IBM Plex Mono'";ctx.textAlign="left";ctx.fillText(o.unit,4,padT-2);}
+  if(o.unit){ctx.fillStyle="#464D63";ctx.font="bold 11px 'Lato'";ctx.textAlign="left";ctx.fillText(o.unit,4,padT-2);}
   const n=act.length||1, gw=pw/12, groupW=gw*0.72, bw=groupW/n, base=padT+ph;
   for(let m=0;m<12;m++){const x0=padL+m*gw+(gw-groupW)/2;
     act.forEach((s,j)=>{const h=ph*(s.vals[m]/max),bx=x0+j*bw;ctx.fillStyle=s.color;ctx.fillRect(bx+1,base-h,bw-2,h);});
-    ctx.fillStyle="#94A0BE";ctx.font="10px 'IBM Plex Mono'";ctx.textAlign="center";ctx.fillText(mes()[m],padL+m*gw+gw/2,H-6);}
+    ctx.fillStyle="#99A0B4";ctx.font="10px 'Lato'";ctx.textAlign="center";ctx.fillText(mes()[m],padL+m*gw+gw/2,H-6);}
 }
 function makeFmts(arrs,kind){const vals=[];arrs.forEach(a=>vals.push(...a));const max=Math.max(...vals,1);
   const sc=kind==="money"?moneyScale(max):energyUnit(max);const r=max/sc.div;const dec=r<10?2:(r<100?1:0);
@@ -1011,16 +1056,16 @@ function makeFmts(arrs,kind){const vals=[];arrs.forEach(a=>vals.push(...a));cons
 function monthSeries(useMoney){
   const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
   return [
-    {vals:mk("A"),color:"#3A4CC0",show:S.monthLayers.a},
-    {vals:mk("C"),color:"#0E9B72",show:S.C.enabled&&S.monthLayers.c},
-    {vals:mk("B"),color:"#D14B36",show:S.B.enabled&&S.monthLayers.b},
+    {vals:mk("A"),color:"#22B0E1",show:S.monthLayers.a},
+    {vals:mk("C"),color:"#4EB270",show:S.C.enabled&&S.monthLayers.c},
+    {vals:mk("B"),color:"#EA561B",show:S.B.enabled&&S.monthLayers.b},
   ];
 }
 function monthRows(useMoney){
   const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
-  const rows=[{key:"A",lab:t("c_astro_dim"),vals:mk("A"),color:"#3A4CC0"}];
-  if(S.C.enabled)rows.push({key:"C",lab:t("c_astro_nodim"),vals:mk("C"),color:"#0E9B72"});
-  if(S.B.enabled)rows.push({key:"B",lab:t("c_fijo"),vals:mk("B"),color:"#D14B36"});
+  const rows=[{key:"A",lab:t("c_astro_dim"),vals:mk("A"),color:"#22B0E1"}];
+  if(S.C.enabled)rows.push({key:"C",lab:t("c_astro_nodim"),vals:mk("C"),color:"#4EB270"});
+  if(S.B.enabled)rows.push({key:"B",lab:t("c_fijo"),vals:mk("B"),color:"#EA561B"});
   return rows;
 }
 function monthTableHTML(useMoney){
@@ -1088,32 +1133,32 @@ function renderYear(id,layers){
   const W=cv.width,H=cv.height,padL=44,padR=12,padT=12,padB=26,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);
   const y0=12,y1=36,Y=h=>padT+ph*((h-y0)/(y1-y0)),X=i=>padL+pw*(i/(N-1));
-  ctx.strokeStyle="#E9EDF6";ctx.fillStyle="#94A0BE";ctx.font="10px 'IBM Plex Mono'";ctx.textAlign="right";
+  ctx.strokeStyle="#E2E6EF";ctx.fillStyle="#99A0B4";ctx.font="10px 'Lato'";ctx.textAlign="right";
   for(let h=12;h<=36;h+=3){const y=Y(h);ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText(String(h%24).padStart(2,"0")+":00",padL-6,y+3);}
   if(layers.night){
     ctx.beginPath();
     for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunset));
     for(let i=N-1;i>=0;i--)ctx.lineTo(X(i),Y(sunCache[i].sunrise+24));
-    ctx.closePath();ctx.fillStyle="rgba(58,76,192,.16)";ctx.fill();
-    ctx.strokeStyle="#3A4CC0";ctx.lineWidth=1.5;
+    ctx.closePath();ctx.fillStyle="rgba(34,176,225,.14)";ctx.fill();
+    ctx.strokeStyle="#22B0E1";ctx.lineWidth=1.5;
     ctx.beginPath();for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunset));ctx.stroke();
     ctx.beginPath();for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunrise+24));ctx.stroke();
   }
   const onB=S.B.on,offB=S.B.off+24;
-  if(layers.excess&&S.B.enabled){ctx.fillStyle="rgba(209,75,54,.22)";
+  if(layers.excess&&S.B.enabled){ctx.fillStyle="rgba(234,86,27,.16)";
     for(let i=0;i<N;i++){const ss=sunCache[i].sunset;if(onB<ss){ctx.fillRect(X(i),Y(onB),Math.max(1,pw/N+1),Y(ss)-Y(onB));}}
     for(let i=0;i<N;i++){const sr=sunCache[i].sunrise+24;if(offB>sr){ctx.fillRect(X(i),Y(sr),Math.max(1,pw/N+1),Y(offB)-Y(sr));}}}
-  if(layers.fixed&&S.B.enabled){ctx.strokeStyle="#D14B36";ctx.setLineDash([6,4]);ctx.lineWidth=1.5;
+  if(layers.fixed&&S.B.enabled){ctx.strokeStyle="#EA561B";ctx.setLineDash([6,4]);ctx.lineWidth=1.5;
     ctx.beginPath();ctx.moveTo(padL,Y(onB));ctx.lineTo(W-padR,Y(onB));ctx.stroke();
     ctx.beginPath();ctx.moveTo(padL,Y(offB));ctx.lineTo(W-padR,Y(offB));ctx.stroke();ctx.setLineDash([]);}
-  if(layers.cprofile&&S.C.enabled){ctx.strokeStyle="#0E9B72";ctx.setLineDash([3,3]);ctx.lineWidth=1.4;
+  if(layers.cprofile&&S.C.enabled){ctx.strokeStyle="#4EB270";ctx.setLineDash([3,3]);ctx.lineWidth=1.4;
     ctx.beginPath();for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunset+S.C.offEnc/60));ctx.stroke();
     ctx.beginPath();for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunrise+24+S.C.offApag/60));ctx.stroke();ctx.setLineDash([]);}
-  ctx.fillStyle="#94A0BE";ctx.textAlign="center";ctx.font="10px 'IBM Plex Mono'";let prev=-1;
+  ctx.fillStyle="#99A0B4";ctx.textAlign="center";ctx.font="10px 'Lato'";let prev=-1;
   for(let i=0;i<N;i++){const mo=sunCache[i].date.getUTCMonth();if(mo!==prev){ctx.fillText(mes()[mo],X(i)+14,H-10);prev=mo;}}
-  if(layers.dst)DSTDAYS.forEach(x=>{const px=X(x.i);ctx.strokeStyle="#7A52B3";ctx.lineWidth=1.5;ctx.setLineDash([2,3]);
+  if(layers.dst)DSTDAYS.forEach(x=>{const px=X(x.i);ctx.strokeStyle="#59509D";ctx.lineWidth=1.5;ctx.setLineDash([2,3]);
     ctx.beginPath();ctx.moveTo(px,padT);ctx.lineTo(px,padT+ph);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle="#7A52B3";ctx.textAlign="center";ctx.fillText(x.s,px,padT+ph-4);});
+    ctx.fillStyle="#59509D";ctx.textAlign="center";ctx.fillText(x.s,px,padT+ph-4);});
 }
 
 /* ============ day chart ============ */
@@ -1123,17 +1168,17 @@ function renderDay(){
   const cv=document.getElementById("dayChart"),ctx=cv.getContext("2d");
   const W=cv.width,H=cv.height,padL=46,padR=10,padT=14,padB=28,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);const maxK=d.Pt*1.05||1;
-  ctx.strokeStyle="#E9EDF6";ctx.fillStyle="#94A0BE";ctx.font="11px 'IBM Plex Mono'";ctx.textAlign="right";
+  ctx.strokeStyle="#E2E6EF";ctx.fillStyle="#99A0B4";ctx.font="11px 'Lato'";ctx.textAlign="right";
   for(let g=0;g<=4;g++){const y=padT+ph*(1-g/4);ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText((maxK*g/4).toFixed(2),padL-6,y+3);}
   const order=[];for(let h=12;h<24;h++)order.push(h);for(let h=0;h<12;h++)order.push(h);
   const bw=pw/24;ctx.textAlign="center";
   order.forEach((h,idx)=>{const hr=d.hours[h];const x=padL+idx*bw;const bh=ph*(hr.kwh/maxK);
-    if(hr.frac>0){ctx.fillStyle=hr.state==="edge"?"#D14B36":(hr.dim<0.999?"#FFD27A":"#E08600");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);}
-    if(idx%3===0){ctx.fillStyle="#94A0BE";ctx.fillText(String(h).padStart(2,"0"),x+bw/2,H-10);}});
+    if(hr.frac>0){ctx.fillStyle=hr.state==="edge"?"#EA561B":(hr.dim<0.999?"#FAB512":"#22B0E1");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);}
+    if(idx%3===0){ctx.fillStyle="#99A0B4";ctx.fillText(String(h).padStart(2,"0"),x+bw/2,H-10);}});
   function mark(hr,color,label){let idx=hr-12;if(idx<0)idx+=24;const x=padL+idx/24*pw;
     ctx.strokeStyle=color;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+ph);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=color;ctx.font="10px 'IBM Plex Mono'";ctx.textAlign="center";ctx.fillText(label,x,padT+9);}
-  mark(d.on,"#E08600",t("ch_enc").toLowerCase()+" "+hhmm(d.on)); mark(d.off,"#3A4CC0",t("ch_apg").toLowerCase()+" "+hhmm(d.off));
+    ctx.fillStyle=color;ctx.font="10px 'Lato'";ctx.textAlign="center";ctx.fillText(label,x,padT+9);}
+  mark(d.on,"#22B0E1",t("ch_enc").toLowerCase()+" "+hhmm(d.on)); mark(d.off,"#22B0E1",t("ch_apg").toLowerCase()+" "+hhmm(d.off));
   const onH=d.hours[Math.floor((d.on%24)+24)%24],offH=d.hours[Math.floor((d.off%24)+24)%24];
   document.getElementById("bd").innerHTML=`
     <h3>${t("calc_how")}</h3>
@@ -1150,7 +1195,7 @@ function renderDay(){
 }
 
 /* ============ heatmap ============ */
-const C_OFF=[238,241,248],C_LO=[255,230,184],C_DUSK=[246,169,30],C_HI=[224,134,0],C_EDGE=[209,75,54];
+const C_OFF=[238,240,245],C_LO=[254,238,200],C_DUSK=[250,181,18],C_HI=[234,86,27],C_EDGE=[30,36,69];
 const mix=(a,b,tt)=>a.map((v,k)=>Math.round(v+(b[k]-v)*tt));
 function cellColor(frac,dim,edge){if(frac<=0)return `rgb(${C_OFF.join(",")})`;if(edge)return `rgb(${C_EDGE.join(",")})`;
   const c=dim<0.7?mix(C_LO,C_DUSK,dim/0.7):mix(C_DUSK,C_HI,(dim-0.7)/0.3);return `rgb(${c.join(",")})`;}
@@ -1162,7 +1207,7 @@ function renderHeat(){
 }
 
 /* ============ dim editor ============ */
-function dimCellColor(p){if(p<=0)return "#EEF1F8";const tt=p/100;const c=tt<0.7?mix([255,230,184],[246,169,30],tt/0.7):mix([246,169,30],[224,134,0],(tt-0.7)/0.3);return `rgb(${c.join(",")})`;}
+function dimCellColor(p){if(p<=0)return "#E8ECF4";const tt=p/100;const c=tt<0.7?mix([254,238,200],[250,181,18],tt/0.7):mix([250,181,18],[234,86,27],(tt-0.7)/0.3);return `rgb(${c.join(",")})`;}
 function buildDimTable(){
   const wrap=document.getElementById("dimTables");wrap.innerHTML="";
   for(let part=0;part<2;part++){const h0=part*12;
@@ -1223,13 +1268,13 @@ function lineChart(id,series,o){
   const W=cv.width,H=cv.height,padL=54,padR=12,padT=14,padB=24,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);
   const all=[];series.forEach(s=>{if(s.show)all.push(...s.vals);});const max=Math.max(...all,1)*1.05;
-  ctx.strokeStyle="#E9EDF6";ctx.fillStyle="#94A0BE";ctx.font="10px 'IBM Plex Mono'";ctx.textAlign="right";
+  ctx.strokeStyle="#E2E6EF";ctx.fillStyle="#99A0B4";ctx.font="10px 'Lato'";ctx.textAlign="right";
   for(let g=0;g<=4;g++){const y=padT+ph*(1-g/4);ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText(o.fmt(max*g/4),padL-6,y+3);}
-  if(o.unit){ctx.fillStyle="#5C6788";ctx.font="bold 10px 'IBM Plex Mono'";ctx.textAlign="left";ctx.fillText(o.unit,4,padT-2);}
+  if(o.unit){ctx.fillStyle="#464D63";ctx.font="bold 10px 'Lato'";ctx.textAlign="left";ctx.fillText(o.unit,4,padT-2);}
   const Np=series[0].vals.length,X=i=>padL+pw*(i/(Np-1)),Y=v=>padT+ph*(1-v/max);
   series.forEach(s=>{if(!s.show)return;ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();
     for(let i=0;i<Np;i++){const x=X(i),y=Y(s.vals[i]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();});
-  ctx.fillStyle="#94A0BE";ctx.textAlign="center";ctx.font="9px 'IBM Plex Mono'";let prev=-1;
+  ctx.fillStyle="#99A0B4";ctx.textAlign="center";ctx.font="9px 'Lato'";let prev=-1;
   for(let i=0;i<Np;i++){const mo=sunCache[i].date.getUTCMonth();if(mo!==prev){ctx.fillText(mes()[mo],X(i)+12,H-6);prev=mo;}}
 }
 function cumHours(){const cA=[],cB=[];let a=0,b=0;for(let i=0;i<N;i++){a+=RA.days[i].nightH;cA.push(a);b+=RB.days[i].nightH;cB.push(b);}return {cA,cB};}
@@ -1246,7 +1291,7 @@ function renderHoursTable(){
     rows.push(r+`</tr>`);}
   tbody.innerHTML=rows.join("");
   const ch=cumHours();
-  lineChart("hoursChart",[{vals:ch.cA,color:"#3A4CC0",show:true},{vals:ch.cB,color:"#D14B36",show:S.B.enabled}],{fmt:v=>nf(v,0),unit:"h"});
+  lineChart("hoursChart",[{vals:ch.cA,color:"#22B0E1",show:true},{vals:ch.cB,color:"#EA561B",show:S.B.enabled}],{fmt:v=>nf(v,0),unit:"h"});
   const el=document.getElementById("hoursAvg");
   if(el){const avg=(RB.onH-RA.onH)/N*60;
     el.textContent=S.B.enabled?(t("avg_min")+": "+(avg>=0?"+":"")+nf(avg,1)+" min/"+(LANG==="es"?"día":"day")+" · "+(RB.onH-RA.onH>=0?"+":"")+nf(RB.onH-RA.onH,1)+" h/"+(LANG==="es"?"año":"yr")+" ("+t("vs_fixed")+")"):"";}
@@ -1294,8 +1339,9 @@ function renderExec(){
    <table class="rep"><tbody>
      <tr><td>${t("ex_lum")}</td><td class="num">${nf(units)} ${t("ex_units")}</td><td>${t("ex_power")}</td><td class="num">${nf(IKW,1)} kW</td></tr>
      <tr><td>${t("ex_tariff")}</td><td class="num">US$${nf(S.tariff,3)}/kWh</td><td>${t("dst")}</td><td class="num">${S.dstRule==="none"?t("dst_none"):DSTDAYS.map(z=>fdate(sunCache[z.i].date)+" "+z.s).join(" · ")}</td></tr>
-     <tr><td>${t("sc_astro")}</td><td class="num">${hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].on:18)} → ${hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].off:6)} ${S.A.useDim?"+ dim":""}</td><td>${t("sc_fixed")}</td><td class="num">${hhmm(S.B.on)} → ${hhmm(S.B.off)} ${S.B.useDim?"+ dim":""}</td></tr>
+     <tr><td>${t("sc_astro")}</td><td class="num">${hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].on:18)} → ${hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].off:6)} ${S.A.useDim?"+ dim":""}</td>${S.B.enabled?`<td>${t("sc_fixed")}</td><td class="num">${hhmm(S.B.on)} → ${hhmm(S.B.off)} ${S.B.useDim?"+ dim":""}</td>`:"<td></td><td></td>"}</tr>
    </tbody></table>
+   <p class="exp">${t("ex_astro_note")}</p>
 
    <h3>${t("exp_dim_title")}</h3>
    <p class="exp">${t("exp_dim")}</p>
@@ -1307,6 +1353,7 @@ function renderExec(){
      <div class="kbox"><div class="k">${t("ex_energy")}</div><div class="v">${efmt(x.kAstroDim)}</div><div class="s">${t("ex_op")}: ${k(eqA)} h</div></div>
      <div class="kbox"><div class="k">${t("ex_cost")}</div><div class="v">${money(x.kAstroDim*S.tariff)}</div><div class="s">US$${nf(S.tariff,3)}/kWh</div></div>
      <div class="kbox"><div class="k">${t("ex_power")}</div><div class="v">${nf(IKW,1)} kW</div><div class="s">${nf(units)} ${t("ex_units")}</div></div>
+     ${(()=>{const pb=payback();return (pb.years!=null&&isFinite(pb.years)&&pb.years>0)?`<div class="kbox hl"><div class="k">${t("pay_k")}</div><div class="v">${nf(pb.years,1)} ${t("years")}</div><div class="s">${money(pb.invest)} ${t("pay_invest")} · ${money(pb.annual)}${t("per_year")}</div></div>`:"";})()}
    </div>
 
    <h3>${t("ex_save_title")}</h3>
@@ -1335,9 +1382,9 @@ function renderExec(){
   const series=monthSeries(false);
   const f=makeFmts(series.filter(s=>s.show).map(s=>s.vals),"energy");
   barsChart("execMonth",series,{axisFmt:f.axisFmt,barFmt:f.barFmt,unit:f.unit});
-  renderYear("execYear",{night:true,fixed:true,cprofile:S.C.enabled,excess:true,dst:true});
+  renderYear("execYear",{night:true,fixed:S.B.enabled,cprofile:S.C.enabled,excess:S.B.enabled,dst:true});
   const chh=cumHours();
-  lineChart("execHours",[{vals:chh.cA,color:"#3A4CC0",show:true},{vals:chh.cB,color:"#D14B36",show:S.B.enabled}],{fmt:v=>nf(v,0),unit:"h"});
+  lineChart("execHours",[{vals:chh.cA,color:"#22B0E1",show:true},{vals:chh.cB,color:"#EA561B",show:S.B.enabled}],{fmt:v=>nf(v,0),unit:"h"});
 }
 
 /* ============ PDF ============ */
@@ -1370,20 +1417,18 @@ function exportPDF(){
   doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[14,155,114],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
     columnStyles:{0:{cellWidth:230}},
     head:[[t("c_ind"),t("ex_save_energy")+" (kWh)",t("ex_save_money"),"%"]],
-    body:[
-      [t("ex_save_sched"),dlt(x.schedSave),money(Math.abs(x.schedSave)*S.tariff),(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"%"],
-      [t("ex_save_dim"),nf(x.dimSave,0),money(x.dimSave*S.tariff),(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"%"]
-    ]});
+    body:(()=>{const b=[];if(S.B.enabled)b.push([t("ex_save_sched"),dlt(x.schedSave),money(Math.abs(x.schedSave)*S.tariff),(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"%"]);b.push([t("ex_save_dim"),nf(x.dimSave,0),money(x.dimSave*S.tariff),(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"%"]);return b;})()});
   y=doc.lastAutoTable.finalY+18;
   head(t("ex_detail"));
+  {const act=activeScenarios();
   doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
     columnStyles:{0:{cellWidth:230}},
-    head:[[t("c_ind"),t("c_astro"),t("c_fijo"),t("pdf_dif")]],
+    head:[[t("c_ind"),...act.map(c=>c.lab)]],
     body:[
-      [t("r_ophours"),nf(RA.onH,1),nf(RB.onH,1),dlt(RB.onH-RA.onH,1)],
-      [t("r_kwh_fleet"),nf(flA,0),nf(flB,0),dlt(flB-flA)],
-      [t("r_cost_fleet"),money(flA*S.tariff),money(flB*S.tariff),(flB-flA>=0?"+":"-")+money(Math.abs(flB-flA)*S.tariff)]
-    ]});
+      [t("r_ophours"),...act.map(c=>nf(c.res.onH,1))],
+      [t("r_kwh_fleet"),...act.map(c=>nf(eKWh(c.key),0))],
+      [t("r_cost_fleet"),...act.map(c=>money(eKWh(c.key)*S.tariff))]
+    ]});}
   y=doc.lastAutoTable.finalY+20;
   const cw=(W-M*2-14)/2, chh=cw*0.5;
   if(y+chh+30>Hp-40){doc.addPage();y=46;}
@@ -1426,6 +1471,27 @@ function exportPDF(){
   doc.save("resumen_ejecutivo_"+S.year+".pdf");
 }
 
+/* ============ Excel (XLSX) ============ */
+function sheetDownload(rows,sheetName,fname){
+  if(window.XLSX){const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheetName);XLSX.writeFile(wb,fname+".xlsx");return;}
+  const csv=rows.map(r=>r.map(c=>typeof c==="number"?String(c).replace(".",","):'"'+String(c).replace(/"/g,'""')+'"').join(";")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname+".csv";a.click();URL.revokeObjectURL(a.href);
+}
+function exportHoursXLSX(){
+  const showMin=S.B.enabled;const head=[t("th_dia"),t("th_fecha"),t("th_hday"),t("th_acc")];if(showMin)head.push(t("min_vs_fix"),t("acc_min"));
+  const data=[head];let acc=0,accm=0;
+  for(let i=0;i<N;i++){const d=RA.days[i];acc+=d.nightH;const r=[i+1,fdate(d.date),+d.nightH.toFixed(2),+acc.toFixed(1)];
+    if(showMin){const mn=(RB.days[i].nightH-d.nightH)*60;accm+=mn;r.push(+mn.toFixed(1),Math.round(accm));}data.push(r);}
+  sheetDownload(data,"Horas","horas_encendido_"+S.year);
+}
+function exportGridXLSX(){
+  const days=scnRes(S.tblScn).days;const head=[t("th_fecha"),t("ch_amanecer"),t("ch_atardecer"),t("ch_enc"),t("ch_apg")];
+  for(let i=0;i<24;i++)head.push(String(i).padStart(2,"0")+":00");head.push(t("th_total")+" (kWh)");
+  const data=[head];
+  for(const d of days){const r=[fdate(d.date),hhmm(d.sunrise),hhmm(d.sunset),hhmm(d.on),hhmm(d.off)];
+    for(const hr of d.hours)r.push(+hr.kwh.toFixed(4));r.push(+d.total.toFixed(4));data.push(r);}
+  sheetDownload(data,"Perfil_"+S.tblScn,"perfil_"+S.tblScn+"_"+S.year);
+}
 /* ============ CSV ============ */
 function exportCSV(){
   const days=scnRes(S.tblScn).days;
@@ -1450,12 +1516,28 @@ function renderActive(){
 function refreshLive(){recalc();renderTop();renderCards();renderActive();}
 function refreshAll(){recalc();renderTop();const sl=document.getElementById("daySlider");sl.max=N;if(S.selDay>N){S.selDay=N;sl.value=N;}renderCards();renderActive();}
 
+const GROUP_TABS={cfg:["inventario","escenarios","dim"],res:["resumen","exec"],ana:["perfil","tabla"]};
+const lastTab={cfg:"inventario",res:"resumen",ana:"perfil"};
+function setGroup(g,tab){
+  document.querySelectorAll(".ptab").forEach(p=>p.classList.toggle("active",p.dataset.group===g));
+  const bar=document.getElementById("tabs");
+  if(g==="guia"){bar.style.display="none";S.tab="guia";}
+  else{
+    bar.style.display="flex";
+    bar.querySelectorAll(".tab").forEach(t=>t.style.display=t.dataset.group===g?"":"none");
+    const target=tab||lastTab[g]||GROUP_TABS[g][0]; S.tab=target; lastTab[g]=target;
+    bar.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===target));
+  }
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));
+  renderActive();
+}
+document.getElementById("ptabs").addEventListener("click",e=>{const p=e.target.closest(".ptab");if(!p)return;setGroup(p.dataset.group);});
 document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.closest(".tab");if(!tb)return;
-  S.tab=tb.dataset.tab;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===tb));
+  S.tab=tb.dataset.tab; if(tb.dataset.group)lastTab[tb.dataset.group]=S.tab;
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("active",x===tb));
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));renderActive();});
-document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{S.tab="resumen";
-  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab==="resumen"));
-  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-resumen"));renderActive();window.scrollTo({top:0,behavior:"smooth"});}));
+document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{
+  setGroup("res","resumen");window.scrollTo({top:0,behavior:"smooth"});}));
 
 function wireSeg(id,key,after){document.getElementById(id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   S[key]=b.dataset.s;b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));after();});}
@@ -1480,7 +1562,7 @@ document.getElementById("country").addEventListener("change",e=>{S.country=e.tar
 document.getElementById("dstRule").addEventListener("change",e=>{S.dstRule=e.target.value;refreshAll();});
 
 function num(id){const v=parseFloat(document.getElementById(id).value);return isFinite(v)?v:0;}
-["lat","lon","tariff","pref"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{S[id]=num(id);if(id==="lat"||id==="lon"){S.country="CUSTOM";document.getElementById("country").value="CUSTOM";}refreshLive();}));
+["lat","lon","tariff","pref","nodeCost"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{S[id]=num(id);if(id==="lat"||id==="lon"){S.country="CUSTOM";document.getElementById("country").value="CUSTOM";}refreshLive();}));
 document.getElementById("tz").addEventListener("input",()=>{S.tz=num("tz");S.country="CUSTOM";document.getElementById("country").value="CUSTOM";refreshAll();});
 document.getElementById("year").addEventListener("input",()=>{S.year=num("year");refreshAll();});
 document.getElementById("offEnc").addEventListener("input",()=>{S.A.offEnc=num("offEnc");refreshLive();});
@@ -1496,6 +1578,8 @@ document.getElementById("dimB").addEventListener("change",e=>{S.B.useDim=e.targe
 document.getElementById("daySlider").addEventListener("input",e=>{S.selDay=+e.target.value;renderDay();});
 document.getElementById("addRow").addEventListener("click",()=>{S.inventory.push({name:LANG==="es"?"Nuevo grupo":"New group",qty:0,power:100,dim:true});recalc();renderCards();renderInv();});
 document.getElementById("csv").addEventListener("click",exportCSV);
+document.getElementById("xlsGrid").addEventListener("click",exportGridXLSX);
+document.getElementById("xlsHours").addEventListener("click",exportHoursXLSX);
 document.getElementById("printBtn").addEventListener("click",()=>window.print());
 document.getElementById("pdfBtn").addEventListener("click",exportPDF);
 
