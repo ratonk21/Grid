@@ -3,500 +3,518 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPM · Orden de Trabajo (versión sencilla)</title>
+<title>Ubicquia · Work Order — Simple</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --teal:#0E4D4A; --teal-700:#0a3a37; --green:#00A651; --green-d:#00863f;
-    --ink:#16201F; --muted:#5d6b69; --line:#dde5e3; --bg:#F4F6F5;
-    --tint:#E7F1F0; --amber:#F4B400; --danger:#c0392b; --white:#fff;
-    --radius:12px; --shadow:0 1px 2px rgba(16,32,31,.06),0 8px 24px rgba(16,32,31,.05);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{font-family:"Inter",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
-  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
-  .num{font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace}
-  h1,h2,h3{font-family:"Space Grotesk",sans-serif;margin:0;letter-spacing:-.01em}
-
-  /* Header */
-  header{background:var(--teal);color:#eafaf3;padding:18px 26px;display:flex;align-items:center;gap:16px}
-  .logo{font-family:"Space Grotesk";font-weight:700;font-size:26px;letter-spacing:-.04em;color:#fff;display:flex;align-items:baseline;gap:2px}
-  .logo .reg{font-size:11px;vertical-align:super;color:var(--green)}
-  .logo small{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#9fd9c9;margin-left:8px}
-  header .sub{margin-left:auto;font-size:12.5px;color:#bfe4d8;text-align:right;max-width:340px}
-
-  .wrap{max-width:1060px;margin:0 auto;padding:24px 22px 80px}
-
-  /* Stepper / tabs */
-  .stepper{display:flex;gap:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:24px}
-  .step{flex:1;display:flex;align-items:center;gap:11px;padding:15px 16px;border:none;background:#fff;cursor:pointer;text-align:left;position:relative;transition:background .15s;border-right:1px solid var(--line)}
-  .step:last-child{border-right:none}
-  .step:hover:not(:disabled){background:var(--tint)}
-  .step:disabled{cursor:not-allowed;opacity:.45}
-  .step.active{background:var(--teal)}
-  .step.active .s-num{background:#fff;color:var(--teal)}
-  .step.active .s-lbl,.step.active .s-sub{color:#fff}
-  .s-num{width:28px;height:28px;border-radius:50%;background:var(--tint);color:var(--teal);display:grid;place-items:center;font-family:"Space Grotesk";font-weight:700;font-size:14px;flex:none}
-  .step.done .s-num{background:var(--green);color:#fff}
-  .s-lbl{font-family:"Space Grotesk";font-weight:600;font-size:14px;color:var(--ink);display:block;line-height:1.2}
-  .s-sub{font-size:11px;color:var(--muted);display:block}
-
-  .panel{display:none;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-  .panel.active{display:block;animation:fade .25s ease}
-  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-  .panel-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
-  .panel-head h2{font-size:19px}
-  .panel-head .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--green-d);font-weight:600;display:block;margin-bottom:3px;font-family:"Space Grotesk"}
-  .panel-body{padding:24px}
-
-  /* Form */
-  .grid{display:grid;gap:16px}
-  .g2{grid-template-columns:1fr 1fr}
-  .g3{grid-template-columns:1fr 1fr 1fr}
-  @media(max-width:680px){.g2,.g3{grid-template-columns:1fr}}
-  label{font-size:12.5px;font-weight:600;color:var(--ink);display:block;margin-bottom:6px}
-  label .req{color:var(--danger)}
-  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:14px;color:var(--ink);background:#fff;transition:border .15s,box-shadow .15s}
-  input:focus,select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,77,74,.12)}
-  input[readonly]{background:var(--bg);color:var(--muted)}
-
-  .btn{font-family:"Space Grotesk";font-weight:600;font-size:14px;border:none;border-radius:10px;padding:12px 20px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:8px}
-  .btn-primary{background:var(--teal);color:#fff}
-  .btn-primary:hover{background:var(--teal-700)}
-  .btn-green{background:var(--green);color:#fff}
-  .btn-green:hover{background:var(--green-d)}
-  .btn-ghost{background:#fff;color:var(--teal);border:1px solid var(--line)}
-  .btn-ghost:hover{background:var(--tint)}
-  .btn-row{display:flex;justify-content:space-between;gap:12px;margin-top:24px;flex-wrap:wrap}
-
-  /* Add-line bar */
-  .addbar{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:16px;display:grid;grid-template-columns:1fr 110px auto;gap:12px;align-items:end;margin-bottom:18px}
-  @media(max-width:680px){.addbar{grid-template-columns:1fr}}
-
-  table{width:100%;border-collapse:collapse;font-size:13.5px}
-  thead th{background:var(--teal);color:#dff3ec;text-align:left;padding:11px 12px;font-family:"Space Grotesk";font-weight:600;font-size:12px;letter-spacing:.02em}
-  thead th.r{text-align:right}
-  tbody td{padding:11px 12px;border-bottom:1px solid var(--line)}
-  tbody tr:nth-child(even){background:var(--tint)}
-  td.r{text-align:right}
-  .tcode{font-family:"IBM Plex Mono";font-weight:600;color:var(--teal)}
-  .del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
-  .del:hover{background:#fbeae8}
-  .empty{padding:34px;text-align:center;color:var(--muted);font-size:13.5px}
-  .tablecard{border:1px solid var(--line);border-radius:11px;overflow:hidden}
-
-  .totbar{display:flex;justify-content:flex-end;gap:28px;margin-top:18px;padding:14px 18px;background:var(--tint);border-radius:11px}
-  .totbar .t{text-align:right}
-  .totbar .t span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
-  .totbar .t b{font-family:"IBM Plex Mono";font-size:18px;color:var(--teal)}
-
-  .hint{font-size:12.5px;color:var(--muted);background:var(--bg);border-left:3px solid var(--green);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:18px}
-
-  /* Report */
-  .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 28px;margin-bottom:22px}
-  @media(max-width:680px){.meta{grid-template-columns:1fr 1fr}}
-  .meta .m span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;display:block}
-  .meta .m b{font-size:14.5px;font-weight:600}
-  .badge{display:inline-block;background:var(--green);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;font-family:"Space Grotesk"}
-  .sec-title{font-family:"Space Grotesk";font-weight:600;font-size:14px;margin:22px 0 10px;color:var(--teal);display:flex;align-items:center;gap:8px}
-  .sec-title::before{content:"";width:14px;height:2px;background:var(--green)}
-  .summary{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
-  @media(max-width:680px){.summary{grid-template-columns:1fr}}
-  .sumcard{border:1px solid var(--line);border-radius:11px;padding:18px}
-  .sumrow{display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;border-bottom:1px dashed var(--line)}
-  .sumrow:last-child{border:none}
-  .sumrow.total{margin-top:6px;padding-top:12px;border-top:2px solid var(--teal);font-family:"Space Grotesk";font-weight:700;font-size:16px;color:var(--teal)}
-  .sumrow .num{font-weight:600}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px}
-  @media(max-width:680px){.kpis{grid-template-columns:1fr 1fr}}
-  .kpi{background:var(--teal);color:#fff;border-radius:11px;padding:14px 16px}
-  .kpi span{font-size:11px;color:#bfe4d8;text-transform:uppercase;letter-spacing:.05em;font-weight:600;display:block}
-  .kpi b{font-family:"IBM Plex Mono";font-size:21px;display:block;margin-top:3px}
-
-  .locked-note{padding:48px 24px;text-align:center;color:var(--muted)}
-  .locked-note b{display:block;font-family:"Space Grotesk";color:var(--ink);font-size:16px;margin-bottom:6px}
-
-  @media print{
-    header .sub,.stepper,.btn-row,.addbar,.del,.no-print{display:none!important}
-    body{background:#fff}.panel{box-shadow:none;border:none}
-    .panel:not(.active){display:none}
-  }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --db:#1E2445; --db2:#161b36; --ub:#22B0E1; --ub-d:#189ec9;
+  --dg:#005B59; --lg:#AECC53; --lg-d:#96b042;
+  --ink:#1a1f3a; --muted:#5a6278; --line:#e2e6f0; --line-d:#cdd3e2;
+  --bg:#EEF0F5; --tint:#e0f4fb; --tint2:#f0f9fd; --tint3:#f5f9ee;
+  --amber:#FAB512; --danger:#c0392b;
+  --radius:12px; --shadow:0 1px 3px rgba(30,36,69,.07),0 8px 28px rgba(30,36,69,.08);
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0;background:var(--bg)}
+body{font-family:"Lato",system-ui,sans-serif;color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Lato",sans-serif;margin:0;font-weight:700}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ub);font-weight:700;display:block;margin-bottom:4px}
+
+/* HEADER */
+header{background:var(--db);color:#fff;padding:0 28px;display:flex;align-items:center;gap:16px;height:58px;box-shadow:0 2px 12px rgba(30,36,69,.25)}
+.brand-logo{display:flex;align-items:center;gap:2px}
+.brand-logo .ubi{font-weight:300;font-size:20px;color:#fff}
+.brand-logo .cquia{font-weight:900;font-size:20px;color:var(--ub)}
+.brand-logo .dot{font-weight:900;font-size:20px;color:var(--ub)}
+.header-div{width:1px;height:24px;background:rgba(255,255,255,.2);margin:0 4px}
+.header-title{font-size:13px;font-weight:400;color:#8ab0d0}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+
+/* SETTINGS ROW */
+.settings-bar{background:var(--db2);padding:8px 28px;display:flex;align-items:center;gap:20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.set-lbl{font-size:10px;color:#7a90c8;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.lang-toggle{display:flex;border:1px solid rgba(255,255,255,.2);border-radius:6px;overflow:hidden}
+.lang-toggle button{background:transparent;color:#c8d4f0;border:none;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.lang-toggle button.on{background:var(--ub);color:#fff}
+.settings-bar select,.settings-bar input{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px;padding:4px 8px;font-size:11.5px;font-family:inherit}
+.settings-bar select option{color:var(--ink)}
+.set-cur{font-size:11px;color:#7a90c8}.set-cur b{color:#c8d4f0}
+.rate-wrap{display:flex;align-items:center;gap:4px}
+.rate-in{width:64px;text-align:right}
+
+/* STEPPER */
+.stepper-wrap{background:#fff;border-bottom:2px solid var(--line);padding:0 28px}
+.stepper{display:flex;gap:0;max-width:900px;margin:0 auto}
+.step{flex:1;display:flex;align-items:center;gap:9px;padding:14px 0;cursor:pointer;opacity:.45;transition:.15s;border-bottom:3px solid transparent;font-size:13px;font-weight:700;color:var(--muted)}
+.step.active{opacity:1;border-bottom-color:var(--ub);color:var(--db)}
+.step.done{opacity:.75;color:var(--dg)}
+.step .sn{width:24px;height:24px;border-radius:7px;background:var(--line-d);color:var(--muted);display:grid;place-items:center;font-size:12px;font-weight:900;flex:none}
+.step.active .sn{background:var(--ub);color:#fff}
+.step.done .sn{background:var(--dg);color:#fff}
+.step-div{width:30px;flex:none;display:flex;align-items:center;justify-content:center;opacity:.3;padding-top:3px}
+.step-sub{font-size:11px;font-weight:400;color:var(--muted);display:block;margin-top:1px}
+.step.active .step-sub{color:var(--ub-d)}
+
+/* CONTENT */
+.container{max-width:900px;margin:0 auto;padding:28px 28px 80px}
+.panel{display:none}.panel.active{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* BUTTONS */
+.btn{font-family:"Lato";font-weight:700;font-size:13px;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;transition:.13s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn-blue{background:var(--ub);color:#fff}.btn-blue:hover{background:var(--ub-d)}
+.btn-green{background:var(--dg);color:#fff}.btn-green:hover{background:#004745}
+.btn-ghost{background:#fff;color:var(--db);border:1px solid var(--line-d)}.btn-ghost:hover{background:var(--tint2)}
+.btn-sm{padding:6px 11px;font-size:12px}
+.btn-danger{background:#fff;color:var(--danger);border:1px solid #e8c4c0}.btn-danger:hover{background:#fbeae8}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-h{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.card-h h3{font-size:14.5px}
+.card-b{padding:18px}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:13px}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+@media(max-width:640px){.form-grid,.form-grid2{grid-template-columns:1fr}}
+label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+input,select{width:100%;padding:8px 11px;border:1px solid var(--line-d);border-radius:8px;font:inherit;font-size:13px;color:var(--ink);background:#fff;transition:.13s}
+input:focus,select:focus{outline:none;border-color:var(--ub);box-shadow:0 0 0 3px rgba(34,176,225,.12)}
+input[readonly]{background:var(--bg);color:var(--muted)}
+
+/* ADD BAR */
+.addbar{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:13px;display:grid;grid-template-columns:1fr 88px auto;gap:10px;align-items:end;margin-bottom:13px}
+@media(max-width:640px){.addbar{grid-template-columns:1fr}}
+.lineitem{display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;font-size:13px;background:#fff}
+.lineitem .li-code{font-family:"Lato";font-weight:700;color:var(--ub-d);flex:none;font-size:12px}
+.lineitem .li-desc{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lineitem .li-qty{color:var(--muted);flex:none;font-size:12px}
+.lineitem .li-tot{font-family:"Lato";font-weight:700;flex:none;min-width:88px;text-align:right}
+.del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:17px;padding:2px 6px;border-radius:5px}
+.del:hover{background:#fbeae8}
+
+/* SUMMARY CARD */
+.sumrow{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+.sumrow:last-of-type{border:none}
+.sumrow.total{margin-top:4px;padding-top:10px;border-top:2px solid var(--db);font-weight:900;font-size:16px;color:var(--db)}
+
+/* TABLES */
+.tablecard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--db);color:rgba(255,255,255,.9);text-align:left;padding:10px 13px;font-family:"Lato";font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+thead th.r{text-align:right}
+tbody td{padding:10px 13px;border-bottom:1px solid var(--line)}
+tbody tr:nth-child(even){background:var(--tint2)}
+tbody tr:hover{background:var(--tint)}
+td.r{text-align:right}
+.tcode{font-family:"Lato";font-weight:700;color:var(--ub-d);font-size:12px;letter-spacing:.02em}
+.empty{padding:34px;text-align:center;color:var(--muted);font-size:13px}
+
+/* DOC PAGE */
+.docpage{background:#fff;border:2.5px solid var(--lg);border-radius:11px;padding:28px 30px;box-shadow:var(--shadow)}
+.docpage-head{display:flex;align-items:center;gap:13px;border-bottom:2px solid var(--tint3);padding-bottom:13px;margin-bottom:17px}
+.docpage-title{flex:1}.docpage-title h2{font-size:18px;margin-top:3px}
+.docpage-foot{font-size:10.5px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:11px;text-align:center}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 22px;margin-bottom:6px}
+@media(max-width:640px){.meta{grid-template-columns:1fr 1fr}}
+.meta .m span{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;display:block}
+.meta .m b{font-size:13.5px;font-weight:700}
+.sec-title{font-family:"Lato";font-weight:700;font-size:13.5px;margin:20px 0 10px;color:var(--db);display:flex;align-items:center;gap:8px}
+.sec-title::before{content:"";width:13px;height:2.5px;background:var(--lg)}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+@media(max-width:640px){.fin-grid{grid-template-columns:1fr}}
+
+/* IMPORT BAR */
+.import-bar{background:var(--tint2);border:1px solid var(--ub);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.import-bar .ib-note{font-size:12px;color:var(--muted);flex:1}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(18px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:700;opacity:0;transition:.27s;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.action-row{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.muted-note{font-size:12.5px;color:var(--muted)}
+
+@media print{header,.settings-bar,.stepper-wrap,.action-row,.import-bar,.no-print{display:none!important}.container{padding:0}.docpage{box-shadow:none;border-color:var(--lg)}}
+</style>
 </head>
 <body>
 <header>
-  <div class="logo">epm<span class="reg">®</span><small>Guatemala</small></div>
-  <div class="sub">Sistema de movilidad · Registro de orden de trabajo<br>Alumbrado público — versión sencilla</div>
+  <div class="brand-logo"><span class="ubi">ubi</span><span class="cquia">cquia</span><span class="dot">.</span></div>
+  <div class="header-div"></div>
+  <span class="header-title" id="hdr_title">Gestión de órdenes de trabajo</span>
+  <div class="header-right">
+    <button class="btn btn-ghost btn-sm no-print" onclick="window.print()" id="btn_print_hdr">Imprimir</button>
+    <button class="btn btn-blue btn-sm no-print" onclick="exportCSV()" id="btn_export_hdr">Exportar CSV</button>
+  </div>
 </header>
 
-<div class="wrap">
-  <!-- ESTADO DE CATÁLOGOS (precargados) -->
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px 16px;margin-bottom:18px;font-size:13px">
-    <span style="font-family:'Space Grotesk';font-weight:600;color:var(--teal)">Catálogos cargados:</span>
-    <span id="cat_a_count" style="color:var(--green-d);font-weight:600">37 actividades</span>
-    <span style="color:var(--muted)">·</span>
-    <span id="cat_m_count" style="color:var(--green-d);font-weight:600">3 materiales</span>
-    <button class="btn btn-ghost" style="margin-left:auto;padding:7px 13px;font-size:12.5px" onclick="var c=document.getElementById('catimport');c.style.display=(c.style.display==='none'?'grid':'none')">Actualizar catálogo</button>
+<div class="settings-bar">
+  <span class="set-lbl" id="lbl_lang_s">Idioma</span>
+  <div class="lang-toggle">
+    <button id="lang_es" class="on" onclick="setLang('es')">ES</button>
+    <button id="lang_en" onclick="setLang('en')">EN</button>
   </div>
-  <div id="catimport" style="display:none;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:18px">
-    <div>
-      <div style="font-family:'Space Grotesk';font-weight:600;font-size:13.5px;margin-bottom:9px">Reemplazar preciario de actividades</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <label class="btn btn-primary" style="cursor:pointer">Cargar archivo<input id="up_act" type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none"></label>
-        <button class="btn btn-ghost" onclick="tplCSV('act')">Plantilla CSV</button>
-      </div>
-    </div>
-    <div>
-      <div style="font-family:'Space Grotesk';font-weight:600;font-size:13.5px;margin-bottom:9px">Reemplazar catálogo de materiales</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <label class="btn btn-primary" style="cursor:pointer">Cargar archivo<input id="up_mat" type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none"></label>
-        <button class="btn btn-ghost" onclick="tplCSV('mat')">Plantilla CSV</button>
-      </div>
-    </div>
-    <div style="grid-column:1/-1;font-size:12px;color:var(--muted)">Formato: columnas <b>Ítem · Descripción · Precio sin IVA</b> (CSV o Excel). Al cargar, se reemplaza el catálogo actual.</div>
-  </div>
-
-  <!-- STEPPER -->
-  <div class="stepper" id="stepper">
-    <button class="step active" data-step="0" onclick="go(0)">
-      <span class="s-num">1</span><span><span class="s-lbl">Datos de la orden</span><span class="s-sub">Información general</span></span>
-    </button>
-    <button class="step" data-step="1" disabled onclick="go(1)">
-      <span class="s-num">2</span><span><span class="s-lbl">Actividades</span><span class="s-sub">Desde el preciario</span></span>
-    </button>
-    <button class="step" data-step="2" disabled onclick="go(2)">
-      <span class="s-num">3</span><span><span class="s-lbl">Materiales</span><span class="s-sub">Cables y otros</span></span>
-    </button>
-    <button class="step" data-step="3" disabled onclick="go(3)">
-      <span class="s-num">4</span><span><span class="s-lbl">Reporte</span><span class="s-sub">Costos consolidados</span></span>
-    </button>
-  </div>
-
-  <!-- PANEL 1: ORDEN -->
-  <section class="panel active" id="p0">
-    <div class="panel-head"><div><span class="eyebrow">Paso 1</span><h2>Crear orden de trabajo</h2></div></div>
-    <div class="panel-body">
-      <div class="hint">Al guardar la orden se habilitan las pestañas siguientes. Las actividades y materiales que registres alimentan automáticamente el reporte final.</div>
-      <div class="grid g3">
-        <div><label>N.° de orden</label><input id="f_ot" readonly></div>
-        <div><label>Fecha de ejecución <span class="req">*</span></label><input type="date" id="f_fecha"></div>
-        <div><label>Estado</label>
-          <select id="f_estado"><option>Abierta</option><option selected>Cerrada</option></select></div>
-      </div>
-      <div class="grid g3" style="margin-top:16px">
-        <div><label>Contratista <span class="req">*</span></label><input id="f_contratista" placeholder="Ej. Contrata XYZ"></div>
-        <div><label>Técnico responsable</label><input id="f_tecnico" placeholder="Ej. Juan Pérez"></div>
-        <div><label>Distrito / zona</label><input id="f_distrito" placeholder="Ej. Centro"></div>
-      </div>
-      <div class="grid g2" style="margin-top:16px">
-        <div><label>Dirección / ubicación</label><input id="f_dir" placeholder="Ej. Avenida Reforma, Zona 10"></div>
-        <div><label>Tipo de trabajo</label>
-          <select id="f_tipo"><option selected>Alumbrado Público</option><option>Mantenimiento correctivo</option><option>Mantenimiento preventivo</option></select></div>
-      </div>
-      <div class="btn-row" style="justify-content:flex-end">
-        <button class="btn btn-primary" onclick="saveOrder()">Guardar y continuar →</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- PANEL 2: ACTIVIDADES -->
-  <section class="panel" id="p1">
-    <div class="panel-head"><div><span class="eyebrow">Paso 2 · <span id="h_ot1" class="mono"></span></span><h2>Actividades ejecutadas</h2></div></div>
-    <div class="panel-body">
-      <div class="hint">Selecciona la actividad del preciario, indica la cantidad y agrégala. El costo total se calcula con el precio del catálogo.</div>
-      <div class="addbar">
-        <div><label>Actividad (preciario)</label><select id="a_sel"></select></div>
-        <div><label>Cantidad</label><input type="number" id="a_qty" min="1" step="1" value="1"></div>
-        <div><button class="btn btn-green" onclick="addActivity()">+ Agregar</button></div>
-      </div>
-      <div class="tablecard">
-        <table>
-          <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cantidad</th><th class="r">Precio unit. (sin IVA)</th><th class="r">Costo total</th><th></th></tr></thead>
-          <tbody id="a_body"><tr><td colspan="6" class="empty">Aún no hay actividades registradas.</td></tr></tbody>
-        </table>
-      </div>
-      <div class="totbar"><div class="t"><span>Subtotal actividades (sin IVA)</span><b class="num" id="a_sub">Q0.00</b></div></div>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="go(0)">← Volver</button>
-        <button class="btn btn-primary" onclick="go(2)">Continuar a materiales →</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- PANEL 3: MATERIALES -->
-  <section class="panel" id="p2">
-    <div class="panel-head"><div><span class="eyebrow">Paso 3 · <span id="h_ot2" class="mono"></span></span><h2>Materiales utilizados</h2></div></div>
-    <div class="panel-body">
-      <div class="hint">Selecciona el material del catálogo, indica la cantidad y agrégalo. Puedes omitir este paso si la orden no consume materiales.</div>
-      <div class="addbar">
-        <div><label>Material (catálogo)</label><select id="m_sel"></select></div>
-        <div><label>Cantidad</label><input type="number" id="m_qty" min="1" step="1" value="1"></div>
-        <div><button class="btn btn-green" onclick="addMaterial()">+ Agregar</button></div>
-      </div>
-      <div class="tablecard">
-        <table>
-          <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cantidad</th><th class="r">Precio unit. (sin IVA)</th><th class="r">Costo total</th><th></th></tr></thead>
-          <tbody id="m_body"><tr><td colspan="6" class="empty">Aún no hay materiales registrados.</td></tr></tbody>
-        </table>
-      </div>
-      <div class="totbar"><div class="t"><span>Subtotal materiales (sin IVA)</span><b class="num" id="m_sub">Q0.00</b></div></div>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="go(1)">← Volver</button>
-        <button class="btn btn-primary" onclick="go(3)">Ver reporte →</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- PANEL 4: REPORTE -->
-  <section class="panel" id="p3">
-    <div class="panel-head" style="justify-content:space-between">
-      <div><span class="eyebrow">Paso 4</span><h2>Reporte integrado de la orden</h2></div>
-      <div class="no-print" style="display:flex;gap:10px">
-        <button class="btn btn-ghost" onclick="window.print()">Imprimir / PDF</button>
-        <button class="btn btn-green" onclick="exportCSV()">Exportar (CSV)</button>
-      </div>
-    </div>
-    <div class="panel-body" id="report"></div>
-  </section>
+  <span class="set-lbl" id="lbl_country_s">País</span>
+  <select id="country_sel" onchange="setCountry(this.value)"></select>
+  <span class="set-lbl" id="lbl_tax_s">IVA</span>
+  <div class="rate-wrap"><input class="rate-in" id="rate_in" type="number" step="0.01" min="0" max="100" value="19" oninput="setRate(this.value)"><span style="color:#7a90c8;font-size:11px">%</span></div>
+  <span class="set-cur" id="cur_display">CLP · $</span>
 </div>
 
-<script>
-/* ============ CATÁLOGOS: los carga el usuario (CSV o Excel) ============ */
-let ACTIVIDADES = [
-  ["APG01","Apertura de agujero para poste",353.76],["APG02","Aplomado de poste de 30 - 35 pies madera o concreto",918.20],
-  ["APG03","Bajada secundaria con tubo HG de 2\" pulgadas",1583.73],["APG04","Cambio de balastro de luminaria",255.01],
-  ["APG05","Cambio de brazo",375.34],["APG06","Cambio de cabeza de luminaria",170.62],
-  ["APG07","Cambio de cableado y conexiones subterráneas",424.67],["APG08","Cambio de contactor",645.58],
-  ["APG09","Cambio de driver LED",329.73],["APG10","Cambio de flipón",262.34],
-  ["APG11","Cambio de fusibles en el relevador",171.22],["APG12","Cambio de herrajes varios unitario",183.83],
-  ["APG13","Cambio de luminaria completa con brazo de 2 a 6'",375.34],["APG14","Cambio de luminaria completa con brazo de 8 a 12'",390.55],
-  ["APG15","Cambio de luminaria de pared (Wallpack o luminaria de techo)",341.22],["APG16","Cambio de módulos LED",329.73],
-  ["APG17","Cambio de poste de 30 - 35 pies concreto",2215.91],["APG18","Cambio de poste de 30 - 35 pies madera",2063.81],
-  ["APG19","Cambio de poste de 30 - 35 pies metálico (con pernos)",2759.63],["APG20","Cambio de poste de 30 - 35 pies metálico (empotrado)",2174.10],
-  ["APG21","Cambio de reflector de 500W en poste de 35 a 40 pies",456.71],["APG22","Cambio de refractor",104.27],
-  ["APG23","Cambio de relevador",464.51],["APG24","Cambio de timer",383.87],
-  ["APG25","Cambio de vano aéreo dañado <=40m",542.80],["APG26","Cambio de vano aéreo dañado >40m",601.10],
-  ["APG27","Cambio de vano subterráneo dañado <=40m",348.30],["APG28","Cambio de vano subterráneo dañado >40m",336.79],
-  ["APG29","Desrame por luminaria o vano",126.33],["APG30","Diseño de alumbrado público de 501 a 1000 metros",889.45],
-  ["APG31","Diseño de alumbrado público hasta 500 metros",527.64],["APG32","Diseño de alumbrado público mayor a 1000 metros",1073.47],
-  ["APG33","Disponibilidad de unidad (Tipo C1 motocicleta)",140.89],["APG34","Disponibilidad de unidad (Tipo C2 pickup)",356.49],
-  ["APG35","Disponibilidad de unidad (Tipo C3 camión canasta)",639.53],["APG36","Disponibilidad de unidad (Tipo C4 camión liniero)",734.15],
-  ["APG37","Instalación de anclajes",481.59]
-].map(([codigo,desc,precio])=>({codigo,desc,precio}));
-let MATERIALES  = [
-  ["310391","Cable Duplex 6 ACSR con forro",100.00],
-  ["310393","Cable Triplex No. 4 con forro",200.00],
-  ["310403","Cable Triplex 1/0 ACSR con forro",300.00]
-].map(([codigo,desc,precio])=>({codigo,desc,precio}));
-const IVA = 0.12;
-
-/* ---- importación de catálogos (CSV o Excel) ---- */
-function cleanPrice(v){ if(typeof v==="number")return v; let s=String(v).replace(/[^0-9.,-]/g,"").trim(); if(s.includes(",")&&s.includes("."))s=s.replace(/,/g,""); else if(s.includes(","))s=s.replace(/\./g,"").replace(",","."); const n=parseFloat(s); return isNaN(n)?null:n; }
-function parseCSV(text){ text=text.replace(/\r/g,""); const first=(text.split("\n").find(l=>l.trim())||""); const delim=(first.split(";").length>first.split(",").length)?";":","; return text.split("\n").map(line=>{ const cells=[];let cur="",q=false,start=true; for(let i=0;i<line.length;i++){const ch=line[i]; if(ch==='"'){ if(q){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else if(start){ q=true; } else { cur+='"'; } start=false; } else if(ch===delim&&!q){ cells.push(cur);cur="";start=true; } else { cur+=ch; start=false; } } cells.push(cur); return cells; }); }
-function rowsToCatalog(rows){ const out=[]; (rows||[]).forEach(r=>{ const cells=(r||[]).map(c=>c==null?"":String(c).trim()); while(cells.length&&cells[cells.length-1]==="")cells.pop(); if(!cells.length)return; let pi=-1,price=null; for(let i=cells.length-1;i>=0;i--){ if(/\d/.test(cells[i])){const n=cleanPrice(cells[i]); if(n!=null){pi=i;price=n;break;}} } if(pi<1)return; const code=cells[0]; if(!code||/^[ií]tem$|^c[oó]digo$|^item$/i.test(code))return; const desc=cells.slice(1,pi).join(" ").trim()||code; out.push({codigo:code,desc,precio:price}); }); return out; }
-
-function importFile(file,target){ const ext=file.name.split(".").pop().toLowerCase();
-  const done=items=>{ if(!items.length){alert('No se encontraron filas válidas (código, descripción, precio) en "'+file.name+'".');return;} if(target==="act")ACTIVIDADES=items; else MATERIALES=items; refreshCatalogUI(); };
-  if(ext==="csv"||ext==="txt"){ const rd=new FileReader(); rd.onload=e=>done(rowsToCatalog(parseCSV(e.target.result))); rd.readAsText(file,"utf-8"); }
-  else if(ext==="xlsx"||ext==="xls"){ if(typeof XLSX==="undefined"){alert("Para leer Excel se necesita conexión a internet. Sin conexión, guarda el archivo como CSV.");return;} const rd=new FileReader(); rd.onload=e=>{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]]; done(rowsToCatalog(XLSX.utils.sheet_to_json(ws,{header:1,defval:""}))); }; rd.readAsArrayBuffer(file); }
-  else alert("Formato no soportado. Usa CSV o Excel (.xlsx)."); }
-function refreshCatalogUI(){
-  $("a_sel").innerHTML = ACTIVIDADES.length ? ACTIVIDADES.map(a=>`<option value="${a.codigo}">${a.codigo} · ${a.desc} — ${Q(a.precio)}</option>`).join("") : '<option value="">— Carga primero el preciario —</option>';
-  $("m_sel").innerHTML = MATERIALES.length ? MATERIALES.map(m=>`<option value="${m.codigo}">${m.codigo} · ${m.desc} — ${Q(m.precio)}</option>`).join("") : '<option value="">— Carga primero el catálogo —</option>';
-  const ca=$("cat_a_count"), cm=$("cat_m_count");
-  if(ca){ ca.textContent=ACTIVIDADES.length?ACTIVIDADES.length+" actividades cargadas":"Sin cargar"; ca.style.color=ACTIVIDADES.length?"var(--green-d)":"var(--muted)"; }
-  if(cm){ cm.textContent=MATERIALES.length?MATERIALES.length+" materiales cargados":"Sin cargar"; cm.style.color=MATERIALES.length?"var(--green-d)":"var(--muted)"; }
-}
-function tplCSV(kind){
-  const head=kind==="act"?["Ítem","Descripción de la actividad","Precio sin IVA"]:["Ítem","Descripción del material","Precio sin IVA"];
-  const ex=kind==="act"?[["APG01","Apertura de agujero para poste","353.76"],["APG05","Cambio de brazo","375.34"]]:[["310391","Cable Duplex 6 ACSR con forro","100.00"]];
-  const csv="\uFEFF"+[head,...ex].map(r=>r.map(c=>`"${c}"`).join(";")).join("\n");
-  const b=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=(kind==="act"?"plantilla_actividades":"plantilla_materiales")+".csv";a.click();
-}
-
-/* ============ ESTADO ============ */
-let order = null;       // datos generales
-let acts = [];          // {codigo,desc,precio,qty}
-let mats = [];
-let current = 0;
-
-const Q = n => "Q"+Number(n).toLocaleString("es-GT",{minimumFractionDigits:2,maximumFractionDigits:2});
-const $ = id => document.getElementById(id);
-
-/* poblar selects + fecha por defecto + correlativo */
-function init(){
-  $("f_fecha").value = new Date().toISOString().slice(0,10);
-  $("f_ot").value = "OT-"+new Date().getFullYear()+"-"+String(Math.floor(1000+Math.random()*9000));
-  refreshCatalogUI();
-  $("up_act").addEventListener("change",e=>{ if(e.target.files[0]) importFile(e.target.files[0],"act"); e.target.value=""; });
-  $("up_mat").addEventListener("change",e=>{ if(e.target.files[0]) importFile(e.target.files[0],"mat"); e.target.value=""; });
-}
-
-/* navegación */
-function go(step){
-  const unlocked = order ? 3 : 0;
-  if(step>unlocked) return;
-  current = step;
-  document.querySelectorAll(".panel").forEach((p,i)=>p.classList.toggle("active",i===step));
-  document.querySelectorAll(".step").forEach((b,i)=>{
-    b.classList.toggle("active",i===step);
-    b.classList.toggle("done", order && i<step);
-  });
-  if(step===3) renderReport();
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-
-function saveOrder(){
-  const contratista=$("f_contratista").value.trim(), fecha=$("f_fecha").value;
-  if(!fecha){alert("Indica la fecha de ejecución.");return;}
-  if(!contratista){alert("Indica el contratista.");return;}
-  order={
-    ot:$("f_ot").value, fecha, estado:$("f_estado").value,
-    contratista, tecnico:$("f_tecnico").value.trim()||"—",
-    distrito:$("f_distrito").value.trim()||"—", dir:$("f_dir").value.trim()||"—",
-    tipo:$("f_tipo").value
-  };
-  // habilitar pestañas
-  document.querySelectorAll(".step").forEach((b,i)=>{ if(i>0) b.disabled=false; });
-  $("h_ot1").textContent=order.ot; $("h_ot2").textContent=order.ot;
-  go(1);
-}
-
-/* actividades */
-function addActivity(){
-  const cat=ACTIVIDADES.find(a=>a.codigo===$("a_sel").value);
-  if(!cat){alert("Carga el preciario y selecciona una actividad.");return;}
-  const qty=Math.max(1,parseInt($("a_qty").value)||1);
-  const ex=acts.find(a=>a.codigo===cat.codigo);
-  if(ex) ex.qty+=qty; else acts.push({...cat,qty});
-  $("a_qty").value=1; renderActs();
-}
-function delAct(c){acts=acts.filter(a=>a.codigo!==c);renderActs();}
-function renderActs(){
-  const b=$("a_body");
-  if(!acts.length){b.innerHTML='<tr><td colspan="6" class="empty">Aún no hay actividades registradas.</td></tr>';}
-  else b.innerHTML=acts.map(a=>`<tr>
-    <td class="tcode">${a.codigo}</td><td>${a.desc}</td>
-    <td class="r num">${a.qty}</td><td class="r num">${Q(a.precio)}</td>
-    <td class="r num">${Q(a.precio*a.qty)}</td>
-    <td class="r"><button class="del" onclick="delAct('${a.codigo}')" title="Quitar">×</button></td></tr>`).join("");
-  $("a_sub").textContent=Q(acts.reduce((s,a)=>s+a.precio*a.qty,0));
-}
-
-/* materiales */
-function addMaterial(){
-  const cat=MATERIALES.find(m=>m.codigo===$("m_sel").value);
-  if(!cat){alert("Carga el catálogo y selecciona un material.");return;}
-  const qty=Math.max(1,parseInt($("m_qty").value)||1);
-  const ex=mats.find(m=>m.codigo===cat.codigo);
-  if(ex) ex.qty+=qty; else mats.push({...cat,qty});
-  $("m_qty").value=1; renderMats();
-}
-function delMat(c){mats=mats.filter(m=>m.codigo!==c);renderMats();}
-function renderMats(){
-  const b=$("m_body");
-  if(!mats.length){b.innerHTML='<tr><td colspan="6" class="empty">Aún no hay materiales registrados.</td></tr>';}
-  else b.innerHTML=mats.map(m=>`<tr>
-    <td class="tcode">${m.codigo}</td><td>${m.desc}</td>
-    <td class="r num">${m.qty}</td><td class="r num">${Q(m.precio)}</td>
-    <td class="r num">${Q(m.precio*m.qty)}</td>
-    <td class="r"><button class="del" onclick="delMat('${m.codigo}')" title="Quitar">×</button></td></tr>`).join("");
-  $("m_sub").textContent=Q(mats.reduce((s,m)=>s+m.precio*m.qty,0));
-}
-
-/* reporte */
-function totals(){
-  const ca=acts.reduce((s,a)=>s+a.precio*a.qty,0);
-  const cm=mats.reduce((s,m)=>s+m.precio*m.qty,0);
-  const sub=ca+cm; const iva=sub*IVA;
-  return {ca,cm,sub,iva,total:sub+iva,
-    nAct:acts.length, nMat:mats.length,
-    qAct:acts.reduce((s,a)=>s+a.qty,0), qMat:mats.reduce((s,m)=>s+m.qty,0)};
-}
-function rowsTable(arr){
-  if(!arr.length) return '<tr><td colspan="5" class="empty">Sin registros.</td></tr>';
-  return arr.map(x=>`<tr><td class="tcode">${x.codigo}</td><td>${x.desc}</td>
-    <td class="r num">${x.qty}</td><td class="r num">${Q(x.precio)}</td>
-    <td class="r num">${Q(x.precio*x.qty)}</td></tr>`).join("");
-}
-function renderReport(){
-  if(!order) return;
-  const t=totals();
-  $("report").innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:6px">
-      <h3 style="font-size:17px">Reporte de costos · <span class="mono" style="color:var(--teal)">${order.ot}</span></h3>
-      <span class="badge">${order.estado}</span>
+<div class="stepper-wrap">
+  <div class="stepper">
+    <div class="step active" id="s0" onclick="goStep(0)">
+      <span class="sn">1</span><div><span id="s0_lbl">Datos</span><span class="step-sub" id="s0_sub">Información general</span></div>
     </div>
-    <div class="meta">
-      <div class="m"><span>Fecha ejecución</span><b>${order.fecha}</b></div>
-      <div class="m"><span>Contratista</span><b>${order.contratista}</b></div>
-      <div class="m"><span>Técnico responsable</span><b>${order.tecnico}</b></div>
-      <div class="m"><span>Distrito / zona</span><b>${order.distrito}</b></div>
-      <div class="m"><span>Dirección</span><b>${order.dir}</b></div>
-      <div class="m"><span>Tipo de trabajo</span><b>${order.tipo}</b></div>
+    <div class="step-div">›</div>
+    <div class="step" id="s1" onclick="goStep(1)">
+      <span class="sn">2</span><div><span id="s1_lbl">Actividades</span><span class="step-sub" id="s1_sub">Desde el catálogo</span></div>
     </div>
+    <div class="step-div">›</div>
+    <div class="step" id="s2" onclick="goStep(2)">
+      <span class="sn">3</span><div><span id="s2_lbl">Materiales</span><span class="step-sub" id="s2_sub">Catálogo de materiales</span></div>
+    </div>
+    <div class="step-div">›</div>
+    <div class="step" id="s3" onclick="goStep(3)">
+      <span class="sn">4</span><div><span id="s3_lbl">Reporte</span><span class="step-sub" id="s3_sub">Costos consolidados</span></div>
+    </div>
+  </div>
+</div>
 
-    <div class="sec-title">Actividades ejecutadas</div>
-    <div class="tablecard"><table>
-      <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cant.</th><th class="r">Precio unit.</th><th class="r">Costo total</th></tr></thead>
-      <tbody>${rowsTable(acts)}</tbody></table></div>
-
-    <div class="sec-title">Materiales utilizados</div>
-    <div class="tablecard"><table>
-      <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cant.</th><th class="r">Precio unit.</th><th class="r">Costo total</th></tr></thead>
-      <tbody>${rowsTable(mats)}</tbody></table></div>
-
-    <div class="summary">
-      <div class="sumcard">
-        <div class="sec-title" style="margin-top:0">Resumen financiero</div>
-        <div class="sumrow"><span>Costo actividades (sin IVA)</span><span class="num">${Q(t.ca)}</span></div>
-        <div class="sumrow"><span>Costo materiales (sin IVA)</span><span class="num">${Q(t.cm)}</span></div>
-        <div class="sumrow"><span>Subtotal (sin IVA)</span><span class="num">${Q(t.sub)}</span></div>
-        <div class="sumrow"><span>IVA (12%)</span><span class="num">${Q(t.iva)}</span></div>
-        <div class="sumrow total"><span>Total general</span><span class="num">${Q(t.total)}</span></div>
-      </div>
-      <div class="sumcard">
-        <div class="sec-title" style="margin-top:0">Indicadores de la orden</div>
-        <div class="kpis">
-          <div class="kpi"><span>Actividades</span><b>${t.nAct}</b></div>
-          <div class="kpi"><span>Materiales</span><b>${t.nMat}</b></div>
-          <div class="kpi"><span>Cant. activ.</span><b>${t.qAct}</b></div>
-          <div class="kpi"><span>Cant. mater.</span><b>${t.qMat}</b></div>
+<div class="container">
+  <!-- STEP 0: datos -->
+  <div class="panel active" id="p0">
+    <div class="card">
+      <div class="card-h"><h3 id="p0_title">Información general de la orden</h3></div>
+      <div class="card-b">
+        <div class="form-grid">
+          <div><label id="lbl_ot">N.° de orden</label><input id="f_ot" readonly></div>
+          <div><label id="lbl_fecha">Fecha de ejecución *</label><input id="f_fecha" type="date"></div>
+          <div><label id="lbl_estado">Estado</label><select id="f_estado"><option value="Abierta" id="opt_open">Abierta</option><option value="Cerrada" selected id="opt_closed">Cerrada</option></select></div>
         </div>
-        <div class="sumrow" style="margin-top:14px"><span>Costo promedio por actividad</span><span class="num">${Q(t.nAct? t.ca/t.nAct:0)}</span></div>
-        <div class="sumrow"><span>Total sin IVA</span><span class="num">${Q(t.sub)}</span></div>
-        <div class="sumrow"><span>Total con IVA</span><span class="num">${Q(t.total)}</span></div>
+        <div class="form-grid">
+          <div><label id="lbl_contr">Contratista *</label><input id="f_contr" placeholder="Ej. Empresa A"></div>
+          <div><label id="lbl_tec">Técnico responsable</label><input id="f_tec" placeholder="Ej. Juan Pérez"></div>
+          <div><label id="lbl_dist">Distrito / zona</label><input id="f_dist" placeholder="Ej. Centro"></div>
+        </div>
+        <div class="form-grid2">
+          <div><label id="lbl_dir">Dirección / ubicación</label><input id="f_dir" placeholder="Ej. Av. Principal 123"></div>
+          <div><label id="lbl_tipo">Tipo de trabajo</label><select id="f_tipo"><option id="opt_w1">Mantenimiento general</option><option id="opt_w2">Mantenimiento correctivo</option><option id="opt_w3">Mantenimiento preventivo</option></select></div>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-blue" onclick="saveStep0()" id="btn_sc">Guardar y continuar →</button>
+        </div>
       </div>
     </div>
-    <p style="font-size:11.5px;color:var(--muted);margin-top:18px">Reporte generado el ${new Date().toLocaleString("es-GT")} · Confidencial EPM Guatemala</p>
-  `;
+  </div>
+
+  <!-- STEP 1: actividades -->
+  <div class="panel" id="p1">
+    <div class="import-bar no-print">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ub)" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span class="ib-note" id="ib_act_note">El catálogo de actividades viene precargado. Puedes reemplazarlo importando un CSV o Excel.</span>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer" id="btn_imp_act">Importar<input type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="onPick(this,'act')"></label>
+      <button class="btn btn-ghost btn-sm" onclick="tplCSV('act')" id="btn_tpl_act">Plantilla CSV</button>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3 id="p1_title">Actividades ejecutadas</h3></div>
+      <div class="card-b">
+        <div class="addbar">
+          <div><label id="lbl_sel_act">Actividad (catálogo)</label><select id="act_sel"></select></div>
+          <div><label id="lbl_qty">Cantidad</label><input id="act_qty" type="number" min="1" value="1"></div>
+          <div><button class="btn btn-blue" onclick="addAct()" id="btn_add_act">+ Agregar</button></div>
+        </div>
+        <div id="actList"><p class="muted-note" id="no_acts_txt">Sin actividades agregadas.</p></div>
+        <div id="act_subtotal" style="margin-top:12px;text-align:right;font-weight:700;color:var(--db);font-size:14px"></div>
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="goStep(0)" id="btn_back1">← Volver</button>
+          <button class="btn btn-blue" onclick="goStep(2)" id="btn_cont_mats">Continuar a materiales →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: materiales -->
+  <div class="panel" id="p2">
+    <div class="import-bar no-print">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ub)" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span class="ib-note" id="ib_mat_note">El catálogo de materiales viene precargado. Puedes reemplazarlo importando un CSV o Excel.</span>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer" id="btn_imp_mat">Importar<input type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none" onchange="onPick(this,'mat')"></label>
+      <button class="btn btn-ghost btn-sm" onclick="tplCSV('mat')" id="btn_tpl_mat">Plantilla CSV</button>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3 id="p2_title">Materiales utilizados</h3></div>
+      <div class="card-b">
+        <div class="addbar">
+          <div><label id="lbl_sel_mat">Material (catálogo)</label><select id="mat_sel"></select></div>
+          <div><label id="lbl_qty2">Cantidad</label><input id="mat_qty" type="number" min="1" value="1"></div>
+          <div><button class="btn btn-blue" onclick="addMat()" id="btn_add_mat">+ Agregar</button></div>
+        </div>
+        <div id="matList"><p class="muted-note" id="no_mats_txt">Sin materiales agregados.</p></div>
+        <div id="mat_subtotal" style="margin-top:12px;text-align:right;font-weight:700;color:var(--db);font-size:14px"></div>
+        <div class="action-row">
+          <button class="btn btn-ghost" onclick="goStep(1)" id="btn_back2">← Volver</button>
+          <button class="btn btn-blue" onclick="goStep(3)" id="btn_see_rep">Ver reporte →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: reporte -->
+  <div class="panel" id="p3">
+    <div class="docpage" id="docReport">
+      <div class="docpage-head">
+        <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="8" fill="#22B0E1"/><text x="20" y="28" text-anchor="middle" font-family="Lato,sans-serif" font-weight="900" font-size="22" fill="#fff">U</text></svg>
+        <div class="docpage-title"><span class="eyebrow" id="rep_eyebrow">Reporte integrado de la orden</span><h2 id="rep_title">Reporte detallado de costos</h2></div>
+        <span id="rep_chip" style="display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--tint);color:var(--dg);text-transform:uppercase;letter-spacing:.04em"></span>
+      </div>
+      <div class="meta" id="rep_meta"></div>
+      <div class="sec-title" id="rep_sec_acts">Actividades ejecutadas</div>
+      <div class="tablecard" id="rep_act_table"></div>
+      <div class="sec-title" id="rep_sec_mats">Materiales utilizados</div>
+      <div class="tablecard" id="rep_mat_table"></div>
+      <div class="fin-grid">
+        <div class="card"><div class="card-h"><h3 id="rep_fin_title">Resumen financiero</h3></div><div class="card-b" id="rep_fin"></div></div>
+        <div class="card"><div class="card-b"><div id="rep_indicators"></div></div></div>
+      </div>
+      <p class="docpage-foot" id="rep_foot"></p>
+    </div>
+    <div class="action-row no-print">
+      <button class="btn btn-ghost" onclick="resetOrder()" id="btn_new_order_r">+ Nueva orden</button>
+      <button class="btn btn-ghost" onclick="window.print()" id="btn_print_r">Imprimir</button>
+      <button class="btn btn-green" onclick="exportCSV()" id="btn_export_r">Exportar CSV</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+/* ===== COUNTRIES ===== */
+const COUNTRIES=[
+  {code:"CA",en:"Canada",       es:"Canadá",           cur:"CAD",sym:"$",  tax:"GST",  rate:5},
+  {code:"US",en:"United States",es:"Estados Unidos",   cur:"USD",sym:"$",  tax:"Tax",  rate:0},
+  {code:"MX",en:"Mexico",       es:"México",           cur:"MXN",sym:"$",  tax:"IVA",  rate:16},
+  {code:"GT",en:"Guatemala",    es:"Guatemala",        cur:"GTQ",sym:"Q",  tax:"IVA",  rate:12},
+  {code:"BZ",en:"Belize",       es:"Belice",           cur:"BZD",sym:"$",  tax:"GST",  rate:12.5},
+  {code:"SV",en:"El Salvador",  es:"El Salvador",      cur:"USD",sym:"$",  tax:"IVA",  rate:13},
+  {code:"HN",en:"Honduras",     es:"Honduras",         cur:"HNL",sym:"L",  tax:"ISV",  rate:15},
+  {code:"NI",en:"Nicaragua",    es:"Nicaragua",        cur:"NIO",sym:"C$", tax:"IVA",  rate:15},
+  {code:"CR",en:"Costa Rica",   es:"Costa Rica",       cur:"CRC",sym:"₡",  tax:"IVA",  rate:13},
+  {code:"PA",en:"Panama",       es:"Panamá",           cur:"PAB",sym:"B/.",tax:"ITBMS",rate:7},
+  {code:"DO",en:"Dominican Rep.",es:"Rep. Dominicana", cur:"DOP",sym:"RD$",tax:"ITBIS",rate:18},
+  {code:"CO",en:"Colombia",     es:"Colombia",         cur:"COP",sym:"$",  tax:"IVA",  rate:19},
+  {code:"VE",en:"Venezuela",    es:"Venezuela",        cur:"VES",sym:"Bs.",tax:"IVA",  rate:16},
+  {code:"EC",en:"Ecuador",      es:"Ecuador",          cur:"USD",sym:"$",  tax:"IVA",  rate:15},
+  {code:"PE",en:"Peru",         es:"Perú",             cur:"PEN",sym:"S/", tax:"IGV",  rate:18},
+  {code:"BO",en:"Bolivia",      es:"Bolivia",          cur:"BOB",sym:"Bs", tax:"IVA",  rate:13},
+  {code:"BR",en:"Brazil",       es:"Brasil",           cur:"BRL",sym:"R$", tax:"ICMS", rate:17},
+  {code:"PY",en:"Paraguay",     es:"Paraguay",         cur:"PYG",sym:"₲",  tax:"IVA",  rate:10},
+  {code:"UY",en:"Uruguay",      es:"Uruguay",          cur:"UYU",sym:"$U", tax:"IVA",  rate:22},
+  {code:"AR",en:"Argentina",    es:"Argentina",        cur:"ARS",sym:"$",  tax:"IVA",  rate:21},
+  {code:"CL",en:"Chile",        es:"Chile",            cur:"CLP",sym:"$",  tax:"IVA",  rate:19}
+];
+let LANG="es", CC="CL", RATE=19;
+function country(){return COUNTRIES.find(c=>c.code===CC)||COUNTRIES[20];}
+function taxRate(){return RATE/100;}
+function taxLabel(){return country().tax;}
+function money(n){const c=country();const loc=LANG==="es"?"es-CL":"en-US";return c.sym+Math.abs(Number(n||0)).toLocaleString(loc,{minimumFractionDigits:2,maximumFractionDigits:2});}
+const $=id=>document.getElementById(id);
+
+/* ===== CATALOG ===== */
+let ACT=[["APG01","Apertura de agujero para poste",353.76],["APG02","Aplomado de poste 30-35 pies madera/concreto",918.20],["APG03","Bajada secundaria con tubo HG de 2\" pulgadas",1583.73],["APG04","Cambio de balastro de luminaria",255.01],["APG05","Cambio de brazo",375.34],["APG06","Cambio de cabeza de luminaria",170.62],["APG07","Cambio de cableado y conexiones subterráneas",424.67],["APG08","Cambio de contactor",645.58],["APG09","Cambio de driver LED",329.73],["APG10","Cambio de flipón",262.34],["APG11","Cambio de fusibles en el relevador",171.22],["APG12","Cambio de herrajes varios unitario",183.83],["APG13","Cambio de luminaria completa con brazo 2-6'",375.34],["APG14","Cambio de luminaria completa con brazo 8-12'",390.55],["APG15","Cambio de luminaria de pared (Wallpack / techo)",341.22],["APG16","Cambio de módulos LED",329.73],["APG17","Cambio de poste 30-35 pies concreto",2215.91],["APG18","Cambio de poste 30-35 pies madera",2063.81],["APG19","Cambio de poste 30-35 pies metálico (pernos)",2759.63],["APG20","Cambio de poste 30-35 pies metálico (empotrado)",2174.10],["APG21","Cambio de reflector 500W en poste 35-40 pies",456.71],["APG22","Cambio de refractor",104.27],["APG23","Cambio de relevador",464.51],["APG24","Cambio de timer",383.87],["APG25","Cambio de vano aéreo dañado <=40m",542.80],["APG26","Cambio de vano aéreo dañado >40m",601.10],["APG27","Cambio de vano subterráneo dañado <=40m",348.30],["APG28","Cambio de vano subterráneo dañado >40m",336.79],["APG29","Desrame por luminaria o vano",126.33],["APG30","Diseño de alumbrado 501-1000 metros",889.45],["APG31","Diseño de alumbrado hasta 500 metros",527.64],["APG32","Diseño de alumbrado mayor a 1000 metros",1073.47],["APG33","Disponibilidad Tipo C1 (motocicleta)",140.89],["APG34","Disponibilidad Tipo C2 (pickup)",356.49],["APG35","Disponibilidad Tipo C3 (camión canasta)",639.53],["APG36","Disponibilidad Tipo C4 (camión liniero)",734.15],["APG37","Instalación de anclajes",481.59]].map(([c,d,p])=>({codigo:c,desc:d,precio:p}));
+let MAT=[["310391","Cable Duplex 6 ACSR con forro",100.00],["310393","Cable Triplex No. 4 con forro",200.00],["310403","Cable Triplex 1/0 ACSR con forro",300.00]].map(([c,d,p])=>({codigo:c,desc:d,precio:p}));
+
+/* ===== ORDER STATE ===== */
+let ORDER={acts:[],mats:[]}, curStep=0, saved=false;
+function genOT(){return"WO-"+new Date().getFullYear()+"-"+String(Math.floor(1000+Math.random()*9000));}
+
+/* ===== i18n minimal ===== */
+const T={
+es:{hdr:"Gestión de órdenes de trabajo",step_data:"Datos",step_acts:"Actividades",step_mats:"Materiales",step_rep:"Reporte",sub_data:"Información general",sub_acts:"Desde el catálogo",sub_mats:"Catálogo de materiales",sub_rep:"Costos consolidados",p0_title:"Información general de la orden",p1_title:"Actividades ejecutadas",p2_title:"Materiales utilizados",lbl_ot:"N.° de orden",lbl_fecha:"Fecha de ejecución *",lbl_estado:"Estado",opt_open:"Abierta",opt_closed:"Cerrada",lbl_contr:"Contratista *",lbl_tec:"Técnico responsable",lbl_dist:"Distrito / zona",lbl_dir:"Dirección / ubicación",lbl_tipo:"Tipo de trabajo",opt_w1:"Mantenimiento general",opt_w2:"Mantenimiento correctivo",opt_w3:"Mantenimiento preventivo",btn_sc:"Guardar y continuar →",lbl_sel_act:"Actividad (catálogo)",lbl_qty:"Cantidad",btn_add_act:"+ Agregar",no_acts:"Sin actividades agregadas.",lbl_sel_mat:"Material (catálogo)",btn_add_mat:"+ Agregar",no_mats:"Sin materiales agregados.",btn_back:"← Volver",btn_cont_mats:"Continuar a materiales →",btn_see_rep:"Ver reporte →",rep_eyebrow:"Reporte integrado de la orden",rep_title:"Reporte detallado de costos",rep_sec_acts:"Actividades ejecutadas",rep_sec_mats:"Materiales utilizados",rep_fin_title:"Resumen financiero",btn_new_order:"+ Nueva orden",btn_print:"Imprimir",btn_export:"Exportar CSV",lbl_lang:"Idioma",lbl_country:"País",lbl_tax:"Tasa imp.",ib_act:"El catálogo de actividades viene precargado. Puedes reemplazarlo importando un CSV o Excel.",ib_mat:"El catálogo de materiales viene precargado. Puedes reemplazarlo importando un CSV o Excel.",btn_imp:"Importar",btn_tpl:"Plantilla CSV",lbl_fecha_r:"Fecha de ejecución",lbl_contr_r:"Contratista",lbl_tec_r:"Técnico",lbl_dist_r:"Distrito",lbl_dir_r:"Dirección",lbl_tipo_r:"Tipo de trabajo",cost_acts:"Costo actividades",cost_mats:"Costo materiales",subtotal:"Subtotal",total:"Total",th_code:"Código",th_descr:"Descripción",th_qty:"Cant.",th_unit:"Precio unit.",th_cost:"Total",gen_on:"Generado el",ind_acts:"Actividades",ind_mats:"Materiales",ind_qacts:"Cant. activ.",ind_qmats:"Cant. mater.",avg_act:"Costo prom./activ.",need_date:"Indica la fecha de ejecución",need_contr:"Indica el contratista",need_line:"Agrega al menos una actividad o material",saved_msg:"Orden guardada",imported_acts:"actividades importadas",imported_mats:"materiales importados",no_valid:"No se encontraron filas válidas",fmt_err:"Formato no soportado: usa CSV o Excel",xlsx_online:"Excel requiere conexión; usa CSV sin conexión",sub_acts_lbl:"Subtotal actividades",sub_mats_lbl:"Subtotal materiales"},
+en:{hdr:"Work Order Management",step_data:"Data",step_acts:"Activities",step_mats:"Materials",step_rep:"Report",sub_data:"General information",sub_acts:"From the catalog",sub_mats:"Materials catalog",sub_rep:"Consolidated cost",p0_title:"General order information",p1_title:"Activities performed",p2_title:"Materials used",lbl_ot:"Order no.",lbl_fecha:"Execution date *",lbl_estado:"Status",opt_open:"Open",opt_closed:"Closed",lbl_contr:"Contractor *",lbl_tec:"Responsible technician",lbl_dist:"District / zone",lbl_dir:"Address / location",lbl_tipo:"Work type",opt_w1:"General maintenance",opt_w2:"Corrective maintenance",opt_w3:"Preventive maintenance",btn_sc:"Save and continue →",lbl_sel_act:"Activity (catalog)",lbl_qty:"Quantity",btn_add_act:"+ Add",no_acts:"No activities added.",lbl_sel_mat:"Material (catalog)",btn_add_mat:"+ Add",no_mats:"No materials added.",btn_back:"← Back",btn_cont_mats:"Continue to materials →",btn_see_rep:"View report →",rep_eyebrow:"Integrated order report",rep_title:"Detailed cost report",rep_sec_acts:"Activities performed",rep_sec_mats:"Materials used",rep_fin_title:"Financial summary",btn_new_order:"+ New order",btn_print:"Print",btn_export:"Export CSV",lbl_lang:"Language",lbl_country:"Country",lbl_tax:"Tax rate",ib_act:"The activities catalog is preloaded. You can replace it by importing a CSV or Excel file.",ib_mat:"The materials catalog is preloaded. You can replace it by importing a CSV or Excel file.",btn_imp:"Import",btn_tpl:"CSV Template",lbl_fecha_r:"Execution date",lbl_contr_r:"Contractor",lbl_tec_r:"Technician",lbl_dist_r:"District",lbl_dir_r:"Address",lbl_tipo_r:"Work type",cost_acts:"Activities cost",cost_mats:"Materials cost",subtotal:"Subtotal",total:"Total",th_code:"Code",th_descr:"Description",th_qty:"Qty",th_unit:"Unit price",th_cost:"Total",gen_on:"Generated on",ind_acts:"Act. types",ind_mats:"Mat. types",ind_qacts:"Act. qty",ind_qmats:"Mat. qty",avg_act:"Avg cost/activity",need_date:"Enter the execution date",need_contr:"Enter the contractor",need_line:"Add at least one activity or material",saved_msg:"Order saved",imported_acts:"activities imported",imported_mats:"materials imported",no_valid:"No valid rows found",fmt_err:"Unsupported format: use CSV or Excel",xlsx_online:"Excel needs connection; use CSV offline",sub_acts_lbl:"Activities subtotal",sub_mats_lbl:"Materials subtotal"}
+};
+function t(k){return(T[LANG]&&T[LANG][k])?T[LANG][k]:(T.es[k]||k);}
+
+function applyI18n(){
+  document.documentElement.lang=LANG;
+  $("hdr_title").textContent=t("hdr");
+  $("lbl_lang_s").textContent=t("lbl_lang");
+  $("lbl_country_s").textContent=t("lbl_country");
+  $("lbl_tax_s").textContent=t("lbl_tax");
+  $("s0_lbl").textContent=t("step_data");$("s0_sub").textContent=t("sub_data");
+  $("s1_lbl").textContent=t("step_acts");$("s1_sub").textContent=t("sub_acts");
+  $("s2_lbl").textContent=t("step_mats");$("s2_sub").textContent=t("sub_mats");
+  $("s3_lbl").textContent=t("step_rep"); $("s3_sub").textContent=t("sub_rep");
+  $("p0_title").textContent=t("p0_title");
+  $("p1_title").textContent=t("p1_title");
+  $("p2_title").textContent=t("p2_title");
+  $("lbl_ot").textContent=t("lbl_ot");$("lbl_fecha").textContent=t("lbl_fecha");$("lbl_estado").textContent=t("lbl_estado");
+  $("opt_open").textContent=t("opt_open");$("opt_closed").textContent=t("opt_closed");
+  $("lbl_contr").textContent=t("lbl_contr");$("lbl_tec").textContent=t("lbl_tec");$("lbl_dist").textContent=t("lbl_dist");
+  $("lbl_dir").textContent=t("lbl_dir");$("lbl_tipo").textContent=t("lbl_tipo");
+  $("opt_w1").textContent=t("opt_w1");$("opt_w2").textContent=t("opt_w2");$("opt_w3").textContent=t("opt_w3");
+  $("btn_sc").textContent=t("btn_sc");
+  $("lbl_sel_act").textContent=t("lbl_sel_act");$("lbl_qty").textContent=t("lbl_qty");$("btn_add_act").textContent=t("btn_add_act");
+  $("no_acts_txt").textContent=t("no_acts");
+  $("lbl_sel_mat").textContent=t("lbl_sel_mat");$("lbl_qty2").textContent=t("lbl_qty");$("btn_add_mat").textContent=t("btn_add_mat");
+  $("no_mats_txt").textContent=t("no_mats");
+  $("btn_back1").textContent=t("btn_back");$("btn_back2").textContent=t("btn_back");
+  $("btn_cont_mats").textContent=t("btn_cont_mats");$("btn_see_rep").textContent=t("btn_see_rep");
+  $("btn_print_hdr").textContent=t("btn_print");$("btn_export_hdr").textContent=t("btn_export");
+  $("btn_imp_act").childNodes[0].textContent=t("btn_imp");$("btn_tpl_act").textContent=t("btn_tpl");
+  $("btn_imp_mat").childNodes[0].textContent=t("btn_imp");$("btn_tpl_mat").textContent=t("btn_tpl");
+  $("ib_act_note").textContent=t("ib_act");$("ib_mat_note").textContent=t("ib_mat");
+  $("btn_new_order_r").textContent=t("btn_new_order");$("btn_print_r").textContent=t("btn_print");$("btn_export_r").textContent=t("btn_export");
+  $("rep_eyebrow").textContent=t("rep_eyebrow");$("rep_title").textContent=t("rep_title");
+  $("rep_sec_acts").textContent=t("rep_sec_acts");$("rep_sec_mats").textContent=t("rep_sec_mats");
+  $("rep_fin_title").textContent=t("rep_fin_title");
+  refreshSelects();
 }
 
+/* ===== SETTINGS ===== */
+function initCountrySelect(){
+  const sel=$("country_sel");
+  sel.innerHTML=COUNTRIES.map(c=>`<option value="${c.code}"${c.code===CC?" selected":""}>${LANG==="es"?c.es:c.en} · ${c.cur}</option>`).join("");
+}
+function updateCurDisplay(){const c=country();$("cur_display").innerHTML=`${c.cur} · ${c.sym}`;}
+function setLang(l){LANG=l;$("lang_es").className=l==="es"?"on":"";$("lang_en").className=l==="en"?"on":"";initCountrySelect();applyI18n();updateCurDisplay();if(saved)buildReport();}
+function setCountry(code){CC=code;RATE=country().rate;$("rate_in").value=RATE;updateCurDisplay();if(saved)buildReport();}
+function setRate(v){RATE=parseFloat(v)||0;if(saved)buildReport();}
+
+/* ===== STEPPER ===== */
+function goStep(n){
+  if(n>0&&!saved&&n>curStep){toast(t("need_date"));return;}
+  curStep=n;
+  [0,1,2,3].forEach(i=>{
+    const s=$("s"+i),p=$("p"+i);
+    s.className="step"+(i===n?" active":i<n?" done":"");
+    p.className="panel"+(i===n?" active":"");
+  });
+  if(n===1)refreshActSel();
+  if(n===2)refreshMatSel();
+  if(n===3&&saved)buildReport();
+  window.scrollTo(0,0);
+}
+
+/* ===== STEP 0 ===== */
+function initStep0(){
+  $("f_ot").value=genOT();
+  $("f_fecha").value=new Date().toISOString().slice(0,10);
+}
+function saveStep0(){
+  if(!$("f_fecha").value){toast(t("need_date"));return;}
+  if(!$("f_contr").value.trim()){toast(t("need_contr"));return;}
+  saved=true; ORDER.acts=[]; ORDER.mats=[];
+  goStep(1);
+}
+
+/* ===== CATALOG HELPERS ===== */
+const actPrice=c=>(ACT.find(a=>a.codigo===c)||{}).precio||0;
+const actDesc=c=>(ACT.find(a=>a.codigo===c)||{}).desc||c;
+const matPrice=c=>(MAT.find(m=>m.codigo===c)||{}).precio||0;
+const matDesc=c=>(MAT.find(m=>m.codigo===c)||{}).desc||c;
+function refreshSelects(){if(saved||curStep>=1){refreshActSel();refreshMatSel();}}
+function refreshActSel(){const s=$("act_sel");if(s)s.innerHTML=ACT.map(a=>`<option value="${a.codigo}">${a.codigo} · ${a.desc} — ${money(a.precio)}</option>`).join("");}
+function refreshMatSel(){const s=$("mat_sel");if(s)s.innerHTML=MAT.map(m=>`<option value="${m.codigo}">${m.codigo} · ${m.desc} — ${money(m.precio)}</option>`).join("");}
+
+/* ===== STEP 1 ===== */
+function addAct(){const c=$("act_sel").value,q=Math.max(1,parseInt($("act_qty").value)||1);const ex=ORDER.acts.find(l=>l[0]===c);if(ex)ex[1]+=q;else ORDER.acts.push([c,q]);$("act_qty").value=1;renderActList();}
+function delAct(c){ORDER.acts=ORDER.acts.filter(l=>l[0]!==c);renderActList();}
+function renderActList(){
+  const el=$("actList");
+  if(!ORDER.acts.length){el.innerHTML=`<p class="muted-note">${t("no_acts")}</p>`;$("act_subtotal").textContent="";return;}
+  el.innerHTML=ORDER.acts.map(([c,q])=>`<div class="lineitem"><span class="li-code">${c}</span><span class="li-desc">${actDesc(c)}</span><span class="li-qty">×${q}</span><span class="li-tot">${money(actPrice(c)*q)}</span><button class="del" onclick="delAct('${c}')">×</button></div>`).join("");
+  const sub=ORDER.acts.reduce((s,[c,q])=>s+actPrice(c)*q,0);
+  $("act_subtotal").textContent=t("sub_acts_lbl")+": "+money(sub);
+}
+
+/* ===== STEP 2 ===== */
+function addMat(){const c=$("mat_sel").value,q=Math.max(1,parseInt($("mat_qty").value)||1);const ex=ORDER.mats.find(l=>l[0]===c);if(ex)ex[1]+=q;else ORDER.mats.push([c,q]);$("mat_qty").value=1;renderMatList();}
+function delMat(c){ORDER.mats=ORDER.mats.filter(l=>l[0]!==c);renderMatList();}
+function renderMatList(){
+  const el=$("matList");
+  if(!ORDER.mats.length){el.innerHTML=`<p class="muted-note">${t("no_mats")}</p>`;$("mat_subtotal").textContent="";return;}
+  el.innerHTML=ORDER.mats.map(([c,q])=>`<div class="lineitem"><span class="li-code">${c}</span><span class="li-desc">${matDesc(c)}</span><span class="li-qty">×${q}</span><span class="li-tot">${money(matPrice(c)*q)}</span><button class="del" onclick="delMat('${c}')">×</button></div>`).join("");
+  const sub=ORDER.mats.reduce((s,[c,q])=>s+matPrice(c)*q,0);
+  $("mat_subtotal").textContent=t("sub_mats_lbl")+": "+money(sub);
+}
+
+/* ===== STEP 3: REPORT ===== */
+function buildReport(){
+  if(!saved){return;}
+  if(!ORDER.acts.length&&!ORDER.mats.length){toast(t("need_line"));goStep(1);return;}
+  const ot=$("f_ot").value,fecha=$("f_fecha").value,estado=$("f_estado").value;
+  const contr=$("f_contr").value,tec=$("f_tec").value||"—",dist=$("f_dist").value||"—",dir=$("f_dir").value||"—",tipo=$("f_tipo").value;
+  const ca=ORDER.acts.reduce((s,[c,q])=>s+actPrice(c)*q,0);
+  const cm=ORDER.mats.reduce((s,[c,q])=>s+matPrice(c)*q,0);
+  const sub=ca+cm,tax=sub*taxRate(),total=sub+tax;
+  const nAct=ORDER.acts.length,nMat=ORDER.mats.length;
+  const qAct=ORDER.acts.reduce((s,[,q])=>s+q,0),qMat=ORDER.mats.reduce((s,[,q])=>s+q,0);
+
+  $("rep_chip").textContent=estado==="Cerrada"?(LANG==="es"?"Cerrada":"Closed"):(LANG==="es"?"Abierta":"Open");
+  $("rep_chip").style.background=estado==="Cerrada"?"var(--tint)":"#fff8dd";
+  $("rep_chip").style.color=estado==="Cerrada"?"var(--dg)":"#8a6a00";
+
+  $("rep_meta").innerHTML=`
+    <div class="m"><span>${t("lbl_ot")}</span><b class="mono">${ot}</b></div>
+    <div class="m"><span>${t("lbl_fecha_r")}</span><b>${fecha}</b></div>
+    <div class="m"><span>${t("lbl_contr_r")}</span><b>${contr}</b></div>
+    <div class="m"><span>${t("lbl_tec_r")}</span><b>${tec}</b></div>
+    <div class="m"><span>${t("lbl_dist_r")}</span><b>${dist}</b></div>
+    <div class="m"><span>${t("lbl_dir_r")}</span><b>${dir}</b></div>`;
+
+  const actRows=ORDER.acts.map(([c,q])=>`<tr><td class="tcode">${c}</td><td>${actDesc(c)}</td><td class="r num">${q}</td><td class="r num">${money(actPrice(c))}</td><td class="r num">${money(actPrice(c)*q)}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">—</td></tr>`;
+  $("rep_act_table").innerHTML=`<table><thead><tr><th>${t("th_code")}</th><th>${t("th_descr")}</th><th class="r">${t("th_qty")}</th><th class="r">${t("th_unit")}</th><th class="r">${t("th_cost")}</th></tr></thead><tbody>${actRows}</tbody></table>`;
+
+  const matRows=ORDER.mats.map(([c,q])=>`<tr><td class="tcode">${c}</td><td>${matDesc(c)}</td><td class="r num">${q}</td><td class="r num">${money(matPrice(c))}</td><td class="r num">${money(matPrice(c)*q)}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">—</td></tr>`;
+  $("rep_mat_table").innerHTML=`<table><thead><tr><th>${t("th_code")}</th><th>${t("th_descr")}</th><th class="r">${t("th_qty")}</th><th class="r">${t("th_unit")}</th><th class="r">${t("th_cost")}</th></tr></thead><tbody>${matRows}</tbody></table>`;
+
+  $("rep_fin").innerHTML=`<div class="sumrow"><span>${t("cost_acts")}</span><span class="num">${money(ca)}</span></div><div class="sumrow"><span>${t("cost_mats")}</span><span class="num">${money(cm)}</span></div><div class="sumrow"><span>${t("subtotal")}</span><span class="num">${money(sub)}</span></div><div class="sumrow"><span>${taxLabel()} (${RATE}%)</span><span class="num">${money(tax)}</span></div><div class="sumrow total"><span>${t("total")}</span><span class="num">${money(total)}</span></div>`;
+
+  $("rep_indicators").innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div style="background:var(--tint);border-radius:9px;padding:11px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">${t("ind_acts")}</div><div style="font-size:26px;font-weight:900;color:var(--db)">${nAct}</div></div><div style="background:var(--tint2);border-radius:9px;padding:11px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">${t("ind_mats")}</div><div style="font-size:26px;font-weight:900;color:var(--ub-d)">${nMat}</div></div><div style="background:var(--bg);border-radius:9px;padding:11px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">${t("ind_qacts")}</div><div style="font-size:26px;font-weight:900;color:var(--db)">${qAct}</div></div><div style="background:var(--bg);border-radius:9px;padding:11px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">${t("ind_qmats")}</div><div style="font-size:26px;font-weight:900;color:var(--ub-d)">${qMat}</div></div></div><div class="sumrow"><span>${t("avg_act")}</span><span class="num">${money(nAct?ca/nAct:0)}</span></div>`;
+
+  $("rep_foot").textContent=t("gen_on")+" "+new Date().toLocaleString(LANG==="es"?"es-CL":"en-US")+" · "+country()[LANG==="es"?"es":"en"]+" · "+country().cur;
+}
+
+/* ===== IMPORT ===== */
+function cleanPrice(v){if(typeof v==="number")return v;let s=String(v).replace(/[^0-9.,-]/g,"").trim();if(s.includes(",")&&s.includes("."))s=s.replace(/,/g,"");else if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");const n=parseFloat(s);return isNaN(n)?null:n;}
+function parseCSV(text){text=text.replace(/\r/g,"");const first=(text.split("\n").find(l=>l.trim())||"");const delim=(first.split(";").length>first.split(",").length)?";":",";;return text.split("\n").map(line=>{const cells=[];let cur="",q=false,start=true;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q){if(line[i+1]==='"'){cur+='"';i++;}else q=false;}else if(start){q=true;}else{cur+='"';}start=false;}else if(ch===delim&&!q){cells.push(cur);cur="";start=true;}else{cur+=ch;start=false;}}cells.push(cur);return cells;});}
+function rowsToCatalog(rows){const out=[];(rows||[]).forEach(r=>{const cells=(r||[]).map(c=>c==null?"":String(c).trim());while(cells.length&&cells[cells.length-1]==="")cells.pop();if(!cells.length)return;let pi=-1,price=null;for(let i=cells.length-1;i>=0;i--){if(/\d/.test(cells[i])){const n=cleanPrice(cells[i]);if(n!=null){pi=i;price=n;break;}}}if(pi<1)return;const code=cells[0];if(!code||/^[ií]tem$|^c[oó]digo$|^item$|^code$/i.test(code))return;const desc=cells.slice(1,pi).join(" ").trim()||code;out.push({codigo:code,desc,precio:price});});return out;}
+function onPick(input,target){const f=input.files[0];if(!f)return;const ext=f.name.split(".").pop().toLowerCase();if(ext==="csv"||ext==="txt"){const rd=new FileReader();rd.onload=e=>{const rows=rowsToCatalog(parseCSV(e.target.result));if(!rows.length){toast(t("no_valid"));return;}if(target==="act")ACT=rows;else MAT=rows;toast(rows.length+" "+(target==="act"?t("imported_acts"):t("imported_mats")));refreshSelects();};rd.readAsText(f,"utf-8");}else if(ext==="xlsx"||ext==="xls"){if(typeof XLSX==="undefined"){alert(t("xlsx_online"));return;}const rd=new FileReader();rd.onload=e=>{const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const rows=rowsToCatalog(XLSX.utils.sheet_to_json(ws,{header:1,defval:""}));if(!rows.length){toast(t("no_valid"));return;}if(target==="act")ACT=rows;else MAT=rows;toast(rows.length+" "+(target==="act"?t("imported_acts"):t("imported_mats")));refreshSelects();};rd.readAsArrayBuffer(f);}else alert(t("fmt_err"));input.value="";}
+function tplCSV(kind){const head=kind==="act"?["Código","Descripción","Precio"]:["Código","Descripción","Precio"];const ex=kind==="act"?[["APG01","Apertura de agujero para poste","353.76"]]:[["310391","Cable Duplex 6 ACSR con forro","100.00"]];const csv="\uFEFF"+[head,...ex].map(r=>r.map(c=>`"${c}"`).join(";")).join("\n");const b=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=(kind==="act"?"template_activities":"template_materials")+".csv";a.click();}
+
+/* ===== EXPORT CSV ===== */
 function exportCSV(){
-  const t=totals(); const L=[];
-  L.push(["Reporte de costos por orden de trabajo"]);
-  L.push(["Orden",order.ot,"Fecha",order.fecha,"Estado",order.estado]);
-  L.push(["Contratista",order.contratista,"Técnico",order.tecnico,"Distrito",order.distrito]);
-  L.push([]);
-  L.push(["ACTIVIDADES"]); L.push(["Código","Descripción","Cantidad","Precio unit.","Costo total"]);
-  acts.forEach(a=>L.push([a.codigo,a.desc,a.qty,a.precio,(a.precio*a.qty).toFixed(2)]));
-  L.push([]);
-  L.push(["MATERIALES"]); L.push(["Código","Descripción","Cantidad","Precio unit.","Costo total"]);
-  mats.forEach(m=>L.push([m.codigo,m.desc,m.qty,m.precio,(m.precio*m.qty).toFixed(2)]));
-  L.push([]);
-  L.push(["Subtotal sin IVA",t.sub.toFixed(2)]);
-  L.push(["IVA 12%",t.iva.toFixed(2)]);
-  L.push(["Total con IVA",t.total.toFixed(2)]);
-  const csv="\uFEFF"+L.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=order.ot+".csv";a.click();
+  if(!saved){toast(t("need_contr"));return;}
+  const ot=$("f_ot").value,fecha=$("f_fecha").value,contr=$("f_contr").value,tec=$("f_tec").value||"—",dist=$("f_dist").value||"—",dir=$("f_dir").value||"—",tipo=$("f_tipo").value,estado=$("f_estado").value;
+  const ca=ORDER.acts.reduce((s,[c,q])=>s+actPrice(c)*q,0);
+  const cm=ORDER.mats.reduce((s,[c,q])=>s+matPrice(c)*q,0);
+  const sub=ca+cm,tax=sub*taxRate(),total=sub+tax;
+  const cur=country().cur;
+  const rows=[[t("rep_title"),cur],[t("lbl_ot"),ot,t("lbl_fecha_r"),fecha,t("lbl_estado"),estado],[t("lbl_contr_r"),contr,t("lbl_tec_r"),tec,t("lbl_dist_r"),dist],[],[t("rep_sec_acts")],[t("th_code"),t("th_descr"),t("th_qty"),t("th_unit"),t("th_cost")]];
+  ORDER.acts.forEach(([c,q])=>rows.push([c,actDesc(c),q,actPrice(c).toFixed(2),(actPrice(c)*q).toFixed(2)]));
+  rows.push([],[t("rep_sec_mats")],[t("th_code"),t("th_descr"),t("th_qty"),t("th_unit"),t("th_cost")]);
+  ORDER.mats.forEach(([c,q])=>rows.push([c,matDesc(c),q,matPrice(c).toFixed(2),(matPrice(c)*q).toFixed(2)]));
+  rows.push([],[t("subtotal"),sub.toFixed(2)],[taxLabel()+" "+RATE+"%",tax.toFixed(2)],[t("total"),total.toFixed(2)]);
+  const csv="\uFEFF"+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
+  const b=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=ot+".csv";a.click();
 }
 
-init();
+/* ===== RESET ===== */
+function resetOrder(){ORDER={acts:[],mats:[]};saved=false;initStep0();goStep(0);}
+
+/* ===== TOAST ===== */
+let toastT;
+function toast(m){const el=$("toast");el.textContent=m;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2200);}
+
+/* ===== INIT ===== */
+initCountrySelect();
+updateCurDisplay();
+initStep0();
+applyI18n();
 </script>
 </body>
 </html>
