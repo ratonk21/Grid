@@ -1,27 +1,502 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simply — Sistema de Movilidad</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet" />
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Lato',Arial,sans-serif;background:#EEF0F5;color:#1E2445;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;}
-    .box{background:#fff;border:1px solid #d8dde9;border-top:4px solid #22B0E1;border-radius:14px;padding:2.5rem;max-width:520px;box-shadow:0 8px 32px rgba(30,58,123,.08)}
-    h1{font-size:1.4rem;margin-bottom:.6rem}
-    h1 em{font-style:normal;color:#22B0E1}
-    p{color:#464D63;line-height:1.55;font-size:.9rem;margin-bottom:1rem}
-    code{background:#f5f7fb;border:1px solid #d8dde9;border-radius:6px;padding:.15rem .4rem;font-size:.82rem;color:#005B59}
-    a{display:inline-block;margin-top:.5rem;color:#22B0E1;font-weight:700;text-decoration:none}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPM · Orden de Trabajo (versión sencilla)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#0E4D4A; --teal-700:#0a3a37; --green:#00A651; --green-d:#00863f;
+    --ink:#16201F; --muted:#5d6b69; --line:#dde5e3; --bg:#F4F6F5;
+    --tint:#E7F1F0; --amber:#F4B400; --danger:#c0392b; --white:#fff;
+    --radius:12px; --shadow:0 1px 2px rgba(16,32,31,.06),0 8px 24px rgba(16,32,31,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Inter",system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .num{font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace}
+  h1,h2,h3{font-family:"Space Grotesk",sans-serif;margin:0;letter-spacing:-.01em}
+
+  /* Header */
+  header{background:var(--teal);color:#eafaf3;padding:18px 26px;display:flex;align-items:center;gap:16px}
+  .logo{font-family:"Space Grotesk";font-weight:700;font-size:26px;letter-spacing:-.04em;color:#fff;display:flex;align-items:baseline;gap:2px}
+  .logo .reg{font-size:11px;vertical-align:super;color:var(--green)}
+  .logo small{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#9fd9c9;margin-left:8px}
+  header .sub{margin-left:auto;font-size:12.5px;color:#bfe4d8;text-align:right;max-width:340px}
+
+  .wrap{max-width:1060px;margin:0 auto;padding:24px 22px 80px}
+
+  /* Stepper / tabs */
+  .stepper{display:flex;gap:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:24px}
+  .step{flex:1;display:flex;align-items:center;gap:11px;padding:15px 16px;border:none;background:#fff;cursor:pointer;text-align:left;position:relative;transition:background .15s;border-right:1px solid var(--line)}
+  .step:last-child{border-right:none}
+  .step:hover:not(:disabled){background:var(--tint)}
+  .step:disabled{cursor:not-allowed;opacity:.45}
+  .step.active{background:var(--teal)}
+  .step.active .s-num{background:#fff;color:var(--teal)}
+  .step.active .s-lbl,.step.active .s-sub{color:#fff}
+  .s-num{width:28px;height:28px;border-radius:50%;background:var(--tint);color:var(--teal);display:grid;place-items:center;font-family:"Space Grotesk";font-weight:700;font-size:14px;flex:none}
+  .step.done .s-num{background:var(--green);color:#fff}
+  .s-lbl{font-family:"Space Grotesk";font-weight:600;font-size:14px;color:var(--ink);display:block;line-height:1.2}
+  .s-sub{font-size:11px;color:var(--muted);display:block}
+
+  .panel{display:none;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .panel.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .panel-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .panel-head h2{font-size:19px}
+  .panel-head .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--green-d);font-weight:600;display:block;margin-bottom:3px;font-family:"Space Grotesk"}
+  .panel-body{padding:24px}
+
+  /* Form */
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:680px){.g2,.g3{grid-template-columns:1fr}}
+  label{font-size:12.5px;font-weight:600;color:var(--ink);display:block;margin-bottom:6px}
+  label .req{color:var(--danger)}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:14px;color:var(--ink);background:#fff;transition:border .15s,box-shadow .15s}
+  input:focus,select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,77,74,.12)}
+  input[readonly]{background:var(--bg);color:var(--muted)}
+
+  .btn{font-family:"Space Grotesk";font-weight:600;font-size:14px;border:none;border-radius:10px;padding:12px 20px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+  .btn-primary{background:var(--teal);color:#fff}
+  .btn-primary:hover{background:var(--teal-700)}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-green:hover{background:var(--green-d)}
+  .btn-ghost{background:#fff;color:var(--teal);border:1px solid var(--line)}
+  .btn-ghost:hover{background:var(--tint)}
+  .btn-row{display:flex;justify-content:space-between;gap:12px;margin-top:24px;flex-wrap:wrap}
+
+  /* Add-line bar */
+  .addbar{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:16px;display:grid;grid-template-columns:1fr 110px auto;gap:12px;align-items:end;margin-bottom:18px}
+  @media(max-width:680px){.addbar{grid-template-columns:1fr}}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{background:var(--teal);color:#dff3ec;text-align:left;padding:11px 12px;font-family:"Space Grotesk";font-weight:600;font-size:12px;letter-spacing:.02em}
+  thead th.r{text-align:right}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line)}
+  tbody tr:nth-child(even){background:var(--tint)}
+  td.r{text-align:right}
+  .tcode{font-family:"IBM Plex Mono";font-weight:600;color:var(--teal)}
+  .del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+  .del:hover{background:#fbeae8}
+  .empty{padding:34px;text-align:center;color:var(--muted);font-size:13.5px}
+  .tablecard{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+
+  .totbar{display:flex;justify-content:flex-end;gap:28px;margin-top:18px;padding:14px 18px;background:var(--tint);border-radius:11px}
+  .totbar .t{text-align:right}
+  .totbar .t span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .totbar .t b{font-family:"IBM Plex Mono";font-size:18px;color:var(--teal)}
+
+  .hint{font-size:12.5px;color:var(--muted);background:var(--bg);border-left:3px solid var(--green);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:18px}
+
+  /* Report */
+  .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 28px;margin-bottom:22px}
+  @media(max-width:680px){.meta{grid-template-columns:1fr 1fr}}
+  .meta .m span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;display:block}
+  .meta .m b{font-size:14.5px;font-weight:600}
+  .badge{display:inline-block;background:var(--green);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;font-family:"Space Grotesk"}
+  .sec-title{font-family:"Space Grotesk";font-weight:600;font-size:14px;margin:22px 0 10px;color:var(--teal);display:flex;align-items:center;gap:8px}
+  .sec-title::before{content:"";width:14px;height:2px;background:var(--green)}
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+  @media(max-width:680px){.summary{grid-template-columns:1fr}}
+  .sumcard{border:1px solid var(--line);border-radius:11px;padding:18px}
+  .sumrow{display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;border-bottom:1px dashed var(--line)}
+  .sumrow:last-child{border:none}
+  .sumrow.total{margin-top:6px;padding-top:12px;border-top:2px solid var(--teal);font-family:"Space Grotesk";font-weight:700;font-size:16px;color:var(--teal)}
+  .sumrow .num{font-weight:600}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px}
+  @media(max-width:680px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{background:var(--teal);color:#fff;border-radius:11px;padding:14px 16px}
+  .kpi span{font-size:11px;color:#bfe4d8;text-transform:uppercase;letter-spacing:.05em;font-weight:600;display:block}
+  .kpi b{font-family:"IBM Plex Mono";font-size:21px;display:block;margin-top:3px}
+
+  .locked-note{padding:48px 24px;text-align:center;color:var(--muted)}
+  .locked-note b{display:block;font-family:"Space Grotesk";color:var(--ink);font-size:16px;margin-bottom:6px}
+
+  @media print{
+    header .sub,.stepper,.btn-row,.addbar,.del,.no-print{display:none!important}
+    body{background:#fff}.panel{box-shadow:none;border:none}
+    .panel:not(.active){display:none}
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="box">
-    <h1>Versión <em>Simply</em></h1>
-    <p>Este es un marcador de posición. Reemplaza este archivo por tu app <b>Simply</b> real.</p>
-    <p>Solo cópiala aquí con el nombre <code>index.html</code> en la carpeta <code>sistema-movilidad/simply/</code> y se abrirá automáticamente.</p>
-    <a href="../">← Volver al menú</a>
+<header>
+  <div class="logo">epm<span class="reg">®</span><small>Guatemala</small></div>
+  <div class="sub">Sistema de movilidad · Registro de orden de trabajo<br>Alumbrado público — versión sencilla</div>
+</header>
+
+<div class="wrap">
+  <!-- ESTADO DE CATÁLOGOS (precargados) -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px 16px;margin-bottom:18px;font-size:13px">
+    <span style="font-family:'Space Grotesk';font-weight:600;color:var(--teal)">Catálogos cargados:</span>
+    <span id="cat_a_count" style="color:var(--green-d);font-weight:600">37 actividades</span>
+    <span style="color:var(--muted)">·</span>
+    <span id="cat_m_count" style="color:var(--green-d);font-weight:600">3 materiales</span>
+    <button class="btn btn-ghost" style="margin-left:auto;padding:7px 13px;font-size:12.5px" onclick="var c=document.getElementById('catimport');c.style.display=(c.style.display==='none'?'grid':'none')">Actualizar catálogo</button>
   </div>
+  <div id="catimport" style="display:none;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:18px">
+    <div>
+      <div style="font-family:'Space Grotesk';font-weight:600;font-size:13.5px;margin-bottom:9px">Reemplazar preciario de actividades</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label class="btn btn-primary" style="cursor:pointer">Cargar archivo<input id="up_act" type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none"></label>
+        <button class="btn btn-ghost" onclick="tplCSV('act')">Plantilla CSV</button>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:'Space Grotesk';font-weight:600;font-size:13.5px;margin-bottom:9px">Reemplazar catálogo de materiales</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label class="btn btn-primary" style="cursor:pointer">Cargar archivo<input id="up_mat" type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none"></label>
+        <button class="btn btn-ghost" onclick="tplCSV('mat')">Plantilla CSV</button>
+      </div>
+    </div>
+    <div style="grid-column:1/-1;font-size:12px;color:var(--muted)">Formato: columnas <b>Ítem · Descripción · Precio sin IVA</b> (CSV o Excel). Al cargar, se reemplaza el catálogo actual.</div>
+  </div>
+
+  <!-- STEPPER -->
+  <div class="stepper" id="stepper">
+    <button class="step active" data-step="0" onclick="go(0)">
+      <span class="s-num">1</span><span><span class="s-lbl">Datos de la orden</span><span class="s-sub">Información general</span></span>
+    </button>
+    <button class="step" data-step="1" disabled onclick="go(1)">
+      <span class="s-num">2</span><span><span class="s-lbl">Actividades</span><span class="s-sub">Desde el preciario</span></span>
+    </button>
+    <button class="step" data-step="2" disabled onclick="go(2)">
+      <span class="s-num">3</span><span><span class="s-lbl">Materiales</span><span class="s-sub">Cables y otros</span></span>
+    </button>
+    <button class="step" data-step="3" disabled onclick="go(3)">
+      <span class="s-num">4</span><span><span class="s-lbl">Reporte</span><span class="s-sub">Costos consolidados</span></span>
+    </button>
+  </div>
+
+  <!-- PANEL 1: ORDEN -->
+  <section class="panel active" id="p0">
+    <div class="panel-head"><div><span class="eyebrow">Paso 1</span><h2>Crear orden de trabajo</h2></div></div>
+    <div class="panel-body">
+      <div class="hint">Al guardar la orden se habilitan las pestañas siguientes. Las actividades y materiales que registres alimentan automáticamente el reporte final.</div>
+      <div class="grid g3">
+        <div><label>N.° de orden</label><input id="f_ot" readonly></div>
+        <div><label>Fecha de ejecución <span class="req">*</span></label><input type="date" id="f_fecha"></div>
+        <div><label>Estado</label>
+          <select id="f_estado"><option>Abierta</option><option selected>Cerrada</option></select></div>
+      </div>
+      <div class="grid g3" style="margin-top:16px">
+        <div><label>Contratista <span class="req">*</span></label><input id="f_contratista" placeholder="Ej. Contrata XYZ"></div>
+        <div><label>Técnico responsable</label><input id="f_tecnico" placeholder="Ej. Juan Pérez"></div>
+        <div><label>Distrito / zona</label><input id="f_distrito" placeholder="Ej. Centro"></div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div><label>Dirección / ubicación</label><input id="f_dir" placeholder="Ej. Avenida Reforma, Zona 10"></div>
+        <div><label>Tipo de trabajo</label>
+          <select id="f_tipo"><option selected>Alumbrado Público</option><option>Mantenimiento correctivo</option><option>Mantenimiento preventivo</option></select></div>
+      </div>
+      <div class="btn-row" style="justify-content:flex-end">
+        <button class="btn btn-primary" onclick="saveOrder()">Guardar y continuar →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL 2: ACTIVIDADES -->
+  <section class="panel" id="p1">
+    <div class="panel-head"><div><span class="eyebrow">Paso 2 · <span id="h_ot1" class="mono"></span></span><h2>Actividades ejecutadas</h2></div></div>
+    <div class="panel-body">
+      <div class="hint">Selecciona la actividad del preciario, indica la cantidad y agrégala. El costo total se calcula con el precio del catálogo.</div>
+      <div class="addbar">
+        <div><label>Actividad (preciario)</label><select id="a_sel"></select></div>
+        <div><label>Cantidad</label><input type="number" id="a_qty" min="1" step="1" value="1"></div>
+        <div><button class="btn btn-green" onclick="addActivity()">+ Agregar</button></div>
+      </div>
+      <div class="tablecard">
+        <table>
+          <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cantidad</th><th class="r">Precio unit. (sin IVA)</th><th class="r">Costo total</th><th></th></tr></thead>
+          <tbody id="a_body"><tr><td colspan="6" class="empty">Aún no hay actividades registradas.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="totbar"><div class="t"><span>Subtotal actividades (sin IVA)</span><b class="num" id="a_sub">Q0.00</b></div></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="go(0)">← Volver</button>
+        <button class="btn btn-primary" onclick="go(2)">Continuar a materiales →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL 3: MATERIALES -->
+  <section class="panel" id="p2">
+    <div class="panel-head"><div><span class="eyebrow">Paso 3 · <span id="h_ot2" class="mono"></span></span><h2>Materiales utilizados</h2></div></div>
+    <div class="panel-body">
+      <div class="hint">Selecciona el material del catálogo, indica la cantidad y agrégalo. Puedes omitir este paso si la orden no consume materiales.</div>
+      <div class="addbar">
+        <div><label>Material (catálogo)</label><select id="m_sel"></select></div>
+        <div><label>Cantidad</label><input type="number" id="m_qty" min="1" step="1" value="1"></div>
+        <div><button class="btn btn-green" onclick="addMaterial()">+ Agregar</button></div>
+      </div>
+      <div class="tablecard">
+        <table>
+          <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cantidad</th><th class="r">Precio unit. (sin IVA)</th><th class="r">Costo total</th><th></th></tr></thead>
+          <tbody id="m_body"><tr><td colspan="6" class="empty">Aún no hay materiales registrados.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="totbar"><div class="t"><span>Subtotal materiales (sin IVA)</span><b class="num" id="m_sub">Q0.00</b></div></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="go(1)">← Volver</button>
+        <button class="btn btn-primary" onclick="go(3)">Ver reporte →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL 4: REPORTE -->
+  <section class="panel" id="p3">
+    <div class="panel-head" style="justify-content:space-between">
+      <div><span class="eyebrow">Paso 4</span><h2>Reporte integrado de la orden</h2></div>
+      <div class="no-print" style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="window.print()">Imprimir / PDF</button>
+        <button class="btn btn-green" onclick="exportCSV()">Exportar (CSV)</button>
+      </div>
+    </div>
+    <div class="panel-body" id="report"></div>
+  </section>
+</div>
+
+<script>
+/* ============ CATÁLOGOS: los carga el usuario (CSV o Excel) ============ */
+let ACTIVIDADES = [
+  ["APG01","Apertura de agujero para poste",353.76],["APG02","Aplomado de poste de 30 - 35 pies madera o concreto",918.20],
+  ["APG03","Bajada secundaria con tubo HG de 2\" pulgadas",1583.73],["APG04","Cambio de balastro de luminaria",255.01],
+  ["APG05","Cambio de brazo",375.34],["APG06","Cambio de cabeza de luminaria",170.62],
+  ["APG07","Cambio de cableado y conexiones subterráneas",424.67],["APG08","Cambio de contactor",645.58],
+  ["APG09","Cambio de driver LED",329.73],["APG10","Cambio de flipón",262.34],
+  ["APG11","Cambio de fusibles en el relevador",171.22],["APG12","Cambio de herrajes varios unitario",183.83],
+  ["APG13","Cambio de luminaria completa con brazo de 2 a 6'",375.34],["APG14","Cambio de luminaria completa con brazo de 8 a 12'",390.55],
+  ["APG15","Cambio de luminaria de pared (Wallpack o luminaria de techo)",341.22],["APG16","Cambio de módulos LED",329.73],
+  ["APG17","Cambio de poste de 30 - 35 pies concreto",2215.91],["APG18","Cambio de poste de 30 - 35 pies madera",2063.81],
+  ["APG19","Cambio de poste de 30 - 35 pies metálico (con pernos)",2759.63],["APG20","Cambio de poste de 30 - 35 pies metálico (empotrado)",2174.10],
+  ["APG21","Cambio de reflector de 500W en poste de 35 a 40 pies",456.71],["APG22","Cambio de refractor",104.27],
+  ["APG23","Cambio de relevador",464.51],["APG24","Cambio de timer",383.87],
+  ["APG25","Cambio de vano aéreo dañado <=40m",542.80],["APG26","Cambio de vano aéreo dañado >40m",601.10],
+  ["APG27","Cambio de vano subterráneo dañado <=40m",348.30],["APG28","Cambio de vano subterráneo dañado >40m",336.79],
+  ["APG29","Desrame por luminaria o vano",126.33],["APG30","Diseño de alumbrado público de 501 a 1000 metros",889.45],
+  ["APG31","Diseño de alumbrado público hasta 500 metros",527.64],["APG32","Diseño de alumbrado público mayor a 1000 metros",1073.47],
+  ["APG33","Disponibilidad de unidad (Tipo C1 motocicleta)",140.89],["APG34","Disponibilidad de unidad (Tipo C2 pickup)",356.49],
+  ["APG35","Disponibilidad de unidad (Tipo C3 camión canasta)",639.53],["APG36","Disponibilidad de unidad (Tipo C4 camión liniero)",734.15],
+  ["APG37","Instalación de anclajes",481.59]
+].map(([codigo,desc,precio])=>({codigo,desc,precio}));
+let MATERIALES  = [
+  ["310391","Cable Duplex 6 ACSR con forro",100.00],
+  ["310393","Cable Triplex No. 4 con forro",200.00],
+  ["310403","Cable Triplex 1/0 ACSR con forro",300.00]
+].map(([codigo,desc,precio])=>({codigo,desc,precio}));
+const IVA = 0.12;
+
+/* ---- importación de catálogos (CSV o Excel) ---- */
+function cleanPrice(v){ if(typeof v==="number")return v; let s=String(v).replace(/[^0-9.,-]/g,"").trim(); if(s.includes(",")&&s.includes("."))s=s.replace(/,/g,""); else if(s.includes(","))s=s.replace(/\./g,"").replace(",","."); const n=parseFloat(s); return isNaN(n)?null:n; }
+function parseCSV(text){ text=text.replace(/\r/g,""); const first=(text.split("\n").find(l=>l.trim())||""); const delim=(first.split(";").length>first.split(",").length)?";":","; return text.split("\n").map(line=>{ const cells=[];let cur="",q=false,start=true; for(let i=0;i<line.length;i++){const ch=line[i]; if(ch==='"'){ if(q){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else if(start){ q=true; } else { cur+='"'; } start=false; } else if(ch===delim&&!q){ cells.push(cur);cur="";start=true; } else { cur+=ch; start=false; } } cells.push(cur); return cells; }); }
+function rowsToCatalog(rows){ const out=[]; (rows||[]).forEach(r=>{ const cells=(r||[]).map(c=>c==null?"":String(c).trim()); while(cells.length&&cells[cells.length-1]==="")cells.pop(); if(!cells.length)return; let pi=-1,price=null; for(let i=cells.length-1;i>=0;i--){ if(/\d/.test(cells[i])){const n=cleanPrice(cells[i]); if(n!=null){pi=i;price=n;break;}} } if(pi<1)return; const code=cells[0]; if(!code||/^[ií]tem$|^c[oó]digo$|^item$/i.test(code))return; const desc=cells.slice(1,pi).join(" ").trim()||code; out.push({codigo:code,desc,precio:price}); }); return out; }
+
+function importFile(file,target){ const ext=file.name.split(".").pop().toLowerCase();
+  const done=items=>{ if(!items.length){alert('No se encontraron filas válidas (código, descripción, precio) en "'+file.name+'".');return;} if(target==="act")ACTIVIDADES=items; else MATERIALES=items; refreshCatalogUI(); };
+  if(ext==="csv"||ext==="txt"){ const rd=new FileReader(); rd.onload=e=>done(rowsToCatalog(parseCSV(e.target.result))); rd.readAsText(file,"utf-8"); }
+  else if(ext==="xlsx"||ext==="xls"){ if(typeof XLSX==="undefined"){alert("Para leer Excel se necesita conexión a internet. Sin conexión, guarda el archivo como CSV.");return;} const rd=new FileReader(); rd.onload=e=>{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]]; done(rowsToCatalog(XLSX.utils.sheet_to_json(ws,{header:1,defval:""}))); }; rd.readAsArrayBuffer(file); }
+  else alert("Formato no soportado. Usa CSV o Excel (.xlsx)."); }
+function refreshCatalogUI(){
+  $("a_sel").innerHTML = ACTIVIDADES.length ? ACTIVIDADES.map(a=>`<option value="${a.codigo}">${a.codigo} · ${a.desc} — ${Q(a.precio)}</option>`).join("") : '<option value="">— Carga primero el preciario —</option>';
+  $("m_sel").innerHTML = MATERIALES.length ? MATERIALES.map(m=>`<option value="${m.codigo}">${m.codigo} · ${m.desc} — ${Q(m.precio)}</option>`).join("") : '<option value="">— Carga primero el catálogo —</option>';
+  const ca=$("cat_a_count"), cm=$("cat_m_count");
+  if(ca){ ca.textContent=ACTIVIDADES.length?ACTIVIDADES.length+" actividades cargadas":"Sin cargar"; ca.style.color=ACTIVIDADES.length?"var(--green-d)":"var(--muted)"; }
+  if(cm){ cm.textContent=MATERIALES.length?MATERIALES.length+" materiales cargados":"Sin cargar"; cm.style.color=MATERIALES.length?"var(--green-d)":"var(--muted)"; }
+}
+function tplCSV(kind){
+  const head=kind==="act"?["Ítem","Descripción de la actividad","Precio sin IVA"]:["Ítem","Descripción del material","Precio sin IVA"];
+  const ex=kind==="act"?[["APG01","Apertura de agujero para poste","353.76"],["APG05","Cambio de brazo","375.34"]]:[["310391","Cable Duplex 6 ACSR con forro","100.00"]];
+  const csv="\uFEFF"+[head,...ex].map(r=>r.map(c=>`"${c}"`).join(";")).join("\n");
+  const b=new Blob([csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=(kind==="act"?"plantilla_actividades":"plantilla_materiales")+".csv";a.click();
+}
+
+/* ============ ESTADO ============ */
+let order = null;       // datos generales
+let acts = [];          // {codigo,desc,precio,qty}
+let mats = [];
+let current = 0;
+
+const Q = n => "Q"+Number(n).toLocaleString("es-GT",{minimumFractionDigits:2,maximumFractionDigits:2});
+const $ = id => document.getElementById(id);
+
+/* poblar selects + fecha por defecto + correlativo */
+function init(){
+  $("f_fecha").value = new Date().toISOString().slice(0,10);
+  $("f_ot").value = "OT-"+new Date().getFullYear()+"-"+String(Math.floor(1000+Math.random()*9000));
+  refreshCatalogUI();
+  $("up_act").addEventListener("change",e=>{ if(e.target.files[0]) importFile(e.target.files[0],"act"); e.target.value=""; });
+  $("up_mat").addEventListener("change",e=>{ if(e.target.files[0]) importFile(e.target.files[0],"mat"); e.target.value=""; });
+}
+
+/* navegación */
+function go(step){
+  const unlocked = order ? 3 : 0;
+  if(step>unlocked) return;
+  current = step;
+  document.querySelectorAll(".panel").forEach((p,i)=>p.classList.toggle("active",i===step));
+  document.querySelectorAll(".step").forEach((b,i)=>{
+    b.classList.toggle("active",i===step);
+    b.classList.toggle("done", order && i<step);
+  });
+  if(step===3) renderReport();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function saveOrder(){
+  const contratista=$("f_contratista").value.trim(), fecha=$("f_fecha").value;
+  if(!fecha){alert("Indica la fecha de ejecución.");return;}
+  if(!contratista){alert("Indica el contratista.");return;}
+  order={
+    ot:$("f_ot").value, fecha, estado:$("f_estado").value,
+    contratista, tecnico:$("f_tecnico").value.trim()||"—",
+    distrito:$("f_distrito").value.trim()||"—", dir:$("f_dir").value.trim()||"—",
+    tipo:$("f_tipo").value
+  };
+  // habilitar pestañas
+  document.querySelectorAll(".step").forEach((b,i)=>{ if(i>0) b.disabled=false; });
+  $("h_ot1").textContent=order.ot; $("h_ot2").textContent=order.ot;
+  go(1);
+}
+
+/* actividades */
+function addActivity(){
+  const cat=ACTIVIDADES.find(a=>a.codigo===$("a_sel").value);
+  if(!cat){alert("Carga el preciario y selecciona una actividad.");return;}
+  const qty=Math.max(1,parseInt($("a_qty").value)||1);
+  const ex=acts.find(a=>a.codigo===cat.codigo);
+  if(ex) ex.qty+=qty; else acts.push({...cat,qty});
+  $("a_qty").value=1; renderActs();
+}
+function delAct(c){acts=acts.filter(a=>a.codigo!==c);renderActs();}
+function renderActs(){
+  const b=$("a_body");
+  if(!acts.length){b.innerHTML='<tr><td colspan="6" class="empty">Aún no hay actividades registradas.</td></tr>';}
+  else b.innerHTML=acts.map(a=>`<tr>
+    <td class="tcode">${a.codigo}</td><td>${a.desc}</td>
+    <td class="r num">${a.qty}</td><td class="r num">${Q(a.precio)}</td>
+    <td class="r num">${Q(a.precio*a.qty)}</td>
+    <td class="r"><button class="del" onclick="delAct('${a.codigo}')" title="Quitar">×</button></td></tr>`).join("");
+  $("a_sub").textContent=Q(acts.reduce((s,a)=>s+a.precio*a.qty,0));
+}
+
+/* materiales */
+function addMaterial(){
+  const cat=MATERIALES.find(m=>m.codigo===$("m_sel").value);
+  if(!cat){alert("Carga el catálogo y selecciona un material.");return;}
+  const qty=Math.max(1,parseInt($("m_qty").value)||1);
+  const ex=mats.find(m=>m.codigo===cat.codigo);
+  if(ex) ex.qty+=qty; else mats.push({...cat,qty});
+  $("m_qty").value=1; renderMats();
+}
+function delMat(c){mats=mats.filter(m=>m.codigo!==c);renderMats();}
+function renderMats(){
+  const b=$("m_body");
+  if(!mats.length){b.innerHTML='<tr><td colspan="6" class="empty">Aún no hay materiales registrados.</td></tr>';}
+  else b.innerHTML=mats.map(m=>`<tr>
+    <td class="tcode">${m.codigo}</td><td>${m.desc}</td>
+    <td class="r num">${m.qty}</td><td class="r num">${Q(m.precio)}</td>
+    <td class="r num">${Q(m.precio*m.qty)}</td>
+    <td class="r"><button class="del" onclick="delMat('${m.codigo}')" title="Quitar">×</button></td></tr>`).join("");
+  $("m_sub").textContent=Q(mats.reduce((s,m)=>s+m.precio*m.qty,0));
+}
+
+/* reporte */
+function totals(){
+  const ca=acts.reduce((s,a)=>s+a.precio*a.qty,0);
+  const cm=mats.reduce((s,m)=>s+m.precio*m.qty,0);
+  const sub=ca+cm; const iva=sub*IVA;
+  return {ca,cm,sub,iva,total:sub+iva,
+    nAct:acts.length, nMat:mats.length,
+    qAct:acts.reduce((s,a)=>s+a.qty,0), qMat:mats.reduce((s,m)=>s+m.qty,0)};
+}
+function rowsTable(arr){
+  if(!arr.length) return '<tr><td colspan="5" class="empty">Sin registros.</td></tr>';
+  return arr.map(x=>`<tr><td class="tcode">${x.codigo}</td><td>${x.desc}</td>
+    <td class="r num">${x.qty}</td><td class="r num">${Q(x.precio)}</td>
+    <td class="r num">${Q(x.precio*x.qty)}</td></tr>`).join("");
+}
+function renderReport(){
+  if(!order) return;
+  const t=totals();
+  $("report").innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+      <h3 style="font-size:17px">Reporte de costos · <span class="mono" style="color:var(--teal)">${order.ot}</span></h3>
+      <span class="badge">${order.estado}</span>
+    </div>
+    <div class="meta">
+      <div class="m"><span>Fecha ejecución</span><b>${order.fecha}</b></div>
+      <div class="m"><span>Contratista</span><b>${order.contratista}</b></div>
+      <div class="m"><span>Técnico responsable</span><b>${order.tecnico}</b></div>
+      <div class="m"><span>Distrito / zona</span><b>${order.distrito}</b></div>
+      <div class="m"><span>Dirección</span><b>${order.dir}</b></div>
+      <div class="m"><span>Tipo de trabajo</span><b>${order.tipo}</b></div>
+    </div>
+
+    <div class="sec-title">Actividades ejecutadas</div>
+    <div class="tablecard"><table>
+      <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cant.</th><th class="r">Precio unit.</th><th class="r">Costo total</th></tr></thead>
+      <tbody>${rowsTable(acts)}</tbody></table></div>
+
+    <div class="sec-title">Materiales utilizados</div>
+    <div class="tablecard"><table>
+      <thead><tr><th>Código</th><th>Descripción</th><th class="r">Cant.</th><th class="r">Precio unit.</th><th class="r">Costo total</th></tr></thead>
+      <tbody>${rowsTable(mats)}</tbody></table></div>
+
+    <div class="summary">
+      <div class="sumcard">
+        <div class="sec-title" style="margin-top:0">Resumen financiero</div>
+        <div class="sumrow"><span>Costo actividades (sin IVA)</span><span class="num">${Q(t.ca)}</span></div>
+        <div class="sumrow"><span>Costo materiales (sin IVA)</span><span class="num">${Q(t.cm)}</span></div>
+        <div class="sumrow"><span>Subtotal (sin IVA)</span><span class="num">${Q(t.sub)}</span></div>
+        <div class="sumrow"><span>IVA (12%)</span><span class="num">${Q(t.iva)}</span></div>
+        <div class="sumrow total"><span>Total general</span><span class="num">${Q(t.total)}</span></div>
+      </div>
+      <div class="sumcard">
+        <div class="sec-title" style="margin-top:0">Indicadores de la orden</div>
+        <div class="kpis">
+          <div class="kpi"><span>Actividades</span><b>${t.nAct}</b></div>
+          <div class="kpi"><span>Materiales</span><b>${t.nMat}</b></div>
+          <div class="kpi"><span>Cant. activ.</span><b>${t.qAct}</b></div>
+          <div class="kpi"><span>Cant. mater.</span><b>${t.qMat}</b></div>
+        </div>
+        <div class="sumrow" style="margin-top:14px"><span>Costo promedio por actividad</span><span class="num">${Q(t.nAct? t.ca/t.nAct:0)}</span></div>
+        <div class="sumrow"><span>Total sin IVA</span><span class="num">${Q(t.sub)}</span></div>
+        <div class="sumrow"><span>Total con IVA</span><span class="num">${Q(t.total)}</span></div>
+      </div>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:18px">Reporte generado el ${new Date().toLocaleString("es-GT")} · Confidencial EPM Guatemala</p>
+  `;
+}
+
+function exportCSV(){
+  const t=totals(); const L=[];
+  L.push(["Reporte de costos por orden de trabajo"]);
+  L.push(["Orden",order.ot,"Fecha",order.fecha,"Estado",order.estado]);
+  L.push(["Contratista",order.contratista,"Técnico",order.tecnico,"Distrito",order.distrito]);
+  L.push([]);
+  L.push(["ACTIVIDADES"]); L.push(["Código","Descripción","Cantidad","Precio unit.","Costo total"]);
+  acts.forEach(a=>L.push([a.codigo,a.desc,a.qty,a.precio,(a.precio*a.qty).toFixed(2)]));
+  L.push([]);
+  L.push(["MATERIALES"]); L.push(["Código","Descripción","Cantidad","Precio unit.","Costo total"]);
+  mats.forEach(m=>L.push([m.codigo,m.desc,m.qty,m.precio,(m.precio*m.qty).toFixed(2)]));
+  L.push([]);
+  L.push(["Subtotal sin IVA",t.sub.toFixed(2)]);
+  L.push(["IVA 12%",t.iva.toFixed(2)]);
+  L.push(["Total con IVA",t.total.toFixed(2)]);
+  const csv="\uFEFF"+L.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(";")).join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=order.ot+".csv";a.click();
+}
+
+init();
+</script>
 </body>
 </html>
