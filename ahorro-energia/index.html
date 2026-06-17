@@ -437,6 +437,7 @@
           <div class="surface">
             <table class="inv" id="invTable"></table>
             <div class="btnrow"><button class="btn primary" id="addRow" data-i18n="add_group">+ Agregar grupo</button></div>
+            <div class="hint" style="margin-top:8px" data-i18n="inv_dim_note">Marca "Dimerizable" en los grupos cuya potencia admite regulación. Los grupos sin marcar funcionan a potencia plena durante toda la noche y no reciben el ahorro por dimerización.</div>
           </div>
           <div class="daysel" style="margin-top:10px">
             <div class="seg" id="invSeg"><button data-s="A" class="on" data-i18n="tag_astro">Astronómico</button><button data-s="B" data-i18n="tag_fixed">Horario fijo</button></div>
@@ -532,7 +533,7 @@ const DICT={
   r_kwh_ref:"kWh/año · luminaria referencia", r_cost_ref:"Costo/año · luminaria referencia",
   r_kwh_fleet:"kWh/año · flota", r_cost_fleet:"Costo/año · flota",
   th_fecha:"Fecha", th_total:"Total",
-  inv_grupo:"Grupo", inv_cant:"Cantidad", inv_pot:"Potencia (W)", inv_potinst:"Pot. inst. (kW)", inv_kwh:"kWh/año", inv_cost:"Costo/año", inv_total:"TOTAL",
+  inv_grupo:"Grupo", inv_cant:"Cantidad", inv_pot:"Potencia (W)", inv_dim:"Dimerizable", inv_dim_note:"Marca \"Dimerizable\" en los grupos cuya potencia admite regulación. Los grupos sin marcar funcionan a potencia plena toda la noche y no reciben el ahorro por dimerización.", inv_potinst:"Pot. inst. (kW)", inv_kwh:"kWh/año", inv_cost:"Costo/año", inv_total:"TOTAL",
   v_cost:"El horario fijo cuesta más.", v_cost2:"adicionales al año", v_cost3:"frente al reloj astronómico. Seguir el sol evita encender con luz de día o apagar tarde.",
   v_short:"El horario fijo resulta más corto.", v_short2:"menos al año, pero deja zonas a oscuras: el reloj fijo apaga aunque aún esté de noche. Revisa las horas fijas.",
   v_eq:"Escenarios casi iguales.", v_eq2:"Las horas fijas elegidas coinciden con el promedio solar del año. Ajusta el horario fijo para ver el impacto.",
@@ -592,7 +593,7 @@ const DICT={
   r_kwh_ref:"kWh/yr · reference luminaire", r_cost_ref:"Cost/yr · reference luminaire",
   r_kwh_fleet:"kWh/yr · fleet", r_cost_fleet:"Cost/yr · fleet",
   th_fecha:"Date", th_total:"Total",
-  inv_grupo:"Group", inv_cant:"Quantity", inv_pot:"Power (W)", inv_potinst:"Inst. power (kW)", inv_kwh:"kWh/yr", inv_cost:"Cost/yr", inv_total:"TOTAL",
+  inv_grupo:"Group", inv_cant:"Quantity", inv_pot:"Power (W)", inv_dim:"Dimmable", inv_dim_note:"Tick \"Dimmable\" for groups whose power supports dimming. Unticked groups run at full power all night and get no dimming savings.", inv_potinst:"Inst. power (kW)", inv_kwh:"kWh/yr", inv_cost:"Cost/yr", inv_total:"TOTAL",
   v_cost:"The fixed schedule costs more.", v_cost2:"extra per year", v_cost3:"versus the astronomical clock. Following the sun avoids switching on in daylight or off late.",
   v_short:"The fixed schedule is shorter.", v_short2:"less per year, but leaves areas dark: the fixed clock turns off while it is still night. Review the fixed times.",
   v_eq:"Scenarios nearly equal.", v_eq2:"The chosen fixed times match the yearly solar average. Adjust the fixed schedule to see the impact.",
@@ -687,7 +688,7 @@ const S={
   A:{type:"solar", offEnc:0, offApag:0, useDim:true},
   B:{type:"fixed", on:18, off:6, useDim:false, enabled:true},
   C:{type:"solar", offEnc:0, offApag:0, useDim:false, enabled:true},
-  inventory:[{name:"Vial 100 W",qty:2000,power:100},{name:"Vial 150 W",qty:800,power:150},{name:"Peatonal 70 W",qty:1200,power:70},{name:"LED 250 W avenida",qty:300,power:250}],
+  inventory:[{name:"Vial 100 W",qty:2000,power:100,dim:true},{name:"Vial 150 W",qty:800,power:150,dim:true},{name:"Peatonal 70 W",qty:1200,power:70,dim:true},{name:"LED 250 W avenida",qty:300,power:250,dim:false}],
   selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"resumen",
   yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true}, monthLayers:{a:true,c:true,b:true,money:false},
   energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B",
@@ -730,6 +731,12 @@ function computeScn(scn){
   return {days,equivH,onH,mEq,mOn};
 }
 function installedKW(){return S.inventory.reduce((s,g)=>s+(g.qty||0)*(g.power||0),0)/1000;}
+function dimKW(){return S.inventory.reduce((s,g)=>s+((g.dim!==false)?(g.qty||0)*(g.power||0):0),0)/1000;}
+function fixedKW(){return S.inventory.reduce((s,g)=>s+((g.dim===false)?(g.qty||0)*(g.power||0):0),0)/1000;}
+function fleetKWh(res,useDim){return useDim?(dimKW()*res.equivH+fixedKW()*res.onH):(IKW*res.equivH);}
+function fleetKWhMonth(res,useDim){const dk=dimKW(),fk=fixedKW();return res.mEq.map((e,m)=>useDim?(dk*e+fk*res.mOn[m]):IKW*e);}
+function eKWh(key){return fleetKWh(scnRes(key),scnObj(key).useDim);}
+function eKWhMonth(key){return fleetKWhMonth(scnRes(key),scnObj(key).useDim);}
 let RA,RB,RC,IKW;
 function recalc(){buildSun(); RA=computeScn(S.A); RB=computeScn(S.B); RC=computeScn(S.C); IKW=installedKW();}
 function scnObj(k){return k==="A"?S.A:k==="B"?S.B:S.C;}
@@ -771,13 +778,13 @@ function renderTop(){
 
 /* ============ cards ============ */
 function savings(){
-  const kAstroDim=IKW*RA.equivH, kAstro100=IKW*RA.onH, kFixed=IKW*RB.equivH;
+  const kAstroDim=eKWh("A"), kAstro100=IKW*RA.onH, kFixed=eKWh("B");
   const dimSave=S.A.useDim?(kAstro100-kAstroDim):0;       // kWh
   const schedSave=kFixed-kAstroDim;                        // kWh (fijo - astro)
   return {kAstroDim,kAstro100,kFixed,dimSave,schedSave};
 }
 function renderCards(){
-  const x=savings(); const kC=IKW*RC.equivH;
+  const x=savings(); const kC=eKWh("C");
   const maxE=Math.max(x.kAstroDim,x.kFixed,kC,Math.abs(x.schedSave),x.dimSave,1);
   const eu=energyUnit(maxE); const rE=maxE/eu.div; const dE=rE<10?2:(rE<100?1:0); const ev=v=>nf(v/eu.div,dE)+" "+eu.u;
   document.getElementById("rA").textContent=ev(x.kAstroDim);
@@ -827,18 +834,18 @@ function makeFmts(arrs,kind){const vals=[];arrs.forEach(a=>vals.push(...a));cons
   const sc=kind==="money"?moneyScale(max):energyUnit(max);const r=max/sc.div;const dec=r<10?2:(r<100?1:0);
   return {axisFmt:v=>nf(v/sc.div,dec),barFmt:v=>nf(v/sc.div,dec),unit:sc.u};}
 function monthSeries(useMoney){
-  const f=h=>IKW*h*(useMoney?S.tariff*curRate():1);
+  const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
   return [
-    {vals:RA.mEq.map(f),color:"#3A4CC0",show:S.monthLayers.a},
-    {vals:RC.mEq.map(f),color:"#0E9B72",show:S.C.enabled&&S.monthLayers.c},
-    {vals:RB.mEq.map(f),color:"#D14B36",show:S.B.enabled&&S.monthLayers.b},
+    {vals:mk("A"),color:"#3A4CC0",show:S.monthLayers.a},
+    {vals:mk("C"),color:"#0E9B72",show:S.C.enabled&&S.monthLayers.c},
+    {vals:mk("B"),color:"#D14B36",show:S.B.enabled&&S.monthLayers.b},
   ];
 }
 function monthRows(useMoney){
-  const f=h=>IKW*h*(useMoney?S.tariff*curRate():1);
-  const rows=[{key:"A",lab:t("c_astro_dim"),vals:RA.mEq.map(f),color:"#3A4CC0"}];
-  if(S.C.enabled)rows.push({key:"C",lab:t("c_astro_nodim"),vals:RC.mEq.map(f),color:"#0E9B72"});
-  if(S.B.enabled)rows.push({key:"B",lab:t("c_fijo"),vals:RB.mEq.map(f),color:"#D14B36"});
+  const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
+  const rows=[{key:"A",lab:t("c_astro_dim"),vals:mk("A"),color:"#3A4CC0"}];
+  if(S.C.enabled)rows.push({key:"C",lab:t("c_astro_nodim"),vals:mk("C"),color:"#0E9B72"});
+  if(S.B.enabled)rows.push({key:"B",lab:t("c_fijo"),vals:mk("B"),color:"#D14B36"});
   return rows;
 }
 function monthTableHTML(useMoney){
@@ -887,8 +894,8 @@ function renderCmp(){
     {lab:t("r_eqhours"),val:c=>c.r.equivH,f:v=>nf(v,1)+" h",pct:false},
     {lab:t("r_kwh_ref"),val:c=>S.pref/1000*c.r.equivH,f:efmt,pct:true},
     {lab:t("r_cost_ref"),val:c=>S.pref/1000*c.r.equivH*S.tariff,f:m,pct:true},
-    {lab:t("r_kwh_fleet"),val:c=>IKW*c.r.equivH,f:efmt,pct:true,tot:true},
-    {lab:t("r_cost_fleet"),val:c=>IKW*c.r.equivH*S.tariff,f:m,pct:true,tot:true},
+    {lab:t("r_kwh_fleet"),val:c=>eKWh(c.key),f:efmt,pct:true,tot:true},
+    {lab:t("r_cost_fleet"),val:c=>eKWh(c.key)*S.tariff,f:m,pct:true,tot:true},
   ];
   let head=`<thead><tr><th>${t("c_ind")}</th>`+cols.map(c=>`<th>${c.lab}</th>`).join("");
   if(baseCol)head+=`<th>${t("pct_base")} · ${t("c_astro_dim")} vs ${baseCol.lab}</th>`;
@@ -1004,23 +1011,27 @@ function wireDim(){
 
 /* ============ inventory ============ */
 function renderInv(){
-  const eq=scnRes(S.invScn).equivH; const tb=document.getElementById("invTable");
-  let h=`<thead><tr><th>${t("inv_grupo")}</th><th>${t("inv_cant")}</th><th>${t("inv_pot")}</th><th>${t("inv_potinst")}</th><th>${t("inv_kwh")}</th><th>${t("inv_cost")}</th><th></th></tr></thead><tbody>`;
+  const res=scnRes(S.invScn), useDim=scnObj(S.invScn).useDim;
+  const eq=res.equivH, on=res.onH; const tb=document.getElementById("invTable");
+  const hOf=g=>((g.dim!==false)&&useDim)?eq:on;
+  let h=`<thead><tr><th>${t("inv_grupo")}</th><th>${t("inv_cant")}</th><th>${t("inv_pot")}</th><th>${t("inv_dim")}</th><th>${t("inv_potinst")}</th><th>${t("inv_kwh")}</th><th>${t("inv_cost")}</th><th></th></tr></thead><tbody>`;
   let tQ=0,tKW=0,tK=0,tC=0;
-  S.inventory.forEach((g,idx)=>{const kw=(g.qty||0)*(g.power||0)/1000,kwh=kw*eq,cost=kwh*S.tariff;tQ+=(+g.qty||0);tKW+=kw;tK+=kwh;tC+=cost;
+  S.inventory.forEach((g,idx)=>{const kw=(g.qty||0)*(g.power||0)/1000,kwh=kw*hOf(g),cost=kwh*S.tariff;tQ+=(+g.qty||0);tKW+=kw;tK+=kwh;tC+=cost;
     h+=`<tr><td><input type="text" data-i="${idx}" data-f="name" value="${g.name||""}"></td>
-      <td><input type="number" data-i="${idx}" data-f="qty" value="${g.qty||0}" style="width:90px;text-align:right"></td>
-      <td><input type="number" data-i="${idx}" data-f="power" value="${g.power||0}" style="width:90px;text-align:right"></td>
+      <td><input type="number" data-i="${idx}" data-f="qty" value="${g.qty||0}" style="width:84px;text-align:right"></td>
+      <td><input type="number" data-i="${idx}" data-f="power" value="${g.power||0}" style="width:84px;text-align:right"></td>
+      <td style="text-align:center"><input type="checkbox" class="dimchk" data-i="${idx}" ${g.dim!==false?"checked":""}></td>
       <td class="num">${nf(kw,2)}</td><td class="num">${nf(kwh,0)}</td><td class="num">${money(cost)}</td>
       <td><button class="del" data-del="${idx}">×</button></td></tr>`;});
-  h+=`<tr class="total"><td>${t("inv_total")}</td><td>${nf(tQ)}</td><td></td><td>${nf(tKW,2)}</td><td>${nf(tK,0)}</td><td>${money(tC)}</td><td></td></tr></tbody>`;
+  h+=`<tr class="total"><td>${t("inv_total")}</td><td>${nf(tQ)}</td><td></td><td></td><td>${nf(tKW,2)}</td><td>${nf(tK,0)}</td><td>${money(tC)}</td><td></td></tr></tbody>`;
   tb.innerHTML=h;
-  tb.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{const i=+inp.dataset.i,f=inp.dataset.f;
+  tb.querySelectorAll("input[data-f]").forEach(inp=>inp.addEventListener("input",()=>{const i=+inp.dataset.i,f=inp.dataset.f;
     S.inventory[i][f]=f==="name"?inp.value:(parseFloat(inp.value)||0);recalc();renderTop();renderCards();
-    const eq2=scnRes(S.invScn).equivH;const tr=tb.querySelectorAll("tbody tr");let q=0,kw=0,kk=0,cc=0;
-    S.inventory.forEach((g,idx)=>{const k=(g.qty||0)*(g.power||0)/1000,kh=k*eq2,co=kh*S.tariff;q+=(+g.qty||0);kw+=k;kk+=kh;cc+=co;
-      const c=tr[idx].children;c[3].textContent=nf(k,2);c[4].textContent=nf(kh,0);c[5].textContent=money(co);});
-    const tt=tr[tr.length-1].children;tt[1].textContent=nf(q);tt[3].textContent=nf(kw,2);tt[4].textContent=nf(kk,0);tt[5].textContent=money(cc);}));
+    const tr=tb.querySelectorAll("tbody tr");let q=0,kw=0,kk=0,cc=0;
+    S.inventory.forEach((g,idx)=>{const k=(g.qty||0)*(g.power||0)/1000,kh=k*hOf(g),co=kh*S.tariff;q+=(+g.qty||0);kw+=k;kk+=kh;cc+=co;
+      const c=tr[idx].children;c[4].textContent=nf(k,2);c[5].textContent=nf(kh,0);c[6].textContent=money(co);});
+    const tt=tr[tr.length-1].children;tt[1].textContent=nf(q);tt[4].textContent=nf(kw,2);tt[5].textContent=nf(kk,0);tt[6].textContent=money(cc);}));
+  tb.querySelectorAll(".dimchk").forEach(chk=>chk.addEventListener("change",()=>{S.inventory[+chk.dataset.i].dim=chk.checked;recalc();renderTop();renderCards();renderInv();}));
   tb.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{S.inventory.splice(+b.dataset.del,1);recalc();renderTop();renderCards();renderInv();}));
 }
 
@@ -1072,7 +1083,7 @@ function renderExec(){
   const place=(cc&&S.country!=="CUSTOM")?cc.n:(nf(S.lat,3)+", "+nf(S.lon,3));
   const today=new Date().toLocaleDateString(loc());
   const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
-  const eqA=RA.equivH,eqB=RB.equivH,flA=IKW*eqA,flB=IKW*eqB;
+  const eqA=RA.equivH,eqB=RB.equivH,flA=eKWh("A"),flB=eKWh("B");
   const k=v=>nf(v,1),k0=v=>nf(v,0),m=v=>money(v);
   const act=activeScenarios();
   let savBoxes=`<h3>${t("ex_save_title")}</h3><div class="kgrid">`;
@@ -1082,7 +1093,7 @@ function renderExec(){
     savBoxes+=`<div class="kbox"><div class="k">${t("ex_save_money")}</div><div class="v">${money(Math.max(0,x.schedSave)*S.tariff)}</div><div class="s">${t("ex_save_sched")}${t("per_year")}</div></div>`;
   }
   savBoxes+=`</div>`;
-  const rdef=[{lab:t("r_ophours"),val:c=>c.res.onH,f:v=>nf(v,1)+" h"},{lab:t("r_kwh_fleet"),val:c=>IKW*c.res.equivH,f:efmt},{lab:t("r_cost_fleet"),val:c=>IKW*c.res.equivH*S.tariff,f:m}];
+  const rdef=[{lab:t("r_ophours"),val:c=>c.res.onH,f:v=>nf(v,1)+" h"},{lab:t("r_kwh_fleet"),val:c=>eKWh(c.key),f:efmt},{lab:t("r_cost_fleet"),val:c=>eKWh(c.key)*S.tariff,f:m}];
   const detailTable=`<h3>${t("ex_detail")}</h3><table class="rep"><thead><tr><th>${t("c_ind")}</th>`+act.map(c=>`<th>${c.lab}</th>`).join("")+`</tr></thead><tbody>`+rdef.map(rd=>`<tr><td>${rd.lab}</td>`+act.map(c=>`<td class="num">${rd.f(rd.val(c))}</td>`).join("")+`</tr>`).join("")+`</tbody></table>`;
   const avgMin=(RB.onH-RA.onH)/N*60;
   let operBoxes=`<h3>${t("ex_oper_title")}</h3><div class="kgrid">`;
@@ -1164,7 +1175,7 @@ function exportPDF(){
   const x=savings(); const cc=COUNTRIES.find(c=>c.c===S.country);
   const place=(cc&&S.country!=="CUSTOM")?cc.n:(nf(S.lat,3)+", "+nf(S.lon,3));
   const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
-  const eqA=RA.equivH,eqB=RB.equivH,flA=IKW*eqA,flB=IKW*eqB;
+  const eqA=RA.equivH,eqB=RB.equivH,flA=eKWh("A"),flB=eKWh("B");
   const dlt=(v,d=0)=>(v>=0?"+":"-")+nf(Math.abs(v),d);
   doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
   doc.text(t("ex_title"),M,y);y+=10;
@@ -1305,7 +1316,7 @@ document.getElementById("fixOff").addEventListener("input",e=>{S.B.off=parseTime
 document.getElementById("dimA").addEventListener("change",e=>{S.A.useDim=e.target.checked;refreshLive();});
 document.getElementById("dimB").addEventListener("change",e=>{S.B.useDim=e.target.checked;refreshLive();});
 document.getElementById("daySlider").addEventListener("input",e=>{S.selDay=+e.target.value;renderDay();});
-document.getElementById("addRow").addEventListener("click",()=>{S.inventory.push({name:LANG==="es"?"Nuevo grupo":"New group",qty:0,power:100});recalc();renderCards();renderInv();});
+document.getElementById("addRow").addEventListener("click",()=>{S.inventory.push({name:LANG==="es"?"Nuevo grupo":"New group",qty:0,power:100,dim:true});recalc();renderCards();renderInv();});
 document.getElementById("csv").addEventListener("click",exportCSV);
 document.getElementById("printBtn").addEventListener("click",()=>window.print());
 document.getElementById("pdfBtn").addEventListener("click",exportPDF);
