@@ -389,6 +389,37 @@
     .footer-wm sup { font-size: 0.45rem; vertical-align: super; color: var(--muted); }
     .footer-dot { color: var(--border); }
 
+    /* ── LANG TOGGLE ── */
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 2px;
+      font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
+    }
+    .lang-btn {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 0.22rem 0.65rem;
+      border-radius: 16px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+      color: var(--muted);
+    }
+    .lang-btn.active {
+      background: var(--blue);
+      color: var(--navy);
+    }
+    .lang-btn:not(.active):hover {
+      color: rgba(255,255,255,0.8);
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       header { padding: 0 1.5rem; }
@@ -417,6 +448,10 @@
     <div class="header-right">
       <span class="badge-env">REPORTS / GRIDDATA.CL</span>
       <span class="header-date" id="header-date"></span>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="btn-es" onclick="setLang('es')">ES</button>
+      </div>
     </div>
   </header>
 
@@ -424,34 +459,34 @@
   <div class="hero">
     <div class="hero-eyebrow">
       <span class="dot"></span>
-      Colección de reportes activos
+      <span data-i18n="hero-eyebrow">Active reports collection</span>
     </div>
-    <h1>Reportes<br><em>Ubicquia®</em></h1>
-    <p>Panel centralizado de informes, simulaciones y herramientas de análisis para infraestructura inteligente. Datos en tiempo real, disponibles siempre.</p>
+    <h1><span data-i18n="hero-title">Reports</span><br><em>Ubicquia®</em></h1>
+    <p data-i18n="hero-desc">Centralized panel of reports, simulations and analysis tools for smart infrastructure. Real-time data, always available.</p>
     <div class="hero-tagline">simply <b>connected</b> simply <b>smart.</b></div>
   </div>
 
   <!-- STATS BAR -->
   <div class="stats-bar">
     <div class="stat-item">
-      <div class="stat-label">Reportes activos</div>
+      <div class="stat-label" data-i18n="stat-active">Active reports</div>
       <div class="stat-value" id="stat-count">4</div>
-      <div class="stat-sub">↑ disponibles ahora</div>
+      <div class="stat-sub" data-i18n="stat-active-sub">↑ available now</div>
     </div>
     <div class="stat-item">
-      <div class="stat-label">Tecnología</div>
+      <div class="stat-label" data-i18n="stat-tech">Technology</div>
       <div class="stat-value">UbiVu<span class="unit">®</span></div>
-      <div class="stat-sub">AI Core activo</div>
+      <div class="stat-sub" data-i18n="stat-tech-sub">AI Core active</div>
     </div>
     <div class="stat-item">
-      <div class="stat-label">Plataforma</div>
+      <div class="stat-label" data-i18n="stat-platform">Platform</div>
       <div class="stat-value">Web<span class="unit">/ HTML</span></div>
-      <div class="stat-sub">Sin instalación</div>
+      <div class="stat-sub" data-i18n="stat-platform-sub">No installation</div>
     </div>
     <div class="stat-item">
-      <div class="stat-label">Guías de usuario</div>
+      <div class="stat-label" data-i18n="stat-guides">User guides</div>
       <div class="stat-value" id="stat-guides">2</div>
-      <div class="stat-sub">↑ disponibles ahora</div>
+      <div class="stat-sub" data-i18n="stat-guides-sub">↑ available now</div>
     </div>
 
   </div>
@@ -459,9 +494,9 @@
   <!-- PROJECTS SECTION -->
   <section class="section">
     <div class="section-header">
-      <span class="section-label">proyectos</span>
+      <span class="section-label" data-i18n="section-projects">projects</span>
       <div class="section-line"></div>
-      <span class="section-count" id="section-count">04 reportes</span>
+      <span class="section-count" id="section-count">06 reports</span>
     </div>
 
     <div class="grid" id="projects-grid">
@@ -470,18 +505,18 @@
         <div class="card-icon" style="background:var(--blue);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5a8 8 0 0 1 16 0"/><path d="M12 17.5l4-3.2"/><circle cx="12" cy="17.5" r="1.2" fill="#ffffff" stroke="none"/><path d="M4.4 16.2h1.3M18.3 16.2h1.3"/></svg>
         </div>
-        <div class="card-name">Cargabilidad Transformadores</div>
-        <div class="card-tag">Grid Monitoring</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-transformers">Transformer Loading</div>
+        <div class="card-tag" data-i18n="tag-grid">Grid Monitoring</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
   <a class="card" href="./ahorro-energia/" target="_blank">
         <div class="card-icon" style="background:var(--green);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.2"/><rect x="7.6" y="4.8" width="8.8" height="5.2" rx="0.7"/><path d="M13 5.6 10.7 8.4h1.7l-1.4 2"/><path d="M8.6 13.6h0M12 13.6h0M15.4 13.6h0M8.6 17.6h0M12 17.6h0M15.4 17.6h0"/></svg>
         </div>
-        <div class="card-name">Calculadora Ahorro de Energia Ubicell</div>
-        <div class="card-tag">Ahorro Energia</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-energy">UbiCell Energy Savings Calculator</div>
+        <div class="card-tag" data-i18n="tag-energy">Energy Savings</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
 
@@ -489,27 +524,27 @@
         <div class="card-icon" style="background:var(--blue);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21h4"/><path d="M8.5 21V8.5"/><path d="M8.5 8.5h5"/><path d="M13.5 8.5v1.3"/><path d="M12 9.8h3l-1.5 2.6z"/><path d="M16.4 6.4a3.2 3.2 0 0 1 0 4.2"/><path d="M14.9 7.7a1.3 1.3 0 0 1 0 1.6"/></svg>
         </div>
-        <div class="card-name">Informe Ubicell</div>
-        <div class="card-tag">Conectividad</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-ubicell">UbiCell Report</div>
+        <div class="card-tag" data-i18n="tag-connectivity">Connectivity</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
       <a class="card" href="./reporte-personalizado-ubicquia/" target="_blank">
         <div class="card-icon" style="background:var(--navy);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h9"/><path d="M17 6.5h3"/><circle cx="15" cy="6.5" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 17.5h9"/><path d="M17 17.5h3"/><circle cx="15" cy="17.5" r="2"/></svg>
         </div>
-        <div class="card-name">Reportes Personalizados</div>
-        <div class="card-tag">Custom Report</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-custom">Custom Reports</div>
+        <div class="card-tag" data-i18n="tag-custom">Custom Report</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
       <a class="card" href="./reporte-obra-emblema/" target="_blank">
         <div class="card-icon" style="background:var(--navy);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21V3"/><path d="M6.5 4h11l-2.5 3.3 2.5 3.3h-11z"/></svg>
         </div>
-        <div class="card-name">Reporte Obra Emblema</div>
-        <div class="card-tag">Obra Emblema</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-emblema">Obra Emblema Report</div>
+        <div class="card-tag" data-i18n="tag-emblema">Obra Emblema</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
 
@@ -519,14 +554,14 @@
         <div class="card-icon" style="background:var(--green);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10z"/><circle cx="12" cy="11" r="2.3"/><path d="M12 4.5v1.4M12 16.1v1.4M5 11h1.4M17.6 11H19"/></svg>
         </div>
-        <div class="card-name">Sistema de Movilidad</div>
-        <div class="card-tag">Confidencial</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-mobility">Mobility System</div>
+        <div class="card-tag" data-i18n="tag-confidential">Confidential</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
       <div class="card card-add">
         <div class="add-icon">+</div>
-        <div class="add-text">// próximo reporte</div>
+        <div class="add-text" data-i18n="next-report">// next report</div>
       </div>
 
     </div>
@@ -535,9 +570,9 @@
   <!-- USER GUIDES SECTION -->
   <section class="section">
     <div class="section-header">
-      <span class="section-label">guías de usuario</span>
+      <span class="section-label" data-i18n="section-guides">user guides</span>
       <div class="section-line"></div>
-      <span class="section-count" id="guides-count" style="background:var(--green-lt); border-color:#a8c8a0; color:var(--green);">02 guías</span>
+      <span class="section-count" id="guides-count" style="background:var(--green-lt); border-color:#a8c8a0; color:var(--green);">02 <span data-i18n="guides-label">guides</span></span>
     </div>
 
     <div class="grid" id="guides-grid">
@@ -550,9 +585,9 @@
             <path d="M9 7h6M9 11h6M9 15h4"/>
           </svg>
         </div>
-        <div class="card-name">Guía UbiVu®</div>
-        <div class="card-tag">Manual de Plataforma</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name">UbiVu® Guide</div>
+        <div class="card-tag" data-i18n="tag-platform-manual">Platform Manual</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
       <a class="card card-guide" href="./guia-work-order/" target="_blank">
@@ -563,9 +598,9 @@
             <path d="M9 12l2 2 4-4"/>
           </svg>
         </div>
-        <div class="card-name">Guía Work Order</div>
-        <div class="card-tag">Órdenes de Trabajo</div>
-        <span class="card-arrow">abrir →</span>
+        <div class="card-name" data-i18n="card-workorder">Work Order Guide</div>
+        <div class="card-tag" data-i18n="tag-workorder">Work Orders</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
     </div>
@@ -582,14 +617,114 @@
   </footer>
 
   <script>
-    const now = new Date();
-    document.getElementById('header-date').textContent =
-      now.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+    // ── i18n dictionary ──
+    const i18n = {
+      en: {
+        'hero-eyebrow':       'Active reports collection',
+        'hero-title':         'Reports',
+        'hero-desc':          'Centralized panel of reports, simulations and analysis tools for smart infrastructure. Real-time data, always available.',
+        'stat-active':        'Active reports',
+        'stat-active-sub':    '↑ available now',
+        'stat-tech':          'Technology',
+        'stat-tech-sub':      'AI Core active',
+        'stat-platform':      'Platform',
+        'stat-platform-sub':  'No installation',
+        'stat-guides':        'User guides',
+        'stat-guides-sub':    '↑ available now',
+        'section-projects':   'projects',
+        'card-transformers':  'Transformer Loading',
+        'tag-grid':           'Grid Monitoring',
+        'card-energy':        'UbiCell Energy Savings Calculator',
+        'tag-energy':         'Energy Savings',
+        'card-ubicell':       'UbiCell Report',
+        'tag-connectivity':   'Connectivity',
+        'card-custom':        'Custom Reports',
+        'tag-custom':         'Custom Report',
+        'card-emblema':       'Obra Emblema Report',
+        'tag-emblema':        'Obra Emblema',
+        'card-mobility':      'Mobility System',
+        'tag-confidential':   'Confidential',
+        'next-report':        '// next report',
+        'section-guides':     'user guides',
+        'guides-label':       'guides',
+        'tag-platform-manual':'Platform Manual',
+        'card-workorder':     'Work Order Guide',
+        'tag-workorder':      'Work Orders',
+        'open':               'open →',
+        'footer-reports':     (n) => n + ' report' + (n !== 1 ? 's' : '') + ' available',
+        'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reports',
+        'date-locale':        'en-US',
+      },
+      es: {
+        'hero-eyebrow':       'Colección de reportes activos',
+        'hero-title':         'Reportes',
+        'hero-desc':          'Panel centralizado de informes, simulaciones y herramientas de análisis para infraestructura inteligente. Datos en tiempo real, disponibles siempre.',
+        'stat-active':        'Reportes activos',
+        'stat-active-sub':    '↑ disponibles ahora',
+        'stat-tech':          'Tecnología',
+        'stat-tech-sub':      'AI Core activo',
+        'stat-platform':      'Plataforma',
+        'stat-platform-sub':  'Sin instalación',
+        'stat-guides':        'Guías de usuario',
+        'stat-guides-sub':    '↑ disponibles ahora',
+        'section-projects':   'proyectos',
+        'card-transformers':  'Cargabilidad Transformadores',
+        'tag-grid':           'Grid Monitoring',
+        'card-energy':        'Calculadora Ahorro de Energía UbiCell',
+        'tag-energy':         'Ahorro Energía',
+        'card-ubicell':       'Informe UbiCell',
+        'tag-connectivity':   'Conectividad',
+        'card-custom':        'Reportes Personalizados',
+        'tag-custom':         'Custom Report',
+        'card-emblema':       'Reporte Obra Emblema',
+        'tag-emblema':        'Obra Emblema',
+        'card-mobility':      'Sistema de Movilidad',
+        'tag-confidential':   'Confidencial',
+        'next-report':        '// próximo reporte',
+        'section-guides':     'guías de usuario',
+        'guides-label':       'guías',
+        'tag-platform-manual':'Manual de Plataforma',
+        'card-workorder':     'Guía Work Order',
+        'tag-workorder':      'Órdenes de Trabajo',
+        'open':               'abrir →',
+        'footer-reports':     (n) => n + ' reporte' + (n !== 1 ? 's' : '') + ' disponibles',
+        'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reportes',
+        'date-locale':        'es-CL',
+      }
+    };
 
-    const count = document.querySelectorAll('.grid .card:not(.card-add)').length;
-    document.getElementById('footer-count').textContent = count + ' reporte' + (count !== 1 ? 's' : '') + ' disponibles';
+    let currentLang = 'en';
+
+    function applyLang(lang) {
+      const dict = i18n[lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key] && typeof dict[key] === 'string') el.textContent = dict[key];
+      });
+      // dynamic counters
+      const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
+      document.getElementById('footer-count').textContent = dict['footer-reports'](count);
+      document.getElementById('section-count').textContent = dict['section-count-fmt'](count);
+      // date
+      const now = new Date();
+      document.getElementById('header-date').textContent =
+        now.toLocaleDateString(dict['date-locale'], { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+      // toggle buttons
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.getElementById('btn-es').classList.toggle('active', lang === 'es');
+      document.documentElement.lang = lang;
+      currentLang = lang;
+    }
+
+    function setLang(lang) {
+      applyLang(lang);
+    }
+
+    // init
+    const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
     document.getElementById('stat-count').textContent = count;
-    document.getElementById('section-count').textContent = String(count).padStart(2, '0') + ' reportes';
+    document.getElementById('stat-guides').textContent = document.querySelectorAll('#guides-grid .card').length;
+    applyLang('en');
   </script>
 
 </body>
