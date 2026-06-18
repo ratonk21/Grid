@@ -343,6 +343,14 @@
     }
     .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
 
+    /* ── GUIDE CARD variant ── */
+    .card-guide:hover {
+      border-color: #7ab89a;
+    }
+    .card-guide::before {
+      background: linear-gradient(90deg, var(--green), var(--lime));
+    }
+
     /* ── ADD CARD ── */
     .card-add {
       border-style: dashed;
@@ -440,6 +448,11 @@
       <div class="stat-value">Web<span class="unit">/ HTML</span></div>
       <div class="stat-sub">Sin instalación</div>
     </div>
+    <div class="stat-item">
+      <div class="stat-label">Guías de usuario</div>
+      <div class="stat-value" id="stat-guides">2</div>
+      <div class="stat-sub">↑ disponibles ahora</div>
+    </div>
 
   </div>
 
@@ -515,6 +528,45 @@
         <div class="add-icon">+</div>
         <div class="add-text">// próximo reporte</div>
       </div>
+
+    </div>
+  </section>
+
+  <!-- USER GUIDES SECTION -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label">guías de usuario</span>
+      <div class="section-line"></div>
+      <span class="section-count" id="guides-count" style="background:var(--green-lt); border-color:#a8c8a0; color:var(--green);">02 guías</span>
+    </div>
+
+    <div class="grid" id="guides-grid">
+
+      <a class="card card-guide" href="./guia-ubivu/" target="_blank">
+        <div class="card-icon" style="background:var(--green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M9 7h6M9 11h6M9 15h4"/>
+          </svg>
+        </div>
+        <div class="card-name">Guía UbiVu®</div>
+        <div class="card-tag">Manual de Plataforma</div>
+        <span class="card-arrow">abrir →</span>
+      </a>
+
+      <a class="card card-guide" href="./guia-work-order/" target="_blank">
+        <div class="card-icon" style="background:var(--green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1.5"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="card-name">Guía Work Order</div>
+        <div class="card-tag">Órdenes de Trabajo</div>
+        <span class="card-arrow">abrir →</span>
+      </a>
 
     </div>
   </section>
