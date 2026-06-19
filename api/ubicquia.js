@@ -16,6 +16,16 @@ const NOTIF_URL  = 'https://api.ubicquia.com/api/v2/notification-nodes';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Lee el cuerpo del error de Ubicquia (truncado) para diagnosticar
+async function readErr(r) {
+  try {
+    const t = await r.text();
+    return t ? ` ${t.slice(0, 300)}` : '';
+  } catch {
+    return '';
+  }
+}
+
 // Comparación en tiempo constante (evita filtrar el código por timing)
 function safeEqual(a, b) {
   const ba = Buffer.from(String(a));
@@ -66,7 +76,7 @@ async function getToken(creds) {
       client_secret: creds.secret,
     }),
   });
-  if (!r.ok) throw new Error(`auth ${r.status}`);
+  if (!r.ok) throw new Error(`auth ${r.status}${await readErr(r)}`);
   return (await r.json()).access_token;
 }
 
@@ -93,7 +103,7 @@ async function fetchMetrix(token, { imei, start, end, subpanel_id }) {
         per_page: '20000',
       }),
     });
-    if (!r.ok) throw new Error(`metrix ${r.status}`);
+    if (!r.ok) throw new Error(`metrix ${r.status}${await readErr(r)}`);
     const data = (await r.json()).data || [];
     if (data.length === 0) break;
     all.push(...data);
@@ -118,7 +128,7 @@ async function fetchNotifications(token, { notification_type, start, end, subpan
       + `&notification_type=${encodeURIComponent(notification_type)}`
       + `&page=${page}&per_page=20000`;
     const r = await fetchRetry(url, { headers });
-    if (!r.ok) throw new Error(`notif ${r.status}`);
+    if (!r.ok) throw new Error(`notif ${r.status}${await readErr(r)}`);
     const nodes = (((await r.json()).data) || {}).nodes || [];
     if (nodes.length === 0) break;
     all.push(...nodes);

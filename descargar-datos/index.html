@@ -153,8 +153,10 @@
 
       <div class="grid2">
         <div class="field"><label for="interval">Días por intervalo</label><input type="number" id="interval" value="5" min="1" /></div>
-        <div class="field"><label for="code">Código de acceso</label><input type="password" id="code" placeholder="requerido" autocomplete="off" /></div>
+        <div class="field"><label for="parallel">IMEIs en paralelo <span class="hint">— sube si no hay 429</span></label><input type="number" id="parallel" value="2" min="1" max="8" /></div>
       </div>
+
+      <div class="field"><label for="code">Código de acceso</label><input type="password" id="code" placeholder="requerido" autocomplete="off" /></div>
 
       <button class="btn" id="go">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
@@ -425,6 +427,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   const subSelVal=document.getElementById('subpanelSel').value;
   const subpanel=(subSelVal==='__other__') ? (document.getElementById('subpanel').value.trim()||'0') : (subSelVal||'0');
   const maxDays=parseInt(document.getElementById('interval').value,10)||5;
+  const concurrency=Math.max(1, Math.min(8, parseInt(document.getElementById('parallel').value,10)||2));
   const code=document.getElementById('code').value.trim();
   const panel=document.getElementById('panel').value;
 
@@ -436,15 +439,14 @@ document.getElementById('go').addEventListener('click', async ()=>{
   btn.disabled=true; btn.textContent='Procesando…';
   try{
     const intervals=splitRange(start,end,maxDays);
-    log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) por IMEI.`);
-    const zip=new JSZip(); const results={};
+    log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
+    const zip=new JSZip(); const results={}; let done=0;
 
-    for(const imei of imeis){
-      log(`\n▶ IMEI ${imei}`);
+    // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
+    async function processImei(imei){
       const acc={DTM2:[],Vsag:[],Vswell:[],Powerloss:[],Powerrestored:[]};
       for(let i=0;i<intervals.length;i++){
         const [is,ie]=intervals[i];
-        log(`  intervalo ${i+1}/${intervals.length}: ${is} → ${ie}`);
         const d = await apiCall('all',imei,is,ie,subpanel,code,panel);
         acc.DTM2.push(...renameKeys(d.metrix||[], raw_mapping));
         acc.Vsag.push(...renameKeys(d.sag||[], voltage_sag_mapping));
@@ -453,7 +455,6 @@ document.getElementById('go').addEventListener('click', async ()=>{
         acc.Powerrestored.push(...renameKeys(filterPowerRestored(d.powerrestored||[]), power_mapping));
         if(i < intervals.length-1) await sleep(1500); // pausa para no saturar Ubicquia
       }
-      // Dedup + orden para CSV y gráficos
       for(const t of Object.keys(acc)) acc[t]=sortByDate(dedupe(acc[t]));
       results[imei]=acc;
 
@@ -462,15 +463,25 @@ document.getElementById('go').addEventListener('click', async ()=>{
         let csv=toCSV(rows);
         if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
         folder.file(`${imei}_combined_data_${type}.csv`, csv);
-        log(`    ${type}: ${rows.length} filas`, 'line-ok');
       }
-      // HTML de análisis interactivo (como tu script de Python)
       if(acc.DTM2.length){
         const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
         folder.file(`${imei}_Final_Electrical_Parameters_ANALYSIS.html`, figureToHtml(spec, `DTM ${imei} — Electrical Parameter Analysis`));
-        log(`    análisis HTML generado`, 'line-ok');
+      }
+      done++;
+      log(`✓ ${imei}  (${acc.DTM2.length} registros)  [${done}/${imeis.length}]`, 'line-ok');
+    }
+
+    // Pool de concurrencia: hasta "concurrency" IMEIs a la vez
+    const cola=[...imeis];
+    async function worker(){
+      while(cola.length){
+        const imei=cola.shift();
+        try{ await processImei(imei); }
+        catch(e){ log(`✗ ${imei}: ${e.message||e}`, 'line-err'); }
       }
     }
+    await Promise.all(Array.from({length:concurrency}, ()=>worker()));
 
     log('\nGenerando ZIP…');
     lastBlob=await zip.generateAsync({type:'blob'});
