@@ -1,0 +1,501 @@
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-K73HD7MSR4');
+  </script>
+</head>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E" />
+<title>DTM Analytics — GridData</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet" />
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#EEF0F5;--surface:#fff;--surface2:#f5f7fb;--border:#d8dde9;--text:#1E2445;--text-mid:#464D63;
+    --muted:#99A0B4;--navy:#1E2445;--navy-mid:#2a3258;--accent:#22B0E1;--accent-d:#199ecb;--accent-lt:#d6eefa;
+    --blue-lt:#e3f4fb;--green:#005B59;--lime:#AECC53;--err:#b42323;
+    --radius:8px;--radius-lg:14px;
+  }
+  body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+  /* Header */
+  header{background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:64px;position:sticky;top:0;z-index:10}
+  .logo-wrap{display:flex;align-items:center;gap:.7rem}
+  header svg.mark{width:24px;height:29px;flex-shrink:0}
+  .brand{color:#fff;font-weight:700;font-size:1rem;letter-spacing:.01em}
+  .brand b{color:var(--accent);font-weight:700}
+  .back{color:#aeb4c7;font-size:.82rem;font-weight:700;text-decoration:none;letter-spacing:.02em;transition:color .15s}
+  .back:hover{color:#fff}
+
+  .wrap{max-width:980px;margin:0 auto;padding:2.5rem 1.25rem 3rem}
+
+  /* Hero */
+  .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.7rem}
+  .eyebrow::before{content:'';width:22px;height:2px;background:var(--accent);border-radius:2px}
+  h1{font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1.1;margin-bottom:.5rem}
+  .lead{color:var(--text-mid);font-size:1rem;line-height:1.6;max-width:640px}
+
+  /* Section header (DTMs / Gráficos) — mismo lenguaje que el index */
+  h2{display:flex;align-items:center;gap:.7rem;font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin:2.5rem 0 1.1rem}
+  h2::before{content:'';width:20px;height:3px;background:var(--lime);border-radius:2px;flex-shrink:0}
+  h2::after{content:'';flex:1;height:1px;background:var(--border)}
+  h3{font-size:.95rem;font-weight:700;margin:1.6rem 0 .6rem;color:var(--navy)}
+
+  /* Form card */
+  .panel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:2rem;box-shadow:0 1px 2px rgba(30,36,69,.04)}
+  .panel-card__head{display:flex;align-items:center;gap:.6rem;padding:1.1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--surface2)}
+  .panel-card__head .ic{width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .panel-card__head .ic svg{width:17px;height:17px}
+  .panel-card__head .t{font-size:.92rem;font-weight:700}
+  .panel-card__body{padding:1.5rem}
+
+  .field{margin-bottom:1.15rem}
+  .field:last-child{margin-bottom:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media (max-width:560px){.grid2{grid-template-columns:1fr}}
+  label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mid);margin-bottom:.4rem}
+  .hint{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)}
+
+  input,textarea,select{width:100%;padding:.7rem .85rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:#b9bfcf}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  select{appearance:none;-webkit-appearance:none;padding-right:2.3rem;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2399A0B4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right .9rem center;background-size:12px}
+
+  .btn{width:100%;margin-top:.4rem;padding:.9rem;border:0;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:1rem;font-weight:700;letter-spacing:.01em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .15s}
+  .btn:hover{background:var(--accent-d)}
+  .btn:disabled{background:var(--muted);cursor:not-allowed}
+  .btn svg{width:17px;height:17px}
+
+  /* Re-descarga */
+  #redownload{display:none;margin-top:1.25rem}
+  #redownload a{display:inline-flex;align-items:center;gap:.45rem;padding:.6rem 1.1rem;background:var(--surface);border:1px solid var(--accent);color:var(--accent);border-radius:var(--radius);font-weight:700;text-decoration:none;font-size:.88rem;cursor:pointer;transition:background .15s}
+  #redownload a:hover{background:var(--blue-lt)}
+
+  /* Consola de registro */
+  #log{background:var(--navy);color:#cfe8f5;border-radius:var(--radius-lg);padding:1.1rem 1.25rem;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;max-height:300px;overflow:auto;margin-top:1.25rem;display:none;border:1px solid #2a3258}
+  #log.show{display:block}
+  .line-err{color:#ff9a9a}.line-ok{color:#bfe88a}
+
+  /* DTMs encontrados */
+  .dtm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.85rem}
+  .dtm-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:1rem 1.1rem;transition:box-shadow .15s}
+  .dtm-card:hover{box-shadow:0 2px 8px rgba(30,36,69,.07)}
+  .dtm-id{font-weight:700;font-size:.95rem;color:var(--navy)}
+  .dtm-meta{color:var(--muted);font-size:.78rem;margin-top:.35rem;line-height:1.5}
+
+  /* Gráficos */
+  .chart{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.6rem;margin-bottom:1.5rem;overflow:hidden}
+  .chart-title{color:var(--navy)}
+
+  /* Footer */
+  footer{max-width:980px;margin:0 auto;padding:2rem 1.25rem 3rem;display:flex;align-items:center;gap:.6rem;color:var(--muted);font-size:.82rem;border-top:1px solid var(--border)}
+  footer .wm b{color:var(--accent);font-weight:700}
+  footer .dot{color:var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-wrap">
+    <svg class="mark" viewBox="0 0 38 46" aria-hidden="true"><path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#22B0E1"/><path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#fff"/></svg>
+    <div class="brand">Grid<b>Data</b></div>
+  </div>
+  <a class="back" href="../">← Menú</a>
+</header>
+
+<div class="wrap">
+  <span class="eyebrow">DTM Analytics</span>
+  <h1>Descargar y analizar datos</h1>
+  <p class="lead">Extrae el histórico de transformadores por IMEI, descárgalo en un ZIP y revisa los gráficos de parámetros eléctricos al instante. Las credenciales nunca salen del servidor.</p>
+
+  <div class="panel-card">
+    <div class="panel-card__head">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg></span>
+      <span class="t">Parámetros de descarga</span>
+    </div>
+    <div class="panel-card__body">
+
+      <div class="grid2">
+        <div class="field">
+          <label for="panel">Panel</label>
+          <select id="panel"></select>
+        </div>
+        <div class="field">
+          <label for="subpanelSel">Subpanel</label>
+          <select id="subpanelSel"></select>
+          <input type="text" id="subpanel" placeholder="N° de subpanel" style="display:none;margin-top:.5rem" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="imeis">IMEIs <span class="hint">— separados por coma o uno por línea</span></label>
+        <textarea id="imeis" placeholder="123456789012345, 234567890123456"></textarea>
+      </div>
+
+      <div class="grid2">
+        <div class="field"><label for="start">Fecha inicio</label><input type="datetime-local" id="start" step="1" /></div>
+        <div class="field"><label for="end">Fecha fin</label><input type="datetime-local" id="end" step="1" /></div>
+      </div>
+
+      <div class="grid2">
+        <div class="field"><label for="interval">Días por intervalo</label><input type="number" id="interval" value="5" min="1" /></div>
+        <div class="field"><label for="code">Código de acceso</label><input type="password" id="code" placeholder="requerido" autocomplete="off" /></div>
+      </div>
+
+      <button class="btn" id="go">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
+        Descargar y analizar
+      </button>
+
+    </div>
+  </div>
+
+  <div id="redownload"><a id="redownload-link"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar el ZIP otra vez</a></div>
+  <div id="log"></div>
+  <div id="dtmlist"></div>
+  <div id="charts"></div>
+</div>
+
+<footer>
+  <span class="wm"><b>ubi</b>cquia<sup>®</sup></span>
+  <span class="dot">·</span>
+  <span>griddata.cl</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   PANELES — uno por número de panel. Cada panel tiene su propio par de
+   credenciales y una lista de subpaneles.
+   Aquí van solo ETIQUETAS, números y subpaneles. NUNCA las credenciales.
+   Las credenciales reales van en Vercel como variables de entorno,
+   usando el NÚMERO del panel como key:
+     panel 646703  →  UBICQUIA_646703_CLIENT_ID   = 646703.ebustos_superuser@ubicquia.com
+                      UBICQUIA_646703_CLIENT_SECRET = (el secret de ese panel)
+   Para agregar un panel: añade una línea aquí + crea sus 2 variables en Vercel.
+   Para agregar un subpanel: añade un { label, id } a su lista (o usa "Otro…").
+   ══════════════════════════════════════════════════════════════════ */
+const PANELS = [
+  {
+    label: 'Default (AES El Salvador)',
+    key: '646703',                       // número de panel (va dentro del client_id)
+    subpanels: [
+      { label: '835', id: '835' },
+      // { label: 'Nombre subpanel', id: '999' },
+    ],
+  },
+  // { label: 'Otro cliente', key: '123456', subpanels: [ { label: '12', id: '12' } ] },
+];
+
+/* ── Mapeos de columnas (de tu script de descarga) ── */
+const raw_mapping = {
+  id:"ID", serialNum:"Serial Number", node:"Node ID", latitude:"Latitude", longitude:"Longitude",
+  status:"Node Status", createdAt:"Date", line1VoltageAvg:"X1 Voltage", line2VoltageAvg:"X2 Voltage",
+  line3VoltageAvg:"X3 Voltage", line1CurrentAvg:"X1 Current", line2CurrentAvg:"X2 Current",
+  line3CurrentAvg:"X3 Current", inletPhase1CurrentAvg:"H1B Current", inletPhase2CurrentAvg:"H2B Current",
+  inletPhase3CurrentAvg:"H3B Current", outletPhase1CurrentAvg:"H1 / H1A Current",
+  outletPhase2CurrentAvg:"H2 / H2A Current", outletPhase3CurrentAvg:"H3 / H3A Current",
+  oilTemperatureAvg_f:"Temperature", oilTemperatureAvg:"Oil Temperature", pressureAvg:"Pressure",
+  line1ActivePowerAvg:"X3 Power (kW)", line2ActivePowerAvg:"X2 Power (kW)", line3ActivePowerAvg:"X1 Power (kW)",
+  line1PowerFactor:"X1 PF", line2PowerFactor:"X2 PF", line3PowerFactor:"X3 PF",
+  line1Energy:"X1 Energy (kWh)", line2Energy:"X2 Energy (kWh)", line3Energy:"X3 Energy (kWh)",
+  updatedAt:"Last Updated", x1Thd:"Power X1 THD", x2Thd:"Power X2 THD", x3Thd:"Power X3 THD",
+  hardwareVersion:"Hardware Version", firmwareVersion:"Firmware Version", rssi:"RSSI",
+  kva:"kVA Rating", kVAHourAvg:"kVA"
+};
+const power_mapping = { createdAt:"Subpanel Time" };
+const voltage_sag_mapping = { createdAt:"Time", x1_value:"X1 Lowest Value", x2_value:"X2 Lowest Value", x3_value:"X3 Lowest Value", x1_duration:"X1 Duration", x2_duration:"X2 Duration", x3_duration:"X3 Duration" };
+const voltage_swell_mapping = { createdAt:"Time", x1_value:"X1 Highest Value", x2_value:"X2 Highest Value", x3_value:"X3 Highest Value", x1_duration:"X1 Duration", x2_duration:"X2 Duration", x3_duration:"X3 Duration" };
+
+/* ── Utilidades de descarga ── */
+function safelyParseJson(x){
+  if(x==null) return {};
+  if(typeof x==='object') return x;
+  try{ return JSON.parse(x); }
+  catch(e){ try{ return JSON.parse(String(x).split("''").join('"').split('“').join('"').split('”').join('"')); } catch(e2){ return {}; } }
+}
+function addMsgFields(rows){ return rows.map(r=>{ const d=safelyParseJson(r.jsonData); return {...r, MsgStr:d.msgStr, MsgType:d.msgType}; }); }
+function filterPowerLoss(rows){ return addMsgFields(rows).filter(r => ['AlertPowerLoss','AlertPowerLoss2'].includes(r.MsgStr) || r.alertvalue==='Loss'); }
+function filterPowerRestored(rows){ return addMsgFields(rows).filter(r => r.MsgStr==='AlertPowerRestored' || r.alertvalue==='Restored'); }
+function renameKeys(rows, mapping){ return rows.map(r=>{ const o={}; for(const k of Object.keys(r)) o[mapping[k]||k]=r[k]; return o; }); }
+function dedupe(rows){ const seen=new Set(),out=[]; for(const r of rows){ const k=JSON.stringify(r); if(!seen.has(k)){ seen.add(k); out.push(r);} } return out; }
+function sortBy(rows, col){ if(!rows.length||!col) return rows; return [...rows].sort((a,b)=>String(a[col]??'').localeCompare(String(b[col]??''))); }
+function sortByDate(rows){ if(!rows.length) return rows; const dcol=Object.keys(rows[0]).find(c=>/date|time/i.test(c)); return sortBy(rows,dcol); }
+function toCSV(rows){
+  if(!rows.length) return '';
+  const keys=[]; for(const r of rows) for(const k of Object.keys(r)) if(!keys.includes(k)) keys.push(k);
+  const esc=v=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s)?'"'+s.split('"').join('""')+'"':s; };
+  return [keys.join(','), ...rows.map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n');
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmt(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function fromLocalInput(v){ return new Date(v.length===16 ? v+':00' : v); }
+function splitRange(start, end, maxDays){
+  const s=fromLocalInput(start), e=fromLocalInput(end), out=[]; let cur=new Date(s);
+  while(cur<e){ const ce=new Date(Math.min(cur.getTime()+maxDays*86400000, e.getTime())); out.push([fmt(cur), fmt(ce)]); cur=ce; }
+  return out;
+}
+async function apiCall(action, imei, start, end, subpanel_id, code, panel){
+  const res = await fetch('/api/ubicquia', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', ...(code ? {'x-access-code':code} : {}) },
+    body: JSON.stringify({ action, imei, start, end, subpanel_id, panel }),
+  });
+  if(!res.ok){ throw new Error(`${action} ${imei}: HTTP ${res.status} ${await res.text()}`); }
+  return (await res.json()).data || [];
+}
+
+/* ── Análisis: port del script Plotly (7 paneles) ── */
+function num(v){ const n=parseFloat(v); return isNaN(n)?null:n; }
+function colVals(rows, col){ return rows.map(r=>num(r[col])); }
+function keysOf(rows){ const s=new Set(); rows.forEach(r=>Object.keys(r).forEach(k=>s.add(k))); return s; }
+function imbalance(rows, cols){
+  return rows.map(r=>{
+    const vals = cols.map(c=>num(r[c])).filter(v=>v!=null);
+    if(vals.length<2) return null;
+    const mx=Math.max(...vals), mn=Math.min(...vals), mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    return mean!==0 ? ((mx-mn)/mean)*100 : null;
+  });
+}
+function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
+  const data=sortBy(dataIn,'Date'), vswell=sortBy(vswellIn,'Time'), vsag=sortBy(vsagIn,'Time'), powerloss=sortBy(powerlossIn,'Subpanel Time');
+  const c3=['black','red','blue'], IMB='purple', ZERO='red';
+  const k=keysOf(data), dates=data.map(r=>r['Date']);
+  const traces=[], add=t=>traces.push(t);
+  const voltCols=['X1 Voltage','X2 Voltage','X3 Voltage'].filter(c=>k.has(c));
+  const curCols=['X1 Current','X2 Current','X3 Current'].filter(c=>k.has(c));
+  const hCols=['H1 / H1A Current','H2 / H2A Current','H3 / H3A Current'].filter(c=>k.has(c));
+  const pfCols=['X1 PF','X2 PF','X3 PF'].filter(c=>k.has(c));
+
+  // Row 1 — Voltages + imbalance + eventos
+  voltCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:c,line:{color:c3[i]},xaxis:'x',yaxis:'y'}));
+  if(voltCols.length>1) add({x:dates,y:imbalance(data,voltCols),mode:'lines',name:'Imbalance Voltage (%)',line:{color:IMB},xaxis:'x',yaxis:'y8'});
+  if(vswell.length){
+    add({x:vswell.map(r=>r['Time']),y:colVals(vswell,'X1 Highest Value'),mode:'markers',name:'Vswell X1',marker:{symbol:'star-triangle-up',size:8,color:'black'},xaxis:'x',yaxis:'y'});
+    add({x:vswell.map(r=>r['Time']),y:colVals(vswell,'X2 Highest Value'),mode:'markers',name:'Vswell X2',marker:{symbol:'star-triangle-up',size:8,color:'red'},xaxis:'x',yaxis:'y'});
+    add({x:vswell.map(r=>r['Time']),y:colVals(vswell,'X3 Highest Value'),mode:'markers',name:'Vswell X3',marker:{symbol:'star-triangle-up',size:8,color:'blue'},xaxis:'x',yaxis:'y'});
+  }
+  if(vsag.length){
+    add({x:vsag.map(r=>r['Time']),y:colVals(vsag,'X1 Lowest Value'),mode:'markers',name:'Vsag X1',marker:{symbol:'star-triangle-down',size:8,color:'black'},xaxis:'x',yaxis:'y'});
+    add({x:vsag.map(r=>r['Time']),y:colVals(vsag,'X2 Lowest Value'),mode:'markers',name:'Vsag X2',marker:{symbol:'star-triangle-down',size:8,color:'red'},xaxis:'x',yaxis:'y'});
+    add({x:vsag.map(r=>r['Time']),y:colVals(vsag,'X3 Lowest Value'),mode:'markers',name:'Vsag X3',marker:{symbol:'star-triangle-down',size:8,color:'blue'},xaxis:'x',yaxis:'y'});
+  }
+  if(powerloss.length){
+    const px=[],py=[]; powerloss.forEach(r=>{const t=r['Subpanel Time']; px.push(t,t,null); py.push(0,400,null);});
+    add({x:px,y:py,mode:'lines',name:'Powerloss Events',line:{color:'red',dash:'dot',width:2},xaxis:'x',yaxis:'y'});
+  }
+
+  // Row 2 — Currents + imbalance
+  curCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:c,line:{color:c3[i]},xaxis:'x2',yaxis:'y2'}));
+  if(curCols.length>1) add({x:dates,y:imbalance(data,curCols),mode:'lines',name:'Imbalance Current (%)',line:{color:IMB},xaxis:'x2',yaxis:'y9'});
+
+  // Row 3 — H Currents + imbalance
+  hCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:c,line:{color:c3[i]},xaxis:'x3',yaxis:'y3'}));
+  if(hCols.length>1) add({x:dates,y:imbalance(data,hCols),mode:'lines',name:'Imbalance H (%)',line:{color:IMB},xaxis:'x3',yaxis:'y10'});
+
+  // Row 4 — Power Factor + THD + zero line
+  pfCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:`Power Factor ${c}`,line:{color:c3[i]},xaxis:'x4',yaxis:'y4'}));
+  if(pfCols.length) add({x:dates,y:dates.map(()=>0),mode:'lines',name:'Zero Line (PF)',line:{color:ZERO,dash:'dash'},xaxis:'x4',yaxis:'y4'});
+  if(['Power X1 THD','Power X2 THD','Power X3 THD'].every(c=>k.has(c))){
+    add({x:dates,y:colVals(data,'Power X1 THD'),mode:'lines',name:'THD X1',line:{dash:'dash',color:'black'},xaxis:'x4',yaxis:'y11'});
+    add({x:dates,y:colVals(data,'Power X2 THD'),mode:'lines',name:'THD X2',line:{dash:'dash',color:'red'},xaxis:'x4',yaxis:'y11'});
+    add({x:dates,y:colVals(data,'Power X3 THD'),mode:'lines',name:'THD X3',line:{dash:'dash',color:'blue'},xaxis:'x4',yaxis:'y11'});
+  }
+
+  // Row 5 — kVA = V*I/1000
+  [['X1 Voltage','X1 Current'],['X2 Voltage','X2 Current'],['X3 Voltage','X3 Current']].forEach((p,i)=>{
+    if(k.has(p[0])&&k.has(p[1])){
+      const y=data.map(r=>{const v=num(r[p[0]]),cc=num(r[p[1]]); return (v==null||cc==null)?null:v*cc/1000;});
+      add({x:dates,y,mode:'lines',name:`kVA ${i+1}`,line:{color:c3[i]},xaxis:'x5',yaxis:'y5'});
+    }
+  });
+
+  // Row 6 — Signed currents + zero line
+  let anySigned=false;
+  [['X1 Current','X1 PF'],['X2 Current','X2 PF'],['X3 Current','X3 PF']].forEach((p,i)=>{
+    if(k.has(p[0])&&k.has(p[1])){
+      anySigned=true;
+      const y=data.map(r=>{const cc=num(r[p[0]]),pf=num(r[p[1]]); return (cc==null||pf==null)?null:cc*Math.sign(pf);});
+      add({x:dates,y,mode:'lines',name:`X${i+1} Current Signed`,line:{color:c3[i]},xaxis:'x6',yaxis:'y6'});
+    }
+  });
+  if(anySigned) add({x:dates,y:dates.map(()=>0),mode:'lines',name:'Zero Line (Current)',line:{color:ZERO,dash:'dash'},xaxis:'x6',yaxis:'y6'});
+
+  // Row 7 — Oil Temperature + Pressure (doble eje)
+  if(k.has('Oil Temperature')&&k.has('Pressure')){
+    add({x:dates,y:colVals(data,'Oil Temperature'),mode:'lines',name:'Oil Temperature',line:{color:'orange'},xaxis:'x7',yaxis:'y7'});
+    add({x:dates,y:colVals(data,'Pressure'),mode:'lines',name:'Pressure',line:{color:'blue'},xaxis:'x7',yaxis:'y12'});
+  }
+
+  // Layout — 7 filas apiladas, x compartido
+  const gap=0.03, n=7, h=(1-gap*(n-1))/n;
+  const dom=i=>{ const top=1-(i-1)*(h+gap); return [Math.max(0,top-h), top]; };
+  const ax=i=>i===1?'':String(i);
+  const layout={ height:2000, hovermode:'x unified', title:{text:'DTM Electrical Parameter Analysis'},
+    showlegend:true, legend:{orientation:'h',y:-0.04}, margin:{l:75,r:75,t:60,b:50}, annotations:[] };
+  for(let i=1;i<=7;i++){
+    layout['xaxis'+ax(i)]={ anchor:'y'+ax(i), domain:[0,1], showticklabels:i===7, matches:i===1?undefined:'x' };
+  }
+  const yTitles=['Voltage (V)','Current (A)','H Current (A)','Power Factor','Apparent Power (kVA)','Signed Current (A)','Oil Temperature (°C)'];
+  for(let i=1;i<=7;i++){
+    layout['yaxis'+ax(i)]={ domain:dom(i), anchor:'x'+ax(i), title:{text:yTitles[i-1],font:{size:11}} };
+  }
+  [[1,8,'Imbalance (%)'],[2,9,'Imbalance (%)'],[3,10,'Imbalance (%)'],[4,11,'THD (%)'],[7,12,'Pressure (Pa)']].forEach(([row,sy,t])=>{
+    layout['yaxis'+sy]={ domain:dom(row), anchor:'x'+ax(row), overlaying:'y'+ax(row), side:'right', title:{text:t,font:{size:11}} };
+  });
+  const subt=['Voltages in 3 Phases','Currents in 3 Phases','H Currents','Power Factor and THD','Apparent Power (kVA)','Currents with Power Factor Sign','Oil Temperature and Pressure'];
+  subt.forEach((t,idx)=>layout.annotations.push({ text:t, font:{size:13,color:'#1E2445'}, showarrow:false, x:0.5, xref:'paper', y:dom(idx+1)[1], yref:'paper', xanchor:'center', yanchor:'bottom', yshift:4 }));
+
+  Plotly.newPlot(div, traces, layout, { responsive:true, displaylogo:false });
+}
+
+/* ── UI ── */
+const logEl=document.getElementById('log');
+function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
+function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
+let lastBlob=null;
+document.getElementById('redownload-link').addEventListener('click', ()=>{ if(lastBlob) download(lastBlob,'datos_ubicquia.zip'); });
+
+function renderResults(results){
+  const imeis=Object.keys(results);
+  const list=document.getElementById('dtmlist');
+  list.innerHTML='<h2>DTMs encontrados</h2>';
+  const grid=document.createElement('div'); grid.className='dtm-grid';
+  imeis.forEach(imei=>{
+    const a=results[imei];
+    const card=document.createElement('div'); card.className='dtm-card';
+    card.innerHTML=`<div class="dtm-id">DTM ${imei}</div>`+
+      `<div class="dtm-meta">${a.DTM2.length} registros · ${a.Vsag.length} sag · ${a.Vswell.length} swell · ${a.Powerloss.length} power loss · ${a.Powerrestored.length} restored</div>`;
+    grid.appendChild(card);
+  });
+  list.appendChild(grid);
+
+  const charts=document.getElementById('charts');
+  charts.innerHTML='<h2>Gráficos</h2>';
+  imeis.forEach(imei=>{
+    const a=results[imei];
+    const h=document.createElement('h3'); h.className='chart-title'; h.textContent='DTM '+imei; charts.appendChild(h);
+    if(!a.DTM2.length){ const p=document.createElement('p'); p.className='sub'; p.textContent='Sin datos de métricas para graficar.'; charts.appendChild(p); return; }
+    const div=document.createElement('div'); div.className='chart'; charts.appendChild(div);
+    buildAnalysis(div, a.DTM2, a.Vswell, a.Vsag, a.Powerloss);
+  });
+}
+
+document.getElementById('go').addEventListener('click', async ()=>{
+  const btn=document.getElementById('go');
+  const imeis=document.getElementById('imeis').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  const start=document.getElementById('start').value, end=document.getElementById('end').value;
+  const subSelVal=document.getElementById('subpanelSel').value;
+  const subpanel=(subSelVal==='__other__') ? (document.getElementById('subpanel').value.trim()||'0') : (subSelVal||'0');
+  const maxDays=parseInt(document.getElementById('interval').value,10)||5;
+  const code=document.getElementById('code').value.trim();
+  const panel=document.getElementById('panel').value;
+
+  if(!imeis.length||!start||!end){ alert('Completa IMEIs, fecha inicio y fecha fin.'); return; }
+  if(!code){ alert('Ingresa el código de acceso.'); return; }
+
+  logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML=''; document.getElementById('charts').innerHTML='';
+  document.getElementById('redownload').style.display='none';
+  btn.disabled=true; btn.textContent='Procesando…';
+  try{
+    const intervals=splitRange(start,end,maxDays);
+    log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) por IMEI.`);
+    const zip=new JSZip(); const results={};
+
+    for(const imei of imeis){
+      log(`\n▶ IMEI ${imei}`);
+      const acc={DTM2:[],Vsag:[],Vswell:[],Powerloss:[],Powerrestored:[]};
+      for(let i=0;i<intervals.length;i++){
+        const [is,ie]=intervals[i];
+        log(`  intervalo ${i+1}/${intervals.length}: ${is} → ${ie}`);
+        acc.DTM2.push(...renameKeys(await apiCall('metrix',imei,is,ie,subpanel,code,panel), raw_mapping));
+        acc.Vsag.push(...renameKeys(await apiCall('sag',imei,is,ie,subpanel,code,panel), voltage_sag_mapping));
+        acc.Vswell.push(...renameKeys(await apiCall('swell',imei,is,ie,subpanel,code,panel), voltage_swell_mapping));
+        acc.Powerloss.push(...renameKeys(filterPowerLoss(await apiCall('powerloss',imei,is,ie,subpanel,code,panel)), power_mapping));
+        acc.Powerrestored.push(...renameKeys(filterPowerRestored(await apiCall('powerrestored',imei,is,ie,subpanel,code,panel)), power_mapping));
+      }
+      // Dedup + orden para CSV y gráficos
+      for(const t of Object.keys(acc)) acc[t]=sortByDate(dedupe(acc[t]));
+      results[imei]=acc;
+
+      const folder=zip.folder(imei);
+      for(const [type,rows] of Object.entries(acc)){
+        let csv=toCSV(rows);
+        if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
+        folder.file(`${imei}_combined_data_${type}.csv`, csv);
+        log(`    ${type}: ${rows.length} filas`, 'line-ok');
+      }
+    }
+
+    log('\nGenerando ZIP…');
+    lastBlob=await zip.generateAsync({type:'blob'});
+    download(lastBlob,'datos_ubicquia.zip');
+    document.getElementById('redownload').style.display='block';
+    log('✓ ZIP descargado.', 'line-ok');
+
+    log('Renderizando lista de DTMs y gráficos…');
+    renderResults(results);
+    log('✓ Listo.', 'line-ok');
+  }catch(e){
+    log('✗ '+(e.message||e), 'line-err');
+  }finally{
+    btn.disabled=false; btn.textContent='Descargar y analizar';
+  }
+});
+
+/* Llena el selector de paneles y, según el panel, su lista de subpaneles.
+   La opción "Otro…" muestra un campo para escribir un subpanel nuevo. */
+(function setupPanels(){
+  const panelSel=document.getElementById('panel');
+  const subSel=document.getElementById('subpanelSel');
+  const subInput=document.getElementById('subpanel');
+  if(!panelSel) return;
+
+  PANELS.forEach(p=>{ const o=document.createElement('option'); o.value=p.key; o.textContent=p.label; panelSel.appendChild(o); });
+
+  function fillSubpanels(){
+    const p=PANELS.find(x=>x.key===panelSel.value);
+    subSel.innerHTML='';
+    const subs=(p && p.subpanels) ? p.subpanels : [];
+    subs.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.label; subSel.appendChild(o); });
+    const other=document.createElement('option'); other.value='__other__'; other.textContent='Otro…'; subSel.appendChild(other);
+    toggleManual();
+  }
+  function toggleManual(){
+    const isOther = subSel.value==='__other__';
+    subInput.style.display = isOther ? 'block' : 'none';
+    if(isOther) subInput.focus();
+  }
+  panelSel.addEventListener('change', fillSubpanels);
+  subSel.addEventListener('change', toggleManual);
+  fillSubpanels();
+})();
+
+/* Valores por defecto de fecha: inicio a las 00:00:00, fin a las 23:59:59 (de hoy).
+   Puedes cambiar el día con el calendario; la hora se mantiene. */
+(function setDefaultDates(){
+  const n=new Date();
+  const day=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
+  const startEl=document.getElementById('start');
+  const endEl=document.getElementById('end');
+  if(startEl && !startEl.value) startEl.value=`${day}T00:00:00`;
+  if(endEl && !endEl.value)   endEl.value=`${day}T23:59:59`;
+})();
+</script>
+</body>
+</html>

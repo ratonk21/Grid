@@ -618,6 +618,30 @@
     </div>
   </section>
 
+  <!-- DTM ANALYTICS SECTION -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label" data-i18n="section-dtm">DTM Analytics</span>
+      <div class="section-line"></div>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">01 <span data-i18n="dtm-count-label">tool</span></span>
+    </div>
+
+    <div class="grid" id="dtm-grid">
+
+      <a class="card" href="./descargar-datos/">
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/>
+          </svg>
+        </div>
+        <div class="card-name" data-i18n="card-dtm-download">Download Data</div>
+        <div class="card-tag" data-i18n="tag-dtm">Data &amp; Charts</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
+      </a>
+
+    </div>
+  </section>
+
   <!-- FOOTER -->
   <footer>
     <div class="footer-brand">
@@ -662,6 +686,10 @@
         'tag-platform-manual':'Platform Manual',
         'card-workorder':     'Work Order Guide',
         'tag-workorder':      'Work Orders',
+        'section-dtm':        'DTM Analytics',
+        'dtm-count-label':    'tool',
+        'card-dtm-download':  'Download Data',
+        'tag-dtm':            'Data & Charts',
         'open':               'open →',
         'footer-reports':     (n) => n + ' report' + (n !== 1 ? 's' : '') + ' available',
         'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reports',
@@ -698,6 +726,10 @@
         'tag-platform-manual':'Manual de Plataforma',
         'card-workorder':     'Guía Work Order',
         'tag-workorder':      'Órdenes de Trabajo',
+        'section-dtm':        'DTM Analytics',
+        'dtm-count-label':    'herramienta',
+        'card-dtm-download':  'Descargar Datos',
+        'tag-dtm':            'Datos y Gráficos',
         'open':               'abrir →',
         'footer-reports':     (n) => n + ' reporte' + (n !== 1 ? 's' : '') + ' disponibles',
         'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reportes',
@@ -705,7 +737,7 @@
       }
     };
 
-    let currentLang = 'en';
+    let currentLang = 'es';
 
     function applyLang(lang) {
       const dict = i18n[lang];
@@ -736,7 +768,7 @@
     const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
     document.getElementById('stat-count').textContent = count;
     document.getElementById('stat-guides').textContent = document.querySelectorAll('#guides-grid .card').length;
-    applyLang('en');
+    applyLang('es');
   </script>
 
 </body>
