@@ -258,12 +258,12 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
 <header>
   <div class="logo-pill">TransLoad v4.2</div>
   <div style="flex:1">
-    <h1 id="h1Title">Transformer Load Study</h1>
-    <p id="headerSub" data-en="Upload a CSV file to begin" data-es="Cargue un CSV para comenzar">Upload a CSV file to begin</p>
+    <h1 id="h1Title">Estudio de Cargabilidad — Transformador</h1>
+    <p id="headerSub" data-en="Upload a CSV file to begin" data-es="Cargue un CSV para comenzar">Cargue un CSV para comenzar</p>
   </div>
   <div class="lang-toggle">
-    <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" id="btnES" onclick="setLang('es')">ES</button>
+    <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
+    <button class="lang-btn active" id="btnES" onclick="setLang('es')">ES</button>
   </div>
 </header>
 
@@ -271,19 +271,19 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
 
   <!-- STEP INDICATOR -->
   <div class="steps">
-    <div class="step active" id="stp1"><div class="sn">1</div><span data-en="Upload CSV" data-es="Cargar CSV">Upload CSV</span></div>
+    <div class="step active" id="stp1"><div class="sn">1</div><span data-en="Upload CSV" data-es="Cargar CSV">Cargar CSV</span></div>
     <div class="step-arrow">›</div>
-    <div class="step" id="stp2"><div class="sn">2</div><span data-en="Select views" data-es="Seleccionar vistas">Select views</span></div>
+    <div class="step" id="stp2"><div class="sn">2</div><span data-en="Select views" data-es="Seleccionar vistas">Seleccionar vistas</span></div>
     <div class="step-arrow">›</div>
-    <div class="step" id="stp3"><div class="sn">3</div><span data-en="View report" data-es="Ver informe">View report</span></div>
+    <div class="step" id="stp3"><div class="sn">3</div><span data-en="View report" data-es="Ver informe">Ver informe</span></div>
   </div>
 
   <!-- ══ PASO 1: UPLOAD ══ -->
   <div id="stepUpload">
     <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="ico">📂</div>
-      <p><strong data-en="Click or drag" data-es="Haga clic o arrastre">Click or drag</strong> <span data-en="your CSV file here" data-es="su archivo CSV aquí">your CSV file here</span></p>
-      <p style="margin-top:5px;font-size:11px;color:var(--text3)" data-en="Expected format: transformer monitoring data with electrical, quality and geolocation columns" data-es="Formato esperado: datos de monitoreo de transformador con columnas eléctricas, de calidad y georeferenciación">Expected format: transformer monitoring data with electrical, quality and geolocation columns</p>
+      <p><strong data-en="Click or drag" data-es="Haga clic o arrastre">Haga clic o arrastre</strong> <span data-en="your CSV file here" data-es="su archivo CSV aquí">su archivo CSV aquí</span></p>
+      <p style="margin-top:5px;font-size:11px;color:var(--text3)" data-en="Expected format: transformer monitoring data with electrical, quality and geolocation columns" data-es="Formato esperado: datos de monitoreo de transformador con columnas eléctricas, de calidad y georeferenciación">Formato esperado: datos de monitoreo de transformador con columnas eléctricas, de calidad y georeferenciación</p>
       <input type="file" id="fileInput" accept=".csv"/>
     </div>
   </div>
@@ -293,29 +293,29 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
 
     <div class="sel-header">
       <div>
-        <h2 data-en="Select the sections to include in the report" data-es="Seleccione las secciones a incluir en el informe">Select the sections to include in the report</h2>
-        <p style="font-size:12px;color:var(--text2);margin-top:3px" data-en="Locked sections (gray) have no data available in the loaded CSV." data-es="Las secciones bloqueadas (gris) no tienen datos disponibles en el CSV cargado.">Locked sections (gray) have no data available in the loaded CSV.</p>
+        <h2 data-en="Select the sections to include in the report" data-es="Seleccione las secciones a incluir en el informe">Seleccione las secciones a incluir en el informe</h2>
+        <p style="font-size:12px;color:var(--text2);margin-top:3px" data-en="Locked sections (gray) have no data available in the loaded CSV." data-es="Las secciones bloqueadas (gris) no tienen datos disponibles en el CSV cargado.">Las secciones bloqueadas (gris) no tienen datos disponibles en el CSV cargado.</p>
       </div>
       <div class="sel-actions">
-        <button class="btn sec" onclick="selAll(true)" data-en="✓ All" data-es="✓ Todas">✓ All</button>
-        <button class="btn sec" onclick="selAll(false)" data-en="✗ None" data-es="✗ Ninguna">✗ None</button>
+        <button class="btn sec" onclick="selAll(true)" data-en="✓ All" data-es="✓ Todas">✓ Todas</button>
+        <button class="btn sec" onclick="selAll(false)" data-en="✗ None" data-es="✗ Ninguna">✗ Ninguna</button>
       </div>
     </div>
 
     <!-- Parámetros del transformador -->
     <div class="params-row">
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ub-blue);min-width:90px" data-en="Parameters" data-es="Parámetros">Parameters</span>
-      <div style="display:flex;align-items:center;gap:5px"><label data-en="Nominal KVA" data-es="KVA nominal">Nominal KVA</label><input type="number" id="cfgKva" value="25" min="1" step="0.1"/></div>
-      <div style="display:flex;align-items:center;gap:5px"><label data-en="Nominal V" data-es="V nominal">Nominal V</label><input type="number" id="cfgVnom" value="120" min="1"/><span class="unit">V</span></div>
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ub-blue);min-width:90px" data-en="Parameters" data-es="Parámetros">Parámetros</span>
+      <div style="display:flex;align-items:center;gap:5px"><label data-en="Nominal KVA" data-es="KVA nominal">KVA nominal</label><input type="number" id="cfgKva" value="25" min="1" step="0.1"/></div>
+      <div style="display:flex;align-items:center;gap:5px"><label data-en="Nominal V" data-es="V nominal">V nominal</label><input type="number" id="cfgVnom" value="120" min="1"/><span class="unit">V</span></div>
       <div class="sep"></div>
-      <div style="display:flex;align-items:center;gap:5px"><label data-en="Overload lim." data-es="Lím. sobrecarga">Overload lim.</label><input type="number" id="cfgOverload" value="120" min="100" max="200"/><span class="unit">%</span></div>
-      <div style="display:flex;align-items:center;gap:5px"><label style="color:var(--purple);font-weight:700" data-en="Add. overload" data-es="Sobrecarga adic.">Add. overload</label><input type="number" id="cfgExtra" value="130" min="100" max="300" style="border-color:var(--purple)"/><span class="unit">%</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><label data-en="Overload lim." data-es="Lím. sobrecarga">Lím. sobrecarga</label><input type="number" id="cfgOverload" value="120" min="100" max="200"/><span class="unit">%</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><label style="color:var(--purple);font-weight:700" data-en="Add. overload" data-es="Sobrecarga adic.">Sobrecarga adic.</label><input type="number" id="cfgExtra" value="130" min="100" max="300" style="border-color:var(--purple)"/><span class="unit">%</span></div>
       <div class="sep"></div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="font-size:11px;color:var(--text2)" data-en="V reg.:" data-es="V reg.:">V reg.:</span>
         <button class="preset-btn" id="presetGeneric" onclick="applyPreset('generic')">±5%</button>
-        <button class="preset-btn active" id="presetSVU" onclick="applyPreset('svu')" data-en="±7% Urban" data-es="±7% SV Urb.">±7% Urban</button>
-        <button class="preset-btn" id="presetSVR" onclick="applyPreset('svr')" data-en="±8% Rural" data-es="±8% SV Rural">±8% Rural</button>
+        <button class="preset-btn active" id="presetSVU" onclick="applyPreset('svu')" data-en="±7% Urban" data-es="±7% SV Urb.">±7% SV Urb.</button>
+        <button class="preset-btn" id="presetSVR" onclick="applyPreset('svr')" data-en="±8% Rural" data-es="±8% SV Rural">±8% SV Rural</button>
         <button class="preset-btn" id="presetCustom" onclick="applyPreset('custom')" data-en="Custom" data-es="Custom">Custom</button>
       </div>
       <div style="display:flex;align-items:center;gap:5px"><label>Sup.</label><input type="number" id="cfgVhi" value="7" min="0" max="30" step="0.5" style="width:55px" oninput="applyPreset('custom')"/><span class="unit">%</span></div>
@@ -329,8 +329,8 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:.6rem;margin-top:.5rem">
-      <button class="btn sec" onclick="goStep(1)" data-en="← Change CSV" data-es="← Cambiar CSV">← Change CSV</button>
-      <button class="btn big" onclick="goStep(3)" data-en="Generate report →" data-es="Generar informe →">Generate report →</button>
+      <button class="btn sec" onclick="goStep(1)" data-en="← Change CSV" data-es="← Cambiar CSV">← Cambiar CSV</button>
+      <button class="btn big" onclick="goStep(3)" data-en="Generate report →" data-es="Generar informe →">Generar informe →</button>
     </div>
   </div>
 
@@ -340,15 +340,15 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
     <div class="dash-topbar">
       <div class="info-strip" id="infoStrip"></div>
       <div style="display:flex;gap:.5rem;margin-left:auto;flex-wrap:wrap">
-        <button class="btn sec" onclick="goStep(2)" data-en="← Edit sections" data-es="← Editar secciones">← Edit sections</button>
-        <button class="btn pdf-btn" onclick="exportPDF()" data-en="⬇ Export PDF" data-es="⬇ Exportar PDF">⬇ Export PDF</button>
-        <button class="btn del" onclick="goStep(1)" data-en="✕ New CSV" data-es="✕ Nuevo CSV">✕ New CSV</button>
+        <button class="btn sec" onclick="goStep(2)" data-en="← Edit sections" data-es="← Editar secciones">← Editar secciones</button>
+        <button class="btn pdf-btn" onclick="exportPDF()" data-en="⬇ Export PDF" data-es="⬇ Exportar PDF">⬇ Exportar PDF</button>
+        <button class="btn del" onclick="goStep(1)" data-en="✕ New CSV" data-es="✕ Nuevo CSV">✕ Nuevo CSV</button>
       </div>
     </div>
 
     <!-- PDF cover (print only) -->
     <div class="pdf-cover" id="pdfCover">
-      <div style="font-size:17px;font-weight:700;margin-bottom:5px;color:#1E2445" data-en="Transformer Load Study Report" data-es="Informe de Cargabilidad — Transformador">Transformer Load Study Report</div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:5px;color:#1E2445" data-en="Transformer Load Study Report" data-es="Informe de Cargabilidad — Transformador">Informe de Cargabilidad — Transformador</div>
       <div id="pdfMeta" style="font-size:11px;color:#464D63;line-height:1.8"></div>
     </div>
 
@@ -366,7 +366,7 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
 let RAW=[];          // parsed CSV rows
 let CI={};           // chart instances
 let ACTIVE_PRESET='svu';
-let LANG='en';
+let LANG='es';
 const $=id=>document.getElementById(id);
 
 /* ════════════════════════════════════════
@@ -1279,15 +1279,3 @@ updateVBadge();
 </script>
 </body>
 </html>
-
-<head>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-15114096182');
-  </script>
-  <!-- Resto de tu head... -->
-</head>
