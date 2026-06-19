@@ -137,7 +137,7 @@
 </header>
 
 <div class="wrap">
-  <span class="eyebrow">DTM Analytics</span>
+  <span class="eyebrow">DTM Analytics · v4-full-schema-manifest-2026-06-19</span>
   <h1>Consultar y graficar datos</h1>
   <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend paginado completo y columnas fijas compatibles con el CSV de referencia.</p>
 
@@ -521,6 +521,7 @@ function multiFigureToHtml(figs, title){
 }
 
 /* ── UI ── */
+const APP_VERSION='v4-full-schema-manifest-2026-06-19';
 const logEl=document.getElementById('log');
 function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
 let latestResults={};
@@ -550,6 +551,18 @@ async function buildZipBlob(){
       folder.file(`${imei}_combined_data_${type}.csv`, csv);
     }
   }
+  const manifest={
+    appVersion: APP_VERSION,
+    generatedAt: new Date().toISOString(),
+    imeis: Object.fromEntries(Object.entries(latestResults).map(([imei,acc])=>[imei,{
+      DTM2: {rows: acc.DTM2.length, columns: CSV_SCHEMAS.DTM2.length},
+      Vsag: {rows: acc.Vsag.length, columns: CSV_SCHEMAS.Vsag.length},
+      Vswell: {rows: acc.Vswell.length, columns: CSV_SCHEMAS.Vswell.length},
+      Powerloss: {rows: acc.Powerloss.length, columns: CSV_SCHEMAS.Powerloss.length},
+      Powerrestored: {rows: acc.Powerrestored.length, columns: CSV_SCHEMAS.Powerrestored.length}
+    }]))
+  };
+  zip.file('download_manifest.json', JSON.stringify(manifest,null,2));
   return await zip.generateAsync({type:'blob'});
 }
 document.getElementById('stop').addEventListener('click', ()=>{
@@ -698,6 +711,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   }
 
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
+  log(`Versión activa: ${APP_VERSION}`);
   latestResults={}; selectedImei=null; updateZipButton();
   const analysisDetail=document.getElementById('analysisDetail');
   if(analysisDetail) analysisDetail.innerHTML='<div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div>';
