@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Informe Ejecutivo · Alumbrado Público Inteligente</title>
+<title>Executive Report · Smart Public Lighting — Ubicquia®</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -169,6 +169,12 @@
   ::-webkit-scrollbar{width:5px;height:5px}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
+  /* ── LANG TOGGLE ── */
+  .lang-toggle{display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:8px;padding:4px;border:1px solid var(--border)}
+  .lang-btn{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-family:var(--font);letter-spacing:.05em;transition:.15s;background:transparent;color:var(--faint)}
+  .lang-btn.active{background:var(--epm-blue);color:#fff}
+  .lang-btn:not(.active):hover{color:var(--epm-magenta)}
+
   /* ── PRINT (PDF) ── */
   @media print{
     @page{margin:12mm}
@@ -192,67 +198,79 @@
 <div class="brand-stripe"></div>
 <header>
   <div class="hleft">
-    <div class="logo-slot" id="logo-slot" onclick="document.getElementById('logo-input').click()" title="Clic para cargar el logo institucional">
-      <span class="logo-hint">Cargar<br>logo<br>institucional</span>
+    <div class="logo-slot" id="logo-slot" onclick="document.getElementById('logo-input').click()" title="Click to upload institutional logo">
+      <span class="logo-hint" data-en="Upload<br>institutional<br>logo" data-es="Cargar<br>logo<br>institucional">Upload<br>institutional<br>logo</span>
     </div>
     <input type="file" id="logo-input" accept="image/*">
     <div>
-      <div class="htitle">Informe Ejecutivo · Alumbrado Público Inteligente</div>
-      <div class="hsub">Sistema de monitoreo Ubicell — Reporte semanal de fallas</div>
+      <div class="htitle" data-en="Executive Report · Smart Public Lighting" data-es="Informe Ejecutivo · Alumbrado Público Inteligente">Executive Report · Smart Public Lighting</div>
+      <div class="hsub" data-en="UbiCell® monitoring system — Weekly fault report" data-es="Sistema de monitoreo UbiCell® — Reporte semanal de fallas">UbiCell® monitoring system — Weekly fault report</div>
       <div class="hclaim">simply connected, simply smart.</div>
     </div>
   </div>
   <div class="hright">
-    <div id="h-date">— Cargue un informe para comenzar —</div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-bottom:6px">
+      <div class="lang-toggle" id="lang-toggle">
+        <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="lang-es" onclick="setLang('es')">ES</button>
+      </div>
+    </div>
+    <div id="h-date" data-en="— Load a report to begin —" data-es="— Cargue un informe para comenzar —">— Load a report to begin —</div>
     <div class="hbtns">
-      <button class="btn primary" id="btn-pdf" onclick="downloadPDF()">⬇ Descargar PDF</button>
-      <button class="btn" id="btn-reset" onclick="resetAll()">↩ Otro informe</button>
+      <button class="btn primary" id="btn-pdf" onclick="downloadPDF()" data-en="⬇ Download PDF" data-es="⬇ Descargar PDF">⬇ Download PDF</button>
+      <button class="btn" id="btn-reset" onclick="resetAll()" data-en="↩ New report" data-es="↩ Otro informe">↩ New report</button>
     </div>
   </div>
 </header>
 
 <nav class="tabs" id="tabs">
-  <button class="tab active" id="tab-exec" onclick="switchTab('exec')">📋 Informe Ejecutivo</button>
-  <button class="tab" id="tab-tech" onclick="switchTab('tech')">🔧 Aspectos Técnicos · Mantenimiento</button>
+  <button class="tab active" id="tab-exec" onclick="switchTab('exec')" data-en="📋 Executive Report" data-es="📋 Informe Ejecutivo">📋 Executive Report</button>
+  <button class="tab" id="tab-tech" onclick="switchTab('tech')" data-en="🔧 Technical · Maintenance" data-es="🔧 Aspectos Técnicos · Mantenimiento">🔧 Technical · Maintenance</button>
 </nav>
 
 <main>
   <div id="upload-zone" onclick="document.getElementById('file-input').click()">
     <input type="file" id="file-input" accept=".zip,.xlsx,.xls">
     <span class="up-icon">📦</span>
-    <div class="up-lbl">Cargar informe Ubicell (.zip o .xlsx)</div>
-    <div class="up-hint">Suba directamente el ZIP que recibe de Ubicquia — se extrae el Excel y se lee el total de flota del PDF automáticamente. Todo el procesamiento es 100% local.</div>
+    <div class="up-lbl" data-en="Load UbiCell® report (.zip or .xlsx)" data-es="Cargar informe UbiCell® (.zip o .xlsx)">Load UbiCell® report (.zip or .xlsx)</div>
+    <div class="up-hint" data-en="Upload the ZIP received from Ubicquia directly — the Excel is extracted and the fleet total read from the PDF automatically. All processing is 100% local." data-es="Suba directamente el ZIP que recibe de Ubicquia — se extrae el Excel y se lee el total de flota del PDF automáticamente. Todo el procesamiento es 100% local.">Upload the ZIP received from Ubicquia directly — the Excel is extracted and the fleet total read from the PDF automatically. All processing is 100% local.</div>
     <div style="margin-top:18px" onclick="event.stopPropagation()">
-      <label style="font-size:12px;color:var(--muted);font-weight:500">Total de luminarias monitoreadas:&nbsp;</label>
+      <label style="font-size:12px;color:var(--muted);font-weight:500" data-en="Total monitored luminaires:&nbsp;" data-es="Total de luminarias monitoreadas:&nbsp;">Total monitored luminaires:&nbsp;</label>
       <input type="number" id="fleet-total" value="2048" min="1" style="width:90px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;text-align:center">
     </div>
   </div>
 
   <!-- ════════ VISTA EJECUTIVA ════════ -->
   <div id="view-exec">
-    <div class="sec-title">1 · Resumen ejecutivo</div>
+    <div class="sec-title" data-en="1 · Executive summary" data-es="1 · Resumen ejecutivo">1 · Executive summary</div>
     <div class="exec-grid" id="exec-grid"></div>
     <div class="note" id="note-exec"></div>
 
-    <div class="sec-title">2 · Estado por categoría de falla</div>
+    <div class="sec-title" data-en="2 · Status by fault category" data-es="2 · Estado por categoría de falla">2 · Status by fault category</div>
     <div class="sem-grid" id="sem-grid"></div>
     <div class="note" id="note-sem"></div>
 
-    <div class="sec-title">3 · Distribución geográfica por zona</div>
+    <div class="sec-title" data-en="3 · Geographic distribution by zone" data-es="3 · Distribución geográfica por zona">3 · Geographic distribution by zone</div>
     <div class="zone-grid" id="zone-grid"></div>
     <div class="note" id="note-zone"></div>
 
-    <div class="sec-title">4 · Análisis comparativo</div>
+    <div class="sec-title" data-en="4 · Comparative analysis" data-es="4 · Análisis comparativo">4 · Comparative analysis</div>
     <div class="charts-row">
-      <div class="chart-card"><div class="card-title">Volumen de fallas por tipo</div><canvas id="chart-bar" height="220"></canvas></div>
-      <div class="chart-card"><div class="card-title">Composición de la criticidad</div><canvas id="chart-donut" height="220"></canvas></div>
+      <div class="chart-card"><div class="card-title" data-en="Fault volume by type" data-es="Volumen de fallas por tipo">Fault volume by type</div><canvas id="chart-bar" height="220"></canvas></div>
+      <div class="chart-card"><div class="card-title" data-en="Criticality breakdown" data-es="Composición de la criticidad">Criticality breakdown</div><canvas id="chart-donut" height="220"></canvas></div>
     </div>
     <div class="note" id="note-charts"></div>
 
-    <div class="sec-title">5 · Intervenciones prioritarias</div>
+    <div class="sec-title" data-en="5 · Priority interventions" data-es="5 · Intervenciones prioritarias">5 · Priority interventions</div>
     <div class="tbl-card">
-      <div class="tbl-hdr"><span class="tbl-ttl">⚠️ Luminarias que requieren atención inmediata</span><span class="badge b-red" id="prio-count">—</span></div>
-      <div class="tbl-wrap"><table><thead><tr><th>Serial</th><th>Zona</th><th>Tipo de falla</th><th>Detalle</th><th>Prioridad</th></tr></thead><tbody id="prio-body"></tbody></table></div>
+      <div class="tbl-hdr"><span class="tbl-ttl" data-en="⚠️ Luminaires requiring immediate attention" data-es="⚠️ Luminarias que requieren atención inmediata">⚠️ Luminaires requiring immediate attention</span><span class="badge b-red" id="prio-count">—</span></div>
+      <div class="tbl-wrap"><table><thead><tr>
+        <th data-en="Serial" data-es="Serial">Serial</th>
+        <th data-en="Zone" data-es="Zona">Zone</th>
+        <th data-en="Fault type" data-es="Tipo de falla">Fault type</th>
+        <th data-en="Detail" data-es="Detalle">Detail</th>
+        <th data-en="Priority" data-es="Prioridad">Priority</th>
+      </tr></thead><tbody id="prio-body"></tbody></table></div>
     </div>
     <div class="note" id="note-prio"></div>
 
@@ -261,17 +279,23 @@
 
   <!-- ════════ VISTA TÉCNICA ════════ -->
   <div id="view-tech">
-    <div class="sec-title">Indicadores técnicos de la semana</div>
+    <div class="sec-title" data-en="Technical indicators of the week" data-es="Indicadores técnicos de la semana">Technical indicators of the week</div>
     <div class="stat-row" id="tech-stats"></div>
 
-    <div class="sec-title">Plan de cuadrillas sugerido</div>
+    <div class="sec-title" data-en="Suggested crew plan" data-es="Plan de cuadrillas sugerido">Suggested crew plan</div>
     <div class="tbl-card">
-      <div class="tbl-hdr"><span class="tbl-ttl">🛠️ Órdenes de trabajo por zona y tipo de intervención</span></div>
-      <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Zona</th><th>Intervención</th><th>Luminarias</th><th>Recursos sugeridos</th></tr></thead><tbody id="work-body"></tbody></table></div>
+      <div class="tbl-hdr"><span class="tbl-ttl" data-en="🛠️ Work orders by zone and intervention type" data-es="🛠️ Órdenes de trabajo por zona y tipo de intervención">🛠️ Work orders by zone and intervention type</span></div>
+      <div class="tbl-wrap"><table><thead><tr>
+        <th data-en="#" data-es="#">#</th>
+        <th data-en="Zone" data-es="Zona">Zone</th>
+        <th data-en="Intervention" data-es="Intervención">Intervention</th>
+        <th data-en="Luminaires" data-es="Luminarias">Luminaires</th>
+        <th data-en="Suggested resources" data-es="Recursos sugeridos">Suggested resources</th>
+      </tr></thead><tbody id="work-body"></tbody></table></div>
     </div>
     <div class="note" id="note-work"></div>
 
-    <div class="sec-title">Detalle completo por categoría</div>
+    <div class="sec-title" data-en="Full detail by category" data-es="Detalle completo por categoría">Full detail by category</div>
     <div id="tech-tables"></div>
   </div>
 </main>
@@ -286,6 +310,22 @@ function showError(msg){
   b.textContent='⚠️ '+msg;
 }
 const fmt = n => n.toLocaleString('es-CO');
+
+// ════════ LANGUAGE ════════
+let currentLang = 'en';
+function setLang(lang){
+  currentLang = lang;
+  document.getElementById('lang-en').classList.toggle('active', lang==='en');
+  document.getElementById('lang-es').classList.toggle('active', lang==='es');
+  // Update all elements with data-en / data-es attributes
+  document.querySelectorAll('[data-en]').forEach(el=>{
+    const val = lang==='en' ? el.dataset.en : el.dataset.es;
+    if(val !== undefined) el.innerHTML = val;
+  });
+  // Re-render dynamic content if report is loaded
+  if(window._lastBuildData) build(window._lastBuildData.wb, window._lastBuildData.filename, true);
+}
+function t(en, es){ return currentLang==='en' ? en : es; }
 
 // ════════ LOGO ════════
 document.getElementById('logo-input').addEventListener('change',e=>{
@@ -321,6 +361,7 @@ document.getElementById('file-input').addEventListener('change',e=>{if(e.target.
 
 let charts=[];
 function resetAll(){
+  window._lastBuildData = null;
   document.getElementById('upload-zone').style.display='block';
   document.getElementById('view-exec').style.display='none';
   document.getElementById('view-tech').style.display='none';
@@ -328,7 +369,7 @@ function resetAll(){
   document.getElementById('btn-pdf').style.display='none';
   document.getElementById('btn-reset').style.display='none';
   document.getElementById('file-input').value='';
-  document.getElementById('h-date').textContent='— Cargue un informe para comenzar —';
+  document.getElementById('h-date').textContent=t('— Load a report to begin —','— Cargue un informe para comenzar —');
   const b=document.getElementById('err-banner'); if(b)b.remove();
   charts.forEach(c=>c.destroy());charts=[];
 }
@@ -343,7 +384,7 @@ async function loadFile(file){
         if(!entry.dir&&(p.endsWith('.xlsx')||p.endsWith('.xls'))&&!xlsxEntry)xlsxEntry=entry;
         if(!entry.dir&&p.endsWith('.pdf')&&!pdfEntry)pdfEntry=entry;
       });
-      if(!xlsxEntry){showError('El ZIP no contiene ningún archivo Excel (.xlsx).');return;}
+      if(!xlsxEntry){showError(t('The ZIP contains no Excel file (.xlsx).','El ZIP no contiene ningún archivo Excel (.xlsx).' ));return;}
       if(pdfEntry&&window.pdfjsLib){
         try{
           pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -363,45 +404,53 @@ async function loadFile(file){
       }
       const xlsxData=await xlsxEntry.async('arraybuffer');
       const wb=XLSX.read(xlsxData,{type:'array'});
-      try{build(wb,xlsxEntry.name.split('/').pop());}catch(e){showError('Error al generar el informe: '+e.message);}
+      try{build(wb,xlsxEntry.name.split('/').pop());}catch(e){showError(t('Error generating the report: ','Error al generar el informe: ')+e.message);}
     }else{
       const buf=await file.arrayBuffer();
       const wb=XLSX.read(buf,{type:'array'});
-      try{build(wb,file.name);}catch(e){showError('Error al generar el informe: '+e.message);}
+      try{build(wb,file.name);}catch(e){showError(t('Error generating the report: ','Error al generar el informe: ')+e.message);}
     }
-  }catch(err){showError('No se pudo procesar el archivo: '+err.message);}
+  }catch(err){showError(t('Could not process the file: ','No se pudo procesar el archivo: ')+err.message);}
 }
 
 // ════════ CONFIG ════════
 const SHEETS={
-  "Weekly Power Losses > 24 Hours":{lbl:"Sin energía >24h",desc:"Postes sin suministro eléctrico",crit:"red",icon:"🔴",action:"Revisión de acometida y restitución de suministro",crew:"Cuadrilla eléctrica + escalera"},
-  "Weekly No Network > 24 Hours":{lbl:"Sin comunicación >24h",desc:"Nodos fuera de monitoreo remoto",crit:"amber",icon:"📡",action:"Verificación de nodo y antena en sitio",crew:"Técnico de comunicaciones"},
-  "Tilt - Sudden Tilt Shifts":{lbl:"Inclinación de poste",desc:"Posible colisión o riesgo de caída",crit:"red",icon:"🔄",action:"Inspección estructural urgente del poste",crew:"Cuadrilla civil + grúa de ser necesario"},
-  "Broken Lamp":{lbl:"Lámpara dañada",desc:"Encendida pero sin emitir luz útil",crit:"red",icon:"💡",action:"Reemplazo de luminaria o driver",crew:"Cuadrilla eléctrica + luminaria de repuesto"},
-  "DALI Flags - Bad Fixture":{lbl:"Fixture defectuoso",desc:"Falla reportada por protocolo DALI",crit:"amber",icon:"⚙️",action:"Diagnóstico DALI y reemplazo de fixture",crew:"Técnico electrónico"},
-  "Day Burning":{lbl:"Encendida de día",desc:"Consumo innecesario en horas diurnas",crit:"amber",icon:"☀️",action:"Revisión de fotocelda / programación horaria",crew:"Técnico de control"},
-  "Light Flickering - VSags":{lbl:"Parpadeo / caídas",desc:"Inestabilidad en la calidad de la luz",crit:"amber",icon:"⚡",action:"Medición de calidad de energía en circuito",crew:"Técnico con analizador de redes"},
-  "Lamp Off At Night":{lbl:"Apagada de noche",desc:"Vía sin iluminación en horario nocturno",crit:"red",icon:"🌙",action:"Revisión de circuito, contactor o relé",crew:"Cuadrilla eléctrica nocturna"},
-  "Undervoltage":{lbl:"Voltaje bajo",desc:"Red eléctrica por debajo del nominal",crit:"amber",icon:"⬇️",action:"Revisión de transformador / balanceo de cargas",crew:"Cuadrilla de redes MT/BT"},
-  "Overvoltage":{lbl:"Voltaje alto",desc:"Riesgo de daño acelerado a equipos",crit:"amber",icon:"⬆️",action:"Ajuste de tap del transformador / regulación",crew:"Cuadrilla de redes MT/BT"},
+  "Weekly Power Losses > 24 Hours":{lbl:{en:"No power >24h",es:"Sin energía >24h"},desc:{en:"Poles without electrical supply",es:"Postes sin suministro eléctrico"},crit:"red",icon:"🔴",action:{en:"Intake inspection and power restoration",es:"Revisión de acometida y restitución de suministro"},crew:{en:"Electrical crew + ladder",es:"Cuadrilla eléctrica + escalera"}},
+  "Weekly No Network > 24 Hours":{lbl:{en:"No network >24h",es:"Sin comunicación >24h"},desc:{en:"Nodes out of remote monitoring",es:"Nodos fuera de monitoreo remoto"},crit:"amber",icon:"📡",action:{en:"On-site node and antenna verification",es:"Verificación de nodo y antena en sitio"},crew:{en:"Communications technician",es:"Técnico de comunicaciones"}},
+  "Tilt - Sudden Tilt Shifts":{lbl:{en:"Pole tilt",es:"Inclinación de poste"},desc:{en:"Possible collision or fall risk",es:"Posible colisión o riesgo de caída"},crit:"red",icon:"🔄",action:{en:"Urgent structural pole inspection",es:"Inspección estructural urgente del poste"},crew:{en:"Civil crew + crane if needed",es:"Cuadrilla civil + grúa de ser necesario"}},
+  "Broken Lamp":{lbl:{en:"Broken lamp",es:"Lámpara dañada"},desc:{en:"On but emitting no useful light",es:"Encendida pero sin emitir luz útil"},crit:"red",icon:"💡",action:{en:"Replace luminaire or driver",es:"Reemplazo de luminaria o driver"},crew:{en:"Electrical crew + spare luminaire",es:"Cuadrilla eléctrica + luminaria de repuesto"}},
+  "DALI Flags - Bad Fixture":{lbl:{en:"Defective fixture",es:"Fixture defectuoso"},desc:{en:"Fault reported by DALI protocol",es:"Falla reportada por protocolo DALI"},crit:"amber",icon:"⚙️",action:{en:"DALI diagnosis and fixture replacement",es:"Diagnóstico DALI y reemplazo de fixture"},crew:{en:"Electronics technician",es:"Técnico electrónico"}},
+  "Day Burning":{lbl:{en:"Burning by day",es:"Encendida de día"},desc:{en:"Unnecessary consumption during daytime",es:"Consumo innecesario en horas diurnas"},crit:"amber",icon:"☀️",action:{en:"Check photocell / time schedule",es:"Revisión de fotocelda / programación horaria"},crew:{en:"Control technician",es:"Técnico de control"}},
+  "Light Flickering - VSags":{lbl:{en:"Flicker / sags",es:"Parpadeo / caídas"},desc:{en:"Instability in light quality",es:"Inestabilidad en la calidad de la luz"},crit:"amber",icon:"⚡",action:{en:"Power quality measurement on circuit",es:"Medición de calidad de energía en circuito"},crew:{en:"Technician with network analyzer",es:"Técnico con analizador de redes"}},
+  "Lamp Off At Night":{lbl:{en:"Off at night",es:"Apagada de noche"},desc:{en:"Road without lighting at night",es:"Vía sin iluminación en horario nocturno"},crit:"red",icon:"🌙",action:{en:"Check circuit, contactor or relay",es:"Revisión de circuito, contactor o relé"},crew:{en:"Night electrical crew",es:"Cuadrilla eléctrica nocturna"}},
+  "Undervoltage":{lbl:{en:"Low voltage",es:"Voltaje bajo"},desc:{en:"Grid below nominal",es:"Red eléctrica por debajo del nominal"},crit:"amber",icon:"⬇️",action:{en:"Transformer check / load balancing",es:"Revisión de transformador / balanceo de cargas"},crew:{en:"MV/LV grid crew",es:"Cuadrilla de redes MT/BT"}},
+  "Overvoltage":{lbl:{en:"High voltage",es:"Voltaje alto"},desc:{en:"Risk of accelerated equipment damage",es:"Riesgo de daño acelerado a equipos"},crit:"amber",icon:"⬆️",action:{en:"Transformer tap adjustment / regulation",es:"Ajuste de tap del transformador / regulación"},crew:{en:"MV/LV grid crew",es:"Cuadrilla de redes MT/BT"}},
 };
 const CRIT_COLOR={red:"#DC2626",amber:"#EA561B",green:"#4EB270"};
+// Helper to get localized string from SHEETS config
+function cfgLbl(cfg){ return cfg.lbl[currentLang]||cfg.lbl.en; }
+function cfgDesc(cfg){ return cfg.desc[currentLang]||cfg.desc.en; }
+function cfgAction(cfg){ return cfg.action[currentLang]||cfg.action.en; }
+function cfgCrew(cfg){ return cfg.crew[currentLang]||cfg.crew.en; }
 function detectZone(lat){
-  if(lat===null||lat===undefined||isNaN(lat))return "Sin georreferencia";
-  return lat>8?"Zona Norte":"Zona Sur";
+  if(lat===null||lat===undefined||isNaN(lat))return t("No geolocation","Sin georreferencia");
+  return lat>8?t("North Zone","Zona Norte"):t("South Zone","Zona Sur");
 }
 
 // ════════ BUILD ════════
-function build(wb,filename){
+function build(wb,filename,isRebuild){
+  window._lastBuildData = {wb, filename};
+  if(!isRebuild){
   document.getElementById('upload-zone').style.display='none';
   document.getElementById('tabs').classList.add('show');
   document.getElementById('btn-pdf').style.display='inline-block';
   document.getElementById('btn-reset').style.display='inline-block';
   switchTab('exec');
+  }
 
   const dateMatch=filename.match(/(\d{4}-\d{2}-\d{2})/);
   const repDate=dateMatch?dateMatch[1]:new Date().toISOString().slice(0,10);
-  document.getElementById('h-date').textContent='Informe: '+repDate;
+  document.getElementById('h-date').textContent=t('Report: ','Informe: ')+repDate;
 
   // Parse
   const data={};let totalFaults=0,redCount=0,amberCount=0;
@@ -414,7 +463,7 @@ function build(wb,filename){
     rows.forEach(r=>{
       const z=detectZone(parseFloat(r['Latitude']));
       zoneCounts[z]=zoneCounts[z]||{};
-      zoneCounts[z][cfg.lbl]=(zoneCounts[z][cfg.lbl]||0)+1;
+      zoneCounts[z][cfgLbl(cfg)]=(zoneCounts[z][cfgLbl(cfg)]||0)+1;
       zoneTotals[z]=(zoneTotals[z]||0)+1;
     });
   }
@@ -430,39 +479,47 @@ function build(wb,filename){
   const tiltCrit=tiltAll.filter(r=>parseFloat(r["Ending Tilt"])>45).length;
   const exec=document.getElementById('exec-grid');exec.innerHTML='';
   const cards=[
-    ...(healthPct!==null?[{cls:healthPct>=90?'ok':(healthPct>=75?'warn':'crit'),n:healthPct.toFixed(1)+'%',lbl:'Salud de la flota',desc:`${affected.size} de ${fmt(fleetTotal)} luminarias presentan alguna falla. El resto opera con normalidad.`}]:[]),
-    {cls:'crit',n:redCount,lbl:'Fallas críticas',desc:'Afectan la seguridad ciudadana o el servicio: vías a oscuras, postes inclinados, lámparas dañadas.'},
-    {cls:'warn',n:amberCount,lbl:'Fallas operativas',desc:'Degradan el servicio o aceleran el desgaste: voltaje, parpadeo, consumo diurno.'},
-    {cls:'info',n:lampOff,lbl:'Vías sin luz nocturna',desc:'Luminarias apagadas en horario nocturno. Impacto directo en percepción de seguridad.'},
-    {cls:tiltCrit>0?'crit':'ok',n:tiltCrit,lbl:'Postes en riesgo físico',desc:tiltCrit>0?'Inclinación >45°: inspección en sitio inmediata por posible colisión.':'Ningún poste con inclinación crítica esta semana.'},
+    ...(healthPct!==null?[{cls:healthPct>=90?'ok':(healthPct>=75?'warn':'crit'),n:healthPct.toFixed(1)+'%',lbl:t('Fleet health','Salud de la flota'),desc:t(`${affected.size} of ${fmt(fleetTotal)} luminaires have a fault. The rest operate normally.`,`${affected.size} de ${fmt(fleetTotal)} luminarias presentan alguna falla. El resto opera con normalidad.`)}]:[]),
+    {cls:'crit',n:redCount,lbl:t('Critical faults','Fallas críticas'),desc:t('Affect public safety or service continuity: dark roads, tilted poles, broken lamps.','Afectan la seguridad ciudadana o el servicio: vías a oscuras, postes inclinados, lámparas dañadas.')},
+    {cls:'warn',n:amberCount,lbl:t('Operational faults','Fallas operativas'),desc:t('Degrade service or accelerate wear: voltage issues, flickering, daytime consumption.','Degradan el servicio o aceleran el desgaste: voltaje, parpadeo, consumo diurno.')},
+    {cls:'info',n:lampOff,lbl:t('Roads dark at night','Vías sin luz nocturna'),desc:t('Luminaires off during nighttime hours. Direct impact on safety perception.','Luminarias apagadas en horario nocturno. Impacto directo en percepción de seguridad.')},
+    {cls:tiltCrit>0?'crit':'ok',n:tiltCrit,lbl:t('Poles at physical risk','Postes en riesgo físico'),desc:tiltCrit>0?t('Tilt >45°: immediate on-site inspection due to possible collision.','Inclinación >45°: inspección en sitio inmediata por posible colisión.'):t('No poles with critical tilt this week.','Ningún poste con inclinación crítica esta semana.')},
   ];
   cards.forEach(c=>{const d=document.createElement('div');d.className='exec-card '+c.cls;
     d.innerHTML=`<div class="exec-n">${c.n}</div><div class="exec-lbl">${c.lbl}</div><div class="exec-desc">${c.desc}</div>`;exec.appendChild(d);});
 
   document.getElementById('note-exec').innerHTML=
-    `<span class="note-lbl">Lectura ejecutiva</span>`+
-    `Durante la semana se registraron <strong>${totalFaults} alertas</strong> sobre una flota de <strong>${fmt(fleetTotal)} luminarias</strong> bajo inspección digital continua, equivalentes a <strong>${affected.size} puntos luminosos únicos</strong> con al menos una novedad. `+
-    (healthPct!==null?`El <strong>${healthPct.toFixed(1)}%</strong> de la infraestructura opera con normalidad. `:'')+
-    `Las <strong>${redCount} fallas críticas</strong> concentran la prioridad de esta semana por su impacto en seguridad ciudadana y continuidad del servicio.`;
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    (currentLang==='en'
+      ? `During the week, <strong>${totalFaults} alerts</strong> were recorded across a fleet of <strong>${fmt(fleetTotal)} luminaires</strong> under continuous digital monitoring, affecting <strong>${affected.size} unique light points</strong> with at least one issue. `
+        +(healthPct!==null?`<strong>${healthPct.toFixed(1)}%</strong> of the infrastructure operates normally. `:'')
+        +`The <strong>${redCount} critical faults</strong> are this week's top priority due to their impact on public safety and service continuity.`
+      : `Durante la semana se registraron <strong>${totalFaults} alertas</strong> sobre una flota de <strong>${fmt(fleetTotal)} luminarias</strong> bajo inspección digital continua, equivalentes a <strong>${affected.size} puntos luminosos únicos</strong> con al menos una novedad. `
+        +(healthPct!==null?`El <strong>${healthPct.toFixed(1)}%</strong> de la infraestructura opera con normalidad. `:'')
+        +`Las <strong>${redCount} fallas críticas</strong> concentran la prioridad de esta semana por su impacto en seguridad ciudadana y continuidad del servicio.`);
 
   // ── 2. SEMAFORO ──
   const sem=document.getElementById('sem-grid');sem.innerHTML='';
   let worstCat=null,worstN=0;
   for(const[sheet,cfg]of Object.entries(SHEETS)){
     const n=data[sheet].length;
-    if(n>worstN){worstN=n;worstCat=cfg.lbl;}
+    if(n>worstN){worstN=n;worstCat=cfgLbl(cfg);}
     const dotCls=n===0?'dot-green':(cfg.crit==='red'?'dot-red':'dot-amber');
     const cntCls=n===0?'g':(cfg.crit==='red'?'r':'a');
     const card=document.createElement('div');card.className='sem-card';
-    card.innerHTML=`<div class="sem-dot ${dotCls}"></div><div class="sem-info"><div class="sem-name">${cfg.icon} ${cfg.lbl}</div><div class="sem-desc">${cfg.desc}</div></div><div class="sem-count ${cntCls}">${n}</div>`;
+    card.innerHTML=`<div class="sem-dot ${dotCls}"></div><div class="sem-info"><div class="sem-name">${cfg.icon} ${cfgLbl(cfg)}</div><div class="sem-desc">${cfgDesc(cfg)}</div></div><div class="sem-count ${cntCls}">${n}</div>`;
     sem.appendChild(card);
   }
-  const cleanCats=Object.entries(SHEETS).filter(([s])=>data[s].length===0).map(([,c])=>c.lbl);
+  const cleanCats=Object.entries(SHEETS).filter(([s])=>data[s].length===0).map(([,c])=>cfgLbl(c));
   document.getElementById('note-sem').innerHTML=
-    `<span class="note-lbl">Lectura ejecutiva</span>`+
-    `La categoría con mayor incidencia es <strong>${worstCat}</strong> con <strong>${worstN} casos</strong>. `+
-    (cleanCats.length?`Las categorías <strong>${cleanCats.join(', ')}</strong> cerraron la semana sin novedades. `:'')+
-    `El semáforo distingue fallas críticas (rojo) de operativas (naranja) para orientar la asignación de recursos.`;
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    (currentLang==='en'
+      ? `The highest-incidence category is <strong>${worstCat}</strong> with <strong>${worstN} cases</strong>. `
+        +(cleanCats.length?`Categories <strong>${cleanCats.join(', ')}</strong> closed the week with no issues. `:'')
+        +`The traffic light distinguishes critical faults (red) from operational ones (orange) to guide resource allocation.`
+      : `La categoría con mayor incidencia es <strong>${worstCat}</strong> con <strong>${worstN} casos</strong>. `
+        +(cleanCats.length?`Las categorías <strong>${cleanCats.join(', ')}</strong> cerraron la semana sin novedades. `:'')
+        +`El semáforo distingue fallas críticas (rojo) de operativas (naranja) para orientar la asignación de recursos.`);
 
   // ── 3. ZONES ──
   const zg=document.getElementById('zone-grid');zg.innerHTML='';
@@ -471,10 +528,10 @@ function build(wb,filename){
     const card=document.createElement('div');card.className='zone-card';
     const entries=Object.entries(zoneCounts[z]).sort((a,b)=>b[1]-a[1]);
     const maxV=entries.length?entries[0][1]:1;
-    card.innerHTML=`<div class="zone-hdr"><span class="zone-name">📍 ${z}</span><span class="zone-total">${zoneTotals[z]}</span></div><div class="zone-sub">luminarias con alguna falla reportada</div>`;
+    card.innerHTML=`<div class="zone-hdr"><span class="zone-name">📍 ${z}</span><span class="zone-total">${zoneTotals[z]}</span></div><div class="zone-sub">${t('luminaires with a reported fault','luminarias con alguna falla reportada')}</div>`;
     entries.forEach(([lbl,n])=>{
       let color='#EA561B';
-      for(const cfg of Object.values(SHEETS))if(cfg.lbl===lbl){color=CRIT_COLOR[cfg.crit];break;}
+      for(const cfg of Object.values(SHEETS))if(cfgLbl(cfg)===lbl){color=CRIT_COLOR[cfg.crit];break;}
       const row=document.createElement('div');row.className='zone-bar-row';
       row.innerHTML=`<span class="zb-lbl">${lbl}</span><div class="zb-track"><div class="zb-fill" style="width:${(n/maxV*100).toFixed(0)}%;background:${color}CC"></div></div><span class="zb-n">${n}</span>`;
       card.appendChild(row);
@@ -483,19 +540,22 @@ function build(wb,filename){
   });
   const topZone=zoneNames[0];
   document.getElementById('note-zone').innerHTML=
-    `<span class="note-lbl">Lectura ejecutiva</span>`+
-    (topZone?`La <strong>${topZone}</strong> concentra <strong>${zoneTotals[topZone]} de ${totalFaults} alertas (${(zoneTotals[topZone]/totalFaults*100).toFixed(0)}%)</strong>, lo que sugiere priorizar el despliegue de cuadrillas en ese sector. `:'')+
-    `La asignación zonal se calcula automáticamente a partir de la georreferencia de cada luminaria, permitiendo planear rutas de intervención eficientes.`;
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    (currentLang==='en'
+      ? (topZone?`<strong>${topZone}</strong> concentrates <strong>${zoneTotals[topZone]} of ${totalFaults} alerts (${(zoneTotals[topZone]/totalFaults*100).toFixed(0)}%)</strong>, suggesting crew deployment should be prioritized in that sector. `:'')
+        +`Zone assignment is calculated automatically from each luminaire's geolocation, enabling efficient intervention routing.`
+      : (topZone?`La <strong>${topZone}</strong> concentra <strong>${zoneTotals[topZone]} de ${totalFaults} alertas (${(zoneTotals[topZone]/totalFaults*100).toFixed(0)}%)</strong>, lo que sugiere priorizar el despliegue de cuadrillas en ese sector. `:'')
+        +`La asignación zonal se calcula automáticamente a partir de la georreferencia de cada luminaria, permitiendo planear rutas de intervención eficientes.`);
 
   // ── 4. CHARTS ──
   charts.forEach(c=>c.destroy());charts=[];
   if(typeof Chart==='undefined'){
-    document.querySelectorAll('.chart-card canvas').forEach(cv=>{cv.outerHTML='<div style="padding:20px;color:var(--faint);font-size:12px">⚠️ Gráficas no disponibles sin conexión. Los datos numéricos no se ven afectados.</div>';});
+    document.querySelectorAll('.chart-card canvas').forEach(cv=>{cv.outerHTML=`<div style="padding:20px;color:var(--faint);font-size:12px">⚠️ ${t('Charts unavailable offline. Numeric data is unaffected.','Gráficas no disponibles sin conexión. Los datos numéricos no se ven afectados.')}</div>`;});
   }
   const labels=[],vals=[],cols=[];
   for(const[sheet,cfg]of Object.entries(SHEETS)){
     if(data[sheet].length===0)continue;
-    labels.push(cfg.lbl);vals.push(data[sheet].length);cols.push(CRIT_COLOR[cfg.crit]);
+    labels.push(cfgLbl(cfg));vals.push(data[sheet].length);cols.push(CRIT_COLOR[cfg.crit]);
   }
   if(typeof Chart!=='undefined'){
     charts.push(new Chart(document.getElementById('chart-bar').getContext('2d'),{
@@ -504,43 +564,45 @@ function build(wb,filename){
         scales:{x:{grid:{color:'#DCE1EA'},ticks:{font:{family:'Helvetica Neue',size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
     }));
     charts.push(new Chart(document.getElementById('chart-donut').getContext('2d'),{
-      type:'doughnut',data:{labels:['Críticas (seguridad/servicio)','Operativas (calidad/desgaste)'],
+      type:'doughnut',data:{labels:[t('Critical (safety/service)','Críticas (seguridad/servicio)'),t('Operational (quality/wear)','Operativas (calidad/desgaste)')],
         datasets:[{data:[redCount,amberCount],backgroundColor:['#DC2626BB','#EA561BBB'],borderColor:'#fff',borderWidth:2}]},
       options:{responsive:true,cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}}}
     }));
   }
   document.getElementById('note-charts').innerHTML=
-    `<span class="note-lbl">Lectura ejecutiva</span>`+
-    `Del total de alertas, el <strong>${(redCount/Math.max(totalFaults,1)*100).toFixed(0)}% son críticas</strong> y el <strong>${(amberCount/Math.max(totalFaults,1)*100).toFixed(0)}% operativas</strong>. `+
-    `Una proporción crítica baja indica que la mayoría de novedades son de mantenimiento preventivo y no comprometen el servicio de forma inmediata.`;
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    (currentLang==='en'
+      ? `Of total alerts, <strong>${(redCount/Math.max(totalFaults,1)*100).toFixed(0)}% are critical</strong> and <strong>${(amberCount/Math.max(totalFaults,1)*100).toFixed(0)}% operational</strong>. A low critical proportion indicates most issues are preventive maintenance and do not immediately compromise service.`
+      : `Del total de alertas, el <strong>${(redCount/Math.max(totalFaults,1)*100).toFixed(0)}% son críticas</strong> y el <strong>${(amberCount/Math.max(totalFaults,1)*100).toFixed(0)}% operativas</strong>. Una proporción crítica baja indica que la mayoría de novedades son de mantenimiento preventivo y no comprometen el servicio de forma inmediata.`);
 
   // ── 5. PRIORITIES ──
   const prio=[];
   tiltAll.forEach(r=>{
     const a=parseFloat(r["Ending Tilt"])||0;
-    if(a>45)prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),t:"Poste inclinado",d:`Inclinación de ${a.toFixed(0)}° — posible colisión`,p:"red",plbl:"INMEDIATA"});
-    else prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),t:"Poste inclinado",d:`Cambio súbito a ${a.toFixed(0)}°`,p:"amber",plbl:"ALTA"});
+    if(a>45)prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Tilted pole","Poste inclinado"),d:t(`Tilt of ${a.toFixed(0)}° — possible collision`,`Inclinación de ${a.toFixed(0)}° — posible colisión`),p:"red",plbl:t("IMMEDIATE","INMEDIATA")});
+    else prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Tilted pole","Poste inclinado"),d:t(`Sudden shift to ${a.toFixed(0)}°`,`Cambio súbito a ${a.toFixed(0)}°`),p:"amber",plbl:t("HIGH","ALTA")});
   });
-  (data["Weekly Power Losses > 24 Hours"]||[]).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),t:"Sin energía >24h",d:"Sin suministro desde hace más de un día",p:"red",plbl:"INMEDIATA"});});
-  (data["Broken Lamp"]||[]).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),t:"Lámpara dañada",d:"Consume energía sin iluminar",p:"amber",plbl:"ALTA"});});
-  (data["Overvoltage"]||[]).filter(r=>parseFloat(r["Average Voltage"])>165).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),t:"Sobrevoltaje severo",d:`${parseFloat(r["Average Voltage"]).toFixed(0)} V promedio — daño acelerado`,p:"amber",plbl:"ALTA"});});
+  (data["Weekly Power Losses > 24 Hours"]||[]).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("No power >24h","Sin energía >24h"),d:t("No supply for more than a day","Sin suministro desde hace más de un día"),p:"red",plbl:t("IMMEDIATE","INMEDIATA")});});
+  (data["Broken Lamp"]||[]).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Broken lamp","Lámpara dañada"),d:t("Consuming energy without illuminating","Consume energía sin iluminar"),p:"amber",plbl:t("HIGH","ALTA")});});
+  (data["Overvoltage"]||[]).filter(r=>parseFloat(r["Average Voltage"])>165).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Severe overvoltage","Sobrevoltaje severo"),d:t(`${parseFloat(r["Average Voltage"]).toFixed(0)} V avg — accelerated damage`,`${parseFloat(r["Average Voltage"]).toFixed(0)} V promedio — daño acelerado`),p:"amber",plbl:t("HIGH","ALTA")});});
   prio.sort((a,b)=>(a.p==='red'?0:1)-(b.p==='red'?0:1));
-  document.getElementById('prio-count').textContent=prio.length+' luminarias';
+  document.getElementById('prio-count').textContent=prio.length+' '+(t('luminaires','luminarias'));
   const body=document.getElementById('prio-body');body.innerHTML='';
   prio.forEach(p=>{const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="mono">${p.s||'—'}</td><td>${p.z}</td><td>${p.t}</td><td>${p.d}</td><td><span class="pill pill-${p.p}">${p.plbl}</span></td>`;
+    tr.innerHTML=`<td class="mono">${p.s||'—'}</td><td>${p.z}</td><td>${p.ft}</td><td>${p.d}</td><td><span class="pill pill-${p.p}">${p.plbl}</span></td>`;
     body.appendChild(tr);});
   const inmediatas=prio.filter(p=>p.p==='red').length;
   document.getElementById('note-prio').innerHTML=
-    `<span class="note-lbl">Lectura ejecutiva</span>`+
-    `Se identifican <strong>${prio.length} luminarias con intervención prioritaria</strong>, de las cuales <strong>${inmediatas} requieren atención inmediata</strong> por riesgo físico o pérdida total de servicio. `+
-    `Se recomienda programar estas intervenciones dentro de las próximas 48 horas y documentar el cierre de cada caso para el siguiente reporte.`;
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    (currentLang==='en'
+      ? `<strong>${prio.length} luminaires requiring priority intervention</strong> were identified, of which <strong>${inmediatas} require immediate attention</strong> due to physical risk or total service loss. It is recommended to schedule these interventions within the next 48 hours and document each case closure for the next report.`
+      : `Se identifican <strong>${prio.length} luminarias con intervención prioritaria</strong>, de las cuales <strong>${inmediatas} requieren atención inmediata</strong> por riesgo físico o pérdida total de servicio. Se recomienda programar estas intervenciones dentro de las próximas 48 horas y documentar el cierre de cada caso para el siguiente reporte.`);
 
   // ── FOOTNOTE ──
   document.getElementById('footnote').innerHTML=
-    `<strong>Nota metodológica:</strong> este informe consolida ${totalFaults} alertas detectadas automáticamente por la red de sensores Ubicell durante la semana, sobre una flota de <strong>${fmt(fleetTotal)} luminarias monitoreadas activamente</strong>. `+
-    `Las fallas <strong>críticas</strong> afectan directamente la seguridad ciudadana o la prestación del servicio; las <strong>operativas</strong> degradan la calidad o aceleran el desgaste de la infraestructura. `+
-    `Las zonas se asignan automáticamente por georreferencia. Para el detalle técnico completo, consulte la pestaña «Aspectos Técnicos».`;
+    (currentLang==='en'
+      ? `<strong>Methodological note:</strong> this report consolidates ${totalFaults} alerts automatically detected by the UbiCell® sensor network during the week, across a fleet of <strong>${fmt(fleetTotal)} actively monitored luminaires</strong>. <strong>Critical</strong> faults directly affect public safety or service delivery; <strong>operational</strong> ones degrade quality or accelerate infrastructure wear. Zones are assigned automatically by geolocation. For full technical detail, see the Technical tab.`
+      : `<strong>Nota metodológica:</strong> este informe consolida ${totalFaults} alertas detectadas automáticamente por la red de sensores UbiCell® durante la semana, sobre una flota de <strong>${fmt(fleetTotal)} luminarias monitoreadas activamente</strong>. Las fallas <strong>críticas</strong> afectan directamente la seguridad ciudadana o la prestación del servicio; las <strong>operativas</strong> degradan la calidad o aceleran el desgaste de la infraestructura. Las zonas se asignan automáticamente por georreferencia. Para el detalle técnico completo, consulte la pestaña «Aspectos Técnicos».`);
 
   // ════════ VISTA TÉCNICA ════════
   buildTech(data,zoneNames,zoneCounts,zoneTotals);
@@ -558,12 +620,12 @@ function buildTech(data,zoneNames,zoneCounts,zoneTotals){
   const tiltMax=Math.max(0,...(data["Tilt - Sudden Tilt Shifts"]||[]).map(r=>parseFloat(r["Ending Tilt"])||0));
 
   const stats=[
-    {n:uvVals.length?Math.min(...uvVals).toFixed(1)+' V':'—',l:'Voltaje mínimo registrado'},
-    {n:ovVals.length?Math.max(...ovVals).toFixed(1)+' V':'—',l:'Voltaje máximo registrado'},
-    {n:uv.length+ov.length,l:'Nodos fuera de rango nominal'},
-    {n:wasteW.toFixed(0)+' W',l:'Potencia diurna desperdiciada'},
-    {n:flickerEvents,l:'Eventos VSag acumulados'},
-    {n:tiltMax?tiltMax.toFixed(0)+'°':'—',l:'Inclinación máxima detectada'},
+    {n:uvVals.length?Math.min(...uvVals).toFixed(1)+' V':'—',l:t('Min. voltage recorded','Voltaje mínimo registrado')},
+    {n:ovVals.length?Math.max(...ovVals).toFixed(1)+' V':'—',l:t('Max. voltage recorded','Voltaje máximo registrado')},
+    {n:uv.length+ov.length,l:t('Nodes out of nominal range','Nodos fuera de rango nominal')},
+    {n:wasteW.toFixed(0)+' W',l:t('Daytime wasted power','Potencia diurna desperdiciada')},
+    {n:flickerEvents,l:t('Accumulated VSag events','Eventos VSag acumulados')},
+    {n:tiltMax?tiltMax.toFixed(0)+'°':'—',l:t('Max. tilt detected','Inclinación máxima detectada')},
   ];
   const sr=document.getElementById('tech-stats');sr.innerHTML='';
   stats.forEach(s=>{const d=document.createElement('div');d.className='stat';
@@ -575,41 +637,42 @@ function buildTech(data,zoneNames,zoneCounts,zoneTotals){
   const rows=[];
   zoneNames.forEach(z=>{
     for(const[sheet,cfg]of Object.entries(SHEETS)){
-      const n=(zoneCounts[z]&&zoneCounts[z][cfg.lbl])||0;
-      if(n>0)rows.push({z,action:cfg.action,n,crew:cfg.crew,crit:cfg.crit});
+      const n=(zoneCounts[z]&&zoneCounts[z][cfgLbl(cfg)])||0;
+      if(n>0)rows.push({z,action:cfgAction(cfg),n,crew:cfgCrew(cfg),crit:cfg.crit});
     }
   });
   rows.sort((a,b)=>(a.crit==='red'?0:1)-(b.crit==='red'?0:1)||b.n-a.n);
   rows.forEach(r=>{const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="mono">OT-${String(wo++).padStart(3,'0')}</td><td>${r.z}</td><td>${r.crit==='red'?'<span class="hi-red">●</span> ':''}${r.action}</td><td class="mono" style="text-align:center">${r.n}</td><td style="white-space:normal;font-size:12px;color:var(--muted)">${r.crew}</td>`;
+    tr.innerHTML=`<td class="mono">WO-${String(wo++).padStart(3,'0')}</td><td>${r.z}</td><td>${r.crit==='red'?'<span class="hi-red">●</span> ':''}${r.action}</td><td class="mono" style="text-align:center">${r.n}</td><td style="white-space:normal;font-size:12px;color:var(--muted)">${r.crew}</td>`;
     wb2.appendChild(tr);});
   document.getElementById('note-work').innerHTML=
-    `<span class="note-lbl">Nota de planeación</span>`+
-    `Se generan <strong>${rows.length} órdenes de trabajo sugeridas</strong> agrupadas por zona y tipo de intervención, ordenadas por criticidad (● = crítica). `+
-    `Cada orden agrupa luminarias cercanas con la misma falla para optimizar el desplazamiento de cuadrillas. Los seriales y coordenadas de cada punto están en las tablas de detalle a continuación.`;
+    `<span class="note-lbl">${t('Planning note','Nota de planeación')}</span>`+
+    (currentLang==='en'
+      ? `<strong>${rows.length} suggested work orders</strong> are generated, grouped by zone and intervention type, ordered by criticality (● = critical). Each order groups nearby luminaires with the same fault to optimize crew routing. Serials and coordinates for each point are in the detail tables below.`
+      : `Se generan <strong>${rows.length} órdenes de trabajo sugeridas</strong> agrupadas por zona y tipo de intervención, ordenadas por criticidad (● = crítica). Cada orden agrupa luminarias cercanas con la misma falla para optimizar el desplazamiento de cuadrillas. Los seriales y coordenadas de cada punto están en las tablas de detalle a continuación.`);
 
   // ── Detail tables with maps links ──
   const td=document.getElementById('tech-tables');td.innerHTML='';
   for(const[sheet,cfg]of Object.entries(SHEETS)){
     const rows=data[sheet]||[];
     const card=document.createElement('div');card.className='tbl-card';
-    const cnt=rows.length?`<span class="badge ${cfg.crit==='red'?'b-red':'b-amber'}">${rows.length} nodo${rows.length!==1?'s':''}</span>`:`<span class="badge b-gray">Sin alertas</span>`;
-    card.innerHTML=`<div class="tbl-hdr"><span class="tbl-ttl">${cfg.icon} ${cfg.lbl} <span style="font-weight:400;color:var(--faint);font-size:12px">— ${cfg.action}</span></span>${cnt}</div>`;
-    if(!rows.length){card.innerHTML+=`<div class="empty">✅ Sin fallas en esta categoría</div>`;td.appendChild(card);continue;}
+    const cnt=rows.length?`<span class="badge ${cfg.crit==='red'?'b-red':'b-amber'}">${rows.length} ${t('node','nodo')}${rows.length!==1?'s':''}</span>`:`<span class="badge b-gray">${t('No alerts','Sin alertas')}</span>`;
+    card.innerHTML=`<div class="tbl-hdr"><span class="tbl-ttl">${cfg.icon} ${cfgLbl(cfg)} <span style="font-weight:400;color:var(--faint);font-size:12px">— ${cfgAction(cfg)}</span></span>${cnt}</div>`;
+    if(!rows.length){card.innerHTML+=`<div class="empty">✅ ${t('No faults in this category','Sin fallas en esta categoría')}</div>`;td.appendChild(card);continue;}
     const skip=new Set(['Node Name','Node Id','Pole Id','Latitude','Longitude']);
     const cols=Object.keys(rows[0]).filter(c=>!skip.has(c));
     const wrap=document.createElement('div');wrap.className='tbl-wrap';
     const tbl=document.createElement('table');
     const thead=tbl.createTHead();const hr=thead.insertRow();
     cols.forEach(c=>{const th=document.createElement('th');th.textContent=c;hr.appendChild(th);});
-    const thMap=document.createElement('th');thMap.textContent='Ubicación';hr.appendChild(thMap);
+    const thMap=document.createElement('th');thMap.textContent=t('Location','Ubicación');hr.appendChild(thMap);
     const tbody=tbl.createTBody();
     rows.forEach(r=>{
       const tr=tbody.insertRow();
       cols.forEach(c=>{
         const tdc=tr.insertCell();let v=r[c];
         if(v===null||v===undefined||v===''){tdc.textContent='—';return;}
-        if(typeof v==='boolean'){tdc.textContent=v?'Sí':'No';if(!v)tdc.classList.add('hi-red');return;}
+        if(typeof v==='boolean'){tdc.textContent=v?t('Yes','Sí'):t('No','No');if(!v)tdc.classList.add('hi-red');return;}
         tdc.textContent=v;tdc.classList.add('mono');
         const n=parseFloat(v);
         if(c==='Pole Voltage'&&n>200)tdc.classList.add('hi-red');
@@ -622,7 +685,7 @@ function buildTech(data,zoneNames,zoneCounts,zoneTotals){
       const tdm=tr.insertCell();
       const lat=parseFloat(r['Latitude']),lng=parseFloat(r['Longitude']);
       if(!isNaN(lat)&&!isNaN(lng)){
-        tdm.innerHTML=`<a class="maps-link" href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener">📍 Ver en mapa</a>`;
+        tdm.innerHTML=`<a class="maps-link" href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener">📍 ${t('View on map','Ver en mapa')}</a>`;
       }else tdm.textContent='—';
     });
     wrap.appendChild(tbl);card.appendChild(wrap);td.appendChild(card);
@@ -631,3 +694,15 @@ function buildTech(data,zoneNames,zoneCounts,zoneTotals){
 </script>
 </body>
 </html>
+
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-15114096182');
+  </script>
+  <!-- Resto de tu head... -->
+</head>

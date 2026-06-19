@@ -7,40 +7,67 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
 :root{
-  --bg:#f6f8fa;--bg2:#fff;--bg3:#f0f2f5;
-  --border:#d0d7de;--border2:#b6bfc8;
-  --text:#1f2328;--text2:#57606a;--text3:#8c959f;
-  --blue:#0969da;--green:#1a7f37;--warn:#9a6700;--danger:#cf222e;--purple:#6639ba;--orange:#e36209;
-  --font:'IBM Plex Mono','Consolas',monospace;
-  --sans:'IBM Plex Sans','Segoe UI',sans-serif;
+  /* ── Ubicquia® Brand Palette ── */
+  --ub-dark-blue:#1E2445;
+  --ub-blue:#22B0E1;
+  --ub-light-gray:#EEF0F5;
+  --ub-deep-gray:#464D63;
+  --ub-gray:#99A0B4;
+  --ub-orange:#EA561B;
+  --ub-yellow:#FAB512;
+  --ub-green:#4EB270;
+  --ub-danger:#D32F2F;
+
+  /* ── Semantic aliases ── */
+  --bg:#EEF0F5;
+  --bg2:#FFFFFF;
+  --bg3:#EEF0F5;
+  --border:#99A0B4;
+  --border2:#C5C9D6;
+  --text:#1E2445;
+  --text2:#464D63;
+  --text3:#99A0B4;
+  --blue:#22B0E1;
+  --green:#4EB270;
+  --warn:#FAB512;
+  --danger:#EA561B;
+  --purple:#59509D;
+  --orange:#EA561B;
+
+  --font:'Lato','Arial',sans-serif;
+  --sans:'Lato','Arial',sans-serif;
+  --mono:'Consolas','Courier New',monospace;
   --r:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;}
 
 /* ─── HEADER ─── */
-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:.8rem 2rem;display:flex;align-items:center;gap:1rem;}
-.logo-pill{background:#ddf4ff;border:1px solid #54aeff;border-radius:20px;padding:3px 12px;font-family:var(--font);font-size:11px;color:var(--blue);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
-header h1{font-size:15px;font-weight:600;}
-header p{font-size:12px;color:var(--text2);margin-top:1px;}
+header{background:var(--ub-dark-blue);border-bottom:none;padding:.9rem 2rem;display:flex;align-items:center;gap:1rem;}
+.logo-pill{background:rgba(34,176,225,.15);border:1px solid rgba(34,176,225,.45);border-radius:20px;padding:3px 13px;font-family:var(--sans);font-size:11px;font-weight:700;color:var(--ub-blue);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+header h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em;}
+header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
+.lang-toggle{display:flex;align-items:center;gap:4px;margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 5px;}
+.lang-btn{background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:4px;transition:all .15s;color:var(--ub-gray);}
+.lang-btn.active{background:var(--ub-blue);color:#fff;}
 .main{max-width:1340px;margin:0 auto;padding:1.5rem 2rem 4rem;}
 
 /* ─── STEP INDICATOR ─── */
 .steps{display:flex;align-items:center;gap:0;margin-bottom:1.75rem;}
-.step{display:flex;align-items:center;gap:.6rem;padding:.5rem 1.1rem .5rem .8rem;border-radius:6px;font-size:12px;color:var(--text3);font-weight:500;transition:all .2s;}
-.step .sn{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-size:11px;font-weight:600;flex-shrink:0;transition:all .2s;}
+.step{display:flex;align-items:center;gap:.6rem;padding:.5rem 1.1rem .5rem .8rem;border-radius:6px;font-size:12px;color:var(--text3);font-weight:600;transition:all .2s;}
+.step .sn{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;flex-shrink:0;transition:all .2s;}
 .step.active{color:var(--blue);}
-.step.active .sn{border-color:var(--blue);background:#ddf4ff;color:var(--blue);}
+.step.active .sn{border-color:var(--blue);background:rgba(34,176,225,.12);color:var(--blue);}
 .step.done{color:var(--green);}
-.step.done .sn{border-color:var(--green);background:#dafbe1;color:var(--green);}
+.step.done .sn{border-color:var(--green);background:rgba(78,178,112,.12);color:var(--green);}
 .step-arrow{color:var(--border2);font-size:16px;margin:0 .1rem;}
 
 /* ─── UPLOAD ─── */
 #stepUpload{}
 .upload-zone{background:var(--bg2);border:2px dashed var(--border2);border-radius:var(--r);padding:2.75rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:#f0f6ff;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:rgba(34,176,225,.04);}
 .upload-zone .ico{font-size:2.4rem;margin-bottom:.6rem;}
 .upload-zone p{color:var(--text2);font-size:13px;}
 .upload-zone strong{color:var(--text);}
@@ -49,13 +76,13 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 /* ─── STEP 2: SELECTOR ─── */
 #stepSelect{display:none;}
 .sel-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;}
-.sel-header h2{font-size:14px;font-weight:600;}
+.sel-header h2{font-size:14px;font-weight:700;color:var(--text);}
 .sel-actions{display:flex;gap:.5rem;}
 
 .sel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.7rem;margin-bottom:1.5rem;}
-.sel-block{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r);padding:.75rem .95rem;cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
-.sel-block:hover{border-color:var(--blue);background:#f8fbff;}
-.sel-block.sel-on{border-color:var(--blue);background:#ddf4ff;}
+.sel-block{background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--r);padding:.75rem .95rem;cursor:pointer;transition:border-color .2s,background .2s;user-select:none;}
+.sel-block:hover{border-color:var(--blue);background:rgba(34,176,225,.04);}
+.sel-block.sel-on{border-color:var(--blue);background:rgba(34,176,225,.08);}
 .sel-block.sel-on .sb-check{background:var(--blue);border-color:var(--blue);}
 .sel-block.sel-on .sb-check::after{opacity:1;}
 .sel-block.unavail{opacity:.4;cursor:not-allowed;pointer-events:none;}
@@ -63,57 +90,57 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 .sb-check{width:16px;height:16px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;position:relative;transition:all .15s;}
 .sb-check::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;opacity:0;transition:opacity .15s;}
 .sb-icon{font-size:1.1rem;}
-.sb-label{font-size:13px;font-weight:500;color:var(--text);}
+.sb-label{font-size:13px;font-weight:600;color:var(--text);}
 .sb-desc{font-size:11px;color:var(--text3);line-height:1.45;}
-.sb-cols{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--font);}
-.sb-group{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-top:.9rem;margin-bottom:.3rem;padding-bottom:.2rem;border-bottom:1px solid var(--border);}
+.sb-cols{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+.sb-group{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ub-blue);margin-top:.9rem;margin-bottom:.3rem;padding-bottom:.2rem;border-bottom:2px solid var(--ub-blue);}
 
 /* params inside selector */
-.params-row{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:.6rem 1.1rem;margin-bottom:1.25rem;overflow:hidden;}
-.params-row label{font-size:12px;color:var(--text2);white-space:nowrap;}
-.params-row input[type=number]{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 7px;font-size:13px;font-family:var(--font);width:76px;}
+.params-row{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:.6rem 1.1rem;margin-bottom:1.25rem;overflow:hidden;}
+.params-row label{font-size:12px;color:var(--text2);white-space:nowrap;font-weight:600;}
+.params-row input[type=number]{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:4px 7px;font-size:13px;font-family:var(--mono);width:76px;}
 .params-row input[type=number]:focus{outline:none;border-color:var(--blue);}
 .params-row .unit{font-size:11px;color:var(--text3);}
-.params-row .sep{width:1px;height:20px;background:var(--border);margin:0 .2rem;}
-.preset-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.params-row .sep{width:1px;height:20px;background:var(--border2);margin:0 .2rem;}
+.preset-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:4px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--sans);}
 .preset-btn:hover{border-color:var(--blue);color:var(--blue);}
-.preset-btn.active{background:#ddf4ff;border-color:#54aeff;color:var(--blue);font-weight:600;}
-.v-badge{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-family:var(--font);font-size:11px;color:var(--text2);}
+.preset-btn.active{background:var(--ub-blue);border-color:var(--ub-blue);color:#fff;font-weight:700;}
+.v-badge{display:inline-flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:3px 8px;font-family:var(--mono);font-size:11px;color:var(--text2);}
 .v-badge .hi{color:var(--danger);}
 .v-badge .lo{color:var(--blue);}
 
 /* ─── BUTTONS ─── */
-.btn{background:var(--blue);color:#fff;border:none;padding:6px 16px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;transition:opacity .15s;font-family:var(--sans);}
+.btn{background:var(--blue);color:#fff;border:none;padding:6px 16px;border-radius:5px;font-weight:700;font-size:12px;cursor:pointer;transition:opacity .15s;font-family:var(--sans);letter-spacing:.02em;}
 .btn:hover{opacity:.85;}
-.btn.sec{background:var(--bg3);color:var(--text);border:1px solid var(--border);font-weight:500;}
-.btn.del{background:transparent;color:var(--danger);border:1px solid var(--danger);font-weight:500;}
-.btn.pdf-btn{background:var(--green);color:#fff;}
+.btn.sec{background:var(--bg2);color:var(--text2);border:1px solid var(--border2);font-weight:600;}
+.btn.del{background:transparent;color:var(--danger);border:1px solid var(--danger);font-weight:600;}
+.btn.pdf-btn{background:var(--ub-dark-blue);color:#fff;}
 .btn.big{padding:9px 24px;font-size:13px;}
 
 /* ─── STEP 3: DASHBOARD ─── */
 #stepDash{display:none;}
 .dash-topbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:1.25rem;}
 .info-strip{display:flex;gap:7px;flex-wrap:wrap;}
-.tag{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-family:var(--font);font-size:11px;color:var(--text2);}
-.tag span{color:var(--text);font-weight:500;}
+.tag{background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;font-family:var(--mono);font-size:11px;color:var(--text3);}
+.tag span{color:var(--text);font-weight:700;}
 
 /* exec summary */
-.exec-summary{background:var(--bg2);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.25rem;}
-.exec-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text);margin-bottom:.6rem;}
+.exec-summary{background:var(--bg2);border:1px solid var(--border2);border-left:4px solid var(--blue);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.25rem;}
+.exec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ub-deep-gray);margin-bottom:.6rem;}
 .exec-body{font-size:13px;color:var(--text2);line-height:1.75;}
-.exec-body .hi{color:var(--danger);font-weight:600;}
-.exec-body .ok{color:var(--green);font-weight:600;}
-.exec-body .warn{color:var(--warn);font-weight:600;}
-.exec-body .inf{color:var(--blue);font-weight:600;}
-.exec-body .pur{color:var(--purple);font-weight:600;}
-.exec-body .ora{color:var(--orange);font-weight:600;}
+.exec-body .hi{color:var(--danger);font-weight:700;}
+.exec-body .ok{color:var(--green);font-weight:700;}
+.exec-body .warn{color:var(--warn);font-weight:700;}
+.exec-body .inf{color:var(--blue);font-weight:700;}
+.exec-body .pur{color:var(--purple);font-weight:700;}
+.exec-body .ora{color:var(--orange);font-weight:700;}
 
 /* kpi */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px;margin-bottom:1.25rem;}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:.85rem 1rem;}
-.kpi .kl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
-.kpi .kv{font-family:var(--font);font-size:20px;font-weight:600;}
-.kpi .ks{font-size:11px;color:var(--text2);margin-top:2px;}
+.kpi{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:.85rem 1rem;}
+.kpi .kl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-weight:700;}
+.kpi .kv{font-family:var(--sans);font-size:22px;font-weight:900;color:var(--ub-blue);}
+.kpi .ks{font-size:11px;color:var(--text3);margin-top:3px;}
 .kpi.ok .kv{color:var(--green);}
 .kpi.warn .kv{color:var(--warn);}
 .kpi.bad .kv{color:var(--danger);}
@@ -122,11 +149,11 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 .kpi.ora .kv{color:var(--orange);}
 
 /* p10-p90 legend */
-.pct-legend{background:var(--bg2);border:1px solid var(--border);border-left:4px solid var(--blue);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:1.25rem;}
-.pct-title{font-weight:600;font-size:13px;color:var(--text);margin-bottom:.5rem;}
+.pct-legend{background:var(--bg2);border:1px solid var(--border2);border-left:4px solid var(--blue);border-radius:var(--r);padding:1rem 1.2rem;margin-bottom:1.25rem;}
+.pct-title{font-weight:700;font-size:13px;color:var(--text);margin-bottom:.5rem;}
 .pct-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.6rem;}
-.pct-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.6rem .85rem;}
-.pct-box .pbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.pct-box{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:.6rem .85rem;}
+.pct-box .pbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
 .pct-box .pbb{font-size:11.5px;color:var(--text2);line-height:1.55;}
 .pct-box.p10 .pbl{color:var(--green);}
 .pct-box.p50 .pbl{color:var(--blue);}
@@ -139,44 +166,44 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 
 /* charts */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.1rem;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:.9rem 1.1rem;}
+.card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:.9rem 1.1rem;}
 .card.full{grid-column:1/-1;}
-.ct{font-size:12px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
-.cd{font-size:11.5px;color:var(--text3);margin-bottom:.7rem;line-height:1.55;border-left:2px solid var(--border);padding-left:8px;}
+.ct{font-size:11px;font-weight:700;color:var(--ub-dark-blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.cd{font-size:11.5px;color:var(--text3);margin-bottom:.7rem;line-height:1.55;border-left:3px solid var(--ub-blue);padding-left:8px;}
 .cw{position:relative;}
 
 /* map */
 #mapWrap{display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;}
-#mapFrame{flex:1;min-width:260px;border:1px solid var(--border);border-radius:6px;overflow:hidden;height:280px;}
-#mapMeta{font-family:var(--font);font-size:12px;color:var(--text2);min-width:180px;line-height:2.1;}
+#mapFrame{flex:1;min-width:260px;border:1px solid var(--border2);border-radius:6px;overflow:hidden;height:280px;}
+#mapMeta{font-family:var(--sans);font-size:12px;color:var(--text2);min-width:180px;line-height:2.1;}
 
 /* stats / events tables */
-.sec-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin:.2rem 0 .55rem;}
-.stats-tbl{width:100%;border-collapse:collapse;font-family:var(--font);font-size:12px;}
-.stats-tbl th{color:var(--text3);font-weight:500;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);}
-.stats-tbl td{padding:6px 10px;border-bottom:1px solid #eaeef2;}
+.sec-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ub-blue);font-weight:700;margin:.2rem 0 .55rem;}
+.stats-tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+.stats-tbl th{color:var(--text3);font-weight:700;padding:6px 10px;text-align:left;border-bottom:2px solid var(--ub-blue);font-family:var(--sans);font-size:11px;text-transform:uppercase;letter-spacing:.05em;}
+.stats-tbl td{padding:6px 10px;border-bottom:1px solid var(--border2);color:var(--text2);}
 .stats-tbl tr:last-child td{border-bottom:none;}
-.badge{display:inline-block;border-radius:3px;padding:2px 8px;font-size:11px;}
-.badge.ok{background:#dafbe1;color:#116329;}
-.badge.warn{background:#fff8c5;color:#7d4e00;}
-.badge.bad{background:#ffebe9;color:#82071e;}
-.evt-tbl{width:100%;border-collapse:collapse;font-family:var(--font);font-size:11.5px;}
-.evt-tbl th{color:var(--text3);font-weight:500;padding:5px 9px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;}
-.evt-tbl td{padding:5px 9px;border-bottom:1px solid #eaeef2;}
+.badge{display:inline-block;border-radius:4px;padding:2px 9px;font-size:11px;font-weight:700;font-family:var(--sans);}
+.badge.ok{background:rgba(78,178,112,.15);color:#2e7d32;}
+.badge.warn{background:rgba(250,181,18,.15);color:#8a6000;}
+.badge.bad{background:rgba(234,86,27,.13);color:#b71c1c;}
+.evt-tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;}
+.evt-tbl th{color:var(--text3);font-weight:700;padding:5px 9px;text-align:left;border-bottom:2px solid var(--ub-blue);font-size:10px;font-family:var(--sans);text-transform:uppercase;letter-spacing:.05em;}
+.evt-tbl td{padding:5px 9px;border-bottom:1px solid var(--border2);color:var(--text2);}
 .evt-tbl tr:last-child td{border-bottom:none;}
-.evt-warn{color:var(--orange);font-weight:600;}
-.evt-bad{color:var(--danger);font-weight:600;}
+.evt-warn{color:var(--ub-yellow);font-weight:700;}
+.evt-bad{color:var(--danger);font-weight:700;}
 .over-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;}
 
 /* ═══ PRINT ═══ */
 @media print{
   @page{size:A4 portrait;margin:10mm 11mm 12mm 11mm;}
-  :root{--bg:#fff;--bg2:#fff;--bg3:#f5f5f5;--border:#ccc;}
+  :root{--bg:#fff;--bg2:#fff;--bg3:#f5f5f5;--border2:#ccc;}
   body{background:#fff;font-size:10px;}
-  .steps,#stepUpload,#stepSelect,.dash-topbar .btn{display:none!important;}
-  header{border-bottom:1.5px solid #1f2328;padding:.35rem .7rem;margin-bottom:5px;}
-  header h1{font-size:12px;}
-  .pdf-cover{display:block!important;border:1.5px solid #1f2328;border-radius:4px;padding:7px 12px;margin-bottom:6px;break-inside:avoid;}
+  .steps,#stepUpload,#stepSelect,.dash-topbar .btn,.lang-toggle{display:none!important;}
+  header{background:#1E2445!important;padding:.35rem .7rem;margin-bottom:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  header h1{font-size:12px;color:#fff!important;}
+  .pdf-cover{display:block!important;border:1.5px solid #1E2445;border-radius:4px;padding:7px 12px;margin-bottom:6px;break-inside:avoid;}
   .info-strip{margin-bottom:5px;}
   .tag{font-size:8.5px;padding:1px 5px;}
   .exec-summary{padding:.5rem .8rem;margin-bottom:5px;break-inside:avoid;}
@@ -187,7 +214,7 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
   .kpi .kl{font-size:7.5px;}
   .kpi .kv{font-size:12px;}
   .kpi .ks{font-size:7.5px;}
-  .pct-legend{padding:.45rem .65rem;margin-bottom:5px;border-left:3px solid #0969da;break-inside:avoid;}
+  .pct-legend{padding:.45rem .65rem;margin-bottom:5px;border-left:3px solid #22B0E1;break-inside:avoid;}
   .pct-title{font-size:9.5px;}
   .pct-3col{grid-template-columns:1fr 1fr 1fr;gap:.25rem;margin-bottom:.25rem;}
   .pct-box{padding:.25rem .45rem;}
@@ -229,10 +256,14 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 </head>
 <body>
 <header>
-  <div class="logo-pill">TransLoad v4.1</div>
+  <div class="logo-pill">TransLoad v4.2</div>
   <div style="flex:1">
-    <h1>Estudio de cargabilidad — transformador</h1>
-    <p id="headerSub">Cargue un CSV para comenzar</p>
+    <h1 id="h1Title">Transformer Load Study</h1>
+    <p id="headerSub" data-en="Upload a CSV file to begin" data-es="Cargue un CSV para comenzar">Upload a CSV file to begin</p>
+  </div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" id="btnES" onclick="setLang('es')">ES</button>
   </div>
 </header>
 
@@ -240,19 +271,19 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 
   <!-- STEP INDICATOR -->
   <div class="steps">
-    <div class="step active" id="stp1"><div class="sn">1</div>Cargar CSV</div>
+    <div class="step active" id="stp1"><div class="sn">1</div><span data-en="Upload CSV" data-es="Cargar CSV">Upload CSV</span></div>
     <div class="step-arrow">›</div>
-    <div class="step" id="stp2"><div class="sn">2</div>Seleccionar vistas</div>
+    <div class="step" id="stp2"><div class="sn">2</div><span data-en="Select views" data-es="Seleccionar vistas">Select views</span></div>
     <div class="step-arrow">›</div>
-    <div class="step" id="stp3"><div class="sn">3</div>Ver informe</div>
+    <div class="step" id="stp3"><div class="sn">3</div><span data-en="View report" data-es="Ver informe">View report</span></div>
   </div>
 
   <!-- ══ PASO 1: UPLOAD ══ -->
   <div id="stepUpload">
     <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="ico">📂</div>
-      <p><strong>Haga clic o arrastre</strong> su archivo CSV aquí</p>
-      <p style="margin-top:5px;font-size:11px;color:var(--text3)">Formato esperado: datos de monitoreo de transformador con columnas eléctricas, de calidad y georeferenciación</p>
+      <p><strong data-en="Click or drag" data-es="Haga clic o arrastre">Click or drag</strong> <span data-en="your CSV file here" data-es="su archivo CSV aquí">your CSV file here</span></p>
+      <p style="margin-top:5px;font-size:11px;color:var(--text3)" data-en="Expected format: transformer monitoring data with electrical, quality and geolocation columns" data-es="Formato esperado: datos de monitoreo de transformador con columnas eléctricas, de calidad y georeferenciación">Expected format: transformer monitoring data with electrical, quality and geolocation columns</p>
       <input type="file" id="fileInput" accept=".csv"/>
     </div>
   </div>
@@ -262,30 +293,30 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 
     <div class="sel-header">
       <div>
-        <h2>Seleccione las secciones a incluir en el informe</h2>
-        <p style="font-size:12px;color:var(--text2);margin-top:3px">Las secciones bloqueadas (gris) no tienen datos disponibles en el CSV cargado.</p>
+        <h2 data-en="Select the sections to include in the report" data-es="Seleccione las secciones a incluir en el informe">Select the sections to include in the report</h2>
+        <p style="font-size:12px;color:var(--text2);margin-top:3px" data-en="Locked sections (gray) have no data available in the loaded CSV." data-es="Las secciones bloqueadas (gris) no tienen datos disponibles en el CSV cargado.">Locked sections (gray) have no data available in the loaded CSV.</p>
       </div>
       <div class="sel-actions">
-        <button class="btn sec" onclick="selAll(true)">✓ Todas</button>
-        <button class="btn sec" onclick="selAll(false)">✗ Ninguna</button>
+        <button class="btn sec" onclick="selAll(true)" data-en="✓ All" data-es="✓ Todas">✓ All</button>
+        <button class="btn sec" onclick="selAll(false)" data-en="✗ None" data-es="✗ Ninguna">✗ None</button>
       </div>
     </div>
 
     <!-- Parámetros del transformador -->
     <div class="params-row">
-      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);min-width:90px">Parámetros</span>
-      <div style="display:flex;align-items:center;gap:5px"><label>KVA nominal</label><input type="number" id="cfgKva" value="25" min="1" step="0.1"/></div>
-      <div style="display:flex;align-items:center;gap:5px"><label>V nominal</label><input type="number" id="cfgVnom" value="120" min="1"/><span class="unit">V</span></div>
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ub-blue);min-width:90px" data-en="Parameters" data-es="Parámetros">Parameters</span>
+      <div style="display:flex;align-items:center;gap:5px"><label data-en="Nominal KVA" data-es="KVA nominal">Nominal KVA</label><input type="number" id="cfgKva" value="25" min="1" step="0.1"/></div>
+      <div style="display:flex;align-items:center;gap:5px"><label data-en="Nominal V" data-es="V nominal">Nominal V</label><input type="number" id="cfgVnom" value="120" min="1"/><span class="unit">V</span></div>
       <div class="sep"></div>
-      <div style="display:flex;align-items:center;gap:5px"><label>Lím. sobrecarga</label><input type="number" id="cfgOverload" value="120" min="100" max="200"/><span class="unit">%</span></div>
-      <div style="display:flex;align-items:center;gap:5px"><label style="color:var(--purple);font-weight:600">Sobrecarga adic.</label><input type="number" id="cfgExtra" value="130" min="100" max="300" style="border-color:var(--purple)"/><span class="unit">%</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><label data-en="Overload lim." data-es="Lím. sobrecarga">Overload lim.</label><input type="number" id="cfgOverload" value="120" min="100" max="200"/><span class="unit">%</span></div>
+      <div style="display:flex;align-items:center;gap:5px"><label style="color:var(--purple);font-weight:700" data-en="Add. overload" data-es="Sobrecarga adic.">Add. overload</label><input type="number" id="cfgExtra" value="130" min="100" max="300" style="border-color:var(--purple)"/><span class="unit">%</span></div>
       <div class="sep"></div>
       <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:11px;color:var(--text2)">V reg.:</span>
+        <span style="font-size:11px;color:var(--text2)" data-en="V reg.:" data-es="V reg.:">V reg.:</span>
         <button class="preset-btn" id="presetGeneric" onclick="applyPreset('generic')">±5%</button>
-        <button class="preset-btn active" id="presetSVU" onclick="applyPreset('svu')">±7% SV Urb.</button>
-        <button class="preset-btn" id="presetSVR" onclick="applyPreset('svr')">±8% SV Rural</button>
-        <button class="preset-btn" id="presetCustom" onclick="applyPreset('custom')">Custom</button>
+        <button class="preset-btn active" id="presetSVU" onclick="applyPreset('svu')" data-en="±7% Urban" data-es="±7% SV Urb.">±7% Urban</button>
+        <button class="preset-btn" id="presetSVR" onclick="applyPreset('svr')" data-en="±8% Rural" data-es="±8% SV Rural">±8% Rural</button>
+        <button class="preset-btn" id="presetCustom" onclick="applyPreset('custom')" data-en="Custom" data-es="Custom">Custom</button>
       </div>
       <div style="display:flex;align-items:center;gap:5px"><label>Sup.</label><input type="number" id="cfgVhi" value="7" min="0" max="30" step="0.5" style="width:55px" oninput="applyPreset('custom')"/><span class="unit">%</span></div>
       <div style="display:flex;align-items:center;gap:5px"><label>Inf.</label><input type="number" id="cfgVlo" value="7" min="0" max="30" step="0.5" style="width:55px" oninput="applyPreset('custom')"/><span class="unit">%</span></div>
@@ -298,8 +329,8 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:.6rem;margin-top:.5rem">
-      <button class="btn sec" onclick="goStep(1)">← Cambiar CSV</button>
-      <button class="btn big" onclick="goStep(3)">Generar informe →</button>
+      <button class="btn sec" onclick="goStep(1)" data-en="← Change CSV" data-es="← Cambiar CSV">← Change CSV</button>
+      <button class="btn big" onclick="goStep(3)" data-en="Generate report →" data-es="Generar informe →">Generate report →</button>
     </div>
   </div>
 
@@ -309,16 +340,16 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
     <div class="dash-topbar">
       <div class="info-strip" id="infoStrip"></div>
       <div style="display:flex;gap:.5rem;margin-left:auto;flex-wrap:wrap">
-        <button class="btn sec" onclick="goStep(2)">← Editar secciones</button>
-        <button class="btn pdf-btn" onclick="exportPDF()">⬇ Exportar PDF</button>
-        <button class="btn del" onclick="goStep(1)">✕ Nuevo CSV</button>
+        <button class="btn sec" onclick="goStep(2)" data-en="← Edit sections" data-es="← Editar secciones">← Edit sections</button>
+        <button class="btn pdf-btn" onclick="exportPDF()" data-en="⬇ Export PDF" data-es="⬇ Exportar PDF">⬇ Export PDF</button>
+        <button class="btn del" onclick="goStep(1)" data-en="✕ New CSV" data-es="✕ Nuevo CSV">✕ New CSV</button>
       </div>
     </div>
 
     <!-- PDF cover (print only) -->
     <div class="pdf-cover" id="pdfCover">
-      <div style="font-size:17px;font-weight:700;margin-bottom:5px">Informe de Cargabilidad — Transformador</div>
-      <div id="pdfMeta" style="font-size:11px;color:#57606a;line-height:1.8"></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:5px;color:#1E2445" data-en="Transformer Load Study Report" data-es="Informe de Cargabilidad — Transformador">Transformer Load Study Report</div>
+      <div id="pdfMeta" style="font-size:11px;color:#464D63;line-height:1.8"></div>
     </div>
 
     <!-- Each section rendered here dynamically -->
@@ -335,7 +366,139 @@ header p{font-size:12px;color:var(--text2);margin-top:1px;}
 let RAW=[];          // parsed CSV rows
 let CI={};           // chart instances
 let ACTIVE_PRESET='svu';
+let LANG='en';
 const $=id=>document.getElementById(id);
+
+/* ════════════════════════════════════════
+   i18n — EN | ES TOGGLE
+════════════════════════════════════════ */
+const I18N={
+  en:{
+    // BLOCKS
+    'b.execSummary.label':'Executive Summary','b.execSummary.desc':'Auto-generated narrative: average load, hours in overload, peak/valley hour, temperature, imbalance.',
+    'b.kpis.label':'KPI Indicators','b.kpis.desc':'8 cards: average load, P10/P50/P90, maximum, hours >100%, hours >80%, continuous overload streak.',
+    'b.pctLegend.label':'P10–P90 Percentile Guide','b.pctLegend.desc':'Explanatory panel for percentile meaning and how to read the P10–P90 band.',
+    'b.chartLoad.label':'Load over time','b.chartLoad.desc':'Time series of % KVA with P10/P50/P90 lines, normative limit and additional threshold.',
+    'b.chartHourly.label':'24h hourly profile','b.chartHourly.desc':'P10/P50/P90 percentiles by hour of day. Identifies peak hours, valleys and overload risk windows.',
+    'b.chartKVA.label':'Absolute kVA over time','b.chartKVA.desc':'Apparent power in kVA to compare directly with nameplate.',
+    'b.chartDuration.label':'Load duration curve','b.chartDuration.desc':'Records sorted high to low. Shows % of time above each load level.',
+    'b.chartHist.label':'Load histogram','b.chartHist.desc':'Frequency distribution by load range with P10/P50/P90 colors.',
+    'b.overThresh.label':'Overload threshold table','b.overThresh.desc':'Records, % of time and estimated hours above 4 thresholds: 80%, 100%, normative, additional.',
+    'b.chartCurrent.label':'Current X1 / X2 / X3','b.chartCurrent.desc':'Winding current (X2 included when available). Persistent imbalance indicates asymmetric loads.',
+    'b.chartVolt.label':'Voltage with reg. limits','b.chartVolt.desc':'Voltage X1/X2/X3 with configurable regulatory bands (±5%, ±7% Urban, ±8% Rural).',
+    'b.chartFP.label':'Power factor |PF|','b.chartFP.desc':'Absolute PF X1/X2/X3 (X2 when available). Below 0.90 indicates high reactive power.',
+    'b.chartTHDI.label':'Current THD X1 / X2 / X3','b.chartTHDI.desc':'Current harmonic distortion (X2 when available). IEEE 519 limit: 5%.',
+    'b.chartTHDV.label':'Voltage THD X1 / X2 / X3','b.chartTHDV.desc':'Voltage harmonic distortion (X2 when available). Above 5% affects connected equipment.',
+    'b.chartImbal.label':'Current imbalance','b.chartImbal.desc':'% difference between X1, X2 and X3 currents (three-phase when available). Alert threshold: 10%.',
+    'b.chartVimbal.label':'Voltage imbalance','b.chartVimbal.desc':'"Voltage imbalance" column from CSV. IEC 61000 limit: 2%.',
+    'b.chartTemp.label':'Oil temperature vs load','b.chartTemp.desc':'Oil temperature vs load %. Thermal correlation: every 8–10°C above limit halves insulation life.',
+    'b.statsTable.label':'Full statistical table','b.statsTable.desc':'Min, P10, P50, P90, Max and Average of all variables with status assessment.',
+    'b.eventsTable.label':'Critical events table','b.eventsTable.desc':'Records where load exceeded the additional threshold, with date, kVA, current and temperature.',
+    'b.mapView.label':'Location map','b.mapView.desc':'Transformer position on Google Maps + data sheet with substation, feeder, phase and coordinates.',
+    // groups
+    'g.Análisis':'Analysis','g.Carga':'Load','g.Eléctrico':'Electrical','g.Calidad':'Quality','g.Condición':'Condition','g.Tablas':'Tables','g.Geoloc.':'Geoloc.',
+    // stats table header
+    'st.variable':'Variable','st.min':'Min.','st.p10':'P10','st.p50':'P50','st.p90':'P90','st.max':'Max.','st.mean':'Mean','st.status':'Status',
+    'st.ok':'Normal','st.warn':'Review','st.bad':'Overload','st.outRange':'Out of range','st.fpLow':'Low PF','st.fpVLow':'Very low PF',
+    // events table
+    'ev.title':'Critical events — records above','ev.none':'✓ No events recorded above',
+    'ev.showing':'Showing','ev.of':'of','ev.events':'events.',
+    'ev.num':'#','ev.date':'Date/Time','ev.kva':'kVA','ev.load':'Load %','ev.i1':'I X1 (A)','ev.i2':'I X2 (A)','ev.i3':'I X3 (A)','ev.temp':'Oil temp.','ev.thd':'THD X1 (%)',
+    // overload table
+    'ov.title':'Overload indicators by threshold','ov.thresh':'Threshold','ov.records':'Records','ov.pct':'% time','ov.hrs':'Est. hours','ov.status':'Status',
+    'ov.none':'No events','ov.spot':'Spot','ov.recurrent':'Recurrent',
+    'ov.chartTitle':'% of time above each threshold',
+    // exec summary
+    'ex.title':'Executive Summary',
+    // kpi labels
+    'kpi.records':'Records','kpi.avgLoad':'Avg. Load','kpi.p90':'P90 Load','kpi.maxLoad':'Max Load','kpi.p10':'P10 Load','kpi.hrs100':'Hours >100%','kpi.hrs80':'Hours >80%','kpi.streak':'Streak >100%',
+    'kpi.period':'Analysis period','kpi.pct':'% Nominal KVA','kpi.sustained':'Sustained peak','kpi.abs':'Absolute peak','kpi.base':'Base load','kpi.overest':'Est. overload','kpi.alert':'Alert zone','kpi.cont':'Continuous est.',
+    // pct legend
+    'pct.title':'What are P10, P50 and P90 percentiles?','pct.p10lbl':'P10 — usual minimum load','pct.p10txt':'10% of the time the load was below this. Represents the base demand when the grid is least stressed.',
+    'pct.p50lbl':'P50 — typical load (median)','pct.p50txt':'Half the time below and half above. The most representative reference for normal operation.',
+    'pct.p90lbl':'P90 — sustained peak','pct.p90txt':'Only 10% of the time the load exceeded this. Above 80–90% of nominal indicates frequent thermal stress.',
+    'pct.note':'The <b>P10–P90 band</b> covers <b>80% of actual time</b> and is the key reference for sizing. P90 reflects <em>sustained</em> load, not isolated spikes.',
+    // info tags
+    'tag.node':'Node','tag.tx':'Transformer','tag.kva':'KVA','tag.period':'Period','tag.records':'Records',
+    // map
+    'map.substation':'Substation','map.feeder':'Feeder','map.network':'Network','map.phase':'Phase','map.open':'Open in Google Maps ↗',
+    // sec labels
+    'sec.stats':'Statistical summary of electrical variables','sec.overload':'Overload indicators by threshold','sec.map':'Transformer location','sec.events':'Critical events — records above',
+    // chart descriptions
+    'cd.load':'Time series of % KVA with P10/P50/P90 lines, normative limit (orange) and additional threshold (purple). Values above 100% indicate overload.',
+    'cd.hourly':'Percentiles by hour of day. The shaded band is the typical P10–P90 operating range. Identifies peak hours, valleys and recurring overload risk windows.',
+    'cd.kva':'Apparent power in absolute kVA to compare with the nameplate. Red line = nominal; orange = normative limit; purple = additional threshold.',
+    'cd.duration':'Records sorted high to low. Crossing 100% to the left indicates frequent overload.',
+    'cd.hist':'Green = below P10 (valley), blue = P10–P90, red = above P90. Right-skewed histogram indicates frequent overload.',
+    'cd.imbal2':'Percentage difference between phases. Alert threshold: 10%.',
+    'cd.imbal3':'Maximum deviation of each phase from the three-phase average. Alert threshold: 10%.',
+    'cd.vimbal':'CSV column. IEC 61000 limit: 2%.',
+    'cd.temp':'Oil temperature (left axis) vs % load (right axis). Thermal correlation: every 8–10°C above limit halves insulation life.',
+  },
+  es:{
+    'b.execSummary.label':'Resumen ejecutivo','b.execSummary.desc':'Párrafo narrativo automático: carga media, horas en sobrecarga, hora punta/valle, temperatura, desequilibrio.',
+    'b.kpis.label':'Indicadores KPI','b.kpis.desc':'8 tarjetas: carga media, P10/P50/P90, máximo, horas >100%, horas >80%, racha continua en sobrecarga.',
+    'b.pctLegend.label':'Guía percentiles P10–P90','b.pctLegend.desc':'Panel explicativo de qué significa cada percentil y cómo leer la banda P10–P90.',
+    'b.chartLoad.label':'Cargabilidad en el tiempo','b.chartLoad.desc':'Serie temporal de % KVA con líneas P10/P50/P90, límite normativo y umbral adicional.',
+    'b.chartHourly.label':'Perfil horario 24h','b.chartHourly.desc':'Percentiles P10/P50/P90 por hora del día. Identifica horas punta, valles y franjas con riesgo de sobrecarga recurrente.',
+    'b.chartKVA.label':'kVA absoluto en el tiempo','b.chartKVA.desc':'Potencia aparente en kVA para comparar directamente con la placa del transformador.',
+    'b.chartDuration.label':'Curva de duración de carga','b.chartDuration.desc':'Registros ordenados de mayor a menor. Muestra el % del tiempo sobre cada nivel de carga.',
+    'b.chartHist.label':'Histograma de cargabilidad','b.chartHist.desc':'Distribución de frecuencias por rango de carga con colores P10/P50/P90.',
+    'b.overThresh.label':'Tabla umbrales sobrecarga','b.overThresh.desc':'Registros, % del tiempo y horas estimadas sobre 4 umbrales: 80%, 100%, normativo, adicional.',
+    'b.chartCurrent.label':'Corriente X1 / X2 / X3','b.chartCurrent.desc':'Corriente por bobinado (X2 incluido cuando disponible). Desequilibrio persistente indica cargas asimétricas.',
+    'b.chartVolt.label':'Voltaje con límites reg.','b.chartVolt.desc':'Tensión X1/X2/X3 con bandas regulatorias configurables (±5%, ±7% SV Urbano, ±8% SV Rural).',
+    'b.chartFP.label':'Factor de potencia |FP|','b.chartFP.desc':'FP absoluto X1/X2/X3 (X2 incluido cuando disponible). Bajo 0,90 indica alta potencia reactiva.',
+    'b.chartTHDI.label':'THD corriente X1 / X2 / X3','b.chartTHDI.desc':'Distorsión armónica de corriente (X2 incluido cuando disponible). Límite IEEE 519: 5%.',
+    'b.chartTHDV.label':'THD tensión X1 / X2 / X3','b.chartTHDV.desc':'Distorsión armónica de tensión (X2 incluido cuando disponible). Sobre 5% afecta equipos conectados.',
+    'b.chartImbal.label':'Desequilibrio de corriente','b.chartImbal.desc':'% de diferencia entre corrientes X1, X2 y X3 (trifásico cuando disponible). Umbral de alerta: 10%.',
+    'b.chartVimbal.label':'Desequilibrio de voltaje','b.chartVimbal.desc':'Columna "Desequilibrio de voltaje" del CSV. Límite IEC 61000: 2%.',
+    'b.chartTemp.label':'Temperatura aceite vs carga','b.chartTemp.desc':'Temperatura del aceite superpuesta con carga. Correlación térmica crítica para envejecimiento.',
+    'b.statsTable.label':'Tabla estadística completa','b.statsTable.desc':'Mín, P10, P50, P90, Máx y Media de todas las variables con evaluación de estado.',
+    'b.eventsTable.label':'Tabla de eventos críticos','b.eventsTable.desc':'Registros donde la carga superó el umbral adicional configurable, con fecha, kVA, corriente y temperatura.',
+    'b.mapView.label':'Mapa de ubicación','b.mapView.desc':'Posición del transformador en Google Maps + ficha con subestación, alimentador, fase y coordenadas.',
+    'g.Análisis':'Análisis','g.Carga':'Carga','g.Eléctrico':'Eléctrico','g.Calidad':'Calidad','g.Condición':'Condición','g.Tablas':'Tablas','g.Geoloc.':'Geoloc.',
+    'st.variable':'Variable','st.min':'Mín.','st.p10':'P10','st.p50':'P50','st.p90':'P90','st.max':'Máx.','st.mean':'Media','st.status':'Estado',
+    'st.ok':'Normal','st.warn':'Revisar','st.bad':'Sobrecarga','st.outRange':'Fuera rango','st.fpLow':'FP bajo','st.fpVLow':'FP muy bajo',
+    'ev.title':'Eventos críticos — registros sobre','ev.none':'✓ No se registraron eventos sobre',
+    'ev.showing':'Mostrando','ev.of':'de','ev.events':'eventos.',
+    'ev.num':'#','ev.date':'Fecha/Hora','ev.kva':'kVA','ev.load':'Carga %','ev.i1':'I X1 (A)','ev.i2':'I X2 (A)','ev.i3':'I X3 (A)','ev.temp':'Temp. aceite','ev.thd':'THD X1 (%)',
+    'ov.title':'Indicadores de sobrecarga por umbral','ov.thresh':'Umbral','ov.records':'Registros','ov.pct':'% tiempo','ov.hrs':'Horas est.','ov.status':'Estado',
+    'ov.none':'Sin eventos','ov.spot':'Puntual','ov.recurrent':'Recurrente',
+    'ov.chartTitle':'% del tiempo sobre cada umbral',
+    'ex.title':'Resumen ejecutivo',
+    'kpi.records':'Registros','kpi.avgLoad':'Carga media','kpi.p90':'P90 carga','kpi.maxLoad':'Carga máx.','kpi.p10':'P10 carga','kpi.hrs100':'Horas >100%','kpi.hrs80':'Horas >80%','kpi.streak':'Racha >100%',
+    'kpi.period':'Período analizado','kpi.pct':'% KVA nominal','kpi.sustained':'Pico sostenido','kpi.abs':'Pico absoluto','kpi.base':'Carga base','kpi.overest':'Sobrecarga est.','kpi.alert':'Zona alerta','kpi.cont':'Continua est.',
+    'pct.title':'¿Qué son los percentiles P10, P50 y P90?','pct.p10lbl':'P10 — carga mínima habitual','pct.p10txt':'El 10% del tiempo la carga estuvo por debajo. Representa la demanda base cuando la red está menos exigida.',
+    'pct.p50lbl':'P50 — carga típica (mediana)','pct.p50txt':'Mitad del tiempo por debajo y mitad por encima. Referencia más representativa de operación normal.',
+    'pct.p90lbl':'P90 — pico sostenido','pct.p90txt':'Solo el 10% del tiempo la carga superó este valor. Sobre el 80–90% del nominal indica estrés térmico frecuente.',
+    'pct.note':'La <b>banda P10–P90</b> concentra el <b>80% del tiempo real</b> y es la referencia clave para dimensionamiento. El P90 refleja carga <em>sostenida</em>, no picos aislados.',
+    'tag.node':'Nodo','tag.tx':'Transformador','tag.kva':'KVA','tag.period':'Período','tag.records':'Registros',
+    'map.substation':'Subestación','map.feeder':'Alimentador','map.network':'Red','map.phase':'Fase','map.open':'Abrir en Google Maps ↗',
+    'sec.stats':'Resumen estadístico de variables eléctricas','sec.overload':'Indicadores de sobrecarga por umbral','sec.map':'Ubicación del transformador','sec.events':'Eventos críticos — registros sobre',
+    'cd.load':'Serie temporal de % KVA con líneas P10/P50/P90, límite normativo (naranja) y umbral adicional (púrpura). Valores sobre el 100% indican sobrecarga.',
+    'cd.hourly':'Percentiles por hora del día. La banda sombreada es el rango típico de operación P10–P90. Identifica horas punta, valles y franjas con riesgo de sobrecarga recurrente.',
+    'cd.kva':'Potencia aparente en kVA absolutos para comparar con la placa. La línea roja es el nominal; naranja = lím. normativo; púrpura = umbral adicional.',
+    'cd.duration':'Registros ordenados de mayor a menor. Cruzar el 100% hacia la izquierda indica sobrecarga frecuente.',
+    'cd.hist':'Verde = bajo P10 (valle), azul = P10–P90, rojo = sobre P90. Histograma sesgado a la derecha indica sobrecarga frecuente.',
+    'cd.imbal2':'Diferencia porcentual entre fases. Umbral de alerta: 10%.',
+    'cd.imbal3':'Desviación máxima de cada fase respecto al promedio de las tres. Umbral de alerta: 10%.',
+    'cd.vimbal':'Columna del CSV. Límite IEC 61000: 2%.',
+    'cd.temp':'Temperatura del aceite (eje izq.) vs % carga (eje der.). Correlación térmica: cada 8–10°C sobre el límite reduce la vida útil del aislamiento a la mitad.',
+  }
+};
+function t(key){return (I18N[LANG]&&I18N[LANG][key])||I18N['en'][key]||key;}
+function setLang(lang){
+  LANG=lang;
+  $('btnEN').classList.toggle('active',lang==='en');
+  $('btnES').classList.toggle('active',lang==='es');
+  // Update all static data-en/data-es elements
+  document.querySelectorAll('[data-en]').forEach(el=>{
+    el.textContent=el.dataset[lang]||el.dataset.en;
+  });
+  $('h1Title').textContent=lang==='en'?'Transformer Load Study':'Estudio de Cargabilidad — Transformador';
+  // Rebuild selector if data loaded
+  if(RAW.length)buildSelector(RAW);
+}
 
 /* ════════════════════════════════════════
    MATH / DATA HELPERS
@@ -365,9 +528,11 @@ function maxStreak(arr,thr){let best=0,cur=0;arr.forEach(v=>{if(v>thr){cur++;bes
 function dChart(id){if(CI[id]){CI[id].destroy();delete CI[id];}}
 function mk(id,cfg){dChart(id);CI[id]=new Chart($(id),cfg);}
 
-const GR={color:'rgba(200,210,220,0.5)'};
-const TK={color:'#8c959f',font:{size:10}};
-const TT={backgroundColor:'#fff',borderColor:'#d0d7de',borderWidth:1,titleColor:'#1f2328',bodyColor:'#57606a'};
+const GR={color:'rgba(153,160,180,0.25)'};
+const TK={color:'#99A0B4',font:{size:10}};
+const TT={backgroundColor:'#fff',borderColor:'#99A0B4',borderWidth:1,titleColor:'#1E2445',bodyColor:'#464D63'};
+/* Ubicquia chart colors */
+const UC={blue:'#22B0E1',dark:'#1E2445',deep:'#464D63',gray:'#99A0B4',green:'#4EB270',orange:'#EA561B',yellow:'#FAB512',purple:'#59509D',danger:'#D32F2F',royal:'#3466AF'};
 
 /* ════════════════════════════════════════
    VOLTAGE PRESET
@@ -388,30 +553,29 @@ function updateVBadge(){
 }
 
 /* ════════════════════════════════════════
-   BLOCK DEFINITIONS
-   Each block has: id, label, icon, desc, cols (required CSV cols), group
+   BLOCK DEFINITIONS — labels/descs via i18n
 ════════════════════════════════════════ */
 const BLOCKS=[
-  {id:'execSummary',  label:'Resumen ejecutivo',        icon:'📋', group:'Análisis',   desc:'Párrafo narrativo automático: carga media, horas en sobrecarga, hora punta/valle, temperatura, desequilibrio.',cols:['kva']},
-  {id:'kpis',         label:'Indicadores KPI',           icon:'🔢', group:'Análisis',   desc:'8 tarjetas: carga media, P10/P50/P90, máximo, horas >100%, horas >80%, racha continua en sobrecarga.',cols:['kva']},
-  {id:'pctLegend',    label:'Guía percentiles P10–P90',  icon:'📖', group:'Análisis',   desc:'Panel explicativo de qué significa cada percentil y cómo leer la banda P10–P90.',cols:[]},
-  {id:'chartLoad',    label:'Cargabilidad en el tiempo', icon:'📈', group:'Carga',      desc:'Serie temporal de % KVA con líneas P10/P50/P90, límite normativo y umbral adicional.',cols:['kva']},
-  {id:'chartHourly',  label:'Perfil horario 24h',        icon:'🕐', group:'Carga',      desc:'Percentiles P10/P50/P90 por hora del día. Identifica horas punta y valles.',cols:['kva']},
-  {id:'chartKVA',     label:'kVA absoluto en el tiempo', icon:'⚡', group:'Carga',      desc:'Potencia aparente en kVA para comparar directamente con la placa del transformador.',cols:['kva']},
-  {id:'chartDuration',label:'Curva de duración de carga',icon:'📉', group:'Carga',      desc:'Registros ordenados de mayor a menor. Muestra el % del tiempo sobre cada nivel de carga.',cols:['kva']},
-  {id:'chartHist',    label:'Histograma de cargabilidad',icon:'📊', group:'Carga',      desc:'Distribución de frecuencias por rango de carga con colores P10/P50/P90.',cols:['kva']},
-  {id:'overThresh',   label:'Tabla umbrales sobrecarga', icon:'⚠️', group:'Carga',      desc:'Registros, % del tiempo y horas estimadas sobre 4 umbrales: 80%, 100%, normativo, adicional.',cols:['kva']},
-  {id:'chartCurrent', label:'Corriente X1 vs X3',        icon:'〰', group:'Eléctrico',  desc:'Corriente por bobinado. Desequilibrio persistente indica cargas asimétricas.',cols:['Corriente X1','Corriente X3']},
-  {id:'chartVolt',    label:'Voltaje con límites reg.',   icon:'🔋', group:'Eléctrico',  desc:'Tensión X1/X3 con bandas regulatorias configurables (±5%, ±7% SV Urbano, ±8% SV Rural).',cols:['X1 Voltaje','X3 Voltaje']},
-  {id:'chartFP',      label:'Factor de potencia |FP|',   icon:'🔄', group:'Eléctrico',  desc:'FP absoluto X1/X3. Bajo 0,90 indica alta potencia reactiva.',cols:['X1 FP','X3 FP']},
-  {id:'chartTHDI',    label:'THD corriente X1 vs X3',    icon:'〰', group:'Calidad',    desc:'Distorsión armónica de corriente. Límite IEEE 519: 5%.',cols:['Corriente X1 THD','Corriente X3 THD']},
-  {id:'chartTHDV',    label:'THD tensión X1 vs X3',      icon:'🔌', group:'Calidad',    desc:'Distorsión armónica de tensión. Sobre 5% afecta equipos conectados y puede generar resonancias.',cols:['Tensión X1 THD','Tensión X3 THD']},
-  {id:'chartImbal',   label:'Desequilibrio de corriente',icon:'⚖️', group:'Calidad',    desc:'% de diferencia entre corrientes X1 y X3. Umbral de alerta: 10%.',cols:['Corriente X1','Corriente X3']},
-  {id:'chartVimbal',  label:'Desequilibrio de voltaje',  icon:'📡', group:'Calidad',    desc:'Columna "Desequilibrio de voltaje" del CSV. Límite IEC 61000: 2%.',cols:['Desequilibrio de voltaje']},
-  {id:'chartTemp',    label:'Temperatura aceite vs carga',icon:'🌡', group:'Condición', desc:'Temperatura del aceite superpuesta con carga. Correlación térmica crítica para envejecimiento.',cols:['Temperatura del Aceite']},
-  {id:'statsTable',   label:'Tabla estadística completa',icon:'📋', group:'Tablas',     desc:'Mín, P10, P50, P90, Máx y Media de todas las variables con evaluación de estado.',cols:['kva']},
-  {id:'eventsTable',  label:'Tabla de eventos críticos', icon:'🚨', group:'Tablas',     desc:'Registros donde la carga superó el umbral adicional configurable, con fecha, kVA, corriente y temperatura.',cols:['kva']},
-  {id:'mapView',      label:'Mapa de ubicación',         icon:'🗺', group:'Geoloc.',    desc:'Posición del transformador en Google Maps + ficha con subestación, alimentador, fase y coordenadas.',cols:['Latitud','Longitud']},
+  {id:'execSummary',  icon:'📋', group:'Análisis',   cols:['kva']},
+  {id:'kpis',         icon:'🔢', group:'Análisis',   cols:['kva']},
+  {id:'pctLegend',    icon:'📖', group:'Análisis',   cols:[]},
+  {id:'chartLoad',    icon:'📈', group:'Carga',      cols:['kva']},
+  {id:'chartHourly',  icon:'🕐', group:'Carga',      cols:['kva']},
+  {id:'chartKVA',     icon:'⚡', group:'Carga',      cols:['kva']},
+  {id:'chartDuration',icon:'📉', group:'Carga',      cols:['kva']},
+  {id:'chartHist',    icon:'📊', group:'Carga',      cols:['kva']},
+  {id:'overThresh',   icon:'⚠️', group:'Carga',      cols:['kva']},
+  {id:'chartCurrent', icon:'〰', group:'Eléctrico',  cols:['Corriente X1','Corriente X3']},
+  {id:'chartVolt',    icon:'🔋', group:'Eléctrico',  cols:['X1 Voltaje','X3 Voltaje']},
+  {id:'chartFP',      icon:'🔄', group:'Eléctrico',  cols:['X1 FP','X3 FP']},
+  {id:'chartTHDI',    icon:'〰', group:'Calidad',    cols:['Corriente X1 THD','Corriente X3 THD']},
+  {id:'chartTHDV',    icon:'🔌', group:'Calidad',    cols:['Tensión X1 THD','Tensión X3 THD']},
+  {id:'chartImbal',   icon:'⚖️', group:'Calidad',    cols:['Corriente X1','Corriente X3']},
+  {id:'chartVimbal',  icon:'📡', group:'Calidad',    cols:['Desequilibrio de voltaje']},
+  {id:'chartTemp',    icon:'🌡', group:'Condición',  cols:['Temperatura del Aceite']},
+  {id:'statsTable',   icon:'📋', group:'Tablas',     cols:['kva']},
+  {id:'eventsTable',  icon:'🚨', group:'Tablas',     cols:['kva']},
+  {id:'mapView',      icon:'🗺', group:'Geoloc.',    cols:['Latitud','Longitud']},
 ];
 
 /* ════════════════════════════════════════
@@ -436,7 +600,7 @@ function loadFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
     const data=Papa.parse(e.target.result,{header:true,skipEmptyLines:true,dynamicTyping:true}).data;
-    if(!data.length){alert('CSV vacío o formato no reconocido.');return;}
+    if(!data.length){alert(LANG==='es'?'CSV vacío o formato no reconocido.':'Empty CSV or unrecognized format.');return;}
     RAW=data;
 
     // Auto-detect KVA nominal
@@ -448,7 +612,10 @@ function loadFile(file){
     if(vNomKey){const vN=parseFloat(data[0][vNomKey]);if(!isNaN(vN)&&vN>0){$('cfgVnom').value=vN;}}
     updateVBadge();
 
-    $('headerSub').textContent=`${file.name} · ${data.length.toLocaleString('es-CO')} registros`;
+    const recLabel=LANG==='es'?'registros':'records';
+    $('headerSub').textContent=`${file.name} · ${data.length.toLocaleString()} ${recLabel}`;
+    $('headerSub').dataset.en=`${file.name} · ${data.length.toLocaleString()} records`;
+    $('headerSub').dataset.es=`${file.name} · ${data.length.toLocaleString('es-CO')} registros`;
     buildSelector(data);
     goStep(2);
   };
@@ -479,9 +646,11 @@ function buildSelector(data){
       const div=document.createElement('div');
       div.className='sb-group';
       div.style.gridColumn='1/-1';
-      div.textContent=b.group;
+      div.textContent=t('g.'+b.group);
       grid.appendChild(div);
     }
+    const label=t('b.'+b.id+'.label');
+    const desc=t('b.'+b.id+'.desc');
     const div=document.createElement('div');
     div.className='sel-block'+(avail?' sel-on':' unavail');
     div.dataset.id=b.id;
@@ -489,10 +658,10 @@ function buildSelector(data){
       <div class="sb-top">
         <div class="sb-check"></div>
         <span class="sb-icon">${b.icon}</span>
-        <span class="sb-label">${b.label}</span>
+        <span class="sb-label">${label}</span>
       </div>
-      <div class="sb-desc">${b.desc}</div>
-      ${b.cols.length?`<div class="sb-cols">Requiere: ${b.cols.join(' · ')}</div>`:''}`;
+      <div class="sb-desc">${desc}</div>
+      ${b.cols.length?`<div class="sb-cols">${LANG==='es'?'Requiere':'Requires'}: ${b.cols.join(' · ')}</div>`:''}`;
     if(avail)div.addEventListener('click',()=>div.classList.toggle('sel-on'));
     grid.appendChild(div);
   });
@@ -529,16 +698,19 @@ function buildDashboard(){
     const a=colFull(data,name);
     if(a&&a.filter(v=>v!=null&&v>0).length>a.length*.5){kvaFull=a;break;}
   }
-  const fp1F=colFull(data,'X1 FP'),fp2F=colFull(data,'X3 FP');
+  const fp1F=colFull(data,'X1 FP'),fp2F=colFull(data,'X2 FP')||null,fp3F=colFull(data,'X3 FP');
   const fp1A=fp1F?fp1F.map(v=>v!=null?Math.abs(v):null):null;
   const fp2A=fp2F?fp2F.map(v=>v!=null?Math.abs(v):null):null;
+  const fp3A=fp3F?fp3F.map(v=>v!=null?Math.abs(v):null):null;
   const kw1F=colFull(data,'Potencia X1 (kW)'),kw2F=colFull(data,'Potencia X3 (kW)');
   if(!kvaFull){
-    if(kw1F&&fp1A&&kw2F&&fp2A){
-      kvaFull=kw1F.map((v,i)=>{if(v==null)return null;const f1=fp1A[i],f2=fp2A[i];return(f1&&f1>.01?Math.abs(v)/f1:0)+(f2&&f2>.01?Math.abs(kw2F[i])/f2:0);});
+    if(kw1F&&fp1A&&kw2F&&(fp3A||fp2A)){
+      const fpEnd=fp3A||fp2A;
+      const kwEnd=kw2F;
+      kvaFull=kw1F.map((v,i)=>{if(v==null)return null;const f1=fp1A[i],f2=fpEnd[i];return(f1&&f1>.01?Math.abs(v)/f1:0)+(f2&&f2>.01?Math.abs(kwEnd[i])/f2:0);});
     }else{
-      const i1c=col(data,'Corriente X1'),i2c=col(data,'Corriente X3');
-      if(i1c)kvaFull=i1c.map((v,i)=>((v+(i2c?i2c[i]:0))*vNom)/1000);
+      const i1c=col(data,'Corriente X1'),i3c=col(data,'Corriente X3');
+      if(i1c)kvaFull=i1c.map((v,i)=>((v+(i3c?i3c[i]:0))*vNom)/1000);
     }
   }
 
@@ -562,10 +734,10 @@ function buildDashboard(){
   const loadSub=subIdx.map(i=>{const v=loadFull[i];return v!=null?r2(v):null;});
   const N=lbl.length;
 
-  const i1Raw=col(data,'Corriente X1'),i2Raw=col(data,'Corriente X3');
-  const v1Raw=col(data,'X1 Voltaje'),v2Raw=col(data,'X3 Voltaje');
-  const thd1=col(data,'Corriente X1 THD'),thd2=col(data,'Corriente X3 THD');
-  const thdV1=col(data,'Tensión X1 THD'),thdV2=col(data,'Tensión X3 THD');
+  const i1Raw=col(data,'Corriente X1'),i2Raw=col(data,'Corriente X2')||null,i3Raw=col(data,'Corriente X3');
+  const v1Raw=col(data,'X1 Voltaje'),v2Raw=col(data,'X2 Voltaje')||null,v3Raw=col(data,'X3 Voltaje');
+  const thd1=col(data,'Corriente X1 THD'),thd2=col(data,'Corriente X2 THD')||null,thd3=col(data,'Corriente X3 THD');
+  const thdV1=col(data,'Tensión X1 THD'),thdV2=col(data,'Tensión X2 THD')||null,thdV3=col(data,'Tensión X3 THD');
   const tempFull=colFull(data,'Temperatura del Aceite');
   const vimbalFull=colFull(data,'Desequilibrio de voltaje');
   const tempArr=tempFull?tempFull.filter(v=>v!=null&&v>-30):null;
@@ -592,15 +764,16 @@ function buildDashboard(){
   // Info strip
   const tsList=ts.filter(t=>t instanceof Date);
   const fDate=tsList[0],lDate=tsList[tsList.length-1];
-  const period=fDate&&lDate?fDate.toLocaleDateString('es-CO')+' – '+lDate.toLocaleDateString('es-CO'):data.length+' registros';
+  const locStr=LANG==='es'?'es-CO':'en-US';
+  const period=fDate&&lDate?fDate.toLocaleDateString(locStr)+' – '+lDate.toLocaleDateString(locStr):data.length+' '+t('tag.records');
   const nodo=data[0]['Nombre del nodo']||data[0]['ID de nodo']||'—';
   const idTx=data[0]['Identificación del Transformador']||data[0]['Número de serie']||'—';
   $('infoStrip').innerHTML=[
-    `<div class="tag">Nodo: <span>${nodo}</span></div>`,
-    `<div class="tag">Transformador: <span>${idTx}</span></div>`,
-    `<div class="tag">KVA: <span>${kvaNom} kVA</span></div>`,
-    `<div class="tag">Período: <span>${period}</span></div>`,
-    `<div class="tag">Registros: <span>${data.length.toLocaleString('es-CO')}</span></div>`,
+    `<div class="tag">${t('tag.node')}: <span>${nodo}</span></div>`,
+    `<div class="tag">${t('tag.tx')}: <span>${idTx}</span></div>`,
+    `<div class="tag">${t('tag.kva')}: <span>${kvaNom} kVA</span></div>`,
+    `<div class="tag">${t('tag.period')}: <span>${period}</span></div>`,
+    `<div class="tag">${t('tag.records')}: <span>${data.length.toLocaleString(locStr)}</span></div>`,
   ].join('');
 
   // ── Build HTML content ──
@@ -611,7 +784,6 @@ function buildDashboard(){
   function openGrid(){content.insertAdjacentHTML('beforeend','<div class="dash-grid">');}
   function closeGrid(){const g=content.querySelector('.dash-grid:last-of-type');if(g){/* already open */}}
   function addFullCard(html){
-    // flush any open grid first by wrapping in a full-width element
     content.insertAdjacentHTML('beforeend',`<div class="dash-grid" style="margin-bottom:1.1rem"><div class="card full">${html}</div></div>`);
   }
   function addHalfCards(html1,html2){
@@ -632,7 +804,6 @@ function buildDashboard(){
   function flushQueue(){
     if(!cardQueue.length)return;
     if(cardQueue.length===1){
-      // single card: render full width
       addFullCard(cardQueue[0]);
     }else{
       content.insertAdjacentHTML('beforeend',`<div class="dash-grid" style="margin-bottom:1.1rem"><div class="card">${cardQueue[0]}</div><div class="card">${cardQueue[1]}</div></div>`);
@@ -643,13 +814,16 @@ function buildDashboard(){
   // ── EXEC SUMMARY ──
   if(sel.has('execSummary')){
     const p90Class=p90>100?'hi':p90>80?'warn':'ok';
-    const execHtml=`<div class="exec-summary"><div class="exec-title">Resumen ejecutivo</div><div class="exec-body">
-      El transformador operó con carga media de <span class="inf">${r1(meanL)}%</span> del KVA nominal
-      (P10: <span class="ok">${r1(p10)}%</span> · P50: <span class="inf">${r1(p50)}%</span> · P90: <span class="${p90Class}">${r1(p90)}%</span> · Máx: <span class="hi">${r1(maxL)}%</span>).
-      <br><br>
-      La <b>hora punta</b> (mayor carga P50 horaria) es las <span class="hi">${String(peakHr).padStart(2,'0')}:00 h</span> con P50 = <span class="hi">${r1(peakV)}%</span>.
-      El <b>valle mínimo</b> se ubica a las <span class="ok">${String(valHr).padStart(2,'0')}:00 h</span> con P50 = <span class="ok">${r1(valV)}%</span>.
-    </div></div>`;
+    const execBody=LANG==='es'
+      ?`El transformador operó con carga media de <span class="inf">${r1(meanL)}%</span> del KVA nominal
+        (P10: <span class="ok">${r1(p10)}%</span> · P50: <span class="inf">${r1(p50)}%</span> · P90: <span class="${p90Class}">${r1(p90)}%</span> · Máx: <span class="hi">${r1(maxL)}%</span>).
+        <br><br>La <b>hora punta</b> (mayor carga P50 horaria) es las <span class="hi">${String(peakHr).padStart(2,'0')}:00 h</span> con P50 = <span class="hi">${r1(peakV)}%</span>.
+        El <b>valle mínimo</b> se ubica a las <span class="ok">${String(valHr).padStart(2,'0')}:00 h</span> con P50 = <span class="ok">${r1(valV)}%</span>.`
+      :`Transformer operated with average load of <span class="inf">${r1(meanL)}%</span> of nominal KVA
+        (P10: <span class="ok">${r1(p10)}%</span> · P50: <span class="inf">${r1(p50)}%</span> · P90: <span class="${p90Class}">${r1(p90)}%</span> · Max: <span class="hi">${r1(maxL)}%</span>).
+        <br><br>The <b>peak hour</b> (highest hourly P50 load) is at <span class="hi">${String(peakHr).padStart(2,'0')}:00 h</span> with P50 = <span class="hi">${r1(peakV)}%</span>.
+        The <b>minimum valley</b> is at <span class="ok">${String(valHr).padStart(2,'0')}:00 h</span> with P50 = <span class="ok">${r1(valV)}%</span>.`;
+    const execHtml=`<div class="exec-summary"><div class="exec-title">${t('ex.title')}</div><div class="exec-body">${execBody}</div></div>`;
     content.insertAdjacentHTML('beforeend',execHtml);
   }
 
@@ -657,14 +831,14 @@ function buildDashboard(){
   if(sel.has('kpis')){
     const kpiStatus=(v,thr1,thr2)=>v<thr1?'ok':v<thr2?'warn':'bad';
     const kpis=[
-      {l:'Registros',v:data.length.toLocaleString('es-CO'),s:'Período analizado',cls:'info'},
-      {l:'Carga media',v:r1(meanL)+'%',s:'% KVA nominal',cls:kpiStatus(meanL,80,100)},
-      {l:'P90 carga',v:r1(p90)+'%',s:'Pico sostenido',cls:kpiStatus(p90,80,100)},
-      {l:'Carga máx.',v:r1(maxL)+'%',s:'Pico absoluto',cls:kpiStatus(maxL,overLim,overLim+1)},
-      {l:'P10 carga',v:r1(p10)+'%',s:'Carga base',cls:'ok'},
-      {l:'Horas >100%',v:r1(over100*2/60)+' h',s:'Sobrecarga est.',cls:over100===0?'ok':over100<loadPct.length*.05?'warn':'bad'},
-      {l:'Horas >80%',v:r1(over80*2/60)+' h',s:'Zona alerta',cls:over80/loadPct.length<.2?'ok':'ora'},
-      {l:'Racha >100%',v:(streak*2)+' min',s:'Continua est.',cls:streak===0?'ok':streak<30?'warn':'bad'},
+      {l:t('kpi.records'),v:data.length.toLocaleString(locStr),s:t('kpi.period'),cls:'info'},
+      {l:t('kpi.avgLoad'),v:r1(meanL)+'%',s:t('kpi.pct'),cls:kpiStatus(meanL,80,100)},
+      {l:t('kpi.p90'),v:r1(p90)+'%',s:t('kpi.sustained'),cls:kpiStatus(p90,80,100)},
+      {l:t('kpi.maxLoad'),v:r1(maxL)+'%',s:t('kpi.abs'),cls:kpiStatus(maxL,overLim,overLim+1)},
+      {l:t('kpi.p10'),v:r1(p10)+'%',s:t('kpi.base'),cls:'ok'},
+      {l:t('kpi.hrs100'),v:r1(over100*2/60)+' h',s:t('kpi.overest'),cls:over100===0?'ok':over100<loadPct.length*.05?'warn':'bad'},
+      {l:t('kpi.hrs80'),v:r1(over80*2/60)+' h',s:t('kpi.alert'),cls:over80/loadPct.length<.2?'ok':'ora'},
+      {l:t('kpi.streak'),v:(streak*2)+' min',s:t('kpi.cont'),cls:streak===0?'ok':streak<30?'warn':'bad'},
     ];
     const kpiHtml=`<div class="kpi-grid" style="margin-bottom:1.25rem">${kpis.map(k=>`<div class="kpi ${k.cls}"><div class="kl">${k.l}</div><div class="kv">${k.v}</div><div class="ks">${k.s}</div></div>`).join('')}</div>`;
     content.insertAdjacentHTML('beforeend',kpiHtml);
@@ -672,21 +846,24 @@ function buildDashboard(){
 
   // ── P10-P90 LEGEND ──
   if(sel.has('pctLegend')){
+    const bandLabel=LANG==='es'?'Banda P10–P90':'P10–P90 Band';
+    const normLabel=LANG==='es'?'Lím. normativo':'Norm. limit';
+    const addLabel=LANG==='es'?'Sobrecarga adicional':'Add. overload';
     content.insertAdjacentHTML('beforeend',`<div class="pct-legend" style="margin-bottom:1.25rem">
-      <div class="pct-title">¿Qué son los percentiles P10, P50 y P90?</div>
+      <div class="pct-title">${t('pct.title')}</div>
       <div class="pct-3col">
-        <div class="pct-box p10"><div class="pbl">P10 — carga mínima habitual</div><div class="pbb">El 10% del tiempo la carga estuvo por debajo. Representa la demanda base cuando la red está menos exigida.</div></div>
-        <div class="pct-box p50"><div class="pbl">P50 — carga típica (mediana)</div><div class="pbb">Mitad del tiempo por debajo y mitad por encima. Referencia más representativa de operación normal.</div></div>
-        <div class="pct-box p90"><div class="pbl">P90 — pico sostenido</div><div class="pbb">Solo el 10% del tiempo la carga superó este valor. Sobre el 80–90% del nominal indica estrés térmico frecuente.</div></div>
+        <div class="pct-box p10"><div class="pbl">${t('pct.p10lbl')}</div><div class="pbb">${t('pct.p10txt')}</div></div>
+        <div class="pct-box p50"><div class="pbl">${t('pct.p50lbl')}</div><div class="pbb">${t('pct.p50txt')}</div></div>
+        <div class="pct-box p90"><div class="pbl">${t('pct.p90lbl')}</div><div class="pbb">${t('pct.p90txt')}</div></div>
       </div>
-      <div class="pct-note">La <b>banda P10–P90</b> concentra el <b>80% del tiempo real</b> y es la referencia clave para dimensionamiento. El P90 refleja carga <em>sostenida</em>, no picos aislados.</div>
+      <div class="pct-note">${t('pct.note')}</div>
       <div class="pct-pills">
-        <div class="pct-pill"><div class="pct-dot" style="background:#1a7f37"></div>P10</div>
-        <div class="pct-pill"><div class="pct-dot" style="background:#0969da"></div>P50</div>
-        <div class="pct-pill"><div class="pct-dot" style="background:#cf222e"></div>P90</div>
-        <div class="pct-pill"><div class="pct-dot" style="background:rgba(9,105,218,.15);width:28px;height:8px;border-radius:2px"></div>Banda P10–P90</div>
-        <div class="pct-pill"><div class="pct-dot" style="background:#e36209"></div>Lím. normativo</div>
-        <div class="pct-pill"><div class="pct-dot" style="background:#6639ba"></div>Sobrecarga adicional</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:#4EB270"></div>P10</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:#22B0E1"></div>P50</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:#EA561B"></div>P90</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:rgba(34,176,225,.18);width:28px;height:8px;border-radius:2px"></div>${bandLabel}</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:#EA561B"></div>${normLabel}</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:#59509D"></div>${addLabel}</div>
       </div>
     </div>`);
   }
@@ -696,65 +873,82 @@ function buildDashboard(){
     return `<div class="ct">${title}</div><div class="cd">${desc}</div><div class="cw" style="height:${h||190}px"><canvas id="${canvasId}"></canvas></div>`;
   }
 
+  const presetLabel=ACTIVE_PRESET==='generic'?'±5%':ACTIVE_PRESET==='svu'?(LANG==='es'?'SV Urbano':'Urban'):ACTIVE_PRESET==='svr'?(LANG==='es'?'SV Rural':'Rural'):(LANG==='es'?'Personalizado':'Custom');
+
   // ── CHART: Cargabilidad ──
   if(sel.has('chartLoad')){
-    queueCard(chartBody('chartLoad','Cargabilidad en el tiempo — % KVA nominal',
-      'Serie temporal de % KVA con líneas P10/P50/P90, límite normativo (naranja) y umbral adicional (púrpura). Valores sobre el 100% indican sobrecarga.',240),true);
+    const loadT=LANG==='es'?'Cargabilidad en el tiempo — % KVA nominal':'Load over time — % Nominal KVA';
+    queueCard(chartBody('chartLoad',loadT,t('cd.load'),240),true);
   }
 
   // ── CHART: Horario ──
   if(sel.has('chartHourly')){
-    queueCard(chartBody('chartHourly','Perfil horario P10 / P50 / P90 — 24 horas',
-      'Percentiles por hora del día. La banda sombreada es el rango típico de operación P10–P90. Identifica horas punta, valles y franjas con riesgo de sobrecarga recurrente.',240),true);
+    const hourT=LANG==='es'?'Perfil horario P10 / P50 / P90 — 24 horas':'Hourly P10 / P50 / P90 profile — 24 hours';
+    queueCard(chartBody('chartHourly',hourT,t('cd.hourly'),240),true);
   }
 
   // ── CHART: kVA absoluto ──
   if(sel.has('chartKVA')){
-    queueCard(chartBody('chartKVA','kVA de operación en el tiempo',
-      'Potencia aparente en kVA absolutos para comparar con la placa. La línea roja es el nominal; naranja = lím. normativo; púrpura = umbral adicional.',200),true);
+    const kvaT=LANG==='es'?'kVA de operación en el tiempo':'Operating kVA over time';
+    queueCard(chartBody('chartKVA',kvaT,t('cd.kva'),200),true);
   }
 
-  // ── Half-width charts: corriente + voltaje ──
-  if(sel.has('chartCurrent'))queueCard(chartBody('chartCurrent','Corriente X1 vs X3 (A)','Desequilibrio persistente indica cargas asimétricas. Valores altos con caída de voltaje señalan operación cerca del límite térmico.'));
-  if(sel.has('chartVolt'))queueCard(chartBody('chartVolt','Voltaje X1 vs X3 — límites regulatorios',`Tensión secundaria con bandas ±${pHi}%/±${pLo}% (${ACTIVE_PRESET==='generic'?'Genérico':ACTIVE_PRESET==='svu'?'SV Urbano':ACTIVE_PRESET==='svr'?'SV Rural':'Personalizado'}). Caídas sostenidas indican regulación al límite.`));
-  if(sel.has('chartDuration'))queueCard(chartBody('chartDuration','Curva de duración de carga','Registros ordenados de mayor a menor. Cruzar el 100% hacia la izquierda indica sobrecarga frecuente.'));
-  if(sel.has('chartHist'))queueCard(chartBody('chartHist','Histograma de cargabilidad','Verde = bajo P10 (valle), azul = P10–P90, rojo = sobre P90. Histograma sesgado a la derecha indica sobrecarga frecuente.'));
-  if(sel.has('chartFP'))queueCard(chartBody('chartFP','Factor de potencia |FP| X1 vs X3','FP absoluto. Bajo 0,90 indica alta potencia reactiva que reduce la capacidad útil. Línea naranja = umbral 0,90.'));
-  if(sel.has('chartTHDI'))queueCard(chartBody('chartTHDI','THD de corriente X1 vs X3 (%)','Distorsión armónica de corriente. Límite IEEE 519: 5%. Sobre ese valor indica armónicos que aumentan pérdidas.'));
-  if(sel.has('chartTHDV'))queueCard(chartBody('chartTHDV','THD de tensión X1 vs X3 (%)','Distorsión armónica de tensión. Sobre el 5% puede causar calentamiento en equipos y resonancias en bancos de capacitores.'));
-  if(sel.has('chartImbal'))queueCard(chartBody('chartImbal','Desequilibrio de corriente X1 vs X3 (%)','Diferencia porcentual entre fases. Umbral de alerta: 10%.'));
-  if(sel.has('chartVimbal'))queueCard(chartBody('chartVimbal','Desequilibrio de voltaje (%)','Columna del CSV. Límite IEC 61000: 2%.'));
-  if(sel.has('chartTemp'))queueCard(chartBody('chartTemp','Temperatura del aceite vs cargabilidad',
-    'Temperatura del aceite (eje izq.) vs % carga (eje der.). Correlación térmica: cada 8–10°C sobre el límite reduce la vida útil del aislamiento a la mitad.',220),true);
+  // ── Half-width charts ──
+  const currT=i2Raw?(LANG==='es'?'Corriente X1 / X2 / X3 (A) — trifásico':'Current X1 / X2 / X3 (A) — three-phase'):(LANG==='es'?'Corriente X1 vs X3 (A)':'Current X1 vs X3 (A)');
+  const voltT=v2Raw?(LANG==='es'?'Voltaje X1 / X2 / X3 — límites regulatorios':'Voltage X1 / X2 / X3 — regulatory limits'):(LANG==='es'?'Voltaje X1 vs X3 — límites regulatorios':'Voltage X1 vs X3 — regulatory limits');
+  const voltDesc=LANG==='es'?`Tensión secundaria con bandas ±${pHi}%/±${pLo}% (${presetLabel}). Caídas sostenidas indican regulación al límite.`:`Secondary voltage with ±${pHi}%/±${pLo}% bands (${presetLabel}). Sustained drops indicate near-limit regulation.`;
+  const durT=LANG==='es'?'Curva de duración de carga':'Load duration curve';
+  const histT=LANG==='es'?'Histograma de cargabilidad':'Load histogram';
+  const fpT=fp2A?(LANG==='es'?'Factor de potencia |FP| X1 / X2 / X3':'Power factor |PF| X1 / X2 / X3'):(LANG==='es'?'Factor de potencia |FP| X1 vs X3':'Power factor |PF| X1 vs X3');
+  const fpDesc=LANG==='es'?'FP absoluto. Bajo 0,90 indica alta potencia reactiva. Línea de umbral: 0,90.':'Absolute PF. Below 0.90 indicates high reactive power. Threshold line: 0.90.';
+  const thdiT=thd2?(LANG==='es'?'THD de corriente X1 / X2 / X3 (%)':'Current THD X1 / X2 / X3 (%)'):(LANG==='es'?'THD de corriente X1 vs X3 (%)':'Current THD X1 vs X3 (%)');
+  const thdiDesc=LANG==='es'?'Distorsión armónica de corriente. Límite IEEE 519: 5%.':'Current harmonic distortion. IEEE 519 limit: 5%.';
+  const thdvT=thdV2?(LANG==='es'?'THD de tensión X1 / X2 / X3 (%)':'Voltage THD X1 / X2 / X3 (%)'):(LANG==='es'?'THD de tensión X1 vs X3 (%)':'Voltage THD X1 vs X3 (%)');
+  const thdvDesc=LANG==='es'?'Distorsión armónica de tensión. Sobre el 5% puede causar calentamiento en equipos.':'Voltage harmonic distortion. Above 5% may cause equipment heating.';
+  const imbalT=i2Raw?(LANG==='es'?'Desequilibrio de corriente trifásico (%) — NEMA':'Three-phase current imbalance (%) — NEMA'):(LANG==='es'?'Desequilibrio de corriente X1 vs X3 (%)':'Current imbalance X1 vs X3 (%)');
+  const vimbalT=LANG==='es'?'Desequilibrio de voltaje (%)':'Voltage imbalance (%)';
+  const tempT=LANG==='es'?'Temperatura del aceite vs cargabilidad':'Oil temperature vs load';
+
+  if(sel.has('chartCurrent'))queueCard(chartBody('chartCurrent',currT,LANG==='es'?'Desequilibrio persistente indica cargas asimétricas. Valores altos con caída de voltaje señalan operación cerca del límite térmico.':'Persistent imbalance indicates asymmetric loads. High values with voltage drop indicate near-thermal-limit operation.'));
+  if(sel.has('chartVolt'))queueCard(chartBody('chartVolt',voltT,voltDesc));
+  if(sel.has('chartDuration'))queueCard(chartBody('chartDuration',durT,t('cd.duration')));
+  if(sel.has('chartHist'))queueCard(chartBody('chartHist',histT,LANG==='es'?'Verde = bajo P10, azul = P10–P90, rojo = sobre P90.':'Green = below P10, blue = P10–P90, red = above P90.'));
+  if(sel.has('chartFP'))queueCard(chartBody('chartFP',fpT,fpDesc));
+  if(sel.has('chartTHDI'))queueCard(chartBody('chartTHDI',thdiT,thdiDesc));
+  if(sel.has('chartTHDV'))queueCard(chartBody('chartTHDV',thdvT,thdvDesc));
+  if(sel.has('chartImbal'))queueCard(chartBody('chartImbal',imbalT,t(i2Raw?'cd.imbal3':'cd.imbal2')));
+  if(sel.has('chartVimbal'))queueCard(chartBody('chartVimbal',vimbalT,t('cd.vimbal')));
+  if(sel.has('chartTemp'))queueCard(chartBody('chartTemp',tempT,t('cd.temp'),220),true);
 
   flushQueue();
 
   // ── SOBRECARGA UMBRALES ──
   if(sel.has('overThresh')){
     const thresholds=[
-      {l:'> 80% (alerta)',v:80,cls:'warn'},
-      {l:'> 100% nominal',v:100,cls:'bad'},
-      {l:`> ${overLim}% lím. norm.`,v:overLim,cls:'bad'},
-      {l:`> ${extraLim}% adic.`,v:extraLim,cls:'bad'},
+      {l:`> 80% (${LANG==='es'?'alerta':'alert'})`,v:80,cls:'warn'},
+      {l:`> 100% ${LANG==='es'?'nominal':'nominal'}`,v:100,cls:'bad'},
+      {l:`> ${overLim}% ${LANG==='es'?'lím. norm.':'norm. lim.'}`,v:overLim,cls:'bad'},
+      {l:`> ${extraLim}% ${LANG==='es'?'adic.':'add.'}`,v:extraLim,cls:'bad'},
     ];
     const bVals=[],bColors=[];
     let rows='';
-    thresholds.forEach(t=>{
-      const cnt2=loadPct.filter(v=>v>t.val).length;
+    thresholds.forEach(th=>{
+      const cnt2=loadPct.filter(v=>v>th.v).length;
       const p2=r1(cnt2/loadPct.length*100);
       const h2=r1(cnt2*2/60);
-      rows+=`<tr><td style="font-weight:500">${t.l}</td><td>${cnt2.toLocaleString('es-CO')}</td><td><span class="badge ${cnt2>0?t.cls:'ok'}">${p2}%</span></td><td>${h2} h</td><td><span class="badge ${cnt2===0?'ok':t.cls}">${cnt2===0?'Sin eventos':cnt2<loadPct.length*.01?'Puntual':'Recurrente'}</span></td></tr>`;
-      bVals.push(p2);bColors.push(cnt2===0?'rgba(26,127,55,.7)':t.cls==='warn'?'rgba(154,103,0,.7)':'rgba(207,34,46,.7)');
+      const stLabel=cnt2===0?t('ov.none'):cnt2<loadPct.length*.01?t('ov.spot'):t('ov.recurrent');
+      rows+=`<tr><td style="font-weight:600">${th.l}</td><td>${cnt2.toLocaleString(locStr)}</td><td><span class="badge ${cnt2>0?th.cls:'ok'}">${p2}%</span></td><td>${h2} h</td><td><span class="badge ${cnt2===0?'ok':th.cls}">${stLabel}</span></td></tr>`;
+      bVals.push(p2);bColors.push(cnt2===0?'rgba(78,178,112,.7)':th.cls==='warn'?'rgba(250,181,18,.8)':'rgba(234,86,27,.8)');
     });
     content.insertAdjacentHTML('beforeend',`
-      <div class="sec-label">Indicadores de sobrecarga por umbral</div>
+      <div class="sec-label">${t('ov.title')}</div>
       <div class="over-grid" style="margin-bottom:1.25rem">
         <div class="card">
-          <table class="stats-tbl"><thead><tr><th>Umbral</th><th>Registros</th><th>% tiempo</th><th>Horas est.</th><th>Estado</th></tr></thead>
+          <table class="stats-tbl"><thead><tr><th>${t('ov.thresh')}</th><th>${t('ov.records')}</th><th>${t('ov.pct')}</th><th>${t('ov.hrs')}</th><th>${t('ov.status')}</th></tr></thead>
           <tbody>${rows}</tbody></table>
         </div>
         <div class="card">
-          <div class="ct" style="margin-bottom:.6rem">% del tiempo sobre cada umbral</div>
+          <div class="ct" style="margin-bottom:.6rem">${t('ov.chartTitle')}</div>
           <div class="cw" style="height:150px"><canvas id="chartOverBar"></canvas></div>
         </div>
       </div>`);
@@ -769,35 +963,41 @@ function buildDashboard(){
   // ── STATS TABLE ──
   if(sel.has('statsTable')){
     const vHi=vNom*(1+pHi/100),vLo=vNom*(1-pLo/100);
+    const L=LANG==='es';
     const statRows=[
-      {n:'Cargabilidad (% KVA)',a:loadPct,u:'%',hi:100},
-      kvaClean.length?{n:'kVA de operación',a:kvaClean,u:' kVA',hi:kvaNom}:null,
-      i1Raw?{n:'Corriente X1 (A)',a:i1Raw,u:' A'}:null,
-      i2Raw?{n:'Corriente X3 (A)',a:i2Raw,u:' A'}:null,
-      v1Raw?{n:'Voltaje X1 (V)',a:v1Raw,u:' V',vnom:true,lo:vLo,hi:vHi}:null,
-      v2Raw?{n:'Voltaje X3 (V)',a:v2Raw,u:' V',vnom:true,lo:vLo,hi:vHi}:null,
-      thd1?{n:'THD corriente X1 (%)',a:thd1,u:'%',hi:5}:null,
-      thd2?{n:'THD corriente X3 (%)',a:thd2,u:'%',hi:5}:null,
-      thdV1?{n:'THD tensión X1 (%)',a:thdV1,u:'%',hi:5}:null,
-      thdV2?{n:'THD tensión X3 (%)',a:thdV2,u:'%',hi:5}:null,
-      fp1A?{n:'|FP| X1',a:fp1A.filter(v=>v!=null),u:'',lo:.9,fpChk:true}:null,
-      fp2A?{n:'|FP| X3',a:fp2A.filter(v=>v!=null),u:'',lo:.9,fpChk:true}:null,
-      tempArr&&tempArr.length?{n:'Temp. aceite (°C)',a:tempArr,u:'°C'}:null,
+      {n:L?'Cargabilidad (% KVA)':'Load (% KVA)',a:loadPct,u:'%',hi:100},
+      kvaClean.length?{n:L?'kVA de operación':'Operating kVA',a:kvaClean,u:' kVA',hi:kvaNom}:null,
+      i1Raw?{n:L?'Corriente X1 (A)':'Current X1 (A)',a:i1Raw,u:' A'}:null,
+      i2Raw?{n:L?'Corriente X2 (A)':'Current X2 (A)',a:i2Raw,u:' A'}:null,
+      i3Raw?{n:L?'Corriente X3 (A)':'Current X3 (A)',a:i3Raw,u:' A'}:null,
+      v1Raw?{n:L?'Voltaje X1 (V)':'Voltage X1 (V)',a:v1Raw,u:' V',vnom:true,lo:vLo,hi:vHi}:null,
+      v2Raw?{n:L?'Voltaje X2 (V)':'Voltage X2 (V)',a:v2Raw,u:' V',vnom:true,lo:vLo,hi:vHi}:null,
+      v3Raw?{n:L?'Voltaje X3 (V)':'Voltage X3 (V)',a:v3Raw,u:' V',vnom:true,lo:vLo,hi:vHi}:null,
+      thd1?{n:L?'THD corriente X1 (%)':'Current THD X1 (%)',a:thd1,u:'%',hi:5}:null,
+      thd2?{n:L?'THD corriente X2 (%)':'Current THD X2 (%)',a:thd2,u:'%',hi:5}:null,
+      thd3?{n:L?'THD corriente X3 (%)':'Current THD X3 (%)',a:thd3,u:'%',hi:5}:null,
+      thdV1?{n:L?'THD tensión X1 (%)':'Voltage THD X1 (%)',a:thdV1,u:'%',hi:5}:null,
+      thdV2?{n:L?'THD tensión X2 (%)':'Voltage THD X2 (%)',a:thdV2,u:'%',hi:5}:null,
+      thdV3?{n:L?'THD tensión X3 (%)':'Voltage THD X3 (%)',a:thdV3,u:'%',hi:5}:null,
+      fp1A?{n:'|PF| X1',a:fp1A.filter(v=>v!=null),u:'',lo:.9,fpChk:true}:null,
+      fp2A?{n:'|PF| X2',a:fp2A.filter(v=>v!=null),u:'',lo:.9,fpChk:true}:null,
+      fp3A?{n:'|PF| X3',a:fp3A.filter(v=>v!=null),u:'',lo:.9,fpChk:true}:null,
+      tempArr&&tempArr.length?{n:L?'Temp. aceite (°C)':'Oil temp. (°C)',a:tempArr,u:'°C'}:null,
     ].filter(Boolean);
     let trows='';
     statRows.forEach(r=>{
       const mn=r2(Math.min(...r.a)),mx=r2(Math.max(...r.a));
       const p10v=r2(pct(r.a,10)),p50v=r2(pct(r.a,50)),p90v=r2(pct(r.a,90)),av=r2(avg(r.a));
-      let st='ok',stT='Normal';
-      if(r.vnom){const out=r.a.filter(v=>v<r.lo||v>r.hi).length/r.a.length*100;if(out>10){st='bad';stT='Fuera rango';}else if(out>2){st='warn';stT='Revisar';}}
-      else if(r.fpChk){const u=r.a.filter(v=>v<r.lo).length/r.a.length*100;if(u>25){st='bad';stT='FP muy bajo';}else if(u>10){st='warn';stT='FP bajo';}}
-      else if(r.hi!=null){const o=r.a.filter(v=>v>r.hi).length/r.a.length*100;if(o>5){st='bad';stT='Sobrecarga';}else if(o>1){st='warn';stT='Revisar';}}
-      trows+=`<tr><td style="color:var(--text)">${r.n}</td><td>${mn}${r.u}</td><td style="color:#1a7f37">${p10v}${r.u}</td><td style="color:#0969da">${p50v}${r.u}</td><td style="color:#cf222e">${p90v}${r.u}</td><td>${mx}${r.u}</td><td>${av}${r.u}</td><td><span class="badge ${st}">${stT}</span></td></tr>`;
+      let st='ok',stT=t('st.ok');
+      if(r.vnom){const out=r.a.filter(v=>v<r.lo||v>r.hi).length/r.a.length*100;if(out>10){st='bad';stT=t('st.outRange');}else if(out>2){st='warn';stT=t('st.warn');}}
+      else if(r.fpChk){const u=r.a.filter(v=>v<r.lo).length/r.a.length*100;if(u>25){st='bad';stT=t('st.fpVLow');}else if(u>10){st='warn';stT=t('st.fpLow');}}
+      else if(r.hi!=null){const o=r.a.filter(v=>v>r.hi).length/r.a.length*100;if(o>5){st='bad';stT=t('st.bad');}else if(o>1){st='warn';stT=t('st.warn');}}
+      trows+=`<tr><td style="color:var(--text);font-weight:600">${r.n}</td><td>${mn}${r.u}</td><td style="color:#4EB270;font-weight:600">${p10v}${r.u}</td><td style="color:#22B0E1;font-weight:600">${p50v}${r.u}</td><td style="color:#EA561B;font-weight:600">${p90v}${r.u}</td><td>${mx}${r.u}</td><td>${av}${r.u}</td><td><span class="badge ${st}">${stT}</span></td></tr>`;
     });
     content.insertAdjacentHTML('beforeend',`
-      <div class="sec-label">Resumen estadístico de variables eléctricas</div>
+      <div class="sec-label">${t('sec.stats')}</div>
       <div class="card full" style="margin-bottom:1.25rem">
-        <table class="stats-tbl"><thead><tr><th>Variable</th><th>Mín.</th><th>P10</th><th>P50</th><th>P90</th><th>Máx.</th><th>Media</th><th>Estado</th></tr></thead>
+        <table class="stats-tbl"><thead><tr><th>${t('st.variable')}</th><th>${t('st.min')}</th><th>${t('st.p10')}</th><th>${t('st.p50')}</th><th>${t('st.p90')}</th><th>${t('st.max')}</th><th>${t('st.mean')}</th><th>${t('st.status')}</th></tr></thead>
         <tbody>${trows}</tbody></table>
       </div>`);
   }
@@ -806,16 +1006,17 @@ function buildDashboard(){
   if(sel.has('eventsTable')){
     const MAX=50;
     const evts=[];
-    loadFull.forEach((v,i)=>{if(v!=null&&v>extraLim)evts.push({t:ts[i],kva:kvaFull?kvaFull[i]:null,load:v,i1:i1Raw?i1Raw[i]:null,i2:i2Raw?i2Raw[i]:null,thd:thd1?thd1[i]:null,temp:tempFull?tempFull[i]:null});});
+    loadFull.forEach((v,i)=>{if(v!=null&&v>extraLim)evts.push({t:ts[i],kva:kvaFull?kvaFull[i]:null,load:v,i1:i1Raw?i1Raw[i]:null,i2:i2Raw?i2Raw[i]:null,i3:i3Raw?i3Raw[i]:null,thd:thd1?thd1[i]:null,temp:tempFull?tempFull[i]:null});});
     let erows='';
-    if(!evts.length){erows=`<tr><td colspan="8" style="color:var(--green);padding:1rem;text-align:center">✓ No se registraron eventos sobre el ${extraLim}%</td></tr>`;}
-    else evts.slice(0,MAX).forEach((e,n)=>{const cl=e.load>extraLim*1.1?'evt-bad':'evt-warn';erows+=`<tr><td style="color:var(--text3)">${n+1}</td><td>${fmtTs(e.t)}</td><td>${e.kva!=null?r2(e.kva)+' kVA':'—'}</td><td class="${cl}">${r1(e.load)}%</td><td>${e.i1!=null?r2(e.i1):'—'}</td><td>${e.i2!=null?r2(e.i2):'—'}</td><td>${e.temp!=null?r2(e.temp)+'°C':'—'}</td><td>${e.thd!=null?r2(e.thd)+'%':'—'}</td></tr>`;});
+    const hasI2col=!!i2Raw;
+    if(!evts.length){erows=`<tr><td colspan="${hasI2col?9:8}" style="color:var(--green);padding:1rem;text-align:center">✓ ${t('ev.none')} ${extraLim}%</td></tr>`;}
+    else evts.slice(0,MAX).forEach((e,n)=>{const cl=e.load>extraLim*1.1?'evt-bad':'evt-warn';erows+=`<tr><td style="color:var(--text3)">${n+1}</td><td>${fmtTs(e.t)}</td><td>${e.kva!=null?r2(e.kva)+' kVA':'—'}</td><td class="${cl}">${r1(e.load)}%</td><td>${e.i1!=null?r2(e.i1):'—'}</td>${hasI2col?`<td>${e.i2!=null?r2(e.i2):'—'}</td>`:''}<td>${e.i3!=null?r2(e.i3):'—'}</td><td>${e.temp!=null?r2(e.temp)+'°C':'—'}</td><td>${e.thd!=null?r2(e.thd)+'%':'—'}</td></tr>`;});
     content.insertAdjacentHTML('beforeend',`
-      <div class="sec-label">Eventos críticos — registros sobre el ${extraLim}%</div>
+      <div class="sec-label">${t('ev.title')} ${extraLim}%</div>
       <div class="card full" style="margin-bottom:1.25rem">
-        <table class="evt-tbl"><thead><tr><th>#</th><th>Fecha/Hora</th><th>kVA</th><th>Carga %</th><th>I X1 (A)</th><th>I X3 (A)</th><th>Temp. aceite</th><th>THD X1 (%)</th></tr></thead>
+        <table class="evt-tbl"><thead><tr><th>${t('ev.num')}</th><th>${t('ev.date')}</th><th>${t('ev.kva')}</th><th>${t('ev.load')}</th><th>${t('ev.i1')}</th>${hasI2col?`<th>${t('ev.i2')}</th>`:''}<th>${t('ev.i3')}</th><th>${t('ev.temp')}</th><th>${t('ev.thd')}</th></tr></thead>
         <tbody>${erows}</tbody></table>
-        ${evts.length>MAX?`<div style="font-size:11px;color:var(--text3);margin-top:.5rem;padding:.3rem .5rem">Mostrando ${MAX} de ${evts.length} eventos.</div>`:''}
+        ${evts.length>MAX?`<div style="font-size:11px;color:var(--text3);margin-top:.5rem;padding:.3rem .5rem">${t('ev.showing')} ${MAX} ${t('ev.of')} ${evts.length} ${t('ev.events')}</div>`:''}
       </div>`);
   }
 
@@ -830,7 +1031,7 @@ function buildDashboard(){
         const sub=data[0]['Subestación']||'—';const alim=data[0]['Alimentador']||'—';const tipo=data[0]['Tipo de red']||'—';const fase=data[0]['Fase']||'—';
         const mapsUrl=`https://www.google.com/maps?q=${lat},${lon}&z=17`;
         content.insertAdjacentHTML('beforeend',`
-          <div class="sec-label">Ubicación del transformador</div>
+          <div class="sec-label">${t('sec.map')}</div>
           <div class="card full" style="margin-bottom:1.25rem">
             <div id="mapWrap">
               <div id="mapFrame">
@@ -838,15 +1039,15 @@ function buildDashboard(){
                   width="100%" height="280" style="border:0;display:block" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
               </div>
               <div id="mapMeta">
-                <div style="font-weight:600;color:var(--text);margin-bottom:4px">${nodo}</div>
+                <div style="font-weight:700;color:var(--ub-dark-blue);margin-bottom:4px">${nodo}</div>
                 <div>🔧 <span style="color:var(--text)">${idTx}</span></div>
-                <div>🏭 Subestación: <span style="color:var(--text)">${sub}</span></div>
-                <div>⚡ Alimentador: <span style="color:var(--text)">${alim}</span></div>
-                <div>🌐 Red: <span style="color:var(--text)">${tipo}</span></div>
-                <div>〰 Fase: <span style="color:var(--text)">${fase}</span></div>
-                <div style="margin-top:6px;font-family:var(--font);font-size:11px">📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
+                <div>🏭 ${t('map.substation')}: <span style="color:var(--text)">${sub}</span></div>
+                <div>⚡ ${t('map.feeder')}: <span style="color:var(--text)">${alim}</span></div>
+                <div>🌐 ${t('map.network')}: <span style="color:var(--text)">${tipo}</span></div>
+                <div>〰 ${t('map.phase')}: <span style="color:var(--text)">${fase}</span></div>
+                <div style="margin-top:6px;font-family:var(--mono);font-size:11px">📍 ${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
                 <div style="margin-top:8px">
-                  <a href="${mapsUrl}" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;background:#ddf4ff;border:1px solid #54aeff;border-radius:4px;padding:3px 10px;display:inline-block">Abrir en Google Maps ↗</a>
+                  <a href="${mapsUrl}" target="_blank" style="font-size:11px;color:#fff;text-decoration:none;background:var(--ub-blue);border-radius:4px;padding:4px 12px;display:inline-block;font-weight:700">${t('map.open')}</a>
                 </div>
               </div>
             </div>
@@ -858,17 +1059,17 @@ function buildDashboard(){
   // ── NOW RENDER CHARTS ──
   setTimeout(()=>renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     p10,p50,p90,overLim,extraLim,kvaNom,vNom,pHi,pLo,
-    i1Raw,i2Raw,v1Raw,v2Raw,fp1A,fp2A,thd1,thd2,thdV1,thdV2,
+    i1Raw,i2Raw,i3Raw,v1Raw,v2Raw,v3Raw,fp1A,fp2A,fp3A,thd1,thd2,thd3,thdV1,thdV2,thdV3,
     tempFull,vimbalFull,loadSub,p10h,p50h,p90h,cntH,hrL),100);
 
   // ── PDF cover ──
-  const now=new Date().toLocaleString('es-CO');
-  const presetLabel=ACTIVE_PRESET==='generic'?'±5%':ACTIVE_PRESET==='svu'?'±7% SV Urbano':ACTIVE_PRESET==='svr'?'±8% SV Rural':'Personalizado';
+  const now=new Date().toLocaleString(LANG==='es'?'es-CO':'en-US');
+  const presetLabelPDF=ACTIVE_PRESET==='generic'?'±5%':ACTIVE_PRESET==='svu'?(LANG==='es'?'±7% SV Urb.':'±7% Urban'):ACTIVE_PRESET==='svr'?(LANG==='es'?'±8% SV Rural':'±8% Rural'):(LANG==='es'?'Personalizado':'Custom');
   $('pdfMeta').innerHTML=`
     <div>${$('infoStrip').textContent.replace(/\s+/g,' ')}</div>
-    <div>KVA nominal: <b>${kvaNom} kVA</b> · V nominal: <b>${vNom} V</b> · Lím. sobrecarga: <b>${overLim}%</b> · Sobrecarga adic.: <b>${extraLim}%</b></div>
-    <div>Límite regulatorio voltaje: <b>${presetLabel}</b> (+${pHi}% / -${pLo}%) · Rango: <b>${r2(vNom*(1-pLo/100))}V – ${r2(vNom*(1+pHi/100))}V</b></div>
-    <div style="color:#8c959f;font-size:10px">Generado: ${now} · TransLoad v4.0 · Secciones: ${[...sel].join(', ')}</div>`;
+    <div>KVA nominal: <b>${kvaNom} kVA</b> · V nominal: <b>${vNom} V</b> · ${LANG==='es'?'Lím. sobrecarga':'Overload lim.'}: <b>${overLim}%</b> · ${LANG==='es'?'Sobrecarga adic.':'Add. overload'}: <b>${extraLim}%</b></div>
+    <div>${LANG==='es'?'Límite regulatorio voltaje':'Voltage reg. limit'}: <b>${presetLabelPDF}</b> (+${pHi}% / -${pLo}%) · ${LANG==='es'?'Rango':'Range'}: <b>${r2(vNom*(1-pLo/100))}V – ${r2(vNom*(1+pHi/100))}V</b></div>
+    <div style="color:var(--text3);font-size:10px">${LANG==='es'?'Generado':'Generated'}: ${now} · TransLoad v4.2 · ${LANG==='es'?'Secciones':'Sections'}: ${[...sel].join(', ')}</div>`;
 }
 
 /* ════════════════════════════════════════
@@ -876,7 +1077,7 @@ function buildDashboard(){
 ════════════════════════════════════════ */
 function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
   p10,p50,p90,overLim,extraLim,kvaNom,vNom,pHi,pLo,
-  i1Raw,i2Raw,v1Raw,v2Raw,fp1A,fp2A,thd1,thd2,thdV1,thdV2,
+  i1Raw,i2Raw,i3Raw,v1Raw,v2Raw,v3Raw,fp1A,fp2A,fp3A,thd1,thd2,thd3,thdV1,thdV2,thdV3,
   tempFull,vimbalFull,_loadSub,p10h,p50h,p90h,cntH,hrL){
 
   const sorted=[...loadPct].sort((a,b)=>b-a);
@@ -886,151 +1087,177 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
 
   if(sel.has('chartLoad')&&$('chartLoad'))
     mk('chartLoad',{type:'line',data:{labels:lbl,datasets:[
-      {label:'Cargabilidad (%)',data:loadSub,borderColor:'#0969da',borderWidth:1.2,pointRadius:0,fill:false,tension:.2,spanGaps:true},
-      {label:'P90',data:Array(N).fill(r2(p90)),borderColor:'#cf222e',borderWidth:1.6,borderDash:[7,3],pointRadius:0,fill:false},
-      {label:'P50',data:Array(N).fill(r2(p50)),borderColor:'#6639ba',borderWidth:1.2,borderDash:[4,4],pointRadius:0,fill:false},
-      {label:'P10',data:Array(N).fill(r2(p10)),borderColor:'#1a7f37',borderWidth:1.6,borderDash:[7,3],pointRadius:0,fill:false},
-      {label:'100%',data:Array(N).fill(100),borderColor:'rgba(207,34,46,.3)',borderWidth:1,borderDash:[2,4],pointRadius:0,fill:false},
-      {label:`${overLim}% lím.`,data:Array(N).fill(overLim),borderColor:'#e36209',borderWidth:1.8,borderDash:[8,3],pointRadius:0,fill:false},
-      {label:`${extraLim}% adic.`,data:Array(N).fill(extraLim),borderColor:'#6639ba',borderWidth:1.8,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:LANG==='es'?'Cargabilidad (%)':'Load (%)',data:loadSub,borderColor:UC.blue,borderWidth:1.4,pointRadius:0,fill:false,tension:.2,spanGaps:true},
+      {label:'P90',data:Array(N).fill(r2(p90)),borderColor:UC.orange,borderWidth:1.6,borderDash:[7,3],pointRadius:0,fill:false},
+      {label:'P50',data:Array(N).fill(r2(p50)),borderColor:UC.dark,borderWidth:1.2,borderDash:[4,4],pointRadius:0,fill:false},
+      {label:'P10',data:Array(N).fill(r2(p10)),borderColor:UC.green,borderWidth:1.6,borderDash:[7,3],pointRadius:0,fill:false},
+      {label:'100%',data:Array(N).fill(100),borderColor:'rgba(234,86,27,.3)',borderWidth:1,borderDash:[2,4],pointRadius:0,fill:false},
+      {label:`${overLim}% lím.`,data:Array(N).fill(overLim),borderColor:UC.orange,borderWidth:1.8,borderDash:[8,3],pointRadius:0,fill:false},
+      {label:`${extraLim}% adic.`,data:Array(N).fill(extraLim),borderColor:UC.purple,borderWidth:1.8,borderDash:[5,3],pointRadius:0,fill:false},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',labels:{color:'#57606a',font:{size:10},boxWidth:16,padding:10}},tooltip:TT},
+      plugins:{legend:{display:true,position:'top',labels:{color:UC.deep,font:{size:10},boxWidth:16,padding:10}},tooltip:TT},
       scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:10,maxRotation:0}},
-              y:{grid:GR,ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% KVA nominal',color:'#8c959f',font:{size:11}}}}}});
+              y:{grid:GR,ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% KVA nominal',color:UC.gray,font:{size:11}}}}}});
 
   if(sel.has('chartHourly')&&$('chartHourly'))
     mk('chartHourly',{type:'line',data:{labels:hrL,datasets:[
-      {label:'P90',data:p90h,borderColor:'#cf222e',borderWidth:2,pointRadius:3,pointBackgroundColor:'#cf222e',fill:'-1',backgroundColor:'rgba(9,105,218,.09)',tension:.35,spanGaps:true},
-      {label:'P50',data:p50h,borderColor:'#0969da',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#0969da',fill:false,tension:.35,spanGaps:true},
-      {label:'P10',data:p10h,borderColor:'#1a7f37',borderWidth:2,pointRadius:3,pointBackgroundColor:'#1a7f37',fill:false,tension:.35,spanGaps:true},
-      {label:'100%',data:Array(24).fill(100),borderColor:'rgba(207,34,46,.35)',borderWidth:1,borderDash:[5,3],pointRadius:0,fill:false},
-      {label:`${overLim}%`,data:Array(24).fill(overLim),borderColor:'#e36209',borderWidth:1.5,borderDash:[7,3],pointRadius:0,fill:false},
-      {label:`${extraLim}%`,data:Array(24).fill(extraLim),borderColor:'#6639ba',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:'P90',data:p90h,borderColor:UC.orange,borderWidth:2,pointRadius:3,pointBackgroundColor:UC.orange,fill:'-1',backgroundColor:'rgba(34,176,225,.09)',tension:.35,spanGaps:true},
+      {label:'P50',data:p50h,borderColor:UC.blue,borderWidth:2.5,pointRadius:4,pointBackgroundColor:UC.blue,fill:false,tension:.35,spanGaps:true},
+      {label:'P10',data:p10h,borderColor:UC.green,borderWidth:2,pointRadius:3,pointBackgroundColor:UC.green,fill:false,tension:.35,spanGaps:true},
+      {label:'100%',data:Array(24).fill(100),borderColor:'rgba(234,86,27,.35)',borderWidth:1,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:`${overLim}%`,data:Array(24).fill(overLim),borderColor:UC.orange,borderWidth:1.5,borderDash:[7,3],pointRadius:0,fill:false},
+      {label:`${extraLim}%`,data:Array(24).fill(extraLim),borderColor:UC.purple,borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',labels:{color:'#57606a',font:{size:10},boxWidth:16,padding:10}},
-        tooltip:{...TT,callbacks:{title:i=>'Hora: '+hrL[i[0].dataIndex]+' ('+cntH[i[0].dataIndex]+' reg.)',label:c=>` ${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(1)+'%':'—'}`}}},
-      scales:{x:{grid:GR,ticks:{...TK,maxRotation:45},title:{display:true,text:'Hora',color:'#8c959f',font:{size:11}}},
-              y:{grid:GR,ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% KVA nominal',color:'#8c959f',font:{size:11}}}}}});
+      plugins:{legend:{display:true,position:'top',labels:{color:UC.deep,font:{size:10},boxWidth:16,padding:10}},
+        tooltip:{...TT,callbacks:{title:i=>(LANG==='es'?'Hora: ':'Hour: ')+hrL[i[0].dataIndex]+' ('+cntH[i[0].dataIndex]+' '+(LANG==='es'?'reg.':'rec.')+')',label:c=>` ${c.dataset.label}: ${c.raw!=null?c.raw.toFixed(1)+'%':'—'}`}}},
+      scales:{x:{grid:GR,ticks:{...TK,maxRotation:45},title:{display:true,text:LANG==='es'?'Hora':'Hour',color:UC.gray,font:{size:11}}},
+              y:{grid:GR,ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% KVA nominal',color:UC.gray,font:{size:11}}}}}});
 
   if(sel.has('chartKVA')&&$('chartKVA')){
     const kvaSub=subIdx.map(i=>{const v=kvaFull?kvaFull[i]:null;return v!=null?r2(v):null;});
     mk('chartKVA',{type:'line',data:{labels:lbl,datasets:[
-      {label:'kVA',data:kvaSub,borderColor:'#0969da',borderWidth:1.5,pointRadius:0,fill:{target:'origin',above:'rgba(9,105,218,.06)'},tension:.2,spanGaps:true},
-      {label:`Nominal ${kvaNom}kVA`,data:Array(N).fill(kvaNom),borderColor:'rgba(207,34,46,.5)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false},
-      {label:`${overLim}%=${r2(kvaNom*overLim/100)}kVA`,data:Array(N).fill(r2(kvaNom*overLim/100)),borderColor:'#e36209',borderWidth:1.5,borderDash:[7,3],pointRadius:0,fill:false},
-      {label:`${extraLim}%=${r2(kvaNom*extraLim/100)}kVA`,data:Array(N).fill(r2(kvaNom*extraLim/100)),borderColor:'#6639ba',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:'kVA',data:kvaSub,borderColor:UC.blue,borderWidth:1.5,pointRadius:0,fill:{target:'origin',above:'rgba(34,176,225,.07)'},tension:.2,spanGaps:true},
+      {label:`${LANG==='es'?'Nominal':'Nominal'} ${kvaNom}kVA`,data:Array(N).fill(kvaNom),borderColor:'rgba(234,86,27,.5)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false},
+      {label:`${overLim}%=${r2(kvaNom*overLim/100)}kVA`,data:Array(N).fill(r2(kvaNom*overLim/100)),borderColor:UC.orange,borderWidth:1.5,borderDash:[7,3],pointRadius:0,fill:false},
+      {label:`${extraLim}%=${r2(kvaNom*extraLim/100)}kVA`,data:Array(N).fill(r2(kvaNom*extraLim/100)),borderColor:UC.purple,borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',labels:{color:'#57606a',font:{size:10},boxWidth:16,padding:10}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:10,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'kVA',color:'#8c959f',font:{size:11}}}}}});
+      plugins:{legend:{display:true,position:'top',labels:{color:UC.deep,font:{size:10},boxWidth:16,padding:10}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:10,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'kVA',color:UC.gray,font:{size:11}}}}}});
   }
 
-  if(sel.has('chartCurrent')&&$('chartCurrent')&&i1Raw&&i2Raw)
-    mk('chartCurrent',{type:'line',data:{labels:lbl,datasets:[
-      {label:'I X1 (A)',data:subIdx.map(i=>r2(i1Raw[i])),borderColor:'#6639ba',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:'I X3 (A)',data:subIdx.map(i=>r2(i2Raw[i])),borderColor:'#1a7f37',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-    ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'A',color:'#8c959f',font:{size:11}}}}}});
+  if(sel.has('chartCurrent')&&$('chartCurrent')&&i1Raw&&i3Raw){
+    const dsC=[
+      {label:'I X1 (A)',data:subIdx.map(i=>r2(i1Raw[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
+    ];
+    if(i2Raw)dsC.push({label:'I X2 (A)',data:subIdx.map(i=>r2(i2Raw[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsC.push({label:'I X3 (A)',data:subIdx.map(i=>r2(i3Raw[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    mk('chartCurrent',{type:'line',data:{labels:lbl,datasets:dsC},options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'A',color:UC.gray,font:{size:11}}}}}});}
 
-  if(sel.has('chartVolt')&&$('chartVolt')&&v1Raw&&v2Raw){
+
+  if(sel.has('chartVolt')&&$('chartVolt')&&v1Raw&&v3Raw){
     const vHi=r2(vNom*(1+pHi/100)),vLo=r2(vNom*(1-pLo/100));
     const vHi5=r2(vNom*1.05),vLo5=r2(vNom*0.95);
     const sameAs5=Math.abs(pHi-5)<.01&&Math.abs(pLo-5)<.01;
     const ds=[
-      {label:'V X1 (V)',data:subIdx.map(i=>r2(v1Raw[i])),borderColor:'#9a6700',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:'V X3 (V)',data:subIdx.map(i=>r2(v2Raw[i])),borderColor:'#0969da',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:`+${pHi}% (${vHi}V)`,data:Array(N).fill(vHi),borderColor:'rgba(207,34,46,.9)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false},
-      {label:`-${pLo}% (${vLo}V)`,data:Array(N).fill(vLo),borderColor:'rgba(9,105,218,.9)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false},
+      {label:'V X1 (V)',data:subIdx.map(i=>r2(v1Raw[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
     ];
-    if(!sameAs5){ds.push({label:`+5%(${vHi5}V)`,data:Array(N).fill(vHi5),borderColor:'rgba(207,34,46,.25)',borderWidth:1,borderDash:[3,4],pointRadius:0,fill:false});ds.push({label:`-5%(${vLo5}V)`,data:Array(N).fill(vLo5),borderColor:'rgba(9,105,218,.25)',borderWidth:1,borderDash:[3,4],pointRadius:0,fill:false});}
+    if(v2Raw)ds.push({label:'V X2 (V)',data:subIdx.map(i=>r2(v2Raw[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    ds.push({label:'V X3 (V)',data:subIdx.map(i=>r2(v3Raw[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    ds.push({label:`+${pHi}% (${vHi}V)`,data:Array(N).fill(vHi),borderColor:'rgba(234,86,27,.9)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false});
+    ds.push({label:`-${pLo}% (${vLo}V)`,data:Array(N).fill(vLo),borderColor:'rgba(34,176,225,.9)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false});
+    if(!sameAs5){ds.push({label:`+5%(${vHi5}V)`,data:Array(N).fill(vHi5),borderColor:'rgba(234,86,27,.25)',borderWidth:1,borderDash:[3,4],pointRadius:0,fill:false});ds.push({label:`-5%(${vLo5}V)`,data:Array(N).fill(vLo5),borderColor:'rgba(34,176,225,.25)',borderWidth:1,borderDash:[3,4],pointRadius:0,fill:false});}
     mk('chartVolt',{type:'line',data:{labels:lbl,datasets:ds},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
-        plugins:{legend:{display:true,position:'top',labels:{color:'#57606a',font:{size:10},boxWidth:14,padding:9}},tooltip:TT},
-        scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'V',color:'#8c959f',font:{size:11}}}}}});
+        plugins:{legend:{display:true,position:'top',labels:{color:UC.deep,font:{size:10},boxWidth:14,padding:9}},tooltip:TT},
+        scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'V',color:UC.gray,font:{size:11}}}}}});
   }
 
   if(sel.has('chartDuration')&&$('chartDuration'))
     mk('chartDuration',{type:'line',data:{labels:dX,datasets:[
-      {label:'Carga (%)',data:dY,borderColor:'#9a6700',borderWidth:1.5,pointRadius:0,fill:{target:'origin',above:'rgba(154,103,0,.08)'},tension:.1},
-      {label:'100%',data:Array(dY.length).fill(100),borderColor:'rgba(207,34,46,.5)',borderWidth:1,borderDash:[5,3],pointRadius:0,fill:false},
-      {label:'P10',data:Array(dY.length).fill(r2(p10)),borderColor:'#1a7f37',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
-      {label:'P90',data:Array(dY.length).fill(r2(p90)),borderColor:'#cf222e',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
-      {label:`${overLim}%`,data:Array(dY.length).fill(overLim),borderColor:'#e36209',borderWidth:1.3,borderDash:[7,3],pointRadius:0,fill:false},
-      {label:`${extraLim}%`,data:Array(dY.length).fill(extraLim),borderColor:'#6639ba',borderWidth:1.3,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:LANG==='es'?'Carga (%)':'Load (%)',data:dY,borderColor:UC.blue,borderWidth:1.5,pointRadius:0,fill:{target:'origin',above:'rgba(34,176,225,.08)'},tension:.1},
+      {label:'100%',data:Array(dY.length).fill(100),borderColor:'rgba(234,86,27,.5)',borderWidth:1,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:'P10',data:Array(dY.length).fill(r2(p10)),borderColor:UC.green,borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+      {label:'P90',data:Array(dY.length).fill(r2(p90)),borderColor:UC.orange,borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+      {label:`${overLim}%`,data:Array(dY.length).fill(overLim),borderColor:UC.orange,borderWidth:1.3,borderDash:[7,3],pointRadius:0,fill:false},
+      {label:`${extraLim}%`,data:Array(dY.length).fill(extraLim),borderColor:UC.purple,borderWidth:1.3,borderDash:[5,3],pointRadius:0,fill:false},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:10,callback:v=>v+'%'},title:{display:true,text:'% del tiempo',color:'#8c959f',font:{size:11}}},
-              y:{grid:GR,ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% KVA nominal',color:'#8c959f',font:{size:11}}}}}});
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:10,callback:v=>v+'%'},title:{display:true,text:LANG==='es'?'% del tiempo':'% of time',color:UC.gray,font:{size:11}}},
+              y:{grid:GR,ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% KVA nominal',color:UC.gray,font:{size:11}}}}}});
 
   if(sel.has('chartHist')&&$('chartHist')){
     const nB=20,hMin=Math.min(...loadPct),hMax=Math.max(...loadPct),bSz=(hMax-hMin)/nB;
     const bins=Array(nB).fill(0);
     loadPct.forEach(v=>{bins[Math.min(nB-1,Math.floor((v-hMin)/bSz))]++;});
     const bL=Array.from({length:nB},(_,i)=>r2(hMin+i*bSz).toFixed(0)+'%');
-    const bC=bins.map((_,i)=>{const m=hMin+(i+.5)*bSz;return m<p10?'rgba(26,127,55,.7)':m>p90?'rgba(207,34,46,.7)':'rgba(9,105,218,.6)';});
-    mk('chartHist',{type:'bar',data:{labels:bL,datasets:[{label:'Frecuencia',data:bins,backgroundColor:bC,borderColor:'transparent',borderWidth:0}]},
+    const bC=bins.map((_,i)=>{const m=hMin+(i+.5)*bSz;return m<p10?'rgba(78,178,112,.75)':m>p90?'rgba(234,86,27,.75)':'rgba(34,176,225,.65)';});
+    const recLabel=LANG==='es'?'Registros':'Records';
+    mk('chartHist',{type:'bar',data:{labels:bL,datasets:[{label:recLabel,data:bins,backgroundColor:bC,borderColor:'transparent',borderWidth:0}]},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
-        plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.raw} reg. (${r2(c.raw/loadPct.length*100).toFixed(1)}%)`}}},
-        scales:{x:{grid:{display:false},ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:TK,title:{display:true,text:'Registros',color:'#8c959f',font:{size:11}}}}}});
+        plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.raw} ${recLabel.toLowerCase()} (${r2(c.raw/loadPct.length*100).toFixed(1)}%)`}}},
+        scales:{x:{grid:{display:false},ticks:{...TK,maxRotation:45,font:{size:9}}},y:{grid:GR,ticks:TK,title:{display:true,text:recLabel,color:UC.gray,font:{size:11}}}}}});
   }
 
-  if(sel.has('chartFP')&&$('chartFP')&&fp1A&&fp2A)
-    mk('chartFP',{type:'line',data:{labels:lbl,datasets:[
-      {label:'|FP| X1',data:subIdx.map(i=>{const v=fp1A[i];return v!=null?r2(v):null;}),borderColor:'#0969da',borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true},
-      {label:'|FP| X3',data:subIdx.map(i=>{const v=fp2A[i];return v!=null?r2(v):null;}),borderColor:'#1a7f37',borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true},
-      {label:'FP=0.90',data:Array(N).fill(.9),borderColor:'rgba(154,103,0,.7)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
-    ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,min:0,max:1.05,ticks:TK,title:{display:true,text:'|FP|',color:'#8c959f',font:{size:11}}}}}});
+  if(sel.has('chartFP')&&$('chartFP')&&fp1A&&fp3A){
+    const dsFP=[
+      {label:'|PF| X1',data:subIdx.map(i=>{const v=fp1A[i];return v!=null?r2(v):null;}),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true},
+    ];
+    if(fp2A)dsFP.push({label:'|PF| X2',data:subIdx.map(i=>{const v=fp2A[i];return v!=null?r2(v):null;}),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true});
+    dsFP.push({label:'|PF| X3',data:subIdx.map(i=>{const v=fp3A[i];return v!=null?r2(v):null;}),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true});
+    dsFP.push({label:'PF=0.90',data:Array(N).fill(.9),borderColor:'rgba(234,86,27,.7)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false});
+    mk('chartFP',{type:'line',data:{labels:lbl,datasets:dsFP},options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,min:0,max:1.05,ticks:TK,title:{display:true,text:'|PF|',color:UC.gray,font:{size:11}}}}}});}
 
-  if(sel.has('chartTHDI')&&$('chartTHDI')&&thd1&&thd2)
-    mk('chartTHDI',{type:'line',data:{labels:lbl,datasets:[
-      {label:'THD I X1 (%)',data:subIdx.map(i=>r2(thd1[i])),borderColor:'#9a6700',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:'THD I X3 (%)',data:subIdx.map(i=>r2(thd2[i])),borderColor:'#6639ba',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:'5% IEEE 519',data:Array(N).fill(5),borderColor:'rgba(207,34,46,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
-    ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'THD I (%)',color:'#8c959f',font:{size:11}}}}}});
 
-  if(sel.has('chartTHDV')&&$('chartTHDV')&&thdV1&&thdV2)
-    mk('chartTHDV',{type:'line',data:{labels:lbl,datasets:[
-      {label:'THD V X1 (%)',data:subIdx.map(i=>r2(thdV1[i])),borderColor:'#0969da',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:'THD V X3 (%)',data:subIdx.map(i=>r2(thdV2[i])),borderColor:'#1a7f37',borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
-      {label:'5% límite',data:Array(N).fill(5),borderColor:'rgba(207,34,46,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
-    ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'THD V (%)',color:'#8c959f',font:{size:11}}}}}});
+  if(sel.has('chartTHDI')&&$('chartTHDI')&&thd1&&thd3){
+    const dsTHDI=[
+      {label:'THD I X1 (%)',data:subIdx.map(i=>r2(thd1[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
+    ];
+    if(thd2)dsTHDI.push({label:'THD I X2 (%)',data:subIdx.map(i=>r2(thd2[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsTHDI.push({label:'THD I X3 (%)',data:subIdx.map(i=>r2(thd3[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsTHDI.push({label:'5% IEEE 519',data:Array(N).fill(5),borderColor:'rgba(234,86,27,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false});
+    mk('chartTHDI',{type:'line',data:{labels:lbl,datasets:dsTHDI},options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'THD I (%)',color:UC.gray,font:{size:11}}}}}});}
 
-  if(sel.has('chartImbal')&&$('chartImbal')&&i1Raw&&i2Raw){
-    const imbalSub=subIdx.map(i=>{const a=i1Raw[i],b=i2Raw[i];if(a==null||b==null)return null;const av2=(a+b)/2;return av2>0?r2(Math.abs(a-b)/av2*100):null;});
+
+  if(sel.has('chartTHDV')&&$('chartTHDV')&&thdV1&&thdV3){
+    const dsTHDV=[
+      {label:'THD V X1 (%)',data:subIdx.map(i=>r2(thdV1[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
+    ];
+    if(thdV2)dsTHDV.push({label:'THD V X2 (%)',data:subIdx.map(i=>r2(thdV2[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsTHDV.push({label:'THD V X3 (%)',data:subIdx.map(i=>r2(thdV3[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsTHDV.push({label:LANG==='es'?'5% límite':'5% limit',data:Array(N).fill(5),borderColor:'rgba(234,86,27,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false});
+    mk('chartTHDV',{type:'line',data:{labels:lbl,datasets:dsTHDV},options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'THD V (%)',color:UC.gray,font:{size:11}}}}}});}
+
+
+  if(sel.has('chartImbal')&&$('chartImbal')&&i1Raw&&i3Raw){
+    let imbalSub;
+    if(i2Raw){
+      // Trifásico: desequilibrio NEMA
+      imbalSub=subIdx.map(i=>{
+        const a=i1Raw[i],b=i2Raw[i],c=i3Raw[i];
+        if(a==null||b==null||c==null)return null;
+        const av3=(a+b+c)/3;
+        return av3>0?r2(Math.max(Math.abs(a-av3),Math.abs(b-av3),Math.abs(c-av3))/av3*100):null;
+      });
+    }else{
+      imbalSub=subIdx.map(i=>{const a=i1Raw[i],b=i3Raw[i];if(a==null||b==null)return null;const av2=(a+b)/2;return av2>0?r2(Math.abs(a-b)/av2*100):null;});
+    }
+    const imbalLabel=i2Raw?(LANG==='es'?'Desequil. corriente trifásico (%)':'3-phase current imbalance (%)'):(LANG==='es'?'Desequil. corriente (%)':'Current imbalance (%)');
     mk('chartImbal',{type:'line',data:{labels:lbl,datasets:[
-      {label:'Desequil. corriente (%)',data:imbalSub,borderColor:'#6639ba',borderWidth:1.2,pointRadius:0,fill:{target:'origin',above:'rgba(102,57,186,.07)'},tension:.15,spanGaps:true},
-      {label:'10% umbral',data:Array(N).fill(10),borderColor:'rgba(207,34,46,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:imbalLabel,data:imbalSub,borderColor:UC.purple,borderWidth:1.2,pointRadius:0,fill:{target:'origin',above:'rgba(89,80,157,.07)'},tension:.15,spanGaps:true},
+      {label:LANG==='es'?'10% umbral':'10% threshold',data:Array(N).fill(10),borderColor:'rgba(234,86,27,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'%',color:'#8c959f',font:{size:11}}}}}});
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'%',color:UC.gray,font:{size:11}}}}}});
   }
 
   if(sel.has('chartVimbal')&&$('chartVimbal')&&vimbalFull){
     const vsub=subIdx.map(i=>{const v=vimbalFull[i];return v!=null?r2(v):null;});
     mk('chartVimbal',{type:'line',data:{labels:lbl,datasets:[
-      {label:'Desequil. voltaje (%)',data:vsub,borderColor:'#9a6700',borderWidth:1.2,pointRadius:0,fill:{target:'origin',above:'rgba(154,103,0,.07)'},tension:.15,spanGaps:true},
-      {label:'2% IEC 61000',data:Array(N).fill(2),borderColor:'rgba(207,34,46,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
+      {label:LANG==='es'?'Desequil. voltaje (%)':'Voltage imbalance (%)',data:vsub,borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:{target:'origin',above:'rgba(34,176,225,.07)'},tension:.15,spanGaps:true},
+      {label:'2% IEC 61000',data:Array(N).fill(2),borderColor:'rgba(234,86,27,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{labels:{color:'#57606a',font:{size:10},boxWidth:14}},tooltip:TT},
-      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'%',color:'#8c959f',font:{size:11}}}}}});
+      plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
+      scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'%',color:UC.gray,font:{size:11}}}}}});
   }
 
   if(sel.has('chartTemp')&&$('chartTemp')&&tempFull){
     const tSub=subIdx.map(i=>{const v=tempFull[i];return v!=null?r2(v):null;});
     mk('chartTemp',{type:'line',data:{labels:lbl,datasets:[
-      {label:'Temp. aceite (°C)',data:tSub,borderColor:'#cf222e',borderWidth:1.4,pointRadius:0,fill:false,tension:.2,yAxisID:'yT',spanGaps:true},
-      {label:'Cargabilidad (%)',data:loadSub,borderColor:'rgba(9,105,218,.5)',borderWidth:1,pointRadius:0,fill:false,tension:.2,yAxisID:'yL',spanGaps:true},
+      {label:LANG==='es'?'Temp. aceite (°C)':'Oil temp. (°C)',data:tSub,borderColor:UC.orange,borderWidth:1.4,pointRadius:0,fill:false,tension:.2,yAxisID:'yT',spanGaps:true},
+      {label:LANG==='es'?'Cargabilidad (%)':'Load (%)',data:loadSub,borderColor:'rgba(34,176,225,.5)',borderWidth:1,pointRadius:0,fill:false,tension:.2,yAxisID:'yL',spanGaps:true},
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',labels:{color:'#57606a',font:{size:10},boxWidth:16,padding:10}},tooltip:TT},
+      plugins:{legend:{display:true,position:'top',labels:{color:UC.deep,font:{size:10},boxWidth:16,padding:10}},tooltip:TT},
       scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:10,maxRotation:0}},
-        yT:{grid:GR,position:'left',ticks:TK,title:{display:true,text:'°C',color:'#cf222e',font:{size:11}}},
-        yL:{grid:{display:false},position:'right',ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:'% carga',color:'#0969da',font:{size:11}}}}}});
+        yT:{grid:GR,position:'left',ticks:TK,title:{display:true,text:'°C',color:UC.orange,font:{size:11}}},
+        yL:{grid:{display:false},position:'right',ticks:{...TK,callback:v=>v+'%'},title:{display:true,text:LANG==='es'?'% carga':'% load',color:UC.blue,font:{size:11}}}}}});
   }
 }
 
@@ -1052,3 +1279,15 @@ updateVBadge();
 </script>
 </body>
 </html>
+
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-15114096182');
+  </script>
+  <!-- Resto de tu head... -->
+</head>

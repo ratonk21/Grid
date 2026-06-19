@@ -1,39 +1,41 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ubicell Report - Obra Emblema</title>
+<title>UbiCell® Report — Ubicquia®</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,300;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #eef1f8;
+    --bg: #EEF0F5;
     --surface: #ffffff;
-    --surface2: #f4f6fb;
-    --border: #d5dded;
-    --accent: #1e3a7b;
-    --accent2: #00bfff;
-    --green: #00c98b;
-    --yellow: #d97706;
-    --red: #dc2626;
-    --text: #0a1628;
-    --muted: #7a8fb5;
+    --surface2: #EEF0F5;
+    --border: #99A0B4;
+    --accent: #1E2445;
+    --accent2: #22B0E1;
+    --green: #4EB270;
+    --yellow: #FAB512;
+    --red: #EA561B;
+    --text: #1E2445;
+    --muted: #99A0B4;
+    --deep-gray: #464D63;
     --radius: 12px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
     min-height: 100vh;
   }
 
   /* HEADER */
   header {
-    background: linear-gradient(135deg, #0a1628 0%, #1e3a7b 100%);
+    background: #1E2445;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     padding: 20px 40px;
     display: flex;
@@ -75,13 +77,13 @@
     color: var(--muted);
     transition: all .3s;
   }
-  .step.active .step-num { background: var(--accent); border-color: var(--accent); color: white; }
-  .step.done .step-num { background: var(--green); border-color: var(--green); color: white; }
+  .step.active .step-num { background: #22B0E1; border-color: #22B0E1; color: white; }
+  .step.done .step-num { background: #4EB270; border-color: #4EB270; color: white; }
   .step-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
   .step.active .step-label { color: var(--text); font-weight: 600; }
-  .step.done .step-label { color: var(--green); }
+  .step.done .step-label { color: #4EB270; }
   .step-line { flex: 1; min-width: 24px; height: 2px; background: var(--border); margin: 0 8px; }
-  .step-line.done { background: var(--green); }
+  .step-line.done { background: #4EB270; }
 
   /* CARDS */
   .card {
@@ -97,7 +99,7 @@
     margin-bottom: 20px;
   }
   .badge {
-    background: var(--accent);
+    background: #22B0E1;
     color: white;
     border-radius: 6px;
     padding: 2px 8px;
@@ -105,7 +107,7 @@
     font-weight: 700;
     letter-spacing: .5px;
   }
-  .badge.green { background: var(--green); }
+  .badge.green { background: #4EB270; }
   .badge.yellow { background: var(--yellow); color: #1a1a1a; }
 
   /* DROP ZONE */
@@ -119,8 +121,8 @@
     position: relative;
   }
   .drop-zone:hover, .drop-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(30,58,123,.06);
+    border-color: #22B0E1;
+    background: rgba(34,176,225,0.06);
   }
   .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .drop-icon { font-size: 40px; margin-bottom: 12px; }
@@ -154,20 +156,20 @@
     border-radius: 10px;
     padding: 14px 16px;
   }
-  .stat-card .val { font-size: 28px; font-weight: 800; color: var(--accent); }
+  .stat-card .val { font-size: 28px; font-weight: 800; color: #22B0E1; }
   .stat-card .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.3; }
   .stat-card.warn .val { color: var(--yellow); }
   .stat-card.danger .val { color: var(--red); }
-  .stat-card.ok .val { color: var(--green); }
+  .stat-card.ok .val { color: #4EB270; }
 
   /* TABLE */
   .tbl-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  thead { position: sticky; top: 0; background: #eef1f8; }
+  thead { position: sticky; top: 0; background: #EEF0F5; }
   th { padding: 10px 12px; text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 9px 12px; border-bottom: 1px solid #edf0f4; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(30,58,123,.06); }
+  tr:hover td { background: rgba(34,176,225,0.08); }
 
   /* TABS */
   .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -182,8 +184,8 @@
     transition: all .2s;
     font-family: inherit;
   }
-  .tab-btn:hover { border-color: var(--accent); color: var(--text); }
-  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+  .tab-btn:hover { border-color: #22B0E1; color: var(--text); }
+  .tab-btn.active { background: #22B0E1; border-color: #22B0E1; color: white; font-weight: 600; }
 
   /* PDF PREVIEW */
   .pdf-preview-wrap {
@@ -220,7 +222,7 @@
     transition: border-color .2s;
     font-family: inherit;
   }
-  input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input[type="text"]:focus, textarea:focus, select:focus { border-color: #22B0E1; outline: none; box-shadow: 0 0 0 2px rgba(34,176,225,0.2); }
   input[type="color"] { height: 40px; padding: 4px 8px; cursor: pointer; }
   textarea { resize: vertical; min-height: 80px; }
 
@@ -235,7 +237,7 @@
     position: relative;
     background: rgba(30,58,123,.04);
   }
-  .img-drop:hover { border-color: var(--accent); background: rgba(30,58,123,.09); }
+  .img-drop:hover { border-color: #22B0E1; background: rgba(34,176,225,0.09); }
   .img-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
   .img-preview { max-width: 100%; max-height: 120px; object-fit: contain; border-radius: 6px; }
 
@@ -253,24 +255,24 @@
     align-items: center;
     gap: 8px;
   }
-  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+  .btn-primary { background: #22B0E1; color: white; }
   .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
   .btn-secondary { background: #ffffff; border: 1px solid var(--border); color: var(--text); }
   .btn-secondary:hover { border-color: var(--accent); }
-  .btn-green { background: var(--green); color: white; }
+  .btn-green { background: #4EB270; color: white; }
   .btn-green:hover { opacity: .9; }
   .btn:disabled { opacity: .4; cursor: not-allowed; transform: none !important; }
   .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
 
   /* PROGRESS */
   .progress-bar { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; margin: 8px 0; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width .4s; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #1E2445, #22B0E1); border-radius: 99px; transition: width .4s; }
 
   /* ALERTS */
   .alert { padding: 12px 16px; border-radius: 9px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-  .alert-info { background: #dde5f8; border: 1px solid #b3c3ee; color: #1e3a7b; }
-  .alert-success { background: #e0fdf4; border: 1px solid #99f0d5; color: #00a06f; }
-  .alert-warn { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
+  .alert-info { background: rgba(34,176,225,0.1); border: 1px solid rgba(34,176,225,0.4); color: #1E2445; }
+  .alert-success { background: rgba(78,178,112,0.1); border: 1px solid rgba(78,178,112,0.4); color: #1E2445; }
+  .alert-warn { background: rgba(250,181,18,0.1); border: 1px solid rgba(250,181,18,0.4); color: #464D63; }
 
   /* SECTION HIDDEN */
   .section { display: none; }
@@ -289,15 +291,15 @@
   .palette-swatch {
     width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: .2s;
   }
-  .palette-swatch.selected { border-color: #0a1628; box-shadow: 0 0 0 1px #fff inset; }
+  .palette-swatch.selected { border-color: #1E2445; box-shadow: 0 0 0 1px #fff inset; }
 
   .img-size-btn {
     padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
     background: #fff; color: var(--muted); font-size: 11px; font-weight: 600;
     cursor: pointer; transition: all .15s; font-family: inherit;
   }
-  .img-size-btn:hover { border-color: var(--accent); color: var(--text); }
-  .img-size-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .img-size-btn:hover { border-color: #22B0E1; color: var(--text); }
+  .img-size-btn.active { background: #22B0E1; border-color: #22B0E1; color: #fff; }
   textarea { resize: vertical; min-height: 72px; }
   .hidden { display: none !important; }
   .mt4 { margin-top: 4px; }
@@ -311,10 +313,18 @@
 <body>
 
 <header>
-  <div class="logo-dot">⚡</div>
-  <div>
-    <h1>Ubicell Report - Obra Emblema</h1>
-    <p>Procesamiento white-label de reportes de despliegue inteligente</p>
+  <div style="display:flex;align-items:center;gap:16px;flex:1;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(34,176,225,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#22B0E1;letter-spacing:-1px;">U</div>
+      <div>
+        <h1 id="hdr-title">UbiCell® Deployment Report</h1>
+        <p id="hdr-sub">Intelligent deployment report — white-label processing</p>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <button onclick="setLang('en')" id="btn-en" style="background:none;border:1px solid #22B0E1;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:#22B0E1;cursor:pointer;transition:.2s;font-family:inherit;">EN</button>
+    <button onclick="setLang('es')" id="btn-es" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer;transition:.2s;font-family:inherit;">ES</button>
   </div>
 </header>
 
@@ -322,26 +332,26 @@
 
   <!-- STEPPER (3 pasos: sin paso 2) -->
   <div class="stepper">
-    <div class="step active" id="stp1"><div class="step-num">1</div><div class="step-label">Cargar ZIP</div></div>
+    <div class="step active" id="stp1"><div class="step-num">1</div><div class="step-label" id="lbl-step1">Load ZIP</div></div>
     <div class="step-line" id="line1"></div>
-    <div class="step" id="stp2"><div class="step-num">2</div><div class="step-label">White Label PDF</div></div>
+    <div class="step" id="stp2"><div class="step-num">2</div><div class="step-label" id="lbl-step2">White Label PDF</div></div>
     <div class="step-line" id="line2"></div>
-    <div class="step" id="stp3"><div class="step-num">3</div><div class="step-label">Exportar</div></div>
+    <div class="step" id="stp3"><div class="step-num">3</div><div class="step-label" id="lbl-step3">Export</div></div>
   </div>
 
   <!-- STEP 1: UPLOAD -->
   <div class="section visible" id="step1">
     <div class="card">
-      <div class="card-title">📦 Cargar archivo ZIP <span class="badge">Paso 1</span></div>
+      <div class="card-title" id="card1-title">📦 <span id="t-load-zip">Load ZIP file</span> <span class="badge" id="t-step1-badge">Step 1</span></div>
       <div class="drop-zone" id="dropZone">
         <input type="file" accept=".zip" id="zipInput">
         <div class="drop-icon">📂</div>
-        <h3>Arrastra tu ZIP aquí o haz clic para seleccionar</h3>
-        <p>Debe contener un archivo PDF y un archivo Excel (.xlsx)</p>
+        <h3 id="t-drop-h3">Drag your ZIP here or click to select</h3>
+        <p id="t-drop-p">Must contain a PDF file and an Excel file (.xlsx)</p>
       </div>
       <div id="fileInfo" class="hidden mt12"></div>
       <div id="parseProgress" class="hidden mt12">
-        <p class="muted mt4" id="parseMsg">Leyendo archivos...</p>
+        <p class="muted mt4" id="parseMsg">Reading files...</p>
         <div class="progress-bar mt8"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
       </div>
     </div>
@@ -350,18 +360,18 @@
   <!-- STEP 2: WHITE LABEL (ex step 3) -->
   <div class="section" id="step2">
     <div class="card" style="padding:20px 24px;">
-      <div class="card-title" style="margin-bottom:16px;">🎨 Editor White Label — Página 2 del PDF</div>
+      <div class="card-title" style="margin-bottom:16px;">🎨 <span id="t-wl-title">White Label Editor — PDF Page 2</span></div>
 
       <!-- SIDE BY SIDE: preview left (narrow), controls right -->
       <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
 
         <!-- LEFT: narrow A4 preview -->
         <div>
-          <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.4px;">VISTA PREVIA</p>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.4px;" id="t-preview">PREVIEW</p>
           <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);">
             <canvas id="wlPreviewCanvas" style="display:block;width:100%;"></canvas>
           </div>
-          <p style="font-size:10px;color:var(--muted);margin-top:5px;text-align:center;">Tiempo real</p>
+          <p style="font-size:10px;color:var(--muted);margin-top:5px;text-align:center;" id="t-realtime">Real time</p>
         </div>
 
         <!-- RIGHT: controls -->
@@ -373,17 +383,17 @@
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
               <label style="margin-bottom:0;">IMAGEN DE FONDO</label>
               <div style="display:flex;gap:5px;">
-                <button class="img-size-btn" data-size="small"  onclick="setImgSize('small',this)"  title="Centrada con espacio">⬜ Pequeña</button>
-                <button class="img-size-btn active" data-size="medium" onclick="setImgSize('medium',this)" title="Cubre ~75%">▪ Mediana</button>
-                <button class="img-size-btn"        data-size="full"   onclick="setImgSize('full',this)"   title="Llena toda la zona">■ Completa</button>
+                <button class="img-size-btn" data-size="small"  onclick="setImgSize('small',this)"  title="Centered with space" data-es="⬜ Pequeña" data-en="⬜ Small">⬜ Small</button>
+                <button class="img-size-btn active" data-size="medium" onclick="setImgSize('medium',this)" title="Covers ~75%" data-es="▪ Mediana" data-en="▪ Medium">▪ Medium</button>
+                <button class="img-size-btn"        data-size="full"   onclick="setImgSize('full',this)"   title="Fills entire area" data-es="■ Completa" data-en="■ Full">■ Full</button>
               </div>
             </div>
             <div class="img-drop" id="logoDropZone">
               <input type="file" accept="image/*" id="logoInput">
               <div id="logoPlaceholder">
                 <div style="font-size:24px;margin-bottom:4px;">🖼️</div>
-                <p style="font-size:12px;color:var(--muted);">Arrastra tu imagen aquí</p>
-                <p style="font-size:11px;color:var(--muted);">PNG, JPG — foto o fondo de marca</p>
+                <p style="font-size:12px;color:var(--muted);" id="t-drag-img">Drag your image here</p>
+                <p style="font-size:11px;color:var(--muted);" id="t-drag-img2">PNG, JPG — photo or brand background</p>
               </div>
               <div id="logoPreviewWrap" class="hidden" style="position:relative;display:inline-block;width:100%;">
                 <img id="logoPreview" class="img-preview" alt="Logo preview">
@@ -395,40 +405,40 @@
           <!-- Company + client -->
           <div class="grid2">
             <div class="field-group">
-              <label>NOMBRE DE EMPRESA</label>
-              <input type="text" id="wlCompany" placeholder="Mi Empresa S.A." value="Obra Emblema Colonia Juarez">
+              <label id="t-company-lbl">COMPANY NAME</label>
+              <input type="text" id="wlCompany" placeholder="My Company" value="Obra Emblema Colonia Juarez">
             </div>
             <div class="field-group">
-              <label>CIUDAD / CLIENTE</label>
-              <input type="text" id="wlClient" placeholder="Ciudad, País" value="Ciudad de Mexico, Mexico">
+              <label id="t-client-lbl">CITY / CLIENT</label>
+              <input type="text" id="wlClient" placeholder="City, Country" value="Ciudad de Mexico, Mexico">
             </div>
           </div>
 
           <!-- Intro -->
           <div class="field-group">
-            <label>DESCRIPCIÓN / TEXTO INTRODUCTORIO</label>
-            <textarea id="wlIntro" rows="2" placeholder="Estimado cliente, le presentamos el reporte semanal..."></textarea>
+            <label id="t-intro-lbl">DESCRIPTION / INTRO TEXT</label>
+            <textarea id="wlIntro" rows="2" placeholder="Dear client, we present the weekly report..."></textarea>
           </div>
 
           <!-- Footer + color in a row -->
           <div class="grid2">
             <div class="field-group">
-              <label>NOTA AL PIE</label>
-              <input type="text" id="wlFooter" placeholder="Confidencial · Generado por Ubicquia Platform · © 2026" value="Confidencial · Generado por Ubicquia Platform · © 2026">
+              <label id="t-footer-lbl">FOOTER NOTE</label>
+              <input type="text" id="wlFooter" placeholder="Confidential · Generated by Ubicquia Platform · © 2026" value="Confidential · Generated by Ubicquia Platform · © 2026">
             </div>
             <div class="field-group">
-              <label>COLOR PRIMARIO</label>
+              <label id="t-color-lbl">PRIMARY COLOR</label>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-                <input type="color" id="wlColor" value="#1e3a7b" style="width:40px;flex-shrink:0;">
-                <input type="text" id="wlColorHex" value="#1e3a7b" style="font-family:monospace;">
+                <input type="color" id="wlColor" value="#1E2445" style="width:40px;flex-shrink:0;">
+                <input type="text" id="wlColorHex" value="#1E2445" style="font-family:monospace;">
               </div>
               <div class="palette-pick" id="colorPalette">
-                <div class="palette-swatch selected" style="background:#1e3a7b" data-color="#1e3a7b"></div>
-                <div class="palette-swatch" style="background:#0a1628" data-color="#0a1628"></div>
-                <div class="palette-swatch" style="background:#00bfff" data-color="#00bfff"></div>
-                <div class="palette-swatch" style="background:#00c98b" data-color="#00c98b"></div>
-                <div class="palette-swatch" style="background:#d97706" data-color="#d97706"></div>
-                <div class="palette-swatch" style="background:#dc2626" data-color="#dc2626"></div>
+                <div class="palette-swatch selected" style="background:#1E2445" data-color="#1E2445" title="Ubicquia® Dark Blue"></div>
+                <div class="palette-swatch" style="background:#22B0E1" data-color="#22B0E1" title="Ubicquia® Blue"></div>
+                <div class="palette-swatch" style="background:#464D63" data-color="#464D63" title="Deep Gray"></div>
+                <div class="palette-swatch" style="background:#2E2B2A" data-color="#2E2B2A" title="Matte Black"></div>
+                <div class="palette-swatch" style="background:#005B59" data-color="#005B59" title="Ubicquia® Dark Green"></div>
+                <div class="palette-swatch" style="background:#3466AF" data-color="#3466AF" title="Royal Blue"></div>
               </div>
             </div>
           </div>
@@ -436,24 +446,24 @@
           <!-- Logo overlay -->
           <div class="grid2">
             <div class="field-group">
-              <label>POSICIÓN DEL LOGO EN LA IMAGEN</label>
+              <label id="t-logo-pos-lbl">LOGO POSITION ON IMAGE</label>
               <select id="wlLogoPos">
-                <option value="none">Sin logo superpuesto</option>
-                <option value="top-left">Arriba izquierda</option>
-                <option value="top-center">Arriba centro</option>
-                <option value="top-right">Arriba derecha</option>
-                <option value="center">Centro</option>
-                <option value="bottom-left">Abajo izquierda</option>
-                <option value="bottom-center">Abajo centro</option>
-                <option value="bottom-right">Abajo derecha</option>
+                <option value="none" data-es="Sin logo superpuesto" data-en="No overlay logo">No overlay logo</option>
+                <option value="top-left" data-es="Arriba izquierda" data-en="Top left">Top left</option>
+                <option value="top-center" data-es="Arriba centro" data-en="Top center">Top center</option>
+                <option value="top-right" data-es="Arriba derecha" data-en="Top right">Top right</option>
+                <option value="center" data-es="Centro" data-en="Center">Center</option>
+                <option value="bottom-left" data-es="Abajo izquierda" data-en="Bottom left">Bottom left</option>
+                <option value="bottom-center" data-es="Abajo centro" data-en="Bottom center">Bottom center</option>
+                <option value="bottom-right" data-es="Abajo derecha" data-en="Bottom right">Bottom right</option>
               </select>
             </div>
             <div class="field-group">
-              <label>LOGO SUPERPUESTO (PNG transparente)</label>
+              <label id="t-overlay-lbl">OVERLAY LOGO (transparent PNG)</label>
               <div class="img-drop" id="logoOverlayDropZone" style="padding:10px;">
                 <input type="file" accept="image/*" id="logoOverlayInput">
                 <div id="logoOverlayPlaceholder">
-                  <p style="font-size:11px;color:var(--muted);">🏷️ Arrastra logo aquí</p>
+                  <p style="font-size:11px;color:var(--muted);" id="t-drag-logo">🏷️ Drag logo here</p>
                 </div>
                 <div id="logoOverlayPreviewWrap" class="hidden" style="position:relative;display:inline-block;width:100%;text-align:center;">
                   <img id="logoOverlayPreview" class="img-preview" style="max-height:50px;" alt="">
@@ -468,8 +478,8 @@
 
       <!-- Buttons -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-        <button class="btn btn-secondary" onclick="goStep(1)">← Volver</button>
-        <button class="btn btn-primary" onclick="goStep(3)">Generar Reporte Final ➡</button>
+        <button class="btn btn-secondary" id="t-btn-back1" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" id="t-btn-generate" onclick="goStep(3)">Generate Final Report ➡</button>
       </div>
     </div>
   </div>
@@ -477,39 +487,39 @@
   <!-- STEP 3: EXPORT (ex step 4) -->
   <div class="section" id="step3">
     <div class="card">
-      <div class="card-title">🚀 Reporte Final Listo</div>
-      <div class="alert alert-success" id="exportStatus">✅ Todo listo para exportar</div>
+      <div class="card-title" id="t-export-title">🚀 <span id="t-final-ready">Final Report Ready</span></div>
+      <div class="alert alert-success" id="exportStatus"><span id="t-all-ready">✅ All set for export</span></div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
           <div style="font-size:24px;margin-bottom:8px;">📄</div>
-          <strong>PDF White-Label</strong>
-          <p class="muted mt4">Pág. 1 original + Pág. 2 con tu marca + resto del informe</p>
+          <strong id="t-pdf-title">White-Label PDF</strong>
+          <p class="muted mt4" id="t-pdf-desc">Pg. 1 original + Pg. 2 with your brand + rest of report</p>
           <div class="btn-row" style="margin-top:12px;">
-            <button class="btn btn-primary" id="downloadPdfBtn" onclick="generateAndDownloadPDF()">⬇ Descargar PDF</button>
+            <button class="btn btn-primary" id="downloadPdfBtn" onclick="generateAndDownloadPDF()" id="t-dl-pdf">⬇ Download PDF</button>
           </div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
           <div style="font-size:24px;margin-bottom:8px;">📊</div>
-          <strong>Reporte Excel Consolidado</strong>
-          <p class="muted mt4">Todas las hojas + hoja resumen con métricas + formato</p>
+          <strong id="t-excel-title">Consolidated Excel Report</strong>
+          <p class="muted mt4" id="t-excel-desc">All sheets + summary sheet with metrics + formatting</p>
           <div class="btn-row" style="margin-top:12px;">
-            <button class="btn btn-green" onclick="generateAndDownloadExcel()">⬇ Descargar Excel</button>
+            <button class="btn btn-green" id="t-dl-excel" onclick="generateAndDownloadExcel()">⬇ Download Excel</button>
           </div>
         </div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;">
           <div style="font-size:24px;margin-bottom:8px;">📦</div>
-          <strong>ZIP Completo</strong>
-          <p class="muted mt4">PDF white-label + Excel consolidado en un solo archivo ZIP</p>
+          <strong id="t-zip-title">Complete ZIP</strong>
+          <p class="muted mt4" id="t-zip-desc">White-label PDF + consolidated Excel in one ZIP file</p>
           <div class="btn-row" style="margin-top:12px;">
-            <button class="btn btn-secondary" id="downloadZipBtn" onclick="generateAndDownloadZip()">⬇ Descargar ZIP</button>
+            <button class="btn btn-secondary" id="downloadZipBtn" onclick="generateAndDownloadZip()">⬇ Download ZIP</button>
           </div>
         </div>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <button class="btn btn-secondary" onclick="goStep(2)">← Editar White Label</button>
-        <button class="btn btn-secondary" onclick="resetAll()">🔄 Procesar nuevo ZIP</button>
+        <button class="btn btn-secondary" id="t-btn-back2" onclick="goStep(2)">← Edit White Label</button>
+        <button class="btn btn-secondary" id="t-btn-reset" onclick="resetAll()">🔄 Process new ZIP</button>
       </div>
     </div>
   </div>
@@ -519,6 +529,172 @@
 <script>
 // ─── PDF.js setup ───────────────────────────────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── Language ───────────────────────────────────────────────────
+let currentLang = 'en';
+
+const i18n = {
+  en: {
+    'hdr-title': 'UbiCell® Deployment Report',
+    'hdr-sub': 'Intelligent deployment report — white-label processing',
+    'lbl-step1': 'Load ZIP',
+    'lbl-step2': 'White Label PDF',
+    'lbl-step3': 'Export',
+    'card1-title-text': 'Load ZIP file',
+    't-step1-badge': 'Step 1',
+    't-drop-h3': 'Drag your ZIP here or click to select',
+    't-drop-p': 'Must contain a PDF file and an Excel file (.xlsx)',
+    't-wl-title': 'White Label Editor — PDF Page 2',
+    't-preview': 'PREVIEW',
+    't-bg-img': 'BACKGROUND IMAGE',
+    't-company-lbl': 'COMPANY NAME',
+    't-client-lbl': 'CITY / CLIENT',
+    't-intro-lbl': 'DESCRIPTION / INTRO TEXT',
+    't-footer-lbl': 'FOOTER NOTE',
+    't-color-lbl': 'PRIMARY COLOR',
+    't-logo-pos-lbl': 'LOGO POSITION ON IMAGE',
+    't-overlay-lbl': 'OVERLAY LOGO (transparent PNG)',
+    't-drag-img': 'Drag your image here',
+    't-drag-img2': 'PNG, JPG — photo or brand background',
+    't-drag-logo': '🏷️ Drag logo here',
+    't-btn-back1': '← Back',
+    't-btn-generate': 'Generate Final Report ➡',
+    't-export-title': 'Final Report Ready',
+    't-final-ready': '✅ All set for export',
+    't-pdf-title': 'White-Label PDF',
+    't-pdf-desc': 'Pg. 1 original + Pg. 2 with your brand + rest of report',
+    't-excel-title': 'Consolidated Excel Report',
+    't-excel-desc': 'All sheets + summary sheet with metrics + formatting',
+    't-zip-title': 'Complete ZIP',
+    't-zip-desc': 'White-label PDF + consolidated Excel in one ZIP file',
+    't-dl-pdf': '⬇ Download PDF',
+    't-dl-excel': '⬇ Download Excel',
+    't-dl-zip': '⬇ Download ZIP',
+    't-btn-back2': '← Edit White Label',
+    't-btn-reset': '🔄 Process new ZIP',
+    't-realtime': 'Real time',
+    'parseMsg': 'Reading files...',
+    'small-btn': '⬜ Small', 'medium-btn': '▪ Medium', 'full-btn': '■ Full',
+    'wlCompany-placeholder': 'My Company',
+    'wlClient-placeholder': 'City, Country',
+    'wlIntro-placeholder': 'Dear client, we present the weekly report...',
+    'wlFooter-placeholder': 'Confidential · Generated by Ubicquia Platform · © 2026',
+  },
+  es: {
+    'hdr-title': 'Reporte de Despliegue UbiCell®',
+    'hdr-sub': 'Procesamiento white-label de reportes de despliegue inteligente',
+    'lbl-step1': 'Cargar ZIP',
+    'lbl-step2': 'White Label PDF',
+    'lbl-step3': 'Exportar',
+    'card1-title-text': 'Cargar archivo ZIP',
+    't-step1-badge': 'Paso 1',
+    't-drop-h3': 'Arrastra tu ZIP aquí o haz clic para seleccionar',
+    't-drop-p': 'Debe contener un archivo PDF y un archivo Excel (.xlsx)',
+    't-wl-title': 'Editor White Label — Página 2 del PDF',
+    't-preview': 'VISTA PREVIA',
+    't-bg-img': 'IMAGEN DE FONDO',
+    't-company-lbl': 'NOMBRE DE EMPRESA',
+    't-client-lbl': 'CIUDAD / CLIENTE',
+    't-intro-lbl': 'DESCRIPCIÓN / TEXTO INTRODUCTORIO',
+    't-footer-lbl': 'NOTA AL PIE',
+    't-color-lbl': 'COLOR PRIMARIO',
+    't-logo-pos-lbl': 'POSICIÓN DEL LOGO EN LA IMAGEN',
+    't-overlay-lbl': 'LOGO SUPERPUESTO (PNG transparente)',
+    't-drag-img': 'Arrastra tu imagen aquí',
+    't-drag-img2': 'PNG, JPG — foto o fondo de marca',
+    't-drag-logo': '🏷️ Arrastra logo aquí',
+    't-btn-back1': '← Volver',
+    't-btn-generate': 'Generar Reporte Final ➡',
+    't-export-title': 'Reporte Final Listo',
+    't-final-ready': '✅ Todo listo para exportar',
+    't-pdf-title': 'PDF White-Label',
+    't-pdf-desc': 'Pág. 1 original + Pág. 2 con tu marca + resto del informe',
+    't-excel-title': 'Reporte Excel Consolidado',
+    't-excel-desc': 'Todas las hojas + hoja resumen con métricas + formato',
+    't-zip-title': 'ZIP Completo',
+    't-zip-desc': 'PDF white-label + Excel consolidado en un solo archivo ZIP',
+    't-dl-pdf': '⬇ Descargar PDF',
+    't-dl-excel': '⬇ Descargar Excel',
+    't-dl-zip': '⬇ Descargar ZIP',
+    't-btn-back2': '← Editar White Label',
+    't-btn-reset': '🔄 Procesar nuevo ZIP',
+    't-realtime': 'Tiempo real',
+    'parseMsg': 'Leyendo archivos...',
+    'small-btn': '⬜ Pequeña', 'medium-btn': '▪ Mediana', 'full-btn': '■ Completa',
+    'wlCompany-placeholder': 'Mi Empresa S.A.',
+    'wlClient-placeholder': 'Ciudad, País',
+    'wlIntro-placeholder': 'Estimado cliente, le presentamos el reporte semanal...',
+    'wlFooter-placeholder': 'Confidencial · Generado por Ubicquia Platform · © 2026',
+  }
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  const t = i18n[lang];
+  // Toggle button styles
+  document.getElementById('btn-en').style.color = lang === 'en' ? '#22B0E1' : 'rgba(255,255,255,0.5)';
+  document.getElementById('btn-en').style.borderColor = lang === 'en' ? '#22B0E1' : 'rgba(255,255,255,0.2)';
+  document.getElementById('btn-es').style.color = lang === 'es' ? '#22B0E1' : 'rgba(255,255,255,0.5)';
+  document.getElementById('btn-es').style.borderColor = lang === 'es' ? '#22B0E1' : 'rgba(255,255,255,0.2)';
+
+  // Update all translatable elements
+  const ids = ['hdr-title','hdr-sub','lbl-step1','lbl-step2','lbl-step3',
+    't-drop-h3','t-drop-p','t-wl-title','t-preview','t-bg-img','t-company-lbl',
+    't-client-lbl','t-intro-lbl','t-footer-lbl','t-color-lbl','t-logo-pos-lbl',
+    't-overlay-lbl','t-drag-img','t-drag-img2','t-drag-logo','t-btn-back1',
+    't-btn-generate','t-final-ready','t-pdf-title','t-pdf-desc','t-excel-title',
+    't-excel-desc','t-zip-title','t-zip-desc','t-btn-back2','t-btn-reset','t-realtime',
+    't-step1-badge'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(el && t[id]) el.textContent = t[id];
+  });
+
+  // Card1 title text
+  const card1 = document.getElementById('card1-title');
+  if(card1) card1.innerHTML = '📦 <span id="t-load-zip">' + t['card1-title-text'] + '</span> <span class="badge" id="t-step1-badge">' + t['t-step1-badge'] + '</span>';
+
+  // Export title
+  const exportTitle = document.getElementById('t-export-title');
+  if(exportTitle) exportTitle.innerHTML = '🚀 <span id="t-final-ready">' + t['t-export-title'] + '</span>';
+
+  // Image size buttons
+  document.querySelectorAll('.img-size-btn').forEach(btn => {
+    const size = btn.dataset.size;
+    if(size === 'small' && t['small-btn']) btn.textContent = t['small-btn'];
+    if(size === 'medium' && t['medium-btn']) btn.textContent = t['medium-btn'];
+    if(size === 'full' && t['full-btn']) btn.textContent = t['full-btn'];
+  });
+
+  // Logo position select options
+  const logoSel = document.getElementById('wlLogoPos');
+  if(logoSel) {
+    Array.from(logoSel.options).forEach(opt => {
+      const key = lang === 'es' ? opt.dataset.es : opt.dataset.en;
+      if(key) opt.textContent = key;
+    });
+  }
+
+  // Placeholder texts
+  const placeholders = {
+    'wlCompany': t['wlCompany-placeholder'],
+    'wlClient': t['wlClient-placeholder'],
+    'wlIntro': t['wlIntro-placeholder'],
+    'wlFooter': t['wlFooter-placeholder'],
+  };
+  Object.entries(placeholders).forEach(([id, ph]) => {
+    const el = document.getElementById(id);
+    if(el) el.placeholder = ph;
+  });
+
+  // Download buttons
+  const dlPdf = document.getElementById('downloadPdfBtn');
+  if(dlPdf && !dlPdf.disabled) dlPdf.textContent = t['t-dl-pdf'];
+  const dlZip = document.getElementById('downloadZipBtn');
+  if(dlZip && !dlZip.disabled) dlZip.textContent = t['t-dl-zip'];
+  const dlExcel = document.querySelector('.btn-green');
+  if(dlExcel && !dlExcel.disabled) dlExcel.textContent = t['t-dl-excel'];
+}
 
 // ─── State ──────────────────────────────────────────────────────
 let state = {
@@ -598,7 +774,7 @@ dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.
 zipInput.addEventListener('change', e => { if(e.target.files[0]) handleZip(e.target.files[0]); });
 
 async function handleZip(file) {
-  if (!file || !file.name.endsWith('.zip')) { alert('Por favor selecciona un archivo .zip'); return; }
+  if (!file || !file.name.endsWith('.zip')) { alert(currentLang==='es' ? 'Por favor selecciona un archivo .zip' : 'Please select a .zip file'); return; }
   state.zipFile = file;
 
   // Show file info
@@ -613,7 +789,7 @@ async function handleZip(file) {
   prog.classList.remove('hidden');
 
   try {
-    msg.textContent = 'Abriendo ZIP...'; fill.style.width = '10%';
+    msg.textContent = currentLang==='es' ? 'Abriendo ZIP...' : 'Opening ZIP...'; fill.style.width = '10%';
     const zip = await JSZip.loadAsync(file);
     const files = Object.keys(zip.files).filter(n => !zip.files[n].dir);
 
@@ -630,23 +806,23 @@ async function handleZip(file) {
     state.pdfFilename = pdfEntry.split('/').pop();
     state.xlsxFilename = xlsxEntry.split('/').pop();
 
-    msg.textContent = 'Extrayendo PDF...'; fill.style.width = '30%';
+    msg.textContent = currentLang==='es' ? 'Extrayendo PDF...' : 'Extracting PDF...'; fill.style.width = '30%';
     state.pdfBytes = await zip.files[pdfEntry].async('uint8array');
 
-    msg.textContent = 'Extrayendo Excel...'; fill.style.width = '55%';
+    msg.textContent = currentLang==='es' ? 'Extrayendo Excel...' : 'Extracting Excel...'; fill.style.width = '55%';
     state.xlsxBytes = await zip.files[xlsxEntry].async('uint8array');
 
-    msg.textContent = 'Cargando PDF...'; fill.style.width = '70%';
+    msg.textContent = currentLang==='es' ? 'Cargando PDF...' : 'Loading PDF...'; fill.style.width = '70%';
     state.pdfDoc = await pdfjsLib.getDocument({ data: state.pdfBytes.slice() }).promise;
 
-    msg.textContent = 'Leyendo Excel...'; fill.style.width = '85%';
+    msg.textContent = currentLang==='es' ? 'Leyendo Excel...' : 'Reading Excel...'; fill.style.width = '85%';
     state.workbook = XLSX.read(state.xlsxBytes, { type: 'array' });
 
-    msg.textContent = 'Procesando datos...'; fill.style.width = '95%';
+    msg.textContent = currentLang==='es' ? 'Procesando datos...' : 'Processing data...'; fill.style.width = '95%';
     parseSummary();
 
     fill.style.width = '100%';
-    msg.textContent = '✅ Archivos procesados correctamente';
+    msg.textContent = currentLang==='es' ? '✅ Archivos procesados correctamente' : '✅ Files processed successfully';
 
     setTimeout(() => {
       goStep(2);
@@ -839,13 +1015,13 @@ function drawWlPreview() {
     // Report title
     ctx.fillStyle = '#333';
     ctx.font = `bold ${Math.round(8.5*scale)}px Segoe UI, sans-serif`;
-    ctx.fillText('Informe de Perspectivas de Despliegue UbiCell', PW/2, y);
+    ctx.fillText(currentLang==='es'?'Informe de Perspectivas de Despliegue UbiCell®':'UbiCell® Deployment Insights Report', PW/2, y);
     y += 11*scale;
 
     // Date
     ctx.fillStyle = '#aaa';
     ctx.font = `${Math.round(7.5*scale)}px Segoe UI, sans-serif`;
-    ctx.fillText(new Date().toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'}), PW/2, y);
+    ctx.fillText(new Date().toLocaleDateString(currentLang==='es'?'es-CO':'en-US',{year:'numeric',month:'long',day:'numeric'}), PW/2, y);
     y += 10*scale;
 
     // Intro text (if present)
@@ -875,7 +1051,7 @@ function drawWlPreview() {
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = `bold ${Math.round(7*scale)}px Segoe UI, sans-serif`;
-      ctx.fillText('RESUMEN DE PROBLEMAS DETECTADOS', PW/2, y + HDR_H*0.68);
+      ctx.fillText(currentLang==='es'?'RESUMEN DE PROBLEMAS DETECTADOS':'DETECTED ISSUES SUMMARY', PW/2, y + HDR_H*0.68);
       y += HDR_H;
 
       sheets.forEach((name, idx) => {
@@ -1007,7 +1183,7 @@ function roundRect(ctx, x, y, w, h, r) {
 async function generateAndDownloadPDF() {
   const btn = document.getElementById('downloadPdfBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Generando PDF...';
+  btn.textContent = currentLang === 'es' ? '⏳ Generando PDF...' : '⏳ Generating PDF...';
 
   try {
     const { jsPDF } = window.jspdf;
@@ -1253,7 +1429,7 @@ async function generateAndDownloadPDF() {
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8.5);
-    pdf.text(`Total de registros detectados: ${total}`, PW / 2, TOT_Y + 5.5, { align: 'center' });
+    pdf.text((currentLang==='es'?'Total de registros detectados: ':'Total records detected: ') + total, PW / 2, TOT_Y + 5.5, { align: 'center' });
 
     // ── 7. FOOTER ───────────────────────────────────────
     pdf.setFillColor(r, g, b);
@@ -1262,7 +1438,7 @@ async function generateAndDownloadPDF() {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7.5);
     pdf.text(
-      footer || 'Confidencial · Generado por Ubicquia Platform',
+      footer || (currentLang === 'es' ? 'Confidencial · Generado por Ubicquia Platform' : 'Confidential · Generated by Ubicquia Platform'),
       PW / 2, FOOTER_Y + 6.5, { align: 'center' }
     );
 
@@ -1279,11 +1455,11 @@ async function generateAndDownloadPDF() {
 
   } catch(err) {
     console.error(err);
-    alert('Error al generar PDF: ' + err.message);
+    alert((currentLang==='es' ? 'Error al generar PDF: ' : 'Error generating PDF: ') + err.message);
   }
 
   btn.disabled = false;
-  btn.textContent = '⬇ Descargar PDF';
+  btn.textContent = currentLang === "es" ? "⬇ Descargar PDF" : "⬇ Download PDF";
 }
 
 // ─── GENERATE EXCEL ─────────────────────────────────────────────
@@ -1295,16 +1471,16 @@ function generateAndDownloadExcel() {
 
     // Summary sheet
     const summaryRows = [
-      ['REPORTE DE PERSPECTIVAS DE DESPLIEGUE UBICELL'],
+      [currentLang==='es' ? 'REPORTE DE PERSPECTIVAS DE DESPLIEGUE UBICELL®' : 'UBICELL® DEPLOYMENT INSIGHTS REPORT'],
       [company],
-      [new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'})],
+      [new Date().toLocaleDateString(currentLang==='es'?'es-CO':'en-US', {year:'numeric',month:'long',day:'numeric'})],
       [],
-      ['Categoría', 'Total Registros', 'Estado'],
+      [currentLang==='es'?'Categoría':'Category', currentLang==='es'?'Total Registros':'Total Records', currentLang==='es'?'Estado':'Status'],
     ];
     const sheets = state.workbook.SheetNames;
     sheets.forEach(name => {
       const cnt = state.summaryData[name].rows.length;
-      summaryRows.push([name, cnt, cnt===0?'✅ Sin problemas':cnt>20?'🔴 Crítico':'🟡 Requiere atención']);
+      summaryRows.push([name, cnt, cnt===0?(currentLang==='es'?'✅ Sin problemas':'✅ No issues'):cnt>20?(currentLang==='es'?'🔴 Crítico':'🔴 Critical'):(currentLang==='es'?'🟡 Requiere atención':'🟡 Needs attention')]);
     });
     const totalCnt = Object.values(state.summaryData).reduce((s,v)=>s+v.rows.length,0);
     summaryRows.push([], ['TOTAL', totalCnt, '']);
@@ -1339,7 +1515,7 @@ function generateAndDownloadExcel() {
 
   } catch(err) {
     console.error(err);
-    alert('Error al generar Excel: ' + err.message);
+    alert((currentLang==='es' ? 'Error al generar Excel: ' : 'Error generating Excel: ') + err.message);
   }
 }
 
@@ -1350,15 +1526,15 @@ function buildExcelBytes() {
   const sheets = state.workbook.SheetNames;
 
   const summaryRows = [
-    ['REPORTE DE PERSPECTIVAS DE DESPLIEGUE UBICELL'],
+    [currentLang==='es' ? 'REPORTE DE PERSPECTIVAS DE DESPLIEGUE UBICELL®' : 'UBICELL® DEPLOYMENT INSIGHTS REPORT'],
     [company],
-    [new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'})],
+    [new Date().toLocaleDateString(currentLang==='es'?'es-CO':'en-US', {year:'numeric',month:'long',day:'numeric'})],
     [],
-    ['Categoría', 'Total Registros', 'Estado'],
+    [currentLang==='es'?'Categoría':'Category', currentLang==='es'?'Total Registros':'Total Records', currentLang==='es'?'Estado':'Status'],
   ];
   sheets.forEach(name => {
     const cnt = state.summaryData[name].rows.length;
-    summaryRows.push([name, cnt, cnt===0?'✅ Sin problemas':cnt>20?'🔴 Crítico':'🟡 Requiere atención']);
+    summaryRows.push([name, cnt, cnt===0?(currentLang==='es'?'✅ Sin problemas':'✅ No issues'):cnt>20?(currentLang==='es'?'🔴 Crítico':'🔴 Critical'):(currentLang==='es'?'🟡 Requiere atención':'🟡 Needs attention')]);
   });
   summaryRows.push([], ['TOTAL', sheets.reduce((s,n)=>s+state.summaryData[n].rows.length,0), '']);
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
@@ -1396,7 +1572,7 @@ async function generateAndDownloadZip() {
     const baseName = state.pdfFilename.replace(/\.pdf$/i,'');
 
     // ── PDF: use cached bytes if available, else generate fresh ──
-    btn.textContent = '⏳ Generando PDF...';
+    btn.textContent = currentLang === 'es' ? '⏳ Generando PDF...' : '⏳ Generating PDF...';
     let pdfData = state._lastPdfBytes;
     if(!pdfData) {
       // Build fresh by calling the PDF generator and capturing output
@@ -1406,12 +1582,12 @@ async function generateAndDownloadZip() {
     if(pdfData) zip.file(baseName + '_whitelabel.pdf', pdfData);
 
     // ── Excel ─────────────────────────────────────────────────────
-    btn.textContent = '⏳ Generando Excel...';
+    btn.textContent = currentLang === 'es' ? '⏳ Generando Excel...' : '⏳ Generating Excel...';
     const xlsxData = buildExcelBytes();
     zip.file(state.xlsxFilename.replace(/\.xlsx$/i,'') + '_reporte.xlsx', xlsxData);
 
     // ── Bundle ────────────────────────────────────────────────────
-    btn.textContent = '⏳ Comprimiendo...';
+    btn.textContent = currentLang === 'es' ? '⏳ Comprimiendo...' : '⏳ Compressing...';
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1421,11 +1597,11 @@ async function generateAndDownloadZip() {
 
   } catch(err) {
     console.error(err);
-    alert('Error al generar ZIP: ' + err.message);
+    alert((currentLang==='es' ? 'Error al generar ZIP: ' : 'Error generating ZIP: ') + err.message);
   }
 
   btn.disabled = false;
-  btn.textContent = '⬇ Descargar ZIP';
+  btn.textContent = currentLang === 'es' ? '⬇ Descargar ZIP' : '⬇ Download ZIP';
 }
 
 // ─── RESET ──────────────────────────────────────────────────────
@@ -1435,6 +1611,11 @@ function resetAll() {
   document.getElementById('fileInfo').classList.add('hidden');
   document.getElementById('parseProgress').classList.add('hidden');
   document.getElementById('zipInput').value = '';
+  // reset download buttons
+  const dlPdfBtn = document.getElementById('downloadPdfBtn');
+  if(dlPdfBtn) dlPdfBtn.textContent = currentLang==='es' ? '⬇ Descargar PDF' : '⬇ Download PDF';
+  const dlZipBtn = document.getElementById('downloadZipBtn');
+  if(dlZipBtn) dlZipBtn.textContent = currentLang==='es' ? '⬇ Descargar ZIP' : '⬇ Download ZIP';
   document.getElementById('logoPreviewWrap').classList.add('hidden');
   document.getElementById('logoPlaceholder').classList.remove('hidden');
   document.getElementById('logoOverlayPreviewWrap').classList.add('hidden');
@@ -1447,3 +1628,15 @@ function resetAll() {
 </script>
 </body>
 </html>
+
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-15114096182');
+  </script>
+  <!-- Resto de tu head... -->
+</head>
