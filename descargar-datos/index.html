@@ -71,6 +71,7 @@
   input,textarea,select{width:100%;padding:.7rem .85rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
   input::placeholder,textarea::placeholder{color:#b9bfcf}
   input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+  input:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed;border-style:dashed}
   textarea{resize:vertical;min-height:64px;line-height:1.5}
   select{appearance:none;-webkit-appearance:none;padding-right:2.3rem;cursor:pointer;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2399A0B4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
@@ -80,6 +81,10 @@
   .btn:hover{background:var(--accent-d)}
   .btn:disabled{background:var(--muted);cursor:not-allowed}
   .btn svg{width:17px;height:17px}
+  .btn-stop{width:100%;margin-top:.6rem;padding:.8rem;border:1px solid var(--err);border-radius:var(--radius);background:#fff;color:var(--err);font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .15s}
+  .btn-stop:hover{background:#fdeaea}
+  .btn-stop:disabled{opacity:.6;cursor:not-allowed}
+  .btn-stop svg{width:16px;height:16px}
 
   /* Re-descarga */
   #redownload{display:none;margin-top:1.25rem}
@@ -152,8 +157,8 @@
       </div>
 
       <div class="grid2">
-        <div class="field"><label for="interval">Días por intervalo</label><input type="number" id="interval" value="5" min="1" /></div>
-        <div class="field"><label for="parallel">IMEIs en paralelo <span class="hint">— sube si no hay 429</span></label><input type="number" id="parallel" value="2" min="1" max="8" /></div>
+        <div class="field"><label for="interval">Días por intervalo</label><input type="number" id="interval" value="5" min="1" disabled title="Valor fijo" /></div>
+        <div class="field"><label for="parallel">IMEIs en paralelo</label><input type="number" id="parallel" value="2" min="1" max="8" disabled title="Valor fijo" /></div>
       </div>
 
       <div class="field"><label for="code">Código de acceso</label><input type="password" id="code" placeholder="requerido" autocomplete="off" /></div>
@@ -161,6 +166,10 @@
       <button class="btn" id="go">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
         Descargar y analizar
+      </button>
+      <button class="btn-stop" id="stop" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+        Detener y entregar lo descargado
       </button>
 
     </div>
@@ -393,7 +402,13 @@ const logEl=document.getElementById('log');
 function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
 function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
 let lastBlob=null;
+let cancelRequested=false;
 document.getElementById('redownload-link').addEventListener('click', ()=>{ if(lastBlob) download(lastBlob,'datos_ubicquia.zip'); });
+document.getElementById('stop').addEventListener('click', ()=>{
+  cancelRequested=true;
+  const s=document.getElementById('stop');
+  s.disabled=true; s.textContent='Deteniendo…';
+});
 
 function renderResults(results){
   const imeis=Object.keys(results);
@@ -437,16 +452,21 @@ document.getElementById('go').addEventListener('click', async ()=>{
   // Ubicquia exige que la fecha fin sea anterior a la hora actual; si está en el futuro, la ajustamos.
   let endClampedMsg='';
   {
-    const c=new Date(Date.now()-2*60*1000); // ahora menos 2 min (margen de seguridad)
+    const c=new Date(Date.now()-60*60*1000); // ahora menos 1 hora (margen para el análisis)
     if(fromLocalInput(end) > c){
       end=`${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}T${pad(c.getHours())}:${pad(c.getMinutes())}:${pad(c.getSeconds())}`;
-      endClampedMsg=`⚠ La fecha fin estaba en el futuro; se ajustó a ${end.replace('T',' ')} (Ubicquia exige fin anterior a la hora actual).`;
+      endClampedMsg=`⚠ La fecha fin estaba muy reciente/futura; se ajustó a ${end.replace('T',' ')} (se considera al menos 1 hora antes de ahora).`;
     }
   }
 
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML=''; document.getElementById('charts').innerHTML='';
   document.getElementById('redownload').style.display='none';
   btn.disabled=true; btn.textContent='Procesando…';
+  cancelRequested=false;
+  const stopBtn=document.getElementById('stop');
+  stopBtn.disabled=false;
+  stopBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg> Detener y entregar lo descargado';
+  stopBtn.style.display='flex';
   try{
     const intervals=splitRange(start,end,maxDays);
     log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
@@ -456,7 +476,9 @@ document.getElementById('go').addEventListener('click', async ()=>{
     // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
     async function processImei(imei){
       const acc={DTM2:[],Vsag:[],Vswell:[],Powerloss:[],Powerrestored:[]};
+      let stopped=false;
       for(let i=0;i<intervals.length;i++){
+        if(cancelRequested){ stopped=true; break; }
         const [is,ie]=intervals[i];
         const d = await apiCall('all',imei,is,ie,subpanel,code,panel);
         acc.DTM2.push(...renameKeys(d.metrix||[], raw_mapping));
@@ -464,8 +486,11 @@ document.getElementById('go').addEventListener('click', async ()=>{
         acc.Vswell.push(...renameKeys(d.swell||[], voltage_swell_mapping));
         acc.Powerloss.push(...renameKeys(filterPowerLoss(d.powerloss||[]), power_mapping));
         acc.Powerrestored.push(...renameKeys(filterPowerRestored(d.powerrestored||[]), power_mapping));
-        if(i < intervals.length-1) await sleep(1500); // pausa para no saturar Ubicquia
+        if(i < intervals.length-1 && !cancelRequested) await sleep(1500); // pausa para no saturar Ubicquia
       }
+      const hasData = Object.values(acc).some(a=>a.length);
+      if(stopped && !hasData){ log(`○ ${imei} — detenido antes de descargar`, 'line-err'); return; }
+
       for(const t of Object.keys(acc)) acc[t]=sortByDate(dedupe(acc[t]));
       results[imei]=acc;
 
@@ -480,13 +505,14 @@ document.getElementById('go').addEventListener('click', async ()=>{
         folder.file(`${imei}_Final_Electrical_Parameters_ANALYSIS.html`, figureToHtml(spec, `DTM ${imei} — Electrical Parameter Analysis`));
       }
       done++;
-      log(`✓ ${imei}  (${acc.DTM2.length} registros)  [${done}/${imeis.length}]`, 'line-ok');
+      log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
     }
 
     // Pool de concurrencia: hasta "concurrency" IMEIs a la vez
     const cola=[...imeis];
     async function worker(){
       while(cola.length){
+        if(cancelRequested) break;
         const imei=cola.shift();
         try{ await processImei(imei); }
         catch(e){ log(`✗ ${imei}: ${e.message||e}`, 'line-err'); }
@@ -494,19 +520,26 @@ document.getElementById('go').addEventListener('click', async ()=>{
     }
     await Promise.all(Array.from({length:concurrency}, ()=>worker()));
 
-    log('\nGenerando ZIP…');
-    lastBlob=await zip.generateAsync({type:'blob'});
-    download(lastBlob,'datos_ubicquia.zip');
-    document.getElementById('redownload').style.display='block';
-    log('✓ ZIP descargado.', 'line-ok');
+    if(cancelRequested) log('\n■ Proceso detenido. Se entrega lo descargado hasta aquí.', 'line-err');
 
-    log('Renderizando lista de DTMs y gráficos…');
-    renderResults(results);
-    log('✓ Listo.', 'line-ok');
+    if(Object.keys(results).length===0){
+      log('No se alcanzó a descargar datos.', 'line-err');
+    }else{
+      log('\nGenerando ZIP…');
+      lastBlob=await zip.generateAsync({type:'blob'});
+      download(lastBlob, cancelRequested ? 'datos_ubicquia_parcial.zip' : 'datos_ubicquia.zip');
+      document.getElementById('redownload').style.display='block';
+      log('✓ ZIP descargado.', 'line-ok');
+
+      log('Renderizando lista de DTMs y gráficos…');
+      renderResults(results);
+      log('✓ Listo.', 'line-ok');
+    }
   }catch(e){
     log('✗ '+(e.message||e), 'line-err');
   }finally{
     btn.disabled=false; btn.textContent='Descargar y analizar';
+    document.getElementById('stop').style.display='none';
   }
 });
 
@@ -538,7 +571,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   fillSubpanels();
 })();
 
-/* Valores por defecto: inicio hoy 00:00:00, fin = ahora (Ubicquia exige fin anterior a la hora actual). */
+/* Valores por defecto: inicio hoy 00:00:00, fin = ahora menos 1 hora. */
 (function setDefaultDates(){
   const n=new Date();
   const day=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
@@ -546,7 +579,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   const endEl=document.getElementById('end');
   if(startEl && !startEl.value) startEl.value=`${day}T00:00:00`;
   if(endEl && !endEl.value){
-    const e=new Date(Date.now()-2*60*1000); // ahora menos 2 min
+    const e=new Date(Date.now()-60*60*1000); // ahora menos 1 hora
     endEl.value=`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}T${pad(e.getHours())}:${pad(e.getMinutes())}:${pad(e.getSeconds())}`;
   }
 })();
