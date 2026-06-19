@@ -209,7 +209,8 @@
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<script src="./plotly.min.js"></script>
+<script>if(!window.Plotly){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>');}</script>
 <script>
 /* ══════════════════════════════════════════════════════════════════
    PANELES — uno por número de panel. Cada panel tiene su propio par de
@@ -442,19 +443,26 @@ function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
   Plotly.newPlot(div, spec.traces, spec.layout, { responsive:true, displaylogo:false });
 }
 
+/* Ruta local de Plotly para los HTML abiertos desde Blob o incluidos en el ZIP.
+   Debe existir un archivo plotly.min.js en la misma carpeta pública que este index.html. */
+const PLOTLY_SRC = (()=>{
+  try{ return new URL('plotly.min.js', window.location.href).href; }
+  catch(e){ return './plotly.min.js'; }
+})();
+
 /* Genera un HTML interactivo autocontenido del análisis (como tu script de Python) */
 function figureToHtml(spec, title){
   const safeTitle = String(title||'DTM Analytics').replace(/[<>]/g,'');
   return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
     + '<title>' + safeTitle + '</title>'
-    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>'
+    + '<script src="' + PLOTLY_SRC + '"><\/script>'
     + '<style>body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;background:#EEF0F5;color:#1E2445}header{background:#1E2445;color:#fff;padding:14px 22px;font-weight:700}header b{color:#22B0E1}.msg{margin:18px 22px;padding:14px 16px;background:#fff;border:1px solid #d8dde9;border-radius:10px;color:#464D63}#chart{width:100%;background:#fff}</style></head>'
     + '<body><header>DTM <b>Analytics</b> — ' + safeTitle + '</header><div id="msg" class="msg">Cargando gráfico…</div><div id="chart"></div><script>'
     + 'var data=' + JSON.stringify(spec.traces) + ';'
     + 'var layout=' + JSON.stringify(spec.layout) + ';'
-    + 'function fail(e){document.getElementById("msg").innerHTML="No se pudo renderizar el gráfico. Verifica conexión a internet para cargar Plotly o abre este archivo desde el ZIP ya extraído. Detalle: "+String(e||"");}'
-    + 'if(!window.Plotly){fail("Plotly no cargó desde CDN");}else{try{Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false}).then(function(){document.getElementById("msg").style.display="none";});}catch(e){fail(e.message||e);}}'
+    + 'function fail(e){document.getElementById("msg").innerHTML="No se pudo renderizar el gráfico. Verifica que plotly.min.js esté en la misma carpeta pública que el index.html. Detalle: "+String(e||"");}'
+    + 'if(!window.Plotly){fail("Plotly no cargó desde archivo local plotly.min.js");}else{try{Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false}).then(function(){document.getElementById("msg").style.display="none";});}catch(e){fail(e.message||e);}}'
     + '<\/script></body></html>';
 }
 
@@ -465,7 +473,7 @@ function multiFigureToHtml(figs, title){
   return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
     + '<title>' + title + '</title>'
-    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>'
+    + '<script src="' + PLOTLY_SRC + '"><\/script>'
     + '<style>'
     + 'body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;color:#1E2445;background:#EEF0F5}'
     + 'header{background:#1E2445;color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5}'
@@ -490,7 +498,7 @@ function multiFigureToHtml(figs, title){
     + 'sel.addEventListener("change",function(){render(sel.value);});'
     + 'document.getElementById("prev").addEventListener("click",function(){step(-1);});'
     + 'document.getElementById("next").addEventListener("click",function(){step(1);});'
-    + 'if(!window.Plotly){document.getElementById("meta").textContent="No se pudo cargar Plotly desde CDN. Revisa conexión o bloqueo de scripts.";}else{render(sel.value);}'
+    + 'if(!window.Plotly){document.getElementById("meta").textContent="No se pudo cargar Plotly. Verifica que plotly.min.js esté junto al index.html o que el CDN no esté bloqueado.";}else{render(sel.value);}'
     + '<\/script></body></html>';
 }
 
