@@ -423,7 +423,7 @@ function renderResults(results){
 document.getElementById('go').addEventListener('click', async ()=>{
   const btn=document.getElementById('go');
   const imeis=document.getElementById('imeis').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-  const start=document.getElementById('start').value, end=document.getElementById('end').value;
+  const start=document.getElementById('start').value; let end=document.getElementById('end').value;
   const subSelVal=document.getElementById('subpanelSel').value;
   const subpanel=(subSelVal==='__other__') ? (document.getElementById('subpanel').value.trim()||'0') : (subSelVal||'0');
   const maxDays=parseInt(document.getElementById('interval').value,10)||5;
@@ -434,12 +434,23 @@ document.getElementById('go').addEventListener('click', async ()=>{
   if(!imeis.length||!start||!end){ alert('Completa IMEIs, fecha inicio y fecha fin.'); return; }
   if(!code){ alert('Ingresa el código de acceso.'); return; }
 
+  // Ubicquia exige que la fecha fin sea anterior a la hora actual; si está en el futuro, la ajustamos.
+  let endClampedMsg='';
+  {
+    const c=new Date(Date.now()-2*60*1000); // ahora menos 2 min (margen de seguridad)
+    if(fromLocalInput(end) > c){
+      end=`${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}T${pad(c.getHours())}:${pad(c.getMinutes())}:${pad(c.getSeconds())}`;
+      endClampedMsg=`⚠ La fecha fin estaba en el futuro; se ajustó a ${end.replace('T',' ')} (Ubicquia exige fin anterior a la hora actual).`;
+    }
+  }
+
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML=''; document.getElementById('charts').innerHTML='';
   document.getElementById('redownload').style.display='none';
   btn.disabled=true; btn.textContent='Procesando…';
   try{
     const intervals=splitRange(start,end,maxDays);
     log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
+    if(endClampedMsg) log(endClampedMsg, 'line-err');
     const zip=new JSZip(); const results={}; let done=0;
 
     // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
@@ -527,15 +538,17 @@ document.getElementById('go').addEventListener('click', async ()=>{
   fillSubpanels();
 })();
 
-/* Valores por defecto de fecha: inicio a las 00:00:00, fin a las 23:59:59 (de hoy).
-   Puedes cambiar el día con el calendario; la hora se mantiene. */
+/* Valores por defecto: inicio hoy 00:00:00, fin = ahora (Ubicquia exige fin anterior a la hora actual). */
 (function setDefaultDates(){
   const n=new Date();
   const day=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
   const startEl=document.getElementById('start');
   const endEl=document.getElementById('end');
   if(startEl && !startEl.value) startEl.value=`${day}T00:00:00`;
-  if(endEl && !endEl.value)   endEl.value=`${day}T23:59:59`;
+  if(endEl && !endEl.value){
+    const e=new Date(Date.now()-2*60*1000); // ahora menos 2 min
+    endEl.value=`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}T${pad(e.getHours())}:${pad(e.getMinutes())}:${pad(e.getSeconds())}`;
+  }
 })();
 </script>
 </body>
