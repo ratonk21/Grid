@@ -1,122 +1,789 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-K73HD7MSR4');
+  </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DTM Analytics — Online Voltage</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E" />
+<title>DTM Analytics — GridData</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet" />
 <style>
-  *{box-sizing:border-box} body{margin:0;background:#EEF0F5;color:#1E2445;font-family:Lato,"Helvetica Neue",Arial,sans-serif}
-  header{height:64px;background:#1E2445;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:10}
-  .brand{font-weight:800}.brand b{color:#22B0E1}.toggle{font-size:12px;border:1px solid #99A0B4;border-radius:999px;overflow:hidden}.toggle button{border:0;padding:6px 10px;background:transparent;color:#c8ccda;font-weight:700;cursor:pointer}.toggle button.active{background:#22B0E1;color:#fff}
-  main{max-width:1240px;margin:0 auto;padding:28px 18px 48px}.hero{margin-bottom:18px}.eyebrow{color:#22B0E1;font-size:12px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}h1{margin:8px 0;font-size:30px;line-height:1.1}.lead{margin:0;color:#464D63;line-height:1.5;max-width:760px}
-  .grid{display:grid;grid-template-columns:390px minmax(0,1fr);gap:18px;align-items:start}@media(max-width:900px){.grid{grid-template-columns:1fr}}
-  .card{background:#fff;border:1px solid #99A0B4;border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(30,36,69,.05)}
-  label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:#464D63;margin:12px 0 6px}input,select,textarea{width:100%;border:1px solid #d8dde9;border-radius:8px;padding:10px 11px;font:inherit;color:#1E2445;background:#fff}textarea{min-height:72px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{width:100%;margin-top:16px;border:0;border-radius:9px;background:#22B0E1;color:white;font-weight:800;padding:12px;cursor:pointer}.btn:disabled{background:#99A0B4;cursor:not-allowed}
-  #log{margin-top:14px;background:#1E2445;color:#dceef7;border-radius:10px;padding:12px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:12px;max-height:220px;overflow:auto;display:none}.ok{color:#AECC53}.err{color:#ffb0a0}
-  .chart-card{background:#fff;border:1px solid #99A0B4;border-radius:14px;padding:14px}.chart-head{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px}.chart-title{font-weight:900}.chart-meta{color:#464D63;font-size:13px;margin-top:4px}canvas{width:100%;height:520px;border:1px solid #d8dde9;border-radius:12px;background:#fff}.empty{padding:80px 20px;text-align:center;color:#99A0B4;border:1px dashed #99A0B4;border-radius:14px;background:#fff}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}@media(max-width:560px){.kpis{grid-template-columns:1fr}}.kpi{background:#EEF0F5;border:1px solid #d8dde9;border-radius:10px;padding:10px}.kpi span{display:block;font-size:12px;color:#464D63}.kpi b{font-size:20px;color:#1E2445}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#EEF0F5;--surface:#fff;--surface2:#f5f7fb;--border:#d8dde9;--text:#1E2445;--text-mid:#464D63;
+    --muted:#99A0B4;--navy:#1E2445;--navy-mid:#2a3258;--accent:#22B0E1;--accent-d:#199ecb;--accent-lt:#d6eefa;
+    --blue-lt:#e3f4fb;--green:#005B59;--lime:#AECC53;--err:#b42323;
+    --radius:8px;--radius-lg:14px;
+  }
+  body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+  /* Header */
+  header{background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:64px;position:sticky;top:0;z-index:10}
+  .logo-wrap{display:flex;align-items:center;gap:.7rem}
+  header svg.mark{width:24px;height:29px;flex-shrink:0}
+  .brand{color:#fff;font-weight:700;font-size:1rem;letter-spacing:.01em}
+  .brand b{color:var(--accent);font-weight:700}
+  .back{color:#aeb4c7;font-size:.82rem;font-weight:700;text-decoration:none;letter-spacing:.02em;transition:color .15s}
+  .back:hover{color:#fff}
+
+  .wrap{max-width:1380px;margin:0 auto;padding:2.5rem 1.25rem 3rem}
+  .layout{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:2rem;align-items:start;margin-top:2rem}
+  @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+  .col-form .panel-card{margin-top:0}
+  #analysisDetail{display:flex;flex-direction:column;gap:1.25rem}
+  .vplaceholder{color:var(--muted);font-size:.92rem;border:1px dashed var(--border);border-radius:var(--radius-lg);padding:2.5rem 1.5rem;text-align:center;background:var(--surface)}
+  .vcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.9rem 1rem 1rem}
+  .vhead{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem}
+  .vtitle{font-weight:700;font-size:.92rem;color:var(--navy)}
+  .vtitle .vtipo{font-weight:400;color:var(--muted);font-size:.82rem;margin-left:.4rem}
+  .vopen{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:var(--radius);font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap}
+  .vopen:hover{background:var(--blue-lt)}
+  .vchart{width:100%}
+  .analysis-wrap{margin-top:2rem}
+  .analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1rem;box-shadow:0 1px 2px rgba(30,36,69,.04)}
+  .analysis-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}
+  .analysis-title{font-weight:700;color:var(--navy)}
+  .analysis-chart{width:100%;min-height:900px}
+
+  /* Hero */
+  .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.7rem}
+  .eyebrow::before{content:'';width:22px;height:2px;background:var(--accent);border-radius:2px}
+  h1{font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1.1;margin-bottom:.5rem}
+  .lead{color:var(--text-mid);font-size:1rem;line-height:1.6;max-width:640px}
+
+  /* Section header (DTMs / Gráficos) — mismo lenguaje que el index */
+  h2{display:flex;align-items:center;gap:.7rem;font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin:2.5rem 0 1.1rem}
+  h2::before{content:'';width:20px;height:3px;background:var(--lime);border-radius:2px;flex-shrink:0}
+  h2::after{content:'';flex:1;height:1px;background:var(--border)}
+  h3{font-size:.95rem;font-weight:700;margin:1.6rem 0 .6rem;color:var(--navy)}
+
+  /* Form card */
+  .panel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-top:2rem;box-shadow:0 1px 2px rgba(30,36,69,.04)}
+  .panel-card__head{display:flex;align-items:center;gap:.6rem;padding:1.1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--surface2)}
+  .panel-card__head .ic{width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .panel-card__head .ic svg{width:17px;height:17px}
+  .panel-card__head .t{font-size:.92rem;font-weight:700}
+  .panel-card__body{padding:1.5rem}
+
+  .field{margin-bottom:1.15rem}
+  .field:last-child{margin-bottom:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media (max-width:560px){.grid2{grid-template-columns:1fr}}
+  label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mid);margin-bottom:.4rem}
+  .hint{font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)}
+
+  input,textarea,select{width:100%;padding:.7rem .85rem;border:1px solid var(--border);border-radius:var(--radius);font-size:.95rem;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:#b9bfcf}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt)}
+  input:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed;border-style:dashed}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  select{appearance:none;-webkit-appearance:none;padding-right:2.3rem;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2399A0B4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right .9rem center;background-size:12px}
+
+  .btn{width:100%;margin-top:.4rem;padding:.9rem;border:0;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:1rem;font-weight:700;letter-spacing:.01em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .15s}
+  .btn:hover{background:var(--accent-d)}
+  .btn:disabled{background:var(--muted);cursor:not-allowed}
+  .btn svg{width:17px;height:17px}
+  .btn-stop{width:100%;margin-top:.6rem;padding:.8rem;border:1px solid var(--err);border-radius:var(--radius);background:#fff;color:var(--err);font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:background .15s}
+  .btn-stop:hover{background:#fdeaea}
+  .btn-stop:disabled{opacity:.6;cursor:not-allowed}
+  .btn-stop svg{width:16px;height:16px}
+
+
+  /* Consola de registro */
+  #log{background:var(--navy);color:#cfe8f5;border-radius:var(--radius-lg);padding:1.1rem 1.25rem;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;max-height:300px;overflow:auto;margin-top:1.25rem;display:none;border:1px solid #2a3258}
+  #log.show{display:block}
+  #zipActions{display:none;margin-top:1rem}
+  #downloadZip{width:100%;padding:.8rem;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:var(--radius);font-weight:700;cursor:pointer}
+  #downloadZip:hover{background:var(--blue-lt)}
+  #downloadZip:disabled{opacity:.6;cursor:not-allowed}
+  .line-err{color:#ff9a9a}.line-ok{color:#bfe88a}
+
+  /* DTMs encontrados */
+  .dtm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.85rem}
+  .dtm-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:1rem 1.1rem;transition:box-shadow .15s}
+  .dtm-card:hover{box-shadow:0 2px 8px rgba(30,36,69,.07)}
+  .dtm-id{font-weight:700;font-size:.95rem;color:var(--navy)}
+  .dtm-meta{color:var(--muted);font-size:.78rem;margin-top:.35rem;line-height:1.5}
+
+  /* Gráficos */
+  .chart{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.6rem;margin-bottom:1.5rem;overflow:hidden}
+  .chart-title{color:var(--navy)}
+
+  /* Footer */
+  footer{max-width:980px;margin:0 auto;padding:2rem 1.25rem 3rem;display:flex;align-items:center;gap:.6rem;color:var(--muted);font-size:.82rem;border-top:1px solid var(--border)}
+  footer .wm b{color:var(--accent);font-weight:700}
+  footer .dot{color:var(--border)}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">DTM <b>Analytics</b></div>
-  <div class="toggle"><button id="enBtn" class="active">EN</button><button id="esBtn">ES</button></div>
+  <div class="logo-wrap">
+    <svg class="mark" viewBox="0 0 38 46" aria-hidden="true"><path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#22B0E1"/><path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#fff"/></svg>
+    <div class="brand">Grid<b>Data</b></div>
+  </div>
+  <a class="back" href="../">← Menú</a>
 </header>
-<main>
-  <section class="hero">
-    <div class="eyebrow" data-i18n="eyebrow">Online chart</div>
-    <h1 data-i18n="title">Query DTM data and draw voltage online</h1>
-    <p class="lead" data-i18n="lead">This version does not download CSV, does not create ZIP files, and does not use Plotly or external CDNs. It calls your existing /api/ubicquia endpoint and draws one voltage chart directly in the browser.</p>
-  </section>
 
-  <section class="grid">
-    <div class="card">
-      <label for="panel" data-i18n="panel">Panel</label>
-      <select id="panel">
-        <option value="646703">Default / AES El Salvador</option>
-        <option value="565405">Grupo Melo</option>
-      </select>
+<div class="wrap">
+  <span class="eyebrow">DTM Analytics</span>
+  <h1>Consultar y graficar datos</h1>
+  <p class="lead">Consulta transformadores por IMEI y muestra el análisis completo caso a caso en el panel derecho. La descarga ZIP queda disponible como respaldo opcional en paralelo.</p>
 
-      <label for="subpanel" data-i18n="subpanel">Subpanel</label>
-      <input id="subpanel" value="835" />
+  <div class="layout">
+   <div class="col-form">
+  <div class="panel-card">
+    <div class="panel-card__head">
+      <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg></span>
+      <span class="t">Parámetros de descarga</span>
+    </div>
+    <div class="panel-card__body">
 
-      <label for="imeis" data-i18n="imeis">IMEIs</label>
-      <textarea id="imeis">862754050323467</textarea>
-
-      <div class="row">
-        <div><label for="start" data-i18n="start">Start</label><input type="datetime-local" id="start" step="1"></div>
-        <div><label for="end" data-i18n="end">End</label><input type="datetime-local" id="end" step="1"></div>
+      <div class="grid2">
+        <div class="field">
+          <label for="panel">Panel</label>
+          <select id="panel"></select>
+        </div>
+        <div class="field">
+          <label for="subpanelSel">Subpanel</label>
+          <select id="subpanelSel"></select>
+          <input type="text" id="subpanel" placeholder="N° de subpanel" style="display:none;margin-top:.5rem" />
+        </div>
       </div>
 
-      <label for="code" data-i18n="code">Access code</label>
-      <input type="password" id="code" autocomplete="off" />
+      <div class="field">
+        <label for="imeis">IMEIs <span class="hint">— separados por coma o uno por línea</span></label>
+        <textarea id="imeis" placeholder="123456789012345, 234567890123456"></textarea>
+      </div>
 
-      <button class="btn" id="go" data-i18n="button">Query and draw chart</button>
-      <div id="log"></div>
+      <div class="grid2">
+        <div class="field"><label for="start">Fecha inicio</label><input type="datetime-local" id="start" step="1" /></div>
+        <div class="field"><label for="end">Fecha fin</label><input type="datetime-local" id="end" step="1" /></div>
+      </div>
+
+      <div class="grid2">
+        <div class="field"><label for="interval">Días por intervalo</label><input type="number" id="interval" value="5" min="1" disabled title="Valor fijo" /></div>
+        <div class="field"><label for="parallel">IMEIs en paralelo</label><input type="number" id="parallel" value="2" min="1" max="8" disabled title="Valor fijo" /></div>
+      </div>
+
+      <div class="field"><label for="code">Código de acceso</label><input type="password" id="code" placeholder="requerido" autocomplete="off" /></div>
+
+      <button class="btn" id="go">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
+        Consultar y graficar
+      </button>
+      <button class="btn-stop" id="stop" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+        Detener consulta
+      </button>
+
     </div>
+  </div>
 
-    <div id="output"><div class="empty" data-i18n="empty">The voltage chart will appear here after querying the API.</div></div>
-  </section>
-</main>
+  <div id="log"></div>
+  <div id="zipActions"><button id="downloadZip">Descargar datos en ZIP</button></div>
+   </div><!-- /col-form -->
+   <div class="col-live">
+     <div id="analysisDetail"><div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div></div>
+   </div>
+  </div><!-- /layout -->
+  <div id="dtmlist"></div>
+</div>
 
+<footer>
+  <span class="wm"><b>ubi</b>cquia<sup>®</sup></span>
+  <span class="dot">·</span>
+  <span>griddata.cl</span>
+</footer>
+
+<script src="./jszip.min.js"></script>
+<script src="./plotly.min.js"></script>
+<script>if(!window.Plotly){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>');}</script>
 <script>
-const I18N={
-  en:{eyebrow:'Online chart',title:'Query DTM data and draw voltage online',lead:'This version does not download CSV, does not create ZIP files, and does not use Plotly or external CDNs. It calls your existing /api/ubicquia endpoint and draws one voltage chart directly in the browser.',panel:'Panel',subpanel:'Subpanel',imeis:'IMEIs',start:'Start',end:'End',code:'Access code',button:'Query and draw chart',empty:'The voltage chart will appear here after querying the API.'},
-  es:{eyebrow:'Gráfico online',title:'Consultar datos DTM y graficar voltaje online',lead:'Esta versión no descarga CSV, no crea ZIP y no usa Plotly ni CDNs externos. Llama tu endpoint existente /api/ubicquia y dibuja un gráfico de voltaje directamente en el navegador.',panel:'Panel',subpanel:'Subpanel',imeis:'IMEIs',start:'Inicio',end:'Fin',code:'Código de acceso',button:'Consultar y graficar',empty:'El gráfico de voltaje aparecerá aquí después de consultar la API.'}
-};
-function setLang(lang){document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=I18N[lang][el.dataset.i18n]||el.textContent});document.getElementById('enBtn').classList.toggle('active',lang==='en');document.getElementById('esBtn').classList.toggle('active',lang==='es');}
-document.getElementById('enBtn').onclick=()=>setLang('en');document.getElementById('esBtn').onclick=()=>setLang('es');
+/* ══════════════════════════════════════════════════════════════════
+   PANELES — uno por número de panel. Cada panel tiene su propio par de
+   credenciales y una lista de subpaneles.
+   Aquí van solo ETIQUETAS, números y subpaneles. NUNCA las credenciales.
+   Las credenciales reales van en Vercel como variables de entorno,
+   usando el NÚMERO del panel como key:
+     panel 646703  →  UBICQUIA_646703_CLIENT_ID   = 646703.ebustos_superuser@ubicquia.com
+                      UBICQUIA_646703_CLIENT_SECRET = (el secret de ese panel)
+   Para agregar un panel: añade una línea aquí + crea sus 2 variables en Vercel.
+   Para agregar un subpanel: añade un { label, id } a su lista (o usa "Otro…").
+   ══════════════════════════════════════════════════════════════════ */
+const PANELS = [
+  {
+    label: 'Default (AES El Salvador)',
+    key: '646703',                       // número de panel (va dentro del client_id)
+    subpanels: [
+      { label: '835', id: '835' },
+      // { label: 'Nombre subpanel', id: '999' },
+    ],
+  },
+  {
+    label: 'Grupo Melo',
+    key: '565405',                       // client_id: 565405.ebustos_superuser@ubicquia.com
+    subpanels: [
+      // agrega aquí los subpaneles conocidos: { label: '12', id: '12' }
+      // "Otro…" siempre aparece para escribir uno manualmente
+    ],
+  },
+];
 
-const rawMap={createdAt:'Date',date:'Date',line1VoltageAvg:'X1 Voltage',line2VoltageAvg:'X2 Voltage',line3VoltageAvg:'X3 Voltage'};
-const pad=n=>String(n).padStart(2,'0');
-function fmt(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`}
-function fromInput(v){return new Date(v.length===16?v+':00':v)}
-function splitRange(start,end,maxDays=5){const s=fromInput(start),e=fromInput(end),out=[];let cur=new Date(s);while(cur<e){const ce=new Date(Math.min(cur.getTime()+maxDays*86400000,e.getTime()));out.push([fmt(cur),fmt(ce)]);cur=ce}return out}
-function renameRows(rows){return rows.map(r=>{const o={};Object.keys(r||{}).forEach(k=>o[rawMap[k]||k]=r[k]);return o})}
-function normDate(s){if(!s)return s;const m=String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[ T]+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i);if(!m)return s;let h=+m[4],ap=(m[7]||'').toUpperCase();if(ap==='PM'&&h<12)h+=12;if(ap==='AM'&&h===12)h=0;return `${m[3]}-${pad(+m[1])}-${pad(+m[2])} ${pad(h)}:${m[5]}:${m[6]}`}
-function num(v){const n=parseFloat(v);return Number.isFinite(n)?n:null}
-function log(msg,cls=''){const el=document.getElementById('log');el.style.display='block';const d=document.createElement('div');d.className=cls;d.textContent=msg;el.appendChild(d);el.scrollTop=el.scrollHeight}
-async function apiCall(imei,start,end,subpanel,code,panel){
-  const res=await fetch('/api/ubicquia',{method:'POST',headers:{'Content-Type':'application/json',...(code?{'x-access-code':code}:{})},body:JSON.stringify({action:'all',imei,start,end,subpanel_id:subpanel,panel})});
-  if(!res.ok)throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-  const json=await res.json();return json.data||{};
-}
-function drawVoltage(canvas, rows){
-  const dpr=window.devicePixelRatio||1, rect=canvas.getBoundingClientRect();canvas.width=Math.floor(rect.width*dpr);canvas.height=Math.floor(rect.height*dpr);
-  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);const W=rect.width,H=rect.height,p={l:58,r:18,t:24,b:52};ctx.clearRect(0,0,W,H);
-  const clean=rows.map(r=>({t:new Date(r.Date),x1:num(r['X1 Voltage']),x2:num(r['X2 Voltage']),x3:num(r['X3 Voltage'])})).filter(r=>!isNaN(r.t));
-  const vals=[];clean.forEach(r=>['x1','x2','x3'].forEach(k=>{if(r[k]!=null)vals.push(r[k])}));if(!clean.length||!vals.length){ctx.fillText('No voltage data',20,30);return}
-  const tMin=Math.min(...clean.map(r=>r.t.getTime())),tMax=Math.max(...clean.map(r=>r.t.getTime()));let yMin=Math.min(...vals),yMax=Math.max(...vals);const padY=(yMax-yMin)*0.12||1;yMin-=padY;yMax+=padY;
-  const x=t=>p.l+((t-tMin)/(tMax-tMin||1))*(W-p.l-p.r);const y=v=>p.t+(1-(v-yMin)/(yMax-yMin||1))*(H-p.t-p.b);
-  ctx.strokeStyle='#d8dde9';ctx.lineWidth=1;ctx.fillStyle='#464D63';ctx.font='12px Arial';ctx.textAlign='right';ctx.textBaseline='middle';
-  for(let i=0;i<=5;i++){const yy=p.t+i*(H-p.t-p.b)/5;ctx.beginPath();ctx.moveTo(p.l,yy);ctx.lineTo(W-p.r,yy);ctx.stroke();const val=yMax-i*(yMax-yMin)/5;ctx.fillText(val.toFixed(1),p.l-8,yy)}
-  ctx.textAlign='center';ctx.textBaseline='top';for(let i=0;i<=4;i++){const tt=tMin+i*(tMax-tMin)/4;const xx=x(tt);ctx.beginPath();ctx.moveTo(xx,p.t);ctx.lineTo(xx,H-p.b);ctx.stroke();const dt=new Date(tt);ctx.fillText(`${pad(dt.getDate())}/${pad(dt.getMonth()+1)} ${pad(dt.getHours())}:00`,xx,H-p.b+10)}
-  function line(key,color,label){ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();let started=false;clean.forEach(r=>{const v=r[key];if(v==null)return;const xx=x(r.t.getTime()),yy=y(v);if(!started){ctx.moveTo(xx,yy);started=true}else ctx.lineTo(xx,yy)});ctx.stroke();}
-  line('x1','#1E2445','X1');line('x2','#EA561B','X2');line('x3','#22B0E1','X3');
-  const legends=[['X1','#1E2445'],['X2','#EA561B'],['X3','#22B0E1']];ctx.textAlign='left';ctx.textBaseline='middle';legends.forEach((l,i)=>{const lx=p.l+i*70,ly=14;ctx.fillStyle=l[1];ctx.fillRect(lx,ly-5,18,4);ctx.fillStyle='#1E2445';ctx.fillText(l[0],lx+24,ly)});
-}
-function renderCard(imei,rows){
-  const output=document.getElementById('output');output.innerHTML='';
-  const card=document.createElement('div');card.className='chart-card';
-  const volts=['X1 Voltage','X2 Voltage','X3 Voltage'];const values=rows.flatMap(r=>volts.map(c=>num(r[c])).filter(v=>v!=null));
-  const min=Math.min(...values),max=Math.max(...values),avg=values.reduce((a,b)=>a+b,0)/(values.length||1);
-  card.innerHTML=`<div class="chart-head"><div><div class="chart-title">Voltage — IMEI ${imei}</div><div class="chart-meta">${rows.length} records · ${rows[0]?.Date||''} to ${rows[rows.length-1]?.Date||''}</div></div></div><canvas id="chart"></canvas><div class="kpis"><div class="kpi"><span>Min voltage</span><b>${min.toFixed(1)} V</b></div><div class="kpi"><span>Avg voltage</span><b>${avg.toFixed(1)} V</b></div><div class="kpi"><span>Max voltage</span><b>${max.toFixed(1)} V</b></div></div>`;
-  output.appendChild(card);drawVoltage(document.getElementById('chart'),rows);window.addEventListener('resize',()=>drawVoltage(document.getElementById('chart'),rows),{passive:true});
-}
-document.getElementById('go').onclick=async()=>{
-  const btn=document.getElementById('go');btn.disabled=true;document.getElementById('log').innerHTML='';
-  try{
-    const imei=document.getElementById('imeis').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean)[0];
-    const start=document.getElementById('start').value,end=document.getElementById('end').value,subpanel=document.getElementById('subpanel').value.trim()||'0',panel=document.getElementById('panel').value,code=document.getElementById('code').value.trim();
-    if(!imei||!start||!end||!code)throw new Error('Complete IMEI, dates and access code.');
-    const ranges=splitRange(start,end,5);let rows=[];log(`Querying ${imei} in ${ranges.length} interval(s)…`);
-    for(const [s,e] of ranges){const d=await apiCall(imei,s,e,subpanel,code,panel);rows.push(...renameRows(d.metrix||[]).map(r=>{r.Date=normDate(r.Date);return r}));}
-    rows=rows.filter(r=>r.Date).sort((a,b)=>String(a.Date).localeCompare(String(b.Date)));
-    if(!rows.length)throw new Error('No DTM2/metrix rows returned by API.');
-    log(`Loaded ${rows.length} records. Drawing chart…`,'ok');renderCard(imei,rows);
-  }catch(e){log(e.message||String(e),'err')}
-  finally{btn.disabled=false;}
+/* ── Mapeos de columnas (de tu script de descarga) ── */
+const raw_mapping = {
+  id:"ID", serialNum:"Serial Number", node:"Node ID", latitude:"Latitude", longitude:"Longitude",
+  status:"Node Status", createdAt:"Date", date:"Date", line1VoltageAvg:"X1 Voltage", line2VoltageAvg:"X2 Voltage",
+  line3VoltageAvg:"X3 Voltage", line1CurrentAvg:"X1 Current", line2CurrentAvg:"X2 Current",
+  line3CurrentAvg:"X3 Current", inletPhase1CurrentAvg:"H1B Current", inletPhase2CurrentAvg:"H2B Current",
+  inletPhase3CurrentAvg:"H3B Current", outletPhase1CurrentAvg:"H1 / H1A Current",
+  outletPhase2CurrentAvg:"H2 / H2A Current", outletPhase3CurrentAvg:"H3 / H3A Current",
+  oilTemperatureAvg_f:"Temperature", oilTemperatureAvg:"Oil Temperature", pressureAvg:"Pressure",
+  line1ActivePowerAvg:"X3 Power (kW)", line2ActivePowerAvg:"X2 Power (kW)", line3ActivePowerAvg:"X1 Power (kW)",
+  line1PowerFactor:"X1 PF", line2PowerFactor:"X2 PF", line3PowerFactor:"X3 PF",
+  line1Energy:"X1 Energy (kWh)", line2Energy:"X2 Energy (kWh)", line3Energy:"X3 Energy (kWh)",
+  updatedAt:"Last Updated", x1Thd:"Power X1 THD", x2Thd:"Power X2 THD", x3Thd:"Power X3 THD",
+  hardwareVersion:"Hardware Version", firmwareVersion:"Firmware Version", rssi:"RSSI",
+  kva:"kVA Rating", kVAHourAvg:"kVA"
 };
-(function defaults(){const end=new Date(Date.now()-60*60*1000),start=new Date(end.getTime()-2*86400000);document.getElementById('end').value=`${end.getFullYear()}-${pad(end.getMonth()+1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;document.getElementById('start').value=`${start.getFullYear()}-${pad(start.getMonth()+1)}-${pad(start.getDate())}T00:00:00`;})();
+const power_mapping = { createdAt:"Subpanel Time", date:"Subpanel Time", created_at:"Subpanel Time" };
+const voltage_sag_mapping = { createdAt:"Time", date:"Time", created_at:"Time", x1_value:"X1 Lowest Value", x2_value:"X2 Lowest Value", x3_value:"X3 Lowest Value", x1_duration:"X1 Duration", x2_duration:"X2 Duration", x3_duration:"X3 Duration" };
+const voltage_swell_mapping = { createdAt:"Time", date:"Time", created_at:"Time", x1_value:"X1 Highest Value", x2_value:"X2 Highest Value", x3_value:"X3 Highest Value", x1_duration:"X1 Duration", x2_duration:"X2 Duration", x3_duration:"X3 Duration" };
+
+/* ── Utilidades de descarga ── */
+function safelyParseJson(x){
+  if(x==null) return {};
+  if(typeof x==='object') return x;
+  try{ return JSON.parse(x); }
+  catch(e){ try{ return JSON.parse(String(x).split("''").join('"').split('“').join('"').split('”').join('"')); } catch(e2){ return {}; } }
+}
+function addMsgFields(rows){ return rows.map(r=>{ const d=safelyParseJson(r.jsonData); return {...r, MsgStr:d.msgStr, MsgType:d.msgType}; }); }
+function filterPowerLoss(rows){ return addMsgFields(rows).filter(r => ['AlertPowerLoss','AlertPowerLoss2'].includes(r.MsgStr) || r.alertvalue==='Loss'); }
+function filterPowerRestored(rows){ return addMsgFields(rows).filter(r => r.MsgStr==='AlertPowerRestored' || r.alertvalue==='Restored'); }
+function renameKeys(rows, mapping){ return rows.map(r=>{ const o={}; for(const k of Object.keys(r)) o[mapping[k]||k]=r[k]; return o; }); }
+function dedupe(rows){ const seen=new Set(),out=[]; for(const r of rows){ const k=JSON.stringify(r); if(!seen.has(k)){ seen.add(k); out.push(r);} } return out; }
+function sortBy(rows, col){ if(!rows.length||!col) return rows; return [...rows].sort((a,b)=>String(a[col]??'').localeCompare(String(b[col]??''))); }
+function sortByDate(rows){ if(!rows.length) return rows; const dcol=Object.keys(rows[0]).find(c=>/date|time/i.test(c)); return sortBy(rows,dcol); }
+function toCSV(rows){
+  if(!rows.length) return '';
+  const keys=[]; for(const r of rows) for(const k of Object.keys(r)) if(!keys.includes(k)) keys.push(k);
+  const esc=v=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s)?'"'+s.split('"').join('""')+'"':s; };
+  return [keys.join(','), ...rows.map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n');
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmt(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function fromLocalInput(v){ return new Date(v.length===16 ? v+':00' : v); }
+function splitRange(start, end, maxDays){
+  const s=fromLocalInput(start), e=fromLocalInput(end), out=[]; let cur=new Date(s);
+  while(cur<e){ const ce=new Date(Math.min(cur.getTime()+maxDays*86400000, e.getTime())); out.push([fmt(cur), fmt(ce)]); cur=ce; }
+  return out;
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function apiCall(action, imei, start, end, subpanel_id, code, panel){
+  const res = await fetch('/api/ubicquia', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', ...(code ? {'x-access-code':code} : {}) },
+    body: JSON.stringify({ action, imei, start, end, subpanel_id, panel }),
+  });
+  if(!res.ok){ throw new Error(`${action} ${imei}: HTTP ${res.status} ${await res.text()}`); }
+  return (await res.json()).data || [];
+}
+
+/* ── Análisis: port del script Plotly (7 paneles) ── */
+function num(v){ const n=parseFloat(v); return isNaN(n)?null:n; }
+function colVals(rows, col){ return rows.map(r=>num(r[col])); }
+function keysOf(rows){ const s=new Set(); rows.forEach(r=>Object.keys(r).forEach(k=>s.add(k))); return s; }
+function imbalance(rows, cols){
+  return rows.map(r=>{
+    const vals = cols.map(c=>num(r[c])).filter(v=>v!=null);
+    if(vals.length<2) return null;
+    const mx=Math.max(...vals), mn=Math.min(...vals), mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    return mean!==0 ? ((mx-mn)/mean)*100 : null;
+  });
+}
+// La fecha de metrix llega como "MM/DD/YYYY hh:mm:ss AM/PM"; la normalizamos a "YYYY-MM-DD HH:MM:SS"
+// para que Plotly la grafique y para que ordene cronológicamente.
+function normMetrixDate(s){
+  if(s==null) return s;
+  const m=String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[ T]+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i);
+  if(!m) return s;
+  let h=+m[4]; const ap=m[7]?m[7].toUpperCase():'';
+  if(ap==='PM'&&h<12) h+=12;
+  if(ap==='AM'&&h===12) h=0;
+  return `${m[3]}-${pad(+m[1])}-${pad(+m[2])} ${pad(h)}:${m[5]}:${m[6]}`;
+}
+/* Gráfico dedicado: voltajes en el tiempo (solo fases con datos → monofásico/trifásico) */
+function buildVoltageFigure(dataIn, imei){
+  const data=sortBy(dataIn,'Date');
+  const dates=data.map(r=>r['Date']);
+  const defs=[['X1 Voltage','#1E2445'],['X2 Voltage','#d62728'],['X3 Voltage','#22B0E1']];
+  const traces=[]; const activas=[];
+  for(const [c,color] of defs){
+    const y=data.map(r=>num(r[c]));
+    if(y.some(v=>v!=null)){ activas.push(c.replace(' Voltage','')); traces.push({x:dates,y,mode:'lines',name:c,line:{color,width:1.5}}); }
+  }
+  const tipo = activas.length>=3 ? 'Trifásico' : (activas.length?'Monofásico':'Sin datos');
+  const layout={
+    title:{text:`Voltajes en el tiempo — IMEI ${imei}  ·  ${tipo}${activas.length?' ('+activas.join(', ')+')':''}`},
+    xaxis:{title:{text:'Tiempo'}}, yaxis:{title:{text:'Voltaje (V)'}},
+    hovermode:'x unified', height:480, margin:{l:65,r:30,t:70,b:60},
+    legend:{orientation:'h', y:-0.18}, paper_bgcolor:'#fff', plot_bgcolor:'#fff'
+  };
+  return { traces, layout };
+}
+
+function buildFigure(dataIn, vswellIn, vsagIn, powerlossIn){
+  const data=sortBy(dataIn,'Date'), vswell=sortBy(vswellIn,'Time'), vsag=sortBy(vsagIn,'Time'), powerloss=sortBy(powerlossIn,'Subpanel Time');
+  const c3=['black','red','blue'], IMB='purple', ZERO='red';
+  const k=keysOf(data), dates=data.map(r=>r['Date']);
+  const traces=[], add=t=>traces.push(t);
+  const voltCols=['X1 Voltage','X2 Voltage','X3 Voltage'].filter(c=>k.has(c));
+  const curCols=['X1 Current','X2 Current','X3 Current'].filter(c=>k.has(c));
+  const hCols=['H1 / H1A Current','H2 / H2A Current','H3 / H3A Current'].filter(c=>k.has(c));
+  const pfCols=['X1 PF','X2 PF','X3 PF'].filter(c=>k.has(c));
+
+  // Row 1 — Voltages + imbalance + eventos
+  voltCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:c,line:{color:c3[i]},xaxis:'x',yaxis:'y'}));
+  if(voltCols.length>1) add({x:dates,y:imbalance(data,voltCols),mode:'lines',name:'Imbalance Voltage (%)',line:{color:IMB},xaxis:'x',yaxis:'y8'});
+  if(vswell.length){
+    add({x:vswell.map(r=>r['Time']),y:colVals(vswell,'X1 Highest Value'),mode:'markers',name:'Vswell X1',marker:{symbol:'star-triangle-up',size:8,color:'black'},xaxis:'x',yaxis:'y'});
+    add({x:vswell.map(r=>r['Time']),y:colVals(vswell,'X2 Highest Value'),mode:'markers',name:'Vswell X2',marker:{symbol:'star-triangle-up',size:8,color:'red'},xaxis:'x',yaxis:'y'});
+    add({x:vswell.map(r=>r['Time']),y:colVals(vswell,'X3 Highest Value'),mode:'markers',name:'Vswell X3',marker:{symbol:'star-triangle-up',size:8,color:'blue'},xaxis:'x',yaxis:'y'});
+  }
+  if(vsag.length){
+    add({x:vsag.map(r=>r['Time']),y:colVals(vsag,'X1 Lowest Value'),mode:'markers',name:'Vsag X1',marker:{symbol:'star-triangle-down',size:8,color:'black'},xaxis:'x',yaxis:'y'});
+    add({x:vsag.map(r=>r['Time']),y:colVals(vsag,'X2 Lowest Value'),mode:'markers',name:'Vsag X2',marker:{symbol:'star-triangle-down',size:8,color:'red'},xaxis:'x',yaxis:'y'});
+    add({x:vsag.map(r=>r['Time']),y:colVals(vsag,'X3 Lowest Value'),mode:'markers',name:'Vsag X3',marker:{symbol:'star-triangle-down',size:8,color:'blue'},xaxis:'x',yaxis:'y'});
+  }
+  if(powerloss.length){
+    const px=[],py=[]; powerloss.forEach(r=>{const t=r['Subpanel Time']; px.push(t,t,null); py.push(0,400,null);});
+    add({x:px,y:py,mode:'lines',name:'Powerloss Events',line:{color:'red',dash:'dot',width:2},xaxis:'x',yaxis:'y'});
+  }
+
+  // Row 2 — Currents + imbalance
+  curCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:c,line:{color:c3[i]},xaxis:'x2',yaxis:'y2'}));
+  if(curCols.length>1) add({x:dates,y:imbalance(data,curCols),mode:'lines',name:'Imbalance Current (%)',line:{color:IMB},xaxis:'x2',yaxis:'y9'});
+
+  // Row 3 — H Currents + imbalance
+  hCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:c,line:{color:c3[i]},xaxis:'x3',yaxis:'y3'}));
+  if(hCols.length>1) add({x:dates,y:imbalance(data,hCols),mode:'lines',name:'Imbalance H (%)',line:{color:IMB},xaxis:'x3',yaxis:'y10'});
+
+  // Row 4 — Power Factor + THD + zero line
+  pfCols.forEach((c,i)=>add({x:dates,y:colVals(data,c),mode:'lines',name:`Power Factor ${c}`,line:{color:c3[i]},xaxis:'x4',yaxis:'y4'}));
+  if(pfCols.length) add({x:dates,y:dates.map(()=>0),mode:'lines',name:'Zero Line (PF)',line:{color:ZERO,dash:'dash'},xaxis:'x4',yaxis:'y4'});
+  if(['Power X1 THD','Power X2 THD','Power X3 THD'].every(c=>k.has(c))){
+    add({x:dates,y:colVals(data,'Power X1 THD'),mode:'lines',name:'THD X1',line:{dash:'dash',color:'black'},xaxis:'x4',yaxis:'y11'});
+    add({x:dates,y:colVals(data,'Power X2 THD'),mode:'lines',name:'THD X2',line:{dash:'dash',color:'red'},xaxis:'x4',yaxis:'y11'});
+    add({x:dates,y:colVals(data,'Power X3 THD'),mode:'lines',name:'THD X3',line:{dash:'dash',color:'blue'},xaxis:'x4',yaxis:'y11'});
+  }
+
+  // Row 5 — kVA = V*I/1000
+  [['X1 Voltage','X1 Current'],['X2 Voltage','X2 Current'],['X3 Voltage','X3 Current']].forEach((p,i)=>{
+    if(k.has(p[0])&&k.has(p[1])){
+      const y=data.map(r=>{const v=num(r[p[0]]),cc=num(r[p[1]]); return (v==null||cc==null)?null:v*cc/1000;});
+      add({x:dates,y,mode:'lines',name:`kVA ${i+1}`,line:{color:c3[i]},xaxis:'x5',yaxis:'y5'});
+    }
+  });
+
+  // Row 6 — Signed currents + zero line
+  let anySigned=false;
+  [['X1 Current','X1 PF'],['X2 Current','X2 PF'],['X3 Current','X3 PF']].forEach((p,i)=>{
+    if(k.has(p[0])&&k.has(p[1])){
+      anySigned=true;
+      const y=data.map(r=>{const cc=num(r[p[0]]),pf=num(r[p[1]]); return (cc==null||pf==null)?null:cc*Math.sign(pf);});
+      add({x:dates,y,mode:'lines',name:`X${i+1} Current Signed`,line:{color:c3[i]},xaxis:'x6',yaxis:'y6'});
+    }
+  });
+  if(anySigned) add({x:dates,y:dates.map(()=>0),mode:'lines',name:'Zero Line (Current)',line:{color:ZERO,dash:'dash'},xaxis:'x6',yaxis:'y6'});
+
+  // Row 7 — Oil Temperature + Pressure (doble eje)
+  if(k.has('Oil Temperature')&&k.has('Pressure')){
+    add({x:dates,y:colVals(data,'Oil Temperature'),mode:'lines',name:'Oil Temperature',line:{color:'orange'},xaxis:'x7',yaxis:'y7'});
+    add({x:dates,y:colVals(data,'Pressure'),mode:'lines',name:'Pressure',line:{color:'blue'},xaxis:'x7',yaxis:'y12'});
+  }
+
+  // Layout — 7 filas apiladas, x compartido
+  const gap=0.03, n=7, h=(1-gap*(n-1))/n;
+  const dom=i=>{ const top=1-(i-1)*(h+gap); return [Math.max(0,top-h), top]; };
+  const ax=i=>i===1?'':String(i);
+  const layout={ height:2000, hovermode:'x unified', title:{text:'DTM Electrical Parameter Analysis'},
+    showlegend:true, legend:{orientation:'h',y:-0.04}, margin:{l:75,r:75,t:60,b:50}, annotations:[] };
+  for(let i=1;i<=7;i++){
+    layout['xaxis'+ax(i)]={ anchor:'y'+ax(i), domain:[0,1], showticklabels:i===7, matches:i===1?undefined:'x' };
+  }
+  const yTitles=['Voltage (V)','Current (A)','H Current (A)','Power Factor','Apparent Power (kVA)','Signed Current (A)','Oil Temperature (°C)'];
+  for(let i=1;i<=7;i++){
+    layout['yaxis'+ax(i)]={ domain:dom(i), anchor:'x'+ax(i), title:{text:yTitles[i-1],font:{size:11}} };
+  }
+  [[1,8,'Imbalance (%)'],[2,9,'Imbalance (%)'],[3,10,'Imbalance (%)'],[4,11,'THD (%)'],[7,12,'Pressure (Pa)']].forEach(([row,sy,t])=>{
+    layout['yaxis'+sy]={ domain:dom(row), anchor:'x'+ax(row), overlaying:'y'+ax(row), side:'right', title:{text:t,font:{size:11}} };
+  });
+  const subt=['Voltages in 3 Phases','Currents in 3 Phases','H Currents','Power Factor and THD','Apparent Power (kVA)','Currents with Power Factor Sign','Oil Temperature and Pressure'];
+  subt.forEach((t,idx)=>layout.annotations.push({ text:t, font:{size:13,color:'#1E2445'}, showarrow:false, x:0.5, xref:'paper', y:dom(idx+1)[1], yref:'paper', xanchor:'center', yanchor:'bottom', yshift:4 }));
+
+  return { traces, layout };
+}
+
+/* Renderiza el análisis en pantalla (inline) */
+function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
+  const spec = buildFigure(dataIn, vswellIn, vsagIn, powerlossIn);
+  Plotly.newPlot(div, spec.traces, spec.layout, { responsive:true, displaylogo:false });
+}
+
+/* Ruta local de Plotly para los HTML abiertos desde Blob o incluidos en el ZIP.
+   Debe existir un archivo plotly.min.js en la misma carpeta pública que este index.html. */
+const PLOTLY_SRC = (()=>{
+  try{ return new URL('plotly.min.js', window.location.href).href; }
+  catch(e){ return './plotly.min.js'; }
+})();
+
+/* Genera un HTML interactivo autocontenido del análisis (como tu script de Python) */
+function figureToHtml(spec, title){
+  const safeTitle = String(title||'DTM Analytics').replace(/[<>]/g,'');
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
+    + '<title>' + safeTitle + '</title>'
+    + '<script src="' + PLOTLY_SRC + '"><\/script>'
+    + '<style>body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;background:#EEF0F5;color:#1E2445}header{background:#1E2445;color:#fff;padding:14px 22px;font-weight:700}header b{color:#22B0E1}.msg{margin:18px 22px;padding:14px 16px;background:#fff;border:1px solid #d8dde9;border-radius:10px;color:#464D63}#chart{width:100%;background:#fff}</style></head>'
+    + '<body><header>DTM <b>Analytics</b> — ' + safeTitle + '</header><div id="msg" class="msg">Cargando gráfico…</div><div id="chart"></div><script>'
+    + 'var data=' + JSON.stringify(spec.traces) + ';'
+    + 'var layout=' + JSON.stringify(spec.layout) + ';'
+    + 'function fail(e){document.getElementById("msg").innerHTML="No se pudo renderizar el gráfico. Verifica que plotly.min.js esté en la misma carpeta pública que el index.html. Detalle: "+String(e||"");}'
+    + 'if(!window.Plotly){fail("Plotly no cargó desde archivo local plotly.min.js");}else{try{Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false}).then(function(){document.getElementById("msg").style.display="none";});}catch(e){fail(e.message||e);}}'
+    + '<\/script></body></html>';
+}
+
+/* Visor combinado: un solo HTML con selector para ver los gráficos de TODOS los IMEIs */
+function multiFigureToHtml(figs, title){
+  const imeis=Object.keys(figs);
+  const opts=imeis.map(im=>`<option value="${im}">${im}</option>`).join('');
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
+    + '<title>' + title + '</title>'
+    + '<script src="' + PLOTLY_SRC + '"><\/script>'
+    + '<style>'
+    + 'body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;color:#1E2445;background:#EEF0F5}'
+    + 'header{background:#1E2445;color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5}'
+    + 'header h1{font-size:16px;margin:0;font-weight:700}header h1 b{color:#22B0E1}'
+    + '.ctrl{display:flex;align-items:center;gap:8px;font-size:13px;color:#cfe8f5}'
+    + 'select{font:inherit;font-size:14px;padding:7px 12px;border-radius:6px;border:1px solid #3a4368;background:#fff;color:#1E2445;min-width:200px}'
+    + '.nav{display:flex;gap:6px}.nav button{font:inherit;padding:7px 12px;border:1px solid #3a4368;background:#2a3258;color:#fff;border-radius:6px;cursor:pointer}'
+    + '.nav button:hover{background:#22B0E1;border-color:#22B0E1}'
+    + '.meta{padding:8px 22px;font-size:13px;color:#5b6580}'
+    + '#chart{width:100%;background:#fff}'
+    + '</style></head><body>'
+    + '<header><h1>DTM <b>Analytics</b> — ' + title + '</h1>'
+    + '<div class="ctrl">IMEI <select id="sel">' + opts + '</select>'
+    + '<span class="nav"><button id="prev">‹ Anterior</button><button id="next">Siguiente ›</button></span></div>'
+    + '</header><div class="meta" id="meta"></div><div id="chart"></div><script>'
+    + 'var FIGS=' + JSON.stringify(figs) + ';'
+    + 'var IMEIS=' + JSON.stringify(imeis) + ';'
+    + 'var sel=document.getElementById("sel");'
+    + 'function render(im){var f=FIGS[im];if(!f)return;Plotly.newPlot("chart",f.traces,f.layout,{responsive:true,displaylogo:false});'
+    + 'document.getElementById("meta").textContent="IMEI "+im+"  ·  "+(IMEIS.indexOf(im)+1)+" de "+IMEIS.length;}'
+    + 'function step(d){var i=IMEIS.indexOf(sel.value)+d;if(i<0)i=IMEIS.length-1;if(i>=IMEIS.length)i=0;sel.value=IMEIS[i];render(sel.value);}'
+    + 'sel.addEventListener("change",function(){render(sel.value);});'
+    + 'document.getElementById("prev").addEventListener("click",function(){step(-1);});'
+    + 'document.getElementById("next").addEventListener("click",function(){step(1);});'
+    + 'if(!window.Plotly){document.getElementById("meta").textContent="No se pudo cargar Plotly. Verifica que plotly.min.js esté junto al index.html o que el CDN no esté bloqueado.";}else{render(sel.value);}'
+    + '<\/script></body></html>';
+}
+
+/* ── UI ── */
+const logEl=document.getElementById('log');
+function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
+let latestResults={};
+let selectedImei=null;
+let cancelRequested=false;
+function downloadBlob(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
+function updateZipButton(){ const box=document.getElementById('zipActions'); if(box) box.style.display=Object.keys(latestResults).length ? 'block' : 'none'; }
+async function buildZipBlob(){
+  if(!window.JSZip) throw new Error('JSZip no cargó. Verifica que jszip.min.js esté junto al index.html.');
+  const zip=new JSZip();
+  for(const [imei,acc] of Object.entries(latestResults)){
+    const folder=zip.folder(imei);
+    for(const [type,rows] of Object.entries(acc)){
+      let csv=toCSV(rows);
+      if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
+      folder.file(`${imei}_combined_data_${type}.csv`, csv);
+    }
+  }
+  return await zip.generateAsync({type:'blob'});
+}
+document.getElementById('stop').addEventListener('click', ()=>{
+  cancelRequested=true;
+  const s=document.getElementById('stop');
+  s.disabled=true; s.textContent='Deteniendo…';
+});
+
+document.getElementById('downloadZip').addEventListener('click', async ()=>{
+  const b=document.getElementById('downloadZip');
+  try{
+    b.disabled=true; b.textContent='Generando ZIP…';
+    const blob=await buildZipBlob();
+    downloadBlob(blob,'datos_ubicquia.zip');
+    log('✓ ZIP de datos descargado.', 'line-ok');
+  }catch(e){
+    log('✗ '+(e.message||e), 'line-err');
+  }finally{
+    b.disabled=false; b.textContent='Descargar datos en ZIP';
+  }
+});
+
+function renderResults(results){
+  const imeis=Object.keys(results);
+  const list=document.getElementById('dtmlist');
+  list.innerHTML='<h2>DTMs encontrados</h2>';
+  const grid=document.createElement('div'); grid.className='dtm-grid';
+  imeis.forEach(imei=>{
+    const a=results[imei];
+    const card=document.createElement('div'); card.className='dtm-card';
+    const active = selectedImei===imei;
+    card.innerHTML=`<div class="dtm-id">DTM ${imei}</div>`+
+      `<div class="dtm-meta">${a.DTM2.length} registros · ${a.Vsag.length} sag · ${a.Vswell.length} swell · ${a.Powerloss.length} power loss · ${a.Powerrestored.length} restored</div>`+
+      `<button class="vopen" style="margin-top:.75rem;${active?'background:var(--blue-lt)':''}" data-imei="${imei}">Ver análisis</button>`;
+    grid.appendChild(card);
+  });
+  list.appendChild(grid);
+  grid.querySelectorAll('button[data-imei]').forEach(btn=>{
+    btn.addEventListener('click', ()=>showImeiAnalysis(btn.dataset.imei));
+  });
+}
+
+
+function showImeiAnalysis(imei){
+  const acc=latestResults[imei];
+  const cont=document.getElementById('analysisDetail');
+  selectedImei=imei;
+  if(!acc || !cont){ return; }
+  renderResults(latestResults);
+  cont.innerHTML='';
+  const card=document.createElement('div'); card.className='analysis-card';
+  const head=document.createElement('div'); head.className='analysis-head';
+  head.innerHTML=`<span class="analysis-title">Análisis completo — IMEI ${imei}</span><span class="dtm-meta">${acc.DTM2.length} registros</span>`;
+  card.appendChild(head);
+  const div=document.createElement('div'); div.className='analysis-chart'; card.appendChild(div);
+  cont.appendChild(card);
+  try{
+    buildAnalysis(div, acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+  }catch(e){
+    div.innerHTML=`<div class="vplaceholder">No se pudo renderizar el análisis: ${e.message||e}</div>`;
+  }
+}
+
+/* Abre un HTML autocontenido en una pestaña nueva (sin descargarlo) */
+function openHtmlInTab(html){
+  const blob=new Blob([html],{type:'text/html'});
+  window.open(URL.createObjectURL(blob),'_blank');
+}
+
+/* Agrega en vivo la tarjeta de voltajes de un IMEI al panel derecho */
+function addLiveVoltage(imei, dtm2){
+  const cont=document.getElementById('voltlive');
+  const ph=cont.querySelector('.vplaceholder'); if(ph) ph.remove();
+  const phases=['X1 Voltage','X2 Voltage','X3 Voltage'];
+  const activas=phases.filter(c=>dtm2.some(r=>num(r[c])!=null)).map(c=>c.replace(' Voltage',''));
+  const tipo = activas.length>=3 ? 'Trifásico' : 'Monofásico';
+  const spec=buildVoltageFigure(dtm2, imei);
+
+  const card=document.createElement('div'); card.className='vcard';
+  const head=document.createElement('div'); head.className='vhead';
+  head.innerHTML=`<span class="vtitle">IMEI ${imei}<span class="vtipo">· ${tipo}${activas.length?' ('+activas.join(', ')+')':''}</span></span>`;
+  const btn=document.createElement('button'); btn.className='vopen'; btn.textContent='Abrir ↗';
+  btn.addEventListener('click', ()=> openHtmlInTab(figureToHtml(spec, `Voltajes — IMEI ${imei}`)) );
+  head.appendChild(btn);
+  card.appendChild(head);
+
+  const div=document.createElement('div'); div.className='vchart'; card.appendChild(div);
+  cont.appendChild(card);
+
+  // versión inline: sin el título grande, más compacta
+  const layout=Object.assign({}, spec.layout, { title:{text:''}, height:360, margin:{l:55,r:20,t:20,b:45} });
+  Plotly.newPlot(div, spec.traces, layout, { responsive:true, displaylogo:false })
+    .then(()=>{ requestAnimationFrame(()=>{ try{ Plotly.Plots.resize(div); }catch(_){} }); })
+    .catch(err=>console.error('Plotly voltaje', imei, err));
+}
+
+/* Agrega el análisis completo online, usando los mismos datos ya descargados desde la API.
+   No lee CSV ni requiere subcarpeta: trabaja con acc.DTM2 / acc.Vsag / acc.Vswell / acc.Powerloss en memoria. */
+function addLiveFullAnalysis(imei, acc){
+  const cont=document.getElementById('analysisLive');
+  if(!cont) return;
+  if(!cont.querySelector('h2')) cont.innerHTML='<h2>Análisis online</h2>';
+  const card=document.createElement('div'); card.className='analysis-card';
+  const head=document.createElement('div'); head.className='analysis-head';
+  head.innerHTML=`<span class="analysis-title">Análisis completo — IMEI ${imei}</span>`;
+  const btn=document.createElement('button'); btn.className='vopen'; btn.textContent='Abrir HTML ↗';
+  btn.addEventListener('click', ()=>{
+    const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+    openHtmlInTab(figureToHtml(spec, `Análisis DTM — IMEI ${imei}`));
+  });
+  head.appendChild(btn);
+  card.appendChild(head);
+  const div=document.createElement('div'); div.className='analysis-chart'; card.appendChild(div);
+  cont.appendChild(card);
+  try{
+    buildAnalysis(div, acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+  }catch(e){
+    div.innerHTML=`<div class="vplaceholder">No se pudo renderizar el análisis: ${e.message||e}</div>`;
+  }
+}
+
+document.getElementById('go').addEventListener('click', async ()=>{
+  const btn=document.getElementById('go');
+  const imeis=document.getElementById('imeis').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  const start=document.getElementById('start').value; let end=document.getElementById('end').value;
+  const subSelVal=document.getElementById('subpanelSel').value;
+  const subpanel=(subSelVal==='__other__') ? (document.getElementById('subpanel').value.trim()||'0') : (subSelVal||'0');
+  const maxDays=parseInt(document.getElementById('interval').value,10)||5;
+  const concurrency=Math.max(1, Math.min(8, parseInt(document.getElementById('parallel').value,10)||2));
+  const code=document.getElementById('code').value.trim();
+  const panel=document.getElementById('panel').value;
+
+  if(!imeis.length||!start||!end){ alert('Completa IMEIs, fecha inicio y fecha fin.'); return; }
+  if(!code){ alert('Ingresa el código de acceso.'); return; }
+
+  // Ubicquia exige que la fecha fin sea anterior a la hora actual; si está en el futuro, la ajustamos.
+  let endClampedMsg='';
+  {
+    const c=new Date(Date.now()-60*60*1000); // ahora menos 1 hora (margen para el análisis)
+    if(fromLocalInput(end) > c){
+      end=`${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}T${pad(c.getHours())}:${pad(c.getMinutes())}:${pad(c.getSeconds())}`;
+      endClampedMsg=`⚠ La fecha fin estaba muy reciente/futura; se ajustó a ${end.replace('T',' ')} (se considera al menos 1 hora antes de ahora).`;
+    }
+  }
+
+  logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
+  latestResults={}; selectedImei=null; updateZipButton();
+  const analysisDetail=document.getElementById('analysisDetail');
+  if(analysisDetail) analysisDetail.innerHTML='<div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div>';
+  btn.disabled=true; btn.textContent='Procesando…';
+  cancelRequested=false;
+  const stopBtn=document.getElementById('stop');
+  stopBtn.disabled=false;
+  stopBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg> Detener consulta';
+  stopBtn.style.display='flex';
+  try{
+    const intervals=splitRange(start,end,maxDays);
+    log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
+    if(endClampedMsg) log(endClampedMsg, 'line-err');
+    const results={}; let done=0;
+
+    // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
+    async function processImei(imei){
+      const acc={DTM2:[],Vsag:[],Vswell:[],Powerloss:[],Powerrestored:[]};
+      let stopped=false;
+      for(let i=0;i<intervals.length;i++){
+        if(cancelRequested){ stopped=true; break; }
+        const [is,ie]=intervals[i];
+        const d = await apiCall('all',imei,is,ie,subpanel,code,panel);
+        acc.DTM2.push(...renameKeys(d.metrix||[], raw_mapping).map(r=>{ if(r['Date']!=null) r['Date']=normMetrixDate(r['Date']); return r; }));
+        acc.Vsag.push(...renameKeys(d.sag||[], voltage_sag_mapping).map(r=>{ if(r['Time']!=null) r['Time']=normMetrixDate(r['Time']); return r; }));
+        acc.Vswell.push(...renameKeys(d.swell||[], voltage_swell_mapping).map(r=>{ if(r['Time']!=null) r['Time']=normMetrixDate(r['Time']); return r; }));
+        acc.Powerloss.push(...renameKeys(filterPowerLoss(d.powerloss||[]), power_mapping).map(r=>{ if(r['Subpanel Time']!=null) r['Subpanel Time']=normMetrixDate(r['Subpanel Time']); return r; }));
+        acc.Powerrestored.push(...renameKeys(filterPowerRestored(d.powerrestored||[]), power_mapping).map(r=>{ if(r['Subpanel Time']!=null) r['Subpanel Time']=normMetrixDate(r['Subpanel Time']); return r; }));
+        if(i < intervals.length-1 && !cancelRequested) await sleep(1500); // pausa para no saturar Ubicquia
+      }
+      const hasData = Object.values(acc).some(a=>a.length);
+      if(stopped && !hasData){ log(`○ ${imei} — detenido antes de descargar`, 'line-err'); return; }
+
+      for(const t of Object.keys(acc)) acc[t]=sortByDate(dedupe(acc[t]));
+      results[imei]=acc;
+
+      latestResults=results;
+      updateZipButton();
+      renderResults(results);
+      if(acc.DTM2.length && (!selectedImei || selectedImei===imei)){
+        showImeiAnalysis(imei);
+      }
+      done++;
+      log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
+    }
+
+    // Pool de concurrencia: hasta "concurrency" IMEIs a la vez
+    const cola=[...imeis];
+    async function worker(){
+      while(cola.length){
+        if(cancelRequested) break;
+        const imei=cola.shift();
+        try{ await processImei(imei); }
+        catch(e){ log(`✗ ${imei}: ${e.message||e}`, 'line-err'); }
+      }
+    }
+    await Promise.all(Array.from({length:concurrency}, ()=>worker()));
+
+    if(cancelRequested) log('\n■ Proceso detenido. Se conserva lo consultado hasta aquí.', 'line-err');
+
+    if(Object.keys(results).length===0){
+      log('No se alcanzó a consultar datos.', 'line-err');
+    }else{
+      latestResults=results;
+      updateZipButton();
+      renderResults(results);
+      if(!selectedImei) showImeiAnalysis(Object.keys(results)[0]);
+      log('✓ Listo. Selecciona un IMEI para ver su análisis completo a la derecha.', 'line-ok');
+    }
+  }catch(e){
+    log('✗ '+(e.message||e), 'line-err');
+  }finally{
+    btn.disabled=false; btn.textContent='Consultar y graficar';
+    document.getElementById('stop').style.display='none';
+  }
+});
+
+/* Llena el selector de paneles y, según el panel, su lista de subpaneles.
+   La opción "Otro…" muestra un campo para escribir un subpanel nuevo. */
+(function setupPanels(){
+  const panelSel=document.getElementById('panel');
+  const subSel=document.getElementById('subpanelSel');
+  const subInput=document.getElementById('subpanel');
+  if(!panelSel) return;
+
+  PANELS.forEach(p=>{ const o=document.createElement('option'); o.value=p.key; o.textContent=p.label; panelSel.appendChild(o); });
+
+  function fillSubpanels(){
+    const p=PANELS.find(x=>x.key===panelSel.value);
+    subSel.innerHTML='';
+    const subs=(p && p.subpanels) ? p.subpanels : [];
+    subs.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.label; subSel.appendChild(o); });
+    const other=document.createElement('option'); other.value='__other__'; other.textContent='Otro…'; subSel.appendChild(other);
+    toggleManual();
+  }
+  function toggleManual(){
+    const isOther = subSel.value==='__other__';
+    subInput.style.display = isOther ? 'block' : 'none';
+    if(isOther) subInput.focus();
+  }
+  panelSel.addEventListener('change', fillSubpanels);
+  subSel.addEventListener('change', toggleManual);
+  fillSubpanels();
+})();
+
+/* Valores por defecto: fin = ahora menos 1 hora; inicio = 2 días antes del fin (00:00:00). */
+(function setDefaultDates(){
+  const startEl=document.getElementById('start');
+  const endEl=document.getElementById('end');
+  const e=new Date(Date.now()-60*60*1000); // fin = ahora menos 1 hora
+  if(endEl && !endEl.value){
+    endEl.value=`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}T${pad(e.getHours())}:${pad(e.getMinutes())}:${pad(e.getSeconds())}`;
+  }
+  if(startEl && !startEl.value){
+    const s=new Date(e.getTime()-2*24*60*60*1000); // 2 días antes del fin
+    startEl.value=`${s.getFullYear()}-${pad(s.getMonth()+1)}-${pad(s.getDate())}T00:00:00`;
+  }
+})();
 </script>
 </body>
 </html>
