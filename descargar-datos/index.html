@@ -99,6 +99,10 @@
   .btn-stop:hover{background:#fdeaea}
   .btn-stop:disabled{opacity:.6;cursor:not-allowed}
   .btn-stop svg{width:16px;height:16px}
+  .btn-zip{width:100%;margin-top:.6rem;padding:.8rem;border:1px solid var(--accent);border-radius:var(--radius);background:#fff;color:var(--accent);font-size:.95rem;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;gap:.5rem;transition:background .15s}
+  .btn-zip:hover{background:var(--blue-lt)}
+  .btn-zip:disabled{opacity:.6;cursor:not-allowed}
+  .btn-zip svg{width:16px;height:16px}
 
 
   /* Consola de registro */
@@ -135,7 +139,7 @@
 <div class="wrap">
   <span class="eyebrow">DTM Analytics</span>
   <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI y muestra el análisis completo caso a caso en el panel derecho. No descarga ZIP ni genera HTML adicional.</p>
+  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y permite descargar los datos en ZIP como respaldo opcional.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -183,6 +187,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
         Detener consulta
       </button>
+      <button class="btn-zip" id="downloadZip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
+        Descargar datos ZIP
+      </button>
 
     </div>
   </div>
@@ -202,6 +210,7 @@
   <span>griddata.cl</span>
 </footer>
 
+<script src="./jszip.min.js"></script>
 <script src="./plotly.min.js"></script>
 <script>if(!window.Plotly){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>');}</script>
 <script>
@@ -501,10 +510,51 @@ function log(msg, cls){ logEl.classList.add('show'); const s=document.createElem
 let latestResults={};
 let selectedImei=null;
 let cancelRequested=false;
+function updateZipButton(){
+  const b=document.getElementById('downloadZip');
+  if(!b) return;
+  b.style.display=Object.keys(latestResults).length ? 'flex' : 'none';
+}
+function downloadBlob(blob, name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+async function buildZipBlob(){
+  if(!window.JSZip){ throw new Error('JSZip no cargó. Verifica que jszip.min.js esté junto al index.html.'); }
+  const zip=new JSZip();
+  for(const [imei, acc] of Object.entries(latestResults)){
+    const folder=zip.folder(imei);
+    for(const [type, rows] of Object.entries(acc)){
+      let csv=toCSV(rows);
+      if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
+      folder.file(`${imei}_combined_data_${type}.csv`, csv);
+    }
+  }
+  return await zip.generateAsync({type:'blob'});
+}
 document.getElementById('stop').addEventListener('click', ()=>{
   cancelRequested=true;
   const s=document.getElementById('stop');
   s.disabled=true; s.textContent='Deteniendo…';
+});
+
+document.getElementById('downloadZip').addEventListener('click', async ()=>{
+  const b=document.getElementById('downloadZip');
+  try{
+    b.disabled=true;
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Generando ZIP…';
+    const blob=await buildZipBlob();
+    downloadBlob(blob,'datos_ubicquia.zip');
+    log('✓ ZIP de datos descargado.', 'line-ok');
+  }catch(e){
+    log('✗ '+(e.message||e), 'line-err');
+  }finally{
+    b.disabled=false;
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar datos ZIP';
+  }
 });
 
 function renderResults(results){
@@ -631,7 +681,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   }
 
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
-  latestResults={}; selectedImei=null;
+  latestResults={}; selectedImei=null; updateZipButton();
   const analysisDetail=document.getElementById('analysisDetail');
   if(analysisDetail) analysisDetail.innerHTML='<div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div>';
   btn.disabled=true; btn.textContent='Procesando…';
@@ -668,6 +718,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
       results[imei]=acc;
 
       latestResults=results;
+      updateZipButton();
       renderResults(results);
       if(acc.DTM2.length && (!selectedImei || selectedImei===imei)){
         showImeiAnalysis(imei);
@@ -694,6 +745,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
       log('No se alcanzó a consultar datos.', 'line-err');
     }else{
       latestResults=results;
+      updateZipButton();
       renderResults(results);
       if(!selectedImei) showImeiAnalysis(Object.keys(results)[0]);
       log('✓ Listo. Selecciona un IMEI para ver su análisis completo a la derecha.', 'line-ok');
