@@ -139,7 +139,7 @@
 <div class="wrap">
   <span class="eyebrow">DTM Analytics</span>
   <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando el backend paginado completo.</p>
+  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend paginado completo y columnas fijas compatibles con el CSV de referencia.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -278,12 +278,27 @@ function renameKeys(rows, mapping){ return rows.map(r=>{ const o={}; for(const k
 function dedupe(rows){ const seen=new Set(),out=[]; for(const r of rows){ const k=JSON.stringify(r); if(!seen.has(k)){ seen.add(k); out.push(r);} } return out; }
 function sortBy(rows, col){ if(!rows.length||!col) return rows; return [...rows].sort((a,b)=>String(a[col]??'').localeCompare(String(b[col]??''))); }
 function sortByDate(rows){ if(!rows.length) return rows; const dcol=Object.keys(rows[0]).find(c=>/date|time/i.test(c)); return sortBy(rows,dcol); }
-function toCSV(rows){
-  if(!rows.length) return '';
-  const keys=[]; for(const r of rows) for(const k of Object.keys(r)) if(!keys.includes(k)) keys.push(k);
-  const esc=v=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s)?'"'+s.split('"').join('""')+'"':s; };
-  return [keys.join(','), ...rows.map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n');
+const CSV_SCHEMAS = {"DTM2": ["ID", "Serial Number", "Node ID", "node_name", "subpanel_id", "imei", "node_id", "Latitude", "Longitude", "median_lat", "median_long", "Node Status", "service_center", "substation", "substation_id", "feeder", "feeder_id", "address", "operating_kVA", "phase", "t_loop", "operating_voltage", "secondary_voltage", "transformer_id", "gis_id", "parent_gis_id", "fill_type", "solar_flag", "critical_infrastructure_flag", "transformer_node_id", "cableKit", "ct_ratio", "date", "Firmware Version", "Hardware Version", "hdop", "kVA Rating", "lateral", "lateral_id", "X1 Current", "X1 Voltage", "X2 Current", "X2 Voltage", "X3 Current", "X3 Voltage", "maintenance_state", "manufacturer_name", "network_state", "operational_state", "nominalVoltage", "Oil Temperature", "poleId", "poleType", "pole_color", "pole_height", "Pressure", "pt_ratio", "rated_hv", "switch_number", "tln", "transformer_type", "currentThdLine1", "currentThdLine2", "currentThdLine3", "X3 Power (kW)", "X1 Energy (kWh)", "X1 PF", "line1frequencyPeriodAverage", "X2 Power (kW)", "X2 Energy (kWh)", "X2 PF", "line2frequencyPeriodAverage", "X1 Power (kW)", "X3 Energy (kWh)", "X3 PF", "line3frequencyPeriodAverage", "oilLevelAvg", "primaryPhase1CurrentAvg", "primaryPhase2CurrentAvg", "primaryPhase3CurrentAvg", "voltageImbalance", "voltageThdLine1", "voltageThdLine2", "voltageThdLine3", "networkTypeState", "Last Updated", "tilt", "oilLevelHourAvg", "RSSI", "kVA", "ambientTemperatureMax_f", "scRelayStatusOnlyText", "H1 / H1A Current", "H2 / H2A Current", "H3 / H3A Current"], "Vsag": ["Time", "X1 Lowest Value", "X2 Lowest Value", "X3 Lowest Value", "X1 Duration", "X2 Duration", "X3 Duration"], "Vswell": ["Time", "X1 Highest Value", "X2 Highest Value", "X3 Highest Value", "X1 Duration", "X2 Duration", "X3 Duration"], "Powerloss": ["Subpanel Time"], "Powerrestored": ["Subpanel Time"]};
+
+function rowsForCsv(type, rows){
+  return (rows||[]).map(r=>{
+    const o={...r};
+    // El CSV Python de referencia deja la columna como "date" cuando el API entrega date.
+    // El gráfico interno usa "Date"; para el ZIP garantizamos compatibilidad con el CSV de referencia.
+    if(type==='DTM2' && o.Date!=null && o.date==null) o.date=o.Date;
+    return o;
+  });
 }
+
+function toCSV(rows, columns){
+  const keys = (columns && columns.length) ? [...columns] : (()=>{
+    const k=[]; for(const r of rows) for(const c of Object.keys(r)) if(!k.includes(c)) k.push(c); return k;
+  })();
+  const esc=v=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s)?'"'+s.split('"').join('""')+'"':s; };
+  if(!keys.length) return '';
+  return [keys.join(','), ...(rows||[]).map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n');
+}
+
 function pad(n){ return String(n).padStart(2,'0'); }
 function fmt(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
 function fromLocalInput(v){ return new Date(v.length===16 ? v+':00' : v); }
@@ -529,8 +544,9 @@ async function buildZipBlob(){
   for(const [imei, acc] of Object.entries(latestResults)){
     const folder=zip.folder(imei);
     for(const [type, rows] of Object.entries(acc)){
-      let csv=toCSV(rows);
-      if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
+      const schema = CSV_SCHEMAS[type] || null;
+      const csvRows = rowsForCsv(type, rows);
+      const csv = toCSV(csvRows, schema);
       folder.file(`${imei}_combined_data_${type}.csv`, csv);
     }
   }
