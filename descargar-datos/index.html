@@ -139,7 +139,7 @@
 <div class="wrap">
   <span class="eyebrow">DTM Analytics</span>
   <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y permite descargar los datos en ZIP como respaldo opcional.</p>
+  <p class="lead">Consulta transformadores por IMEI, trae todas las páginas disponibles de la API, muestra el análisis completo caso a caso en el panel derecho y permite descargar los datos en ZIP como respaldo opcional.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -293,15 +293,62 @@ function splitRange(start, end, maxDays){
   return out;
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const PAGE_SIZE = 20000;
+const MAX_PAGES = 100;
+const END_SAFETY_MINUTES = 5;
 
-async function apiCall(action, imei, start, end, subpanel_id, code, panel){
+async function apiCall(action, imei, start, end, subpanel_id, code, panel, extra={}){
   const res = await fetch('/api/ubicquia', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', ...(code ? {'x-access-code':code} : {}) },
-    body: JSON.stringify({ action, imei, start, end, subpanel_id, panel }),
+    body: JSON.stringify({ action, imei, start, end, subpanel_id, panel, ...extra }),
   });
   if(!res.ok){ throw new Error(`${action} ${imei}: HTTP ${res.status} ${await res.text()}`); }
   return (await res.json()).data || [];
+}
+
+function pageSignature(d){
+  const groups=['metrix','sag','swell','powerloss','powerrestored'];
+  return groups.map(k=>{
+    const a=d[k]||[];
+    const first=a[0]||{};
+    const last=a[a.length-1]||{};
+    return [k,a.length,first.id||first.createdAt||first.date||first.Time||'',last.id||last.createdAt||last.date||last.Time||''].join(':');
+  }).join('|');
+}
+
+async function apiCallAllPages(action, imei, start, end, subpanel_id, code, panel){
+  const out={metrix:[],sag:[],swell:[],powerloss:[],powerrestored:[]};
+  const seen=new Set();
+  for(let page=1; page<=MAX_PAGES; page++){
+    const d=await apiCall(action, imei, start, end, subpanel_id, code, panel, {page, per_page: PAGE_SIZE});
+    const sig=pageSignature(d);
+    const counts={
+      metrix:(d.metrix||[]).length,
+      sag:(d.sag||[]).length,
+      swell:(d.swell||[]).length,
+      powerloss:(d.powerloss||[]).length,
+      powerrestored:(d.powerrestored||[]).length,
+    };
+    const total=counts.metrix+counts.sag+counts.swell+counts.powerloss+counts.powerrestored;
+    if(total===0){
+      if(page===1) log(`  ${imei} ${start} → ${end}: página 1 sin datos`, 'line-err');
+      break;
+    }
+    if(seen.has(sig)){
+      log(`  ${imei} ${start} → ${end}: página ${page} repetida; se detiene para evitar duplicados`, 'line-err');
+      break;
+    }
+    seen.add(sig);
+    out.metrix.push(...(d.metrix||[]));
+    out.sag.push(...(d.sag||[]));
+    out.swell.push(...(d.swell||[]));
+    out.powerloss.push(...(d.powerloss||[]));
+    out.powerrestored.push(...(d.powerrestored||[]));
+    log(`  ${imei} ${start} → ${end} · página ${page}: ${counts.metrix} DTM2, ${counts.sag} sag, ${counts.swell} swell, ${counts.powerloss} loss, ${counts.powerrestored} restored`);
+    await sleep(250);
+  }
+  return out;
 }
 
 /* ── Análisis: port del script Plotly (7 paneles) ── */
@@ -673,10 +720,10 @@ document.getElementById('go').addEventListener('click', async ()=>{
   // Ubicquia exige que la fecha fin sea anterior a la hora actual; si está en el futuro, la ajustamos.
   let endClampedMsg='';
   {
-    const c=new Date(Date.now()-60*60*1000); // ahora menos 1 hora (margen para el análisis)
+    const c=new Date(Date.now()-END_SAFETY_MINUTES*60*1000); // margen mínimo para evitar consultar futuro
     if(fromLocalInput(end) > c){
       end=`${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}T${pad(c.getHours())}:${pad(c.getMinutes())}:${pad(c.getSeconds())}`;
-      endClampedMsg=`⚠ La fecha fin estaba muy reciente/futura; se ajustó a ${end.replace('T',' ')} (se considera al menos 1 hora antes de ahora).`;
+      endClampedMsg=`⚠ La fecha fin estaba muy reciente/futura; se ajustó a ${end.replace('T',' ')} (margen automático de 5 minutos para evitar consultar futuro).`;
     }
   }
 
@@ -703,7 +750,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
       for(let i=0;i<intervals.length;i++){
         if(cancelRequested){ stopped=true; break; }
         const [is,ie]=intervals[i];
-        const d = await apiCall('all',imei,is,ie,subpanel,code,panel);
+        const d = await apiCallAllPages('all',imei,is,ie,subpanel,code,panel);
         acc.DTM2.push(...renameKeys(d.metrix||[], raw_mapping).map(r=>{ if(r['Date']!=null) r['Date']=normMetrixDate(r['Date']); return r; }));
         acc.Vsag.push(...renameKeys(d.sag||[], voltage_sag_mapping).map(r=>{ if(r['Time']!=null) r['Time']=normMetrixDate(r['Time']); return r; }));
         acc.Vswell.push(...renameKeys(d.swell||[], voltage_swell_mapping).map(r=>{ if(r['Time']!=null) r['Time']=normMetrixDate(r['Time']); return r; }));
@@ -790,7 +837,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
 (function setDefaultDates(){
   const startEl=document.getElementById('start');
   const endEl=document.getElementById('end');
-  const e=new Date(Date.now()-60*60*1000); // fin = ahora menos 1 hora
+  const e=new Date(Date.now()-END_SAFETY_MINUTES*60*1000); // fin = ahora menos 5 minutos
   if(endEl && !endEl.value){
     endEl.value=`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}T${pad(e.getHours())}:${pad(e.getMinutes())}:${pad(e.getSeconds())}`;
   }
