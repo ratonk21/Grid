@@ -68,15 +68,41 @@
   .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
 
   .ptabs{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap}
-  .ptab{padding:9px 20px; border-radius:11px; font-family:var(--disp); font-size:14px; font-weight:700; color:var(--muted); cursor:pointer; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow); transition:color .12s,background .12s}
-  .ptab:hover{color:var(--ink)}
-  .ptab.active{background:var(--indigo); color:#fff; border-color:var(--indigo)}
+  .ptab{padding:9px 20px; border-radius:11px; font-family:var(--disp); font-size:14px; font-weight:700; color:var(--muted); cursor:pointer; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow); transition:color .15s,background .15s,box-shadow .15s,transform .1s; position:relative}
+  .ptab:hover{color:var(--ink); transform:translateY(-1px); box-shadow:0 4px 14px rgba(34,176,225,.15)}
+  .ptab.active{background:var(--indigo); color:#fff; border-color:var(--indigo); box-shadow:0 4px 18px rgba(34,176,225,.35); transform:translateY(-1px)}
+  .ptab.active::after{content:""; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid var(--indigo)}
+
   .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:5px; box-shadow:var(--shadow); margin-bottom:16px; overflow:auto}
-  .tab{flex:1; min-width:max-content; text-align:center; padding:9px 13px; border-radius:10px; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; white-space:nowrap; border:1px solid transparent}
-  .tab:hover{color:var(--ink)}
-  .tab.active{background:linear-gradient(180deg,#fff,var(--surface2)); color:var(--indigo); border-color:var(--line); box-shadow:var(--shadow); font-weight:600}
+  .tab{flex:1; min-width:max-content; text-align:center; padding:9px 13px; border-radius:10px; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; white-space:nowrap; border:1px solid transparent; transition:color .12s,background .12s,box-shadow .12s}
+  .tab:hover{color:var(--ink); background:var(--surface2)}
+  .tab.active{background:linear-gradient(180deg,#fff,var(--surface2)); color:var(--indigo); border-color:var(--indigo); box-shadow:0 2px 8px rgba(34,176,225,.18); font-weight:700; position:relative}
+  .tab.active::before{content:""; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:24px; height:3px; border-radius:2px; background:var(--indigo); opacity:.7}
   .tabgroup{flex:none; align-self:center; display:flex; align-items:center; font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); font-weight:700; padding:0 4px 0 11px; margin-left:2px; white-space:nowrap; border-left:1px solid var(--line)}
-  .view{display:none} .view.active{display:block}
+
+  .view{display:none}
+  .view.active{display:block; animation:fadeSection .2s ease}
+  @keyframes fadeSection{from{opacity:.5; transform:translateY(4px)} to{opacity:1; transform:translateY(0)}}
+
+  /* Borde indicador de sección activa */
+  .view.active > .surface:first-child,
+  .view.active > .section:first-child > .surface,
+  .view.active > .cards:first-child{
+    border-left: 3px solid var(--indigo);
+  }
+
+  /* Breadcrumb de ubicación */
+  .section-breadcrumb{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; font-family:var(--mono); font-weight:600;
+    color:var(--indigo); background:var(--indigo-soft);
+    border:1px solid rgba(34,176,225,.2); border-radius:8px;
+    padding:5px 11px; margin-bottom:12px; width:fit-content;
+    letter-spacing:.04em; text-transform:uppercase;
+    animation:fadeSection .25s ease;
+  }
+  .section-breadcrumb .bc-sep{color:var(--faint); font-weight:400; margin:0 2px}
+  .section-breadcrumb .bc-dot{width:7px; height:7px; border-radius:50%; background:var(--indigo); display:inline-block; margin-right:6px}
 
   .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:14px}
   @media (max-width:760px){ .cards{grid-template-columns:repeat(2,1fr)} }
@@ -1518,6 +1544,20 @@ function refreshAll(){recalc();renderTop();const sl=document.getElementById("day
 
 const GROUP_TABS={cfg:["inventario","escenarios","dim"],res:["resumen","exec"],ana:["perfil","tabla"]};
 const lastTab={cfg:"inventario",res:"resumen",ana:"perfil"};
+
+/* ── breadcrumb helper ── */
+function updateBreadcrumb(groupEl,tabEl){
+  document.querySelectorAll(".section-breadcrumb").forEach(el=>el.remove());
+  const activeView=document.querySelector(".view.active");
+  if(!activeView||!groupEl)return;
+  const groupLabel=groupEl?groupEl.textContent.trim():"";
+  const tabLabel=tabEl?tabEl.textContent.trim():"";
+  const bc=document.createElement("div");
+  bc.className="section-breadcrumb";
+  bc.innerHTML=`<span class="bc-dot"></span>${groupLabel}${tabLabel?` <span class="bc-sep">›</span> ${tabLabel}`:""}`;
+  activeView.insertBefore(bc,activeView.firstChild);
+}
+
 function setGroup(g,tab){
   document.querySelectorAll(".ptab").forEach(p=>p.classList.toggle("active",p.dataset.group===g));
   const bar=document.getElementById("tabs");
@@ -1530,12 +1570,18 @@ function setGroup(g,tab){
   }
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));
   renderActive();
+  const activeGroup=document.querySelector(".ptab.active");
+  const activeTab=document.querySelector("#tabs .tab.active");
+  updateBreadcrumb(activeGroup,activeTab);
 }
 document.getElementById("ptabs").addEventListener("click",e=>{const p=e.target.closest(".ptab");if(!p)return;setGroup(p.dataset.group);});
 document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.closest(".tab");if(!tb)return;
   S.tab=tb.dataset.tab; if(tb.dataset.group)lastTab[tb.dataset.group]=S.tab;
   document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("active",x===tb));
-  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));renderActive();});
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));renderActive();
+  const activeGroup=document.querySelector(".ptab.active");
+  updateBreadcrumb(activeGroup,tb);
+});
 document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{
   setGroup("res","resumen");window.scrollTo({top:0,behavior:"smooth"});}));
 
@@ -1600,7 +1646,9 @@ document.querySelectorAll(".baseSeg").forEach(seg=>seg.addEventListener("click",
 syncBaseSegs();
 
 /* language */
-document.getElementById("langBtn").addEventListener("click",()=>{LANG=LANG==="es"?"en":"es";applyI18n();fillCountries();buildDimTable();refreshAll();});
+document.getElementById("langBtn").addEventListener("click",()=>{LANG=LANG==="es"?"en":"es";applyI18n();fillCountries();buildDimTable();refreshAll();
+  setTimeout(()=>{const ag=document.querySelector(".ptab.active");const at=document.querySelector("#tabs .tab.active");updateBreadcrumb(ag,at);},50);
+});
 
 /* init */
 applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); wireDim(); refreshAll();

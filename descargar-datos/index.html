@@ -39,7 +39,19 @@
   .back{color:#aeb4c7;font-size:.82rem;font-weight:700;text-decoration:none;letter-spacing:.02em;transition:color .15s}
   .back:hover{color:#fff}
 
-  .wrap{max-width:980px;margin:0 auto;padding:2.5rem 1.25rem 3rem}
+  .wrap{max-width:1380px;margin:0 auto;padding:2.5rem 1.25rem 3rem}
+  .layout{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:2rem;align-items:start;margin-top:2rem}
+  @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+  .col-form .panel-card{margin-top:0}
+  #voltlive{display:flex;flex-direction:column;gap:1.25rem}
+  .vplaceholder{color:var(--muted);font-size:.92rem;border:1px dashed var(--border);border-radius:var(--radius-lg);padding:2.5rem 1.5rem;text-align:center;background:var(--surface)}
+  .vcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.9rem 1rem 1rem}
+  .vhead{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem}
+  .vtitle{font-weight:700;font-size:.92rem;color:var(--navy)}
+  .vtitle .vtipo{font-weight:400;color:var(--muted);font-size:.82rem;margin-left:.4rem}
+  .vopen{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:var(--radius);font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap}
+  .vopen:hover{background:var(--blue-lt)}
+  .vchart{width:100%}
 
   /* Hero */
   .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.7rem}
@@ -125,8 +137,10 @@
 <div class="wrap">
   <span class="eyebrow">DTM Analytics</span>
   <h1>Descargar y analizar datos</h1>
-  <p class="lead">Extrae el histórico de transformadores por IMEI, descárgalo en un ZIP y revisa los gráficos de parámetros eléctricos al instante. Las credenciales nunca salen del servidor.</p>
+  <p class="lead">Extrae el histórico de transformadores por IMEI, descárgalo en un ZIP y revisa los gráficos de voltaje al instante. Las credenciales nunca salen del servidor.</p>
 
+  <div class="layout">
+   <div class="col-form">
   <div class="panel-card">
     <div class="panel-card__head">
       <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg></span>
@@ -177,8 +191,12 @@
 
   <div id="redownload"><a id="redownload-link"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar el ZIP otra vez</a></div>
   <div id="log"></div>
+   </div><!-- /col-form -->
+   <div class="col-live">
+     <div id="voltlive"><div class="vplaceholder">Los gráficos de voltaje aparecerán aquí a medida que cada IMEI termine de descargar.</div></div>
+   </div>
+  </div><!-- /layout -->
   <div id="dtmlist"></div>
-  <div id="charts"></div>
 </div>
 
 <footer>
@@ -497,16 +515,37 @@ function renderResults(results){
     grid.appendChild(card);
   });
   list.appendChild(grid);
+}
 
-  const charts=document.getElementById('charts');
-  charts.innerHTML='<h2>Gráficos</h2>';
-  imeis.forEach(imei=>{
-    const a=results[imei];
-    const h=document.createElement('h3'); h.className='chart-title'; h.textContent='DTM '+imei; charts.appendChild(h);
-    if(!a.DTM2.length){ const p=document.createElement('p'); p.className='sub'; p.textContent='Sin datos de métricas para graficar.'; charts.appendChild(p); return; }
-    const div=document.createElement('div'); div.className='chart'; charts.appendChild(div);
-    buildAnalysis(div, a.DTM2, a.Vswell, a.Vsag, a.Powerloss);
-  });
+/* Abre un HTML autocontenido en una pestaña nueva (sin descargarlo) */
+function openHtmlInTab(html){
+  const blob=new Blob([html],{type:'text/html'});
+  window.open(URL.createObjectURL(blob),'_blank');
+}
+
+/* Agrega en vivo la tarjeta de voltajes de un IMEI al panel derecho */
+function addLiveVoltage(imei, dtm2){
+  const cont=document.getElementById('voltlive');
+  const ph=cont.querySelector('.vplaceholder'); if(ph) ph.remove();
+  const phases=['X1 Voltage','X2 Voltage','X3 Voltage'];
+  const activas=phases.filter(c=>dtm2.some(r=>num(r[c])!=null)).map(c=>c.replace(' Voltage',''));
+  const tipo = activas.length>=3 ? 'Trifásico' : 'Monofásico';
+  const spec=buildVoltageFigure(dtm2, imei);
+
+  const card=document.createElement('div'); card.className='vcard';
+  const head=document.createElement('div'); head.className='vhead';
+  head.innerHTML=`<span class="vtitle">IMEI ${imei}<span class="vtipo">· ${tipo}${activas.length?' ('+activas.join(', ')+')':''}</span></span>`;
+  const btn=document.createElement('button'); btn.className='vopen'; btn.textContent='Abrir ↗';
+  btn.addEventListener('click', ()=> openHtmlInTab(figureToHtml(spec, `Voltajes — IMEI ${imei}`)) );
+  head.appendChild(btn);
+  card.appendChild(head);
+
+  const div=document.createElement('div'); div.className='vchart'; card.appendChild(div);
+  cont.appendChild(card);
+
+  // versión inline: sin el título grande, más compacta
+  const layout=Object.assign({}, spec.layout, { title:{text:''}, height:360, margin:{l:55,r:20,t:20,b:45} });
+  Plotly.newPlot(div, spec.traces, layout, { responsive:true, displaylogo:false });
 }
 
 document.getElementById('go').addEventListener('click', async ()=>{
@@ -533,7 +572,8 @@ document.getElementById('go').addEventListener('click', async ()=>{
     }
   }
 
-  logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML=''; document.getElementById('charts').innerHTML='';
+  logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
+  document.getElementById('voltlive').innerHTML='<div class="vplaceholder">Los gráficos de voltaje aparecerán aquí a medida que cada IMEI termine de descargar.</div>';
   document.getElementById('redownload').style.display='none';
   btn.disabled=true; btn.textContent='Procesando…';
   cancelRequested=false;
@@ -545,7 +585,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
     const intervals=splitRange(start,end,maxDays);
     log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
     if(endClampedMsg) log(endClampedMsg, 'line-err');
-    const zip=new JSZip(); const results={}; const viewerFigs={}; const voltageFigs={}; let done=0;
+    const zip=new JSZip(); const results={}; let done=0;
 
     // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
     async function processImei(imei){
@@ -574,12 +614,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
         if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
         folder.file(`${imei}_combined_data_${type}.csv`, csv);
       }
-      if(acc.DTM2.length){
-        const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
-        folder.file(`${imei}_Final_Electrical_Parameters_ANALYSIS.html`, figureToHtml(spec, `DTM ${imei} — Electrical Parameter Analysis`));
-        viewerFigs[imei]=spec;
-        voltageFigs[imei]=buildVoltageFigure(acc.DTM2, imei);
-      }
+      if(acc.DTM2.length){ try{ addLiveVoltage(imei, acc.DTM2); }catch(e){ console.error(e); } }
       done++;
       log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
     }
@@ -601,18 +636,6 @@ document.getElementById('go').addEventListener('click', async ()=>{
     if(Object.keys(results).length===0){
       log('No se alcanzó a descargar datos.', 'line-err');
     }else{
-      // Visor combinado: un HTML con TODOS los IMEIs (selector), en una subcarpeta
-      const viewerImeis=Object.keys(viewerFigs);
-      if(viewerImeis.length){
-        zip.folder('VISOR_GRAFICOS').file('index.html', multiFigureToHtml(viewerFigs, 'Visor de gráficos'));
-        log(`✓ Visor combinado de ${viewerImeis.length} IMEI(s) → VISOR_GRAFICOS/index.html`, 'line-ok');
-      }
-      const voltImeis=Object.keys(voltageFigs);
-      if(voltImeis.length){
-        zip.folder('VISOR_VOLTAJES').file('index.html', multiFigureToHtml(voltageFigs, 'Voltajes en el tiempo'));
-        log(`✓ Visor de voltajes de ${voltImeis.length} IMEI(s) → VISOR_VOLTAJES/index.html`, 'line-ok');
-      }
-
       log('\nGenerando ZIP…');
       lastBlob=await zip.generateAsync({type:'blob'});
       download(lastBlob, cancelRequested ? 'datos_ubicquia_parcial.zip' : 'datos_ubicquia.zip');
@@ -659,16 +682,17 @@ document.getElementById('go').addEventListener('click', async ()=>{
   fillSubpanels();
 })();
 
-/* Valores por defecto: inicio hoy 00:00:00, fin = ahora menos 1 hora. */
+/* Valores por defecto: fin = ahora menos 1 hora; inicio = 2 días antes del fin (00:00:00). */
 (function setDefaultDates(){
-  const n=new Date();
-  const day=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
   const startEl=document.getElementById('start');
   const endEl=document.getElementById('end');
-  if(startEl && !startEl.value) startEl.value=`${day}T00:00:00`;
+  const e=new Date(Date.now()-60*60*1000); // fin = ahora menos 1 hora
   if(endEl && !endEl.value){
-    const e=new Date(Date.now()-60*60*1000); // ahora menos 1 hora
     endEl.value=`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}T${pad(e.getHours())}:${pad(e.getMinutes())}:${pad(e.getSeconds())}`;
+  }
+  if(startEl && !startEl.value){
+    const s=new Date(e.getTime()-2*24*60*60*1000); // 2 días antes del fin
+    startEl.value=`${s.getFullYear()}-${pad(s.getMonth()+1)}-${pad(s.getDate())}T00:00:00`;
   }
 })();
 </script>
