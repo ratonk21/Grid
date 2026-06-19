@@ -49,6 +49,11 @@
   .vopen{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:var(--radius);font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap}
   .vopen:hover{background:var(--blue-lt)}
   .vchart{width:100%}
+  .analysis-wrap{margin-top:2rem}
+  .analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1rem;box-shadow:0 1px 2px rgba(30,36,69,.04)}
+  .analysis-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}
+  .analysis-title{font-weight:700;color:var(--navy)}
+  .analysis-chart{width:100%;min-height:900px}
 
   /* Hero */
   .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.7rem}
@@ -133,8 +138,8 @@
 
 <div class="wrap">
   <span class="eyebrow">DTM Analytics</span>
-  <h1>Descargar y analizar datos</h1>
-  <p class="lead">Extrae el histórico de transformadores por IMEI, descárgalo en un ZIP y revisa los gráficos de voltaje al instante. Las credenciales nunca salen del servidor.</p>
+  <h1>Consultar y graficar datos</h1>
+  <p class="lead">Extrae el histórico de transformadores por IMEI y lo grafica online al instante. El ZIP queda como respaldo opcional; las credenciales nunca salen del servidor.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -176,7 +181,7 @@
 
       <button class="btn" id="go">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
-        Descargar y analizar
+        Consultar y graficar
       </button>
       <button class="btn-stop" id="stop" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
@@ -186,7 +191,7 @@
     </div>
   </div>
 
-  <div id="redownload"><a id="redownload-link"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar el ZIP otra vez</a></div>
+  <div id="redownload"><a id="redownload-link"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar respaldo ZIP</a></div>
   <div id="log"></div>
    </div><!-- /col-form -->
    <div class="col-live">
@@ -194,6 +199,7 @@
    </div>
   </div><!-- /layout -->
   <div id="dtmlist"></div>
+  <div id="analysisLive" class="analysis-wrap"></div>
 </div>
 
 <footer>
@@ -549,6 +555,31 @@ function addLiveVoltage(imei, dtm2){
     .catch(err=>console.error('Plotly voltaje', imei, err));
 }
 
+/* Agrega el análisis completo online, usando los mismos datos ya descargados desde la API.
+   No lee CSV ni requiere subcarpeta: trabaja con acc.DTM2 / acc.Vsag / acc.Vswell / acc.Powerloss en memoria. */
+function addLiveFullAnalysis(imei, acc){
+  const cont=document.getElementById('analysisLive');
+  if(!cont) return;
+  if(!cont.querySelector('h2')) cont.innerHTML='<h2>Análisis online</h2>';
+  const card=document.createElement('div'); card.className='analysis-card';
+  const head=document.createElement('div'); head.className='analysis-head';
+  head.innerHTML=`<span class="analysis-title">Análisis completo — IMEI ${imei}</span>`;
+  const btn=document.createElement('button'); btn.className='vopen'; btn.textContent='Abrir HTML ↗';
+  btn.addEventListener('click', ()=>{
+    const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+    openHtmlInTab(figureToHtml(spec, `Análisis DTM — IMEI ${imei}`));
+  });
+  head.appendChild(btn);
+  card.appendChild(head);
+  const div=document.createElement('div'); div.className='analysis-chart'; card.appendChild(div);
+  cont.appendChild(card);
+  try{
+    buildAnalysis(div, acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+  }catch(e){
+    div.innerHTML=`<div class="vplaceholder">No se pudo renderizar el análisis: ${e.message||e}</div>`;
+  }
+}
+
 document.getElementById('go').addEventListener('click', async ()=>{
   const btn=document.getElementById('go');
   const imeis=document.getElementById('imeis').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
@@ -575,6 +606,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
 
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
   document.getElementById('voltlive').innerHTML='<div class="vplaceholder">Los gráficos de voltaje aparecerán aquí a medida que cada IMEI termine de descargar.</div>';
+  const analysisLive=document.getElementById('analysisLive'); if(analysisLive) analysisLive.innerHTML='';
   document.getElementById('redownload').style.display='none';
   btn.disabled=true; btn.textContent='Procesando…';
   cancelRequested=false;
@@ -625,6 +657,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
           folder.file(`${imei}_voltage.html`, figureToHtml(voltSpec, `Voltajes — IMEI ${imei}`));
         }catch(e){ log(`⚠ ${imei}: no se pudo generar HTML (${e.message||e})`, 'line-err'); }
         try{ addLiveVoltage(imei, acc.DTM2); }catch(e){ console.error(e); }
+        try{ addLiveFullAnalysis(imei, acc); }catch(e){ console.error(e); }
       }
       done++;
       log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
@@ -653,9 +686,8 @@ document.getElementById('go').addEventListener('click', async ()=>{
         zip.file('DTM_Voltage_Viewer.html', multiFigureToHtml(allVoltageFigures, 'Voltajes'));
       }
       lastBlob=await zip.generateAsync({type:'blob'});
-      download(lastBlob, cancelRequested ? 'datos_ubicquia_parcial.zip' : 'datos_ubicquia.zip');
       document.getElementById('redownload').style.display='block';
-      log('✓ ZIP descargado.', 'line-ok');
+      log('✓ Respaldo ZIP listo para descarga opcional.', 'line-ok');
 
       log('Renderizando lista de DTMs y gráficos…');
       renderResults(results);
@@ -664,7 +696,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   }catch(e){
     log('✗ '+(e.message||e), 'line-err');
   }finally{
-    btn.disabled=false; btn.textContent='Descargar y analizar';
+    btn.disabled=false; btn.textContent='Consultar y graficar';
     document.getElementById('stop').style.display='none';
   }
 });
