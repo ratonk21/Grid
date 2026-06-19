@@ -250,6 +250,8 @@ function splitRange(start, end, maxDays){
   while(cur<e){ const ce=new Date(Math.min(cur.getTime()+maxDays*86400000, e.getTime())); out.push([fmt(cur), fmt(ce)]); cur=ce; }
   return out;
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function apiCall(action, imei, start, end, subpanel_id, code, panel){
   const res = await fetch('/api/ubicquia', {
     method:'POST',
@@ -272,7 +274,7 @@ function imbalance(rows, cols){
     return mean!==0 ? ((mx-mn)/mean)*100 : null;
   });
 }
-function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
+function buildFigure(dataIn, vswellIn, vsagIn, powerlossIn){
   const data=sortBy(dataIn,'Date'), vswell=sortBy(vswellIn,'Time'), vsag=sortBy(vsagIn,'Time'), powerloss=sortBy(powerlossIn,'Subpanel Time');
   const c3=['black','red','blue'], IMB='purple', ZERO='red';
   const k=keysOf(data), dates=data.map(r=>r['Date']);
@@ -361,7 +363,27 @@ function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
   const subt=['Voltages in 3 Phases','Currents in 3 Phases','H Currents','Power Factor and THD','Apparent Power (kVA)','Currents with Power Factor Sign','Oil Temperature and Pressure'];
   subt.forEach((t,idx)=>layout.annotations.push({ text:t, font:{size:13,color:'#1E2445'}, showarrow:false, x:0.5, xref:'paper', y:dom(idx+1)[1], yref:'paper', xanchor:'center', yanchor:'bottom', yshift:4 }));
 
-  Plotly.newPlot(div, traces, layout, { responsive:true, displaylogo:false });
+  return { traces, layout };
+}
+
+/* Renderiza el análisis en pantalla (inline) */
+function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
+  const spec = buildFigure(dataIn, vswellIn, vsagIn, powerlossIn);
+  Plotly.newPlot(div, spec.traces, spec.layout, { responsive:true, displaylogo:false });
+}
+
+/* Genera un HTML interactivo autocontenido del análisis (como tu script de Python) */
+function figureToHtml(spec, title){
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
+    + '<title>' + title + '</title>'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>'
+    + '<style>body{margin:0;font-family:Arial,Helvetica,sans-serif}#chart{width:100%}</style></head>'
+    + '<body><div id="chart"></div><script>'
+    + 'var data=' + JSON.stringify(spec.traces) + ';'
+    + 'var layout=' + JSON.stringify(spec.layout) + ';'
+    + 'Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false});'
+    + '<\/script></body></html>';
 }
 
 /* ── UI ── */
@@ -423,11 +445,13 @@ document.getElementById('go').addEventListener('click', async ()=>{
       for(let i=0;i<intervals.length;i++){
         const [is,ie]=intervals[i];
         log(`  intervalo ${i+1}/${intervals.length}: ${is} → ${ie}`);
-        acc.DTM2.push(...renameKeys(await apiCall('metrix',imei,is,ie,subpanel,code,panel), raw_mapping));
-        acc.Vsag.push(...renameKeys(await apiCall('sag',imei,is,ie,subpanel,code,panel), voltage_sag_mapping));
-        acc.Vswell.push(...renameKeys(await apiCall('swell',imei,is,ie,subpanel,code,panel), voltage_swell_mapping));
-        acc.Powerloss.push(...renameKeys(filterPowerLoss(await apiCall('powerloss',imei,is,ie,subpanel,code,panel)), power_mapping));
-        acc.Powerrestored.push(...renameKeys(filterPowerRestored(await apiCall('powerrestored',imei,is,ie,subpanel,code,panel)), power_mapping));
+        const d = await apiCall('all',imei,is,ie,subpanel,code,panel);
+        acc.DTM2.push(...renameKeys(d.metrix||[], raw_mapping));
+        acc.Vsag.push(...renameKeys(d.sag||[], voltage_sag_mapping));
+        acc.Vswell.push(...renameKeys(d.swell||[], voltage_swell_mapping));
+        acc.Powerloss.push(...renameKeys(filterPowerLoss(d.powerloss||[]), power_mapping));
+        acc.Powerrestored.push(...renameKeys(filterPowerRestored(d.powerrestored||[]), power_mapping));
+        if(i < intervals.length-1) await sleep(1500); // pausa para no saturar Ubicquia
       }
       // Dedup + orden para CSV y gráficos
       for(const t of Object.keys(acc)) acc[t]=sortByDate(dedupe(acc[t]));
@@ -439,6 +463,12 @@ document.getElementById('go').addEventListener('click', async ()=>{
         if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
         folder.file(`${imei}_combined_data_${type}.csv`, csv);
         log(`    ${type}: ${rows.length} filas`, 'line-ok');
+      }
+      // HTML de análisis interactivo (como tu script de Python)
+      if(acc.DTM2.length){
+        const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+        folder.file(`${imei}_Final_Electrical_Parameters_ANALYSIS.html`, figureToHtml(spec, `DTM ${imei} — Electrical Parameter Analysis`));
+        log(`    análisis HTML generado`, 'line-ok');
       }
     }
 
