@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
 <head>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
@@ -9,6 +7,11 @@
     gtag('js', new Date());
     gtag('config', 'G-K73HD7MSR4');
   </script>
+</head>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex" />
@@ -40,7 +43,7 @@
   .layout{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:2rem;align-items:start;margin-top:2rem}
   @media (max-width:1000px){.layout{grid-template-columns:1fr}}
   .col-form .panel-card{margin-top:0}
-  #analysisDetail{display:flex;flex-direction:column;gap:1.25rem}
+  #voltlive{display:flex;flex-direction:column;gap:1.25rem}
   .vplaceholder{color:var(--muted);font-size:.92rem;border:1px dashed var(--border);border-radius:var(--radius-lg);padding:2.5rem 1.5rem;text-align:center;background:var(--surface)}
   .vcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.9rem 1rem 1rem}
   .vhead{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.5rem}
@@ -49,11 +52,6 @@
   .vopen{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .7rem;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:var(--radius);font-weight:700;font-size:.78rem;cursor:pointer;white-space:nowrap}
   .vopen:hover{background:var(--blue-lt)}
   .vchart{width:100%}
-  .analysis-wrap{margin-top:2rem}
-  .analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1rem;box-shadow:0 1px 2px rgba(30,36,69,.04)}
-  .analysis-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem}
-  .analysis-title{font-weight:700;color:var(--navy)}
-  .analysis-chart{width:100%;min-height:900px}
 
   /* Hero */
   .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:.7rem}
@@ -99,11 +97,11 @@
   .btn-stop:hover{background:#fdeaea}
   .btn-stop:disabled{opacity:.6;cursor:not-allowed}
   .btn-stop svg{width:16px;height:16px}
-  .btn-zip{width:100%;margin-top:.6rem;padding:.8rem;border:1px solid var(--accent);border-radius:var(--radius);background:#fff;color:var(--accent);font-size:.95rem;font-weight:700;cursor:pointer;display:none;align-items:center;justify-content:center;gap:.5rem;transition:background .15s}
-  .btn-zip:hover{background:var(--blue-lt)}
-  .btn-zip:disabled{opacity:.6;cursor:not-allowed}
-  .btn-zip svg{width:16px;height:16px}
 
+  /* Re-descarga */
+  #redownload{display:none;margin-top:1.25rem}
+  #redownload a{display:inline-flex;align-items:center;gap:.45rem;padding:.6rem 1.1rem;background:var(--surface);border:1px solid var(--accent);color:var(--accent);border-radius:var(--radius);font-weight:700;text-decoration:none;font-size:.88rem;cursor:pointer;transition:background .15s}
+  #redownload a:hover{background:var(--blue-lt)}
 
   /* Consola de registro */
   #log{background:var(--navy);color:#cfe8f5;border-radius:var(--radius-lg);padding:1.1rem 1.25rem;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;max-height:300px;overflow:auto;margin-top:1.25rem;display:none;border:1px solid #2a3258}
@@ -137,9 +135,9 @@
 </header>
 
 <div class="wrap">
-  <span class="eyebrow">DTM Analytics · v5-schema-plus-extra-diagnostics-2026-06-19</span>
-  <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend paginado completo, columnas fijas, columnas extra detectadas y diagnóstico por IMEI.</p>
+  <span class="eyebrow">DTM Analytics</span>
+  <h1>Descargar y analizar datos</h1>
+  <p class="lead">Extrae el histórico de transformadores por IMEI, descárgalo en un ZIP y revisa los gráficos de voltaje al instante. Las credenciales nunca salen del servidor.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -181,24 +179,21 @@
 
       <button class="btn" id="go">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
-        Consultar y graficar
+        Descargar y analizar
       </button>
       <button class="btn-stop" id="stop" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
-        Detener consulta
-      </button>
-      <button class="btn-zip" id="downloadZip">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg>
-        Descargar datos ZIP
+        Detener y entregar lo descargado
       </button>
 
     </div>
   </div>
 
+  <div id="redownload"><a id="redownload-link"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar el ZIP otra vez</a></div>
   <div id="log"></div>
    </div><!-- /col-form -->
    <div class="col-live">
-     <div id="analysisDetail"><div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div></div>
+     <div id="voltlive"><div class="vplaceholder">Los gráficos de voltaje aparecerán aquí a medida que cada IMEI termine de descargar.</div></div>
    </div>
   </div><!-- /layout -->
   <div id="dtmlist"></div>
@@ -210,9 +205,8 @@
   <span>griddata.cl</span>
 </footer>
 
-<script src="./jszip.min.js"></script>
-<script src="./plotly.min.js"></script>
-<script>if(!window.Plotly){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>');}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="/plotly.min.js"></script>
 <script>
 /* ══════════════════════════════════════════════════════════════════
    PANELES — uno por número de panel. Cada panel tiene su propio par de
@@ -278,54 +272,12 @@ function renameKeys(rows, mapping){ return rows.map(r=>{ const o={}; for(const k
 function dedupe(rows){ const seen=new Set(),out=[]; for(const r of rows){ const k=JSON.stringify(r); if(!seen.has(k)){ seen.add(k); out.push(r);} } return out; }
 function sortBy(rows, col){ if(!rows.length||!col) return rows; return [...rows].sort((a,b)=>String(a[col]??'').localeCompare(String(b[col]??''))); }
 function sortByDate(rows){ if(!rows.length) return rows; const dcol=Object.keys(rows[0]).find(c=>/date|time/i.test(c)); return sortBy(rows,dcol); }
-const CSV_SCHEMAS = {"DTM2": ["ID", "Serial Number", "Node ID", "node_name", "subpanel_id", "imei", "node_id", "Latitude", "Longitude", "median_lat", "median_long", "Node Status", "service_center", "substation", "substation_id", "feeder", "feeder_id", "address", "operating_kVA", "phase", "t_loop", "operating_voltage", "secondary_voltage", "transformer_id", "gis_id", "parent_gis_id", "fill_type", "solar_flag", "critical_infrastructure_flag", "transformer_node_id", "cableKit", "ct_ratio", "date", "Firmware Version", "Hardware Version", "hdop", "kVA Rating", "lateral", "lateral_id", "X1 Current", "X1 Voltage", "X2 Current", "X2 Voltage", "X3 Current", "X3 Voltage", "maintenance_state", "manufacturer_name", "network_state", "operational_state", "nominalVoltage", "Oil Temperature", "poleId", "poleType", "pole_color", "pole_height", "Pressure", "pt_ratio", "rated_hv", "switch_number", "tln", "transformer_type", "currentThdLine1", "currentThdLine2", "currentThdLine3", "X3 Power (kW)", "X1 Energy (kWh)", "X1 PF", "line1frequencyPeriodAverage", "X2 Power (kW)", "X2 Energy (kWh)", "X2 PF", "line2frequencyPeriodAverage", "X1 Power (kW)", "X3 Energy (kWh)", "X3 PF", "line3frequencyPeriodAverage", "oilLevelAvg", "primaryPhase1CurrentAvg", "primaryPhase2CurrentAvg", "primaryPhase3CurrentAvg", "voltageImbalance", "voltageThdLine1", "voltageThdLine2", "voltageThdLine3", "networkTypeState", "Last Updated", "tilt", "oilLevelHourAvg", "RSSI", "kVA", "ambientTemperatureMax_f", "scRelayStatusOnlyText", "H1 / H1A Current", "H2 / H2A Current", "H3 / H3A Current"], "Vsag": ["Time", "X1 Lowest Value", "X2 Lowest Value", "X3 Lowest Value", "X1 Duration", "X2 Duration", "X3 Duration"], "Vswell": ["Time", "X1 Highest Value", "X2 Highest Value", "X3 Highest Value", "X1 Duration", "X2 Duration", "X3 Duration"], "Powerloss": ["Subpanel Time"], "Powerrestored": ["Subpanel Time"]};
-
-function rowsForCsv(type, rows){
-  return (rows||[]).map(r=>{
-    const o={...r};
-    // El CSV Python de referencia deja la columna como "date" cuando el API entrega date.
-    // El gráfico interno usa "Date"; para el ZIP garantizamos compatibilidad con el CSV de referencia.
-    if(type==='DTM2' && o.Date!=null && o.date==null) o.date=o.Date;
-    return o;
-  });
-}
-
-function columnsForCsv(type, rows){
-  const schema = CSV_SCHEMAS[type] || [];
-  const actual=[];
-  for(const r of (rows||[])){
-    for(const k of Object.keys(r||{})){
-      if(!actual.includes(k)) actual.push(k);
-    }
-  }
-  return [...schema, ...actual.filter(k=>!schema.includes(k))];
-}
-
-function nonEmptyCounts(rows, columns){
-  const out={};
-  for(const c of columns){
-    out[c]=(rows||[]).reduce((n,r)=>n+((r[c]!==undefined && r[c]!==null && String(r[c])!=='')?1:0),0);
-  }
-  return out;
-}
-
-function rowsForCsv(type, rows){
-  return (rows||[]).map(r=>{
-    const o={...r};
-    if(type==='DTM2' && o.Date!=null && o.date==null) o.date=o.Date;
-    return o;
-  });
-}
-
-function toCSV(rows, columns){
-  const keys = columns || (()=>{
-    const k=[]; for(const r of rows) for(const c of Object.keys(r)) if(!k.includes(c)) k.push(c); return k;
-  })();
+function toCSV(rows){
+  if(!rows.length) return '';
+  const keys=[]; for(const r of rows) for(const k of Object.keys(r)) if(!keys.includes(k)) keys.push(k);
   const esc=v=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s)?'"'+s.split('"').join('""')+'"':s; };
-  if(!keys.length) return '';
-  return [keys.join(','), ...(rows||[]).map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n');
+  return [keys.join(','), ...rows.map(r=>keys.map(k=>esc(r[k])).join(','))].join('\n');
 }
-
 function pad(n){ return String(n).padStart(2,'0'); }
 function fmt(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
 function fromLocalInput(v){ return new Date(v.length===16 ? v+':00' : v); }
@@ -335,7 +287,6 @@ function splitRange(start, end, maxDays){
   return out;
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const END_SAFETY_MINUTES = 5;
 
 async function apiCall(action, imei, start, end, subpanel_id, code, panel){
   const res = await fetch('/api/ubicquia', {
@@ -488,26 +439,17 @@ function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
   Plotly.newPlot(div, spec.traces, spec.layout, { responsive:true, displaylogo:false });
 }
 
-/* Ruta local de Plotly para los HTML abiertos desde Blob o incluidos en el ZIP.
-   Debe existir un archivo plotly.min.js en la misma carpeta pública que este index.html. */
-const PLOTLY_SRC = (()=>{
-  try{ return new URL('plotly.min.js', window.location.href).href; }
-  catch(e){ return './plotly.min.js'; }
-})();
-
 /* Genera un HTML interactivo autocontenido del análisis (como tu script de Python) */
 function figureToHtml(spec, title){
-  const safeTitle = String(title||'DTM Analytics').replace(/[<>]/g,'');
   return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
-    + '<title>' + safeTitle + '</title>'
-    + '<script src="' + PLOTLY_SRC + '"><\/script>'
-    + '<style>body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;background:#EEF0F5;color:#1E2445}header{background:#1E2445;color:#fff;padding:14px 22px;font-weight:700}header b{color:#22B0E1}.msg{margin:18px 22px;padding:14px 16px;background:#fff;border:1px solid #d8dde9;border-radius:10px;color:#464D63}#chart{width:100%;background:#fff}</style></head>'
-    + '<body><header>DTM <b>Analytics</b> — ' + safeTitle + '</header><div id="msg" class="msg">Cargando gráfico…</div><div id="chart"></div><script>'
+    + '<title>' + title + '</title>'
+    + '<script src="' + location.origin + '/plotly.min.js"><\/script>'
+    + '<style>body{margin:0;font-family:Arial,Helvetica,sans-serif}#chart{width:100%}</style></head>'
+    + '<body><div id="chart"></div><script>'
     + 'var data=' + JSON.stringify(spec.traces) + ';'
     + 'var layout=' + JSON.stringify(spec.layout) + ';'
-    + 'function fail(e){document.getElementById("msg").innerHTML="No se pudo renderizar el gráfico. Verifica que plotly.min.js esté en la misma carpeta pública que el index.html. Detalle: "+String(e||"");}'
-    + 'if(!window.Plotly){fail("Plotly no cargó desde archivo local plotly.min.js");}else{try{Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false}).then(function(){document.getElementById("msg").style.display="none";});}catch(e){fail(e.message||e);}}'
+    + 'Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false});'
     + '<\/script></body></html>';
 }
 
@@ -518,7 +460,7 @@ function multiFigureToHtml(figs, title){
   return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
     + '<title>' + title + '</title>'
-    + '<script src="' + PLOTLY_SRC + '"><\/script>'
+    + '<script src="' + location.origin + '/plotly.min.js"><\/script>'
     + '<style>'
     + 'body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;color:#1E2445;background:#EEF0F5}'
     + 'header{background:#1E2445;color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5}'
@@ -543,84 +485,21 @@ function multiFigureToHtml(figs, title){
     + 'sel.addEventListener("change",function(){render(sel.value);});'
     + 'document.getElementById("prev").addEventListener("click",function(){step(-1);});'
     + 'document.getElementById("next").addEventListener("click",function(){step(1);});'
-    + 'if(!window.Plotly){document.getElementById("meta").textContent="No se pudo cargar Plotly. Verifica que plotly.min.js esté junto al index.html o que el CDN no esté bloqueado.";}else{render(sel.value);}'
+    + 'render(sel.value);'
     + '<\/script></body></html>';
 }
 
 /* ── UI ── */
-const APP_VERSION='v5-schema-plus-extra-diagnostics-2026-06-19';
 const logEl=document.getElementById('log');
 function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
-let latestResults={};
-let selectedImei=null;
+function download(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
+let lastBlob=null;
 let cancelRequested=false;
-function updateZipButton(){
-  const b=document.getElementById('downloadZip');
-  if(!b) return;
-  b.style.display=Object.keys(latestResults).length ? 'flex' : 'none';
-}
-function downloadBlob(blob, name){
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=name;
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-}
-async function buildZipBlob(){
-  if(!window.JSZip){ throw new Error('JSZip no cargó. Verifica que jszip.min.js esté junto al index.html.'); }
-  const zip=new JSZip();
-  for(const [imei, acc] of Object.entries(latestResults)){
-    const folder=zip.folder(imei);
-    const diagnostics={};
-    for(const [type, rows] of Object.entries(acc)){
-      const csvRows = rowsForCsv(type, rows);
-      const columns = columnsForCsv(type, csvRows);
-      const csv = toCSV(csvRows, columns);
-      folder.file(`${imei}_combined_data_${type}.csv`, csv);
-      diagnostics[type]={
-        rows: csvRows.length,
-        columns: columns.length,
-        schemaColumns: (CSV_SCHEMAS[type]||[]).length,
-        extraColumns: columns.filter(c=>!(CSV_SCHEMAS[type]||[]).includes(c)),
-        nonEmptyCounts: nonEmptyCounts(csvRows, columns)
-      };
-    }
-    folder.file(`${imei}_diagnostics.json`, JSON.stringify(diagnostics,null,2));
-  }
-  const manifest={
-    appVersion: APP_VERSION,
-    generatedAt: new Date().toISOString(),
-    imeis: Object.fromEntries(Object.entries(latestResults).map(([imei,acc])=>[imei,{
-      DTM2: {rows: acc.DTM2.length, columns: columnsForCsv('DTM2', rowsForCsv('DTM2', acc.DTM2)).length},
-      Vsag: {rows: acc.Vsag.length, columns: columnsForCsv('Vsag', rowsForCsv('Vsag', acc.Vsag)).length},
-      Vswell: {rows: acc.Vswell.length, columns: columnsForCsv('Vswell', rowsForCsv('Vswell', acc.Vswell)).length},
-      Powerloss: {rows: acc.Powerloss.length, columns: columnsForCsv('Powerloss', rowsForCsv('Powerloss', acc.Powerloss)).length},
-      Powerrestored: {rows: acc.Powerrestored.length, columns: columnsForCsv('Powerrestored', rowsForCsv('Powerrestored', acc.Powerrestored)).length}
-    }]))
-  };
-  zip.file('download_manifest.json', JSON.stringify(manifest,null,2));
-  return await zip.generateAsync({type:'blob'});
-}
+document.getElementById('redownload-link').addEventListener('click', ()=>{ if(lastBlob) download(lastBlob,'datos_ubicquia.zip'); });
 document.getElementById('stop').addEventListener('click', ()=>{
   cancelRequested=true;
   const s=document.getElementById('stop');
   s.disabled=true; s.textContent='Deteniendo…';
-});
-
-document.getElementById('downloadZip').addEventListener('click', async ()=>{
-  const b=document.getElementById('downloadZip');
-  try{
-    b.disabled=true;
-    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Generando ZIP…';
-    const blob=await buildZipBlob();
-    downloadBlob(blob,'datos_ubicquia.zip');
-    log('✓ ZIP de datos descargado.', 'line-ok');
-  }catch(e){
-    log('✗ '+(e.message||e), 'line-err');
-  }finally{
-    b.disabled=false;
-    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 4 5-4"/><path d="M4 19h16"/></svg> Descargar datos ZIP';
-  }
 });
 
 function renderResults(results){
@@ -631,37 +510,11 @@ function renderResults(results){
   imeis.forEach(imei=>{
     const a=results[imei];
     const card=document.createElement('div'); card.className='dtm-card';
-    const active = selectedImei===imei;
     card.innerHTML=`<div class="dtm-id">DTM ${imei}</div>`+
-      `<div class="dtm-meta">${a.DTM2.length} registros · ${a.Vsag.length} sag · ${a.Vswell.length} swell · ${a.Powerloss.length} power loss · ${a.Powerrestored.length} restored</div>`+
-      `<button class="vopen" style="margin-top:.75rem;${active?'background:var(--blue-lt)':''}" data-imei="${imei}">Ver análisis</button>`;
+      `<div class="dtm-meta">${a.DTM2.length} registros · ${a.Vsag.length} sag · ${a.Vswell.length} swell · ${a.Powerloss.length} power loss · ${a.Powerrestored.length} restored</div>`;
     grid.appendChild(card);
   });
   list.appendChild(grid);
-  grid.querySelectorAll('button[data-imei]').forEach(btn=>{
-    btn.addEventListener('click', ()=>showImeiAnalysis(btn.dataset.imei));
-  });
-}
-
-
-function showImeiAnalysis(imei){
-  const acc=latestResults[imei];
-  const cont=document.getElementById('analysisDetail');
-  selectedImei=imei;
-  if(!acc || !cont){ return; }
-  renderResults(latestResults);
-  cont.innerHTML='';
-  const card=document.createElement('div'); card.className='analysis-card';
-  const head=document.createElement('div'); head.className='analysis-head';
-  head.innerHTML=`<span class="analysis-title">Análisis completo — IMEI ${imei}</span><span class="dtm-meta">${acc.DTM2.length} registros</span>`;
-  card.appendChild(head);
-  const div=document.createElement('div'); div.className='analysis-chart'; card.appendChild(div);
-  cont.appendChild(card);
-  try{
-    buildAnalysis(div, acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
-  }catch(e){
-    div.innerHTML=`<div class="vplaceholder">No se pudo renderizar el análisis: ${e.message||e}</div>`;
-  }
 }
 
 /* Abre un HTML autocontenido en una pestaña nueva (sin descargarlo) */
@@ -697,31 +550,6 @@ function addLiveVoltage(imei, dtm2){
     .catch(err=>console.error('Plotly voltaje', imei, err));
 }
 
-/* Agrega el análisis completo online, usando los mismos datos ya descargados desde la API.
-   No lee CSV ni requiere subcarpeta: trabaja con acc.DTM2 / acc.Vsag / acc.Vswell / acc.Powerloss en memoria. */
-function addLiveFullAnalysis(imei, acc){
-  const cont=document.getElementById('analysisLive');
-  if(!cont) return;
-  if(!cont.querySelector('h2')) cont.innerHTML='<h2>Análisis online</h2>';
-  const card=document.createElement('div'); card.className='analysis-card';
-  const head=document.createElement('div'); head.className='analysis-head';
-  head.innerHTML=`<span class="analysis-title">Análisis completo — IMEI ${imei}</span>`;
-  const btn=document.createElement('button'); btn.className='vopen'; btn.textContent='Abrir HTML ↗';
-  btn.addEventListener('click', ()=>{
-    const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
-    openHtmlInTab(figureToHtml(spec, `Análisis DTM — IMEI ${imei}`));
-  });
-  head.appendChild(btn);
-  card.appendChild(head);
-  const div=document.createElement('div'); div.className='analysis-chart'; card.appendChild(div);
-  cont.appendChild(card);
-  try{
-    buildAnalysis(div, acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
-  }catch(e){
-    div.innerHTML=`<div class="vplaceholder">No se pudo renderizar el análisis: ${e.message||e}</div>`;
-  }
-}
-
 document.getElementById('go').addEventListener('click', async ()=>{
   const btn=document.getElementById('go');
   const imeis=document.getElementById('imeis').value.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
@@ -739,29 +567,27 @@ document.getElementById('go').addEventListener('click', async ()=>{
   // Ubicquia exige que la fecha fin sea anterior a la hora actual; si está en el futuro, la ajustamos.
   let endClampedMsg='';
   {
-    const c=new Date(Date.now()-END_SAFETY_MINUTES*60*1000); // margen mínimo para evitar consultar futuro
+    const c=new Date(Date.now()-60*60*1000); // ahora menos 1 hora (margen para el análisis)
     if(fromLocalInput(end) > c){
       end=`${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}T${pad(c.getHours())}:${pad(c.getMinutes())}:${pad(c.getSeconds())}`;
-      endClampedMsg=`⚠ La fecha fin estaba muy reciente/futura; se ajustó a ${end.replace('T',' ')} (margen automático de 5 minutos para evitar consultar futuro).`;
+      endClampedMsg=`⚠ La fecha fin estaba muy reciente/futura; se ajustó a ${end.replace('T',' ')} (se considera al menos 1 hora antes de ahora).`;
     }
   }
 
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
-  log(`Versión activa: ${APP_VERSION}`);
-  latestResults={}; selectedImei=null; updateZipButton();
-  const analysisDetail=document.getElementById('analysisDetail');
-  if(analysisDetail) analysisDetail.innerHTML='<div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div>';
+  document.getElementById('voltlive').innerHTML='<div class="vplaceholder">Los gráficos de voltaje aparecerán aquí a medida que cada IMEI termine de descargar.</div>';
+  document.getElementById('redownload').style.display='none';
   btn.disabled=true; btn.textContent='Procesando…';
   cancelRequested=false;
   const stopBtn=document.getElementById('stop');
   stopBtn.disabled=false;
-  stopBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg> Detener consulta';
+  stopBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg> Detener y entregar lo descargado';
   stopBtn.style.display='flex';
   try{
     const intervals=splitRange(start,end,maxDays);
     log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
     if(endClampedMsg) log(endClampedMsg, 'line-err');
-    const results={}; let done=0;
+    const zip=new JSZip(); const results={}; let done=0;
 
     // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
     async function processImei(imei){
@@ -784,12 +610,13 @@ document.getElementById('go').addEventListener('click', async ()=>{
       for(const t of Object.keys(acc)) acc[t]=sortByDate(dedupe(acc[t]));
       results[imei]=acc;
 
-      latestResults=results;
-      updateZipButton();
-      renderResults(results);
-      if(acc.DTM2.length && (!selectedImei || selectedImei===imei)){
-        showImeiAnalysis(imei);
+      const folder=zip.folder(imei);
+      for(const [type,rows] of Object.entries(acc)){
+        let csv=toCSV(rows);
+        if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
+        folder.file(`${imei}_combined_data_${type}.csv`, csv);
       }
+      if(acc.DTM2.length){ try{ addLiveVoltage(imei, acc.DTM2); }catch(e){ console.error(e); } }
       done++;
       log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
     }
@@ -806,21 +633,25 @@ document.getElementById('go').addEventListener('click', async ()=>{
     }
     await Promise.all(Array.from({length:concurrency}, ()=>worker()));
 
-    if(cancelRequested) log('\n■ Proceso detenido. Se conserva lo consultado hasta aquí.', 'line-err');
+    if(cancelRequested) log('\n■ Proceso detenido. Se entrega lo descargado hasta aquí.', 'line-err');
 
     if(Object.keys(results).length===0){
-      log('No se alcanzó a consultar datos.', 'line-err');
+      log('No se alcanzó a descargar datos.', 'line-err');
     }else{
-      latestResults=results;
-      updateZipButton();
+      log('\nGenerando ZIP…');
+      lastBlob=await zip.generateAsync({type:'blob'});
+      download(lastBlob, cancelRequested ? 'datos_ubicquia_parcial.zip' : 'datos_ubicquia.zip');
+      document.getElementById('redownload').style.display='block';
+      log('✓ ZIP descargado.', 'line-ok');
+
+      log('Renderizando lista de DTMs y gráficos…');
       renderResults(results);
-      if(!selectedImei) showImeiAnalysis(Object.keys(results)[0]);
-      log('✓ Listo. Selecciona un IMEI para ver su análisis completo a la derecha.', 'line-ok');
+      log('✓ Listo.', 'line-ok');
     }
   }catch(e){
     log('✗ '+(e.message||e), 'line-err');
   }finally{
-    btn.disabled=false; btn.textContent='Consultar y graficar';
+    btn.disabled=false; btn.textContent='Descargar y analizar';
     document.getElementById('stop').style.display='none';
   }
 });
@@ -857,7 +688,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
 (function setDefaultDates(){
   const startEl=document.getElementById('start');
   const endEl=document.getElementById('end');
-  const e=new Date(Date.now()-END_SAFETY_MINUTES*60*1000); // fin = ahora menos 5 minutos
+  const e=new Date(Date.now()-60*60*1000); // fin = ahora menos 1 hora
   if(endEl && !endEl.value){
     endEl.value=`${e.getFullYear()}-${pad(e.getMonth()+1)}-${pad(e.getDate())}T${pad(e.getHours())}:${pad(e.getMinutes())}:${pad(e.getSeconds())}`;
   }
