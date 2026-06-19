@@ -545,7 +545,9 @@ function addLiveVoltage(imei, dtm2){
 
   // versión inline: sin el título grande, más compacta
   const layout=Object.assign({}, spec.layout, { title:{text:''}, height:360, margin:{l:55,r:20,t:20,b:45} });
-  Plotly.newPlot(div, spec.traces, layout, { responsive:true, displaylogo:false });
+  Plotly.newPlot(div, spec.traces, layout, { responsive:true, displaylogo:false })
+    .then(()=>{ requestAnimationFrame(()=>{ try{ Plotly.Plots.resize(div); }catch(_){} }); })
+    .catch(err=>console.error('Plotly voltaje', imei, err));
 }
 
 document.getElementById('go').addEventListener('click', async ()=>{

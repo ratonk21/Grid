@@ -154,12 +154,16 @@
   .verdict b{font-weight:700}
 
   .scn2{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px}
-  .scn{border-radius:14px; padding:16px; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow)}
+  .scn{border-radius:14px; padding:16px; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow); transition:opacity .2s, border-color .2s, box-shadow .2s}
   .scn.astro{border-top:3px solid var(--indigo)} .scn.fixed{border-top:3px solid var(--rose)} .scn.nodim{border-top:3px solid var(--teal)}
   .scn h3{font-size:14px; display:flex; align-items:center; gap:8px; margin-bottom:4px}
-  .scn .dot{width:10px;height:10px;border-radius:50%}
+  .scn .dot{width:10px;height:10px;border-radius:50%; transition:background .2s}
   .dot.astro{background:var(--indigo)} .dot.fixed{background:var(--rose)} .dot.nodim{background:var(--teal)}
   .scn .desc{color:var(--faint); font-size:12px; margin-bottom:10px}
+  .scn.scn-off{opacity:.38; border-top-color:var(--line) !important; box-shadow:none; filter:grayscale(.6)}
+  .scn.scn-off .dot{background:var(--faint) !important}
+  .scn.scn-off h3 span:last-child{color:var(--faint)}
+  .scn.scn-on{box-shadow:0 0 0 2px rgba(34,176,225,.14), var(--shadow)}
   .toggle{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; padding:6px 0}
   .toggle input{width:auto; accent-color:var(--amber)}
 
@@ -554,23 +558,24 @@
       <!-- ESCENARIOS -->
       <section class="view" id="view-escenarios">
         <div class="scn2">
-          <div class="scn astro">
+          <div class="scn astro scn-on" id="scnCardA">
             <h3><span class="dot astro"></span><span data-i18n="sc_astro">Reloj astronómico</span></h3>
             <div class="desc" data-i18n="sc_astro_d">Enciende al atardecer y apaga al amanecer, siguiendo el sol cada día.</div>
             <div class="field"><label data-i18n="off_on">Encendido vs atardecer <span class="u">min</span></label><input type="number" id="offEnc" step="1" value="0"></div>
             <div class="field"><label data-i18n="off_off">Apagado vs amanecer <span class="u">min</span></label><input type="number" id="offApag" step="1" value="0"></div>
+            <label class="toggle"><input type="checkbox" id="enaA" checked> <span data-i18n="ena_C">Incluir en comparaciones</span></label>
             <label class="toggle"><input type="checkbox" id="dimA" checked> <span data-i18n="apply_dim">Aplicar dimerización</span></label>
             <div class="gl-tip" style="margin-top:10px" data-i18n="ast_offhint">Los minutos son un ajuste sobre el sol: 0 = enciende justo al atardecer y apaga al amanecer. Un valor positivo retrasa el encendido/apagado; uno negativo lo adelanta.</div>
           </div>
-          <div class="scn fixed">
+          <div class="scn fixed scn-on" id="scnCardB">
             <h3><span class="dot fixed"></span><span data-i18n="sc_fixed">Horario fijo (escenario a comparar)</span></h3>
             <div class="desc" data-i18n="sc_fixed_d">Reloj fijo igual todo el año, sin seguir el sol.</div>
-            <div class="field"><label data-i18n="fix_on">Hora de encendido fija</label><input type="time" id="fixOn" value="18:00"></div>
+            <div class="field"><label data-i18n="fix_on">Hora de encendido fija</label><input type="time" id="fixOn" value="20:00"></div>
             <div class="field"><label data-i18n="fix_off">Hora de apagado fija</label><input type="time" id="fixOff" value="06:00"></div>
             <label class="toggle"><input type="checkbox" id="enaB" checked> <span data-i18n="ena_C">Incluir en comparaciones</span></label>
             <label class="toggle"><input type="checkbox" id="dimB"> <span data-i18n="apply_dim">Aplicar dimerización</span></label>
           </div>
-          <div class="scn nodim">
+          <div class="scn nodim scn-on" id="scnCardC">
             <h3><span class="dot nodim"></span><span data-i18n="sc_nodim">Astronómico sin dimerización</span></h3>
             <div class="desc" data-i18n="sc_nodim_d">Sigue el sol pero a plena potencia, con sus propias ventanas. Útil para aislar el efecto de la dimerización.</div>
             <div class="field"><label data-i18n="off_on">Encendido vs atardecer <span class="u">min</span></label><input type="number" id="offEncC" step="1" value="0"></div>
@@ -911,10 +916,10 @@ const defaultProfile=()=>[70,70, 40,40,40,40,40,40,40,40, 80,80,80,80,80,80,80,8
 const S={
   country:"CO", dstRule:"none", lat:6.2476, lon:-75.5658, tz:-5, year:2026, tariff:0.15, pref:100,
   dim:defaultProfile(),
-  A:{type:"solar", offEnc:0, offApag:0, useDim:true},
-  B:{type:"fixed", on:18, off:6, useDim:false, enabled:true},
+  A:{type:"solar", offEnc:0, offApag:0, useDim:true, enabled:true},
+  B:{type:"fixed", on:20, off:6, useDim:false, enabled:true},
   C:{type:"solar", offEnc:0, offApag:0, useDim:false, enabled:true},
-  inventory:[{name:"Vial 100 W",qty:2000,power:100,dim:true},{name:"Vial 150 W",qty:800,power:150,dim:true},{name:"Peatonal 70 W",qty:1200,power:70,dim:true},{name:"LED 250 W avenida",qty:300,power:250,dim:false}],
+  inventory:[{name:"Luminaria 100 W",qty:1,power:100,dim:true}],
   selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"guia",
   yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true}, monthLayers:{a:true,c:true,b:true,money:false},
   energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B", nodeCost:0,
@@ -968,7 +973,7 @@ function recalc(){buildSun(); RA=computeScn(S.A); RB=computeScn(S.B); RC=compute
 function scnObj(k){return k==="A"?S.A:k==="B"?S.B:S.C;}
 function scnRes(k){return k==="A"?RA:k==="B"?RB:RC;}
 function scnLabel(k){return k==="A"?t("tag_astro"):k==="B"?t("tag_fixed"):t("tag_nodim");}
-function activeScenarios(){const a=[{key:"A",res:RA,obj:S.A,lab:t("c_astro_dim"),cls:"a"}];if(S.C.enabled)a.push({key:"C",res:RC,obj:S.C,lab:t("c_astro_nodim"),cls:"d"});if(S.B.enabled)a.push({key:"B",res:RB,obj:S.B,lab:t("c_fijo"),cls:"b"});return a;}
+function activeScenarios(){const a=[];if(S.A.enabled)a.push({key:"A",res:RA,obj:S.A,lab:t("c_astro_dim"),cls:"a"});if(S.C.enabled)a.push({key:"C",res:RC,obj:S.C,lab:t("c_astro_nodim"),cls:"d"});if(S.B.enabled)a.push({key:"B",res:RB,obj:S.B,lab:t("c_fijo"),cls:"b"});return a;}
 
 /* ============ formato ============ */
 const hhmm=v=>{if(v==null)return"—";let m=Math.round(v*60);m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");};
@@ -1025,10 +1030,19 @@ function renderCards(){
   const eu=energyUnit(maxE); const rE=maxE/eu.div; const dE=rE<10?2:(rE<100?1:0); const ev=v=>nf(v/eu.div,dE)+" "+eu.u;
   const G=id=>document.getElementById(id);
   const setC=(v,m,sb,energy,cost,cap)=>{G(v).textContent=ev(energy);G(m).textContent=money(cost)+t("per_year");G(sb).textContent=cap;};
+  // card A (astronómico)
+  const cardA=document.querySelector(".card.astro");
+  if(cardA) cardA.style.display=S.A.enabled?"":"none";
   setC("rA","rAm","rAs",x.kAstroDim,x.kAstroDim*S.tariff,t("flota"));
+  // card C (astro sin dim)
   G("cardC").style.display=S.C.enabled?"":"none";
+  // card B (horario fijo) — show when B enabled
   G("cardB").style.display=S.B.enabled?"":"none";
-  G("cardSch").style.display=S.B.enabled?"":"none";
+  // card ahorro astro vs fijo — solo cuando ambos A y B están activos
+  G("cardSch").style.display=(S.A.enabled&&S.B.enabled)?"":"none";
+  // card ahorro por dimerización — solo cuando A activo
+  const cardDim=document.querySelector(".card.save:not(#cardSch)");
+  if(cardDim) cardDim.style.display=S.A.enabled?"":"none";
   setC("rC","rCm","rCs",kC,kC*S.tariff,t("flota"));
   setC("rB","rBm","rBs",x.kFixed,x.kFixed*S.tariff,t("flota"));
   const pos=x.schedSave>=0;
@@ -1049,9 +1063,10 @@ function renderCards(){
   }
   // verdict
   const v=document.getElementById("verdict"); const act=activeScenarios(); const d=x.schedSave;
-  if(act.length<=1){const k=IKW*act[0].res.equivH;v.className="verdict s";
+  if(act.length===0){v.className="verdict s";v.innerHTML=`<b>${LANG==="es"?"Sin escenarios activos.":"No active scenarios."}</b> ${t("desc_addmore")}`;}
+  else if(act.length===1){const k=IKW*act[0].res.equivH;v.className="verdict s";
     v.innerHTML=`<b>${t("desc_only")} ${act[0].lab}.</b> ${nf(k,0)} kWh/${LANG==="es"?"año":"yr"} · ${money(k*S.tariff)}${t("per_year")}. ${t("desc_addmore")}`;}
-  else if(S.B.enabled){
+  else if(S.A.enabled&&S.B.enabled){
     if(d>0.5){v.className="verdict c";v.innerHTML=`<b>${t("v_cost")}</b> ${money(d*S.tariff)} ${t("v_cost2")} (${nf(d,0)} kWh) ${t("v_cost3")}`;}
     else if(d<-0.5){v.className="verdict s";v.innerHTML=`<b>${t("v_short")}</b> ${money(Math.abs(d)*S.tariff)} ${t("v_short2")}`;}
     else{v.className="verdict s";v.innerHTML=`<b>${t("v_eq")}</b> ${t("v_eq2")}`;}
@@ -1082,14 +1097,15 @@ function makeFmts(arrs,kind){const vals=[];arrs.forEach(a=>vals.push(...a));cons
 function monthSeries(useMoney){
   const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
   return [
-    {vals:mk("A"),color:"#22B0E1",show:S.monthLayers.a},
+    {vals:mk("A"),color:"#22B0E1",show:S.A.enabled&&S.monthLayers.a},
     {vals:mk("C"),color:"#4EB270",show:S.C.enabled&&S.monthLayers.c},
     {vals:mk("B"),color:"#EA561B",show:S.B.enabled&&S.monthLayers.b},
   ];
 }
 function monthRows(useMoney){
   const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
-  const rows=[{key:"A",lab:t("c_astro_dim"),vals:mk("A"),color:"#22B0E1"}];
+  const rows=[];
+  if(S.A.enabled)rows.push({key:"A",lab:t("c_astro_dim"),vals:mk("A"),color:"#22B0E1"});
   if(S.C.enabled)rows.push({key:"C",lab:t("c_astro_nodim"),vals:mk("C"),color:"#4EB270"});
   if(S.B.enabled)rows.push({key:"B",lab:t("c_fijo"),vals:mk("B"),color:"#EA561B"});
   return rows;
@@ -1131,10 +1147,13 @@ function renderMonth(){
 /* ============ comparison table ============ */
 function renderCmp(){
   const m=v=>money(v);
-  const cols=[{key:"A",r:RA,lab:t("c_astro_dim"),cls:"a"}];
+  const cols=[];
+  if(S.A.enabled)cols.push({key:"A",r:RA,lab:t("c_astro_dim"),cls:"a"});
   if(S.C.enabled)cols.push({key:"C",r:RC,lab:t("c_astro_nodim"),cls:"d"});
   if(S.B.enabled)cols.push({key:"B",r:RB,lab:t("c_fijo"),cls:"b"});
+  if(cols.length===0){document.getElementById("cmpTable").innerHTML="";return;}
   const bk=baseKeyFor(); const baseCol=cols.find(c=>c.key===bk);
+  const astroCol=cols.find(c=>c.key==="A")||cols[0];
   const rowsDef=[
     {lab:t("r_ophours"),val:c=>c.r.onH,f:v=>nf(v,1)+" h",pct:false},
     {lab:t("r_eqhours"),val:c=>c.r.equivH,f:v=>nf(v,1)+" h",pct:false},
@@ -1144,11 +1163,11 @@ function renderCmp(){
     {lab:t("r_cost_fleet"),val:c=>eKWh(c.key)*S.tariff,f:m,pct:true,tot:true},
   ];
   let head=`<thead><tr><th>${t("c_ind")}</th>`+cols.map(c=>`<th>${c.lab}</th>`).join("");
-  if(baseCol)head+=`<th>${t("pct_base")} · ${t("c_astro_dim")} vs ${baseCol.lab}</th>`;
+  if(baseCol&&cols.length>1)head+=`<th>${t("pct_base")} · ${astroCol.lab} vs ${baseCol.lab}</th>`;
   head+=`</tr></thead><tbody>`;
   let body=rowsDef.map(rd=>{
     let r=`<tr class="${rd.tot?"total":""}"><td>${rd.lab}</td>`+cols.map(c=>`<td class="num ${c.cls}">${rd.f(rd.val(c))}</td>`).join("");
-    if(baseCol){ if(rd.pct){const bv=rd.val(baseCol),av=rd.val(cols[0]);const p=bv?(av-bv)/bv*100:0;r+=`<td class="num ${p<0?"d":"b"}">${(p>=0?"+":"")+nf(p,1)}%</td>`;} else r+=`<td class="num">—</td>`; }
+    if(baseCol&&cols.length>1){ if(rd.pct){const bv=rd.val(baseCol),av=rd.val(astroCol);const p=bv?(av-bv)/bv*100:0;r+=`<td class="num ${p<0?"d":"b"}">${(p>=0?"+":"")+nf(p,1)}%</td>`;} else r+=`<td class="num">—</td>`; }
     return r+`</tr>`;}).join("");
   document.getElementById("cmpTable").innerHTML=head+body+`</tbody>`;
 }
@@ -1306,21 +1325,38 @@ function lineChart(id,series,o){
 function cumHours(){const cA=[],cB=[];let a=0,b=0;for(let i=0;i<N;i++){a+=RA.days[i].nightH;cA.push(a);b+=RB.days[i].nightH;cB.push(b);}return {cA,cB};}
 function renderHoursTable(){
   const thead=document.querySelector("#hoursTbl thead"),tbody=document.querySelector("#hoursTbl tbody");
-  const showMin=S.B.enabled;
+  // Determinar escenario principal y secundario para comparar
+  const act=activeScenarios();
+  if(act.length===0){thead.innerHTML="";tbody.innerHTML="";return;}
+  const primary=act[0];   // primer escenario activo
+  const secondary=act.find(a=>a.key!==primary.key)||null; // segundo para comparar
+  const showMin=!!secondary;
   let head=`<tr><th>${t("th_dia")}</th><th>${t("th_fecha")}</th><th>${t("th_hday")}</th><th>${t("th_acc")}</th>`;
   if(showMin)head+=`<th>${t("min_vs_fix")}</th><th>${t("acc_min")}</th>`;
   thead.innerHTML=head+`</tr>`;
+  const primRes=primary.res; const secRes=secondary?secondary.res:null;
   let acc=0,accm=0; const rows=[];
-  for(let i=0;i<N;i++){const d=RA.days[i]; acc+=d.nightH;
+  for(let i=0;i<N;i++){const d=primRes.days[i]; acc+=d.nightH;
     let r=`<tr><td>${i+1}</td><td>${fdate(d.date)}</td><td>${d.nightH.toFixed(2)}</td><td class="tot">${acc.toFixed(1)}</td>`;
-    if(showMin){const mn=(RB.days[i].nightH-d.nightH)*60;accm+=mn;r+=`<td class="${mn>=0?"mplus":"mminus"}">${(mn>=0?"+":"")+nf(mn,1)}</td><td class="tot">${nf(accm,0)}</td>`;}
+    if(showMin){const mn=(secRes.days[i].nightH-d.nightH)*60;accm+=mn;r+=`<td class="${mn>=0?"mplus":"mminus"}">${(mn>=0?"+":"")+nf(mn,1)}</td><td class="tot">${nf(accm,0)}</td>`;}
     rows.push(r+`</tr>`);}
   tbody.innerHTML=rows.join("");
-  const ch=cumHours();
-  lineChart("hoursChart",[{vals:ch.cA,color:"#22B0E1",show:true},{vals:ch.cB,color:"#EA561B",show:S.B.enabled}],{fmt:v=>nf(v,0),unit:"h"});
+  // Leyenda del gráfico
+  const legWrap=document.querySelector("#view-tabla .legend");
+  if(legWrap){
+    legWrap.innerHTML=`<span><span class="sw" style="background:${primary.key==="B"?"var(--rose)":"var(--indigo)"}"></span>${primary.lab}</span>`;
+    if(secondary)legWrap.innerHTML+=`<span><span class="sw" style="background:${secondary.key==="B"?"var(--rose)":"var(--indigo)"}"></span>${secondary.lab}</span>`;
+  }
+  const cA=[];let a=0;for(let i=0;i<N;i++){a+=primRes.days[i].nightH;cA.push(a);}
+  const cB=[];let b=0;if(secRes)for(let i=0;i<N;i++){b+=secRes.days[i].nightH;cB.push(b);}
+  lineChart("hoursChart",[
+    {vals:cA,color:primary.key==="B"?"#EA561B":"#22B0E1",show:true},
+    {vals:secRes?cB:[...cA],color:secondary?.key==="B"?"#EA561B":"#22B0E1",show:!!secRes}
+  ],{fmt:v=>nf(v,0),unit:"h"});
   const el=document.getElementById("hoursAvg");
-  if(el){const avg=(RB.onH-RA.onH)/N*60;
-    el.textContent=S.B.enabled?(t("avg_min")+": "+(avg>=0?"+":"")+nf(avg,1)+" min/"+(LANG==="es"?"día":"day")+" · "+(RB.onH-RA.onH>=0?"+":"")+nf(RB.onH-RA.onH,1)+" h/"+(LANG==="es"?"año":"yr")+" ("+t("vs_fixed")+")"):"";}
+  if(el&&showMin){const avg=(secRes.onH-primRes.onH)/N*60;
+    el.textContent=t("avg_min")+": "+(avg>=0?"+":"")+nf(avg,1)+" min/"+(LANG==="es"?"día":"day")+" · "+(secRes.onH-primRes.onH>=0?"+":"")+nf(secRes.onH-primRes.onH,1)+" h/"+(LANG==="es"?"año":"yr")+" ("+secondary.lab+")";
+  }else if(el)el.textContent="";
 }
 
 /* ============ executive summary ============ */
@@ -1329,32 +1365,54 @@ function renderExec(){
   const place=(cc&&S.country!=="CUSTOM")?cc.n:(nf(S.lat,3)+", "+nf(S.lon,3));
   const today=new Date().toLocaleDateString(loc());
   const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
-  const eqA=RA.equivH,eqB=RB.equivH,flA=eKWh("A"),flB=eKWh("B");
   const k=v=>nf(v,1),k0=v=>nf(v,0),m=v=>money(v);
   const act=activeScenarios();
-  let savBoxes=`<h3>${t("ex_save_title")}</h3><div class="kgrid">`;
-  savBoxes+=`<div class="kbox ${x.dimSave>0?"hl":""}"><div class="k">${t("ex_save_dim")}</div><div class="v">${efmt(x.dimSave)}</div><div class="s">${money(x.dimSave*S.tariff)}${t("per_year")} · ${x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0"}%</div></div>`;
-  if(S.B.enabled){
+  // Primary = first active scenario for key results
+  const primary=act[0]||{key:"A",res:RA,obj:S.A,lab:t("c_astro_dim"),cls:"a"};
+  const primRes=primary.res; const primKwh=eKWh(primary.key);
+  const secondary=act.find(a=>a.key!==primary.key)||null;
+  const secRes=secondary?secondary.res:null;
+
+  // Savings boxes — only when relevant scenarios are active
+  let savBoxes=`<div class="kgrid">`;
+  if(S.A.enabled&&S.A.useDim){
+    savBoxes+=`<div class="kbox ${x.dimSave>0?"hl":""}"><div class="k">${t("ex_save_dim")}</div><div class="v">${efmt(x.dimSave)}</div><div class="s">${money(x.dimSave*S.tariff)}${t("per_year")} · ${x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0"}%</div></div>`;
+  }
+  if(S.A.enabled&&S.B.enabled){
     savBoxes+=`<div class="kbox ${x.schedSave>0?"hl":""}"><div class="k">${t("ex_save_sched")}</div><div class="v">${(x.schedSave>=0?"+":"-")+efmt(Math.abs(x.schedSave))}</div><div class="s">${money(Math.abs(x.schedSave)*S.tariff)}${t("per_year")} · ${x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0"}%</div></div>`;
     savBoxes+=`<div class="kbox"><div class="k">${t("ex_save_money")}</div><div class="v">${money(Math.max(0,x.schedSave)*S.tariff)}</div><div class="s">${t("ex_save_sched")}${t("per_year")}</div></div>`;
   }
   savBoxes+=`</div>`;
+
+  // Detail comparison table
   const rdef=[{lab:t("r_ophours"),val:c=>c.res.onH,f:v=>nf(v,1)+" h"},{lab:t("r_kwh_fleet"),val:c=>eKWh(c.key),f:efmt},{lab:t("r_cost_fleet"),val:c=>eKWh(c.key)*S.tariff,f:m}];
-  const detailTable=`<h3>${t("ex_detail")}</h3><table class="rep"><thead><tr><th>${t("c_ind")}</th>`+act.map(c=>`<th>${c.lab}</th>`).join("")+`</tr></thead><tbody>`+rdef.map(rd=>`<tr><td>${rd.lab}</td>`+act.map(c=>`<td class="num">${rd.f(rd.val(c))}</td>`).join("")+`</tr>`).join("")+`</tbody></table>`;
-  const avgMin=(RB.onH-RA.onH)/N*60;
-  let operBoxes=`<h3>${t("ex_oper_title")}</h3><div class="kgrid">`;
-  operBoxes+=`<div class="kbox"><div class="k">${t("ex_oper_hours")}</div><div class="v">${nf(RA.onH,0)} h</div><div class="s">${nf(RA.onH/N*60,0)} ${t("min_day")}</div></div>`;
-  if(S.B.enabled){
-    operBoxes+=`<div class="kbox ${avgMin>0?"hl":""}"><div class="k">${t("min_saved_day")}</div><div class="v">${(avgMin>=0?"+":"")+nf(avgMin,1)} min</div><div class="s">${t("vs_fixed")}</div></div>`;
-    operBoxes+=`<div class="kbox ${avgMin>0?"hl":""}"><div class="k">${t("hrs_saved_year")}</div><div class="v">${(RB.onH-RA.onH>=0?"+":"")+nf(RB.onH-RA.onH,1)} h</div><div class="s">${t("vs_fixed")}</div></div>`;
+  const detailTable=act.length>0?`<table class="rep"><thead><tr><th>${t("c_ind")}</th>`+act.map(c=>`<th>${c.lab}</th>`).join("")+`</tr></thead><tbody>`+rdef.map(rd=>`<tr><td>${rd.lab}</td>`+act.map(c=>`<td class="num">${rd.f(rd.val(c))}</td>`).join("")+`</tr>`).join("")+`</tbody></table>`:"";
+
+  // Oper boxes — use primary scenario
+  const avgMin=secRes?(secRes.onH-primRes.onH)/N*60:null;
+  let operBoxes=`<div class="kgrid">`;
+  operBoxes+=`<div class="kbox"><div class="k">${t("ex_oper_hours")}</div><div class="v">${nf(primRes.onH,0)} h</div><div class="s">${nf(primRes.onH/N*60,0)} ${t("min_day")}</div></div>`;
+  if(avgMin!==null){
+    operBoxes+=`<div class="kbox ${avgMin>0?"hl":""}"><div class="k">${t("min_saved_day")}</div><div class="v">${(avgMin>=0?"+":"")+nf(avgMin,1)} min</div><div class="s">${secondary.lab}</div></div>`;
+    operBoxes+=`<div class="kbox ${avgMin>0?"hl":""}"><div class="k">${t("hrs_saved_year")}</div><div class="v">${(secRes.onH-primRes.onH>=0?"+":"")+nf(secRes.onH-primRes.onH,1)} h</div><div class="s">${secondary.lab}</div></div>`;
   }
   operBoxes+=`</div><canvas id="execHours" width="1040" height="220" style="margin-top:10px"></canvas>`;
+
+  // Hours table — use primary scenario
   const dim=Array(12).fill(0); for(let i=0;i<N;i++)dim[sunCache[i].date.getUTCMonth()]++;
-  let hoursTbl=`<h3>${t("ex_hours_title")}</h3><div class="mtblwrap"><table class="mtbl"><thead><tr><th>h</th>`+mes().map(mm=>`<th>${mm}</th>`).join("")+`<th>${t("th_total")}</th></tr></thead><tbody>`;
-  hoursTbl+=`<tr><td>${t("ex_oper_hours")}</td>`+RA.mOn.map(v=>`<td>${nf(v,0)}</td>`).join("")+`<td class="tot">${nf(RA.onH,0)}</td></tr>`;
-  hoursTbl+=`<tr><td>${t("avg_hpn")}</td>`+RA.mOn.map((v,m)=>`<td>${nf(v/dim[m],1)}</td>`).join("")+`<td class="tot">${nf(RA.onH/N,1)}</td></tr>`;
-  if(S.B.enabled){hoursTbl+=`<tr class="pctrow"><td>${t("min_vs_fix")}</td>`+RA.mOn.map((v,m)=>{const mn=(RB.mOn[m]-v)/dim[m]*60;return `<td class="${mn>=0?"neg":"pos"}">${(mn>=0?"+":"")+nf(mn,1)}</td>`;}).join("")+`<td class="tot">${((RB.onH-RA.onH)/N*60>=0?"+":"")+nf((RB.onH-RA.onH)/N*60,1)}</td></tr>`;}
+  let hoursTbl=`<div class="mtblwrap"><table class="mtbl"><thead><tr><th>h</th>`+mes().map(mm=>`<th>${mm}</th>`).join("")+`<th>${t("th_total")}</th></tr></thead><tbody>`;
+  hoursTbl+=`<tr><td>${t("ex_oper_hours")}</td>`+primRes.mOn.map(v=>`<td>${nf(v,0)}</td>`).join("")+`<td class="tot">${nf(primRes.onH,0)}</td></tr>`;
+  hoursTbl+=`<tr><td>${t("avg_hpn")}</td>`+primRes.mOn.map((v,mo)=>`<td>${nf(v/dim[mo],1)}</td>`).join("")+`<td class="tot">${nf(primRes.onH/N,1)}</td></tr>`;
+  if(secRes){hoursTbl+=`<tr class="pctrow"><td>${t("min_vs_fix")}</td>`+primRes.mOn.map((v,mo)=>{const mn=(secRes.mOn[mo]-v)/dim[mo]*60;return `<td class="${mn>=0?"neg":"pos"}">${(mn>=0?"+":"")+nf(mn,1)}</td>`;}).join("")+`<td class="tot">${(avgMin>=0?"+":"")+nf(avgMin,1)}</td></tr>`;}
   hoursTbl+=`</tbody></table></div>`;
+
+  // Config table row for scenarios
+  const scnRows=act.map(c=>{
+    const on=c.obj.type==="solar"?hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].on:18):hhmm(c.obj.on);
+    const off=c.obj.type==="solar"?hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].off:6):hhmm(c.obj.off);
+    return `<tr><td>${c.lab}</td><td class="num" colspan="3">${on} → ${off}${c.obj.useDim?" + dim":""}</td></tr>`;
+  }).join("");
+
   document.getElementById("execBody").innerHTML=`
    <div class="ehead">
      <div><h2>${t("ex_title")}</h2></div>
@@ -1365,30 +1423,24 @@ function renderExec(){
    <table class="rep"><tbody>
      <tr><td>${t("ex_lum")}</td><td class="num">${nf(units)} ${t("ex_units")}</td><td>${t("ex_power")}</td><td class="num">${nf(IKW,1)} kW</td></tr>
      <tr><td>${t("ex_tariff")}</td><td class="num">US$${nf(S.tariff,3)}/kWh</td><td>${t("dst")}</td><td class="num">${S.dstRule==="none"?t("dst_none"):DSTDAYS.map(z=>fdate(sunCache[z.i].date)+" "+z.s).join(" · ")}</td></tr>
-     <tr><td>${t("sc_astro")}</td><td class="num">${hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].on:18)} → ${hhmm(RA.days[S.selDay-1]?RA.days[S.selDay-1].off:6)} ${S.A.useDim?"+ dim":""}</td>${S.B.enabled?`<td>${t("sc_fixed")}</td><td class="num">${hhmm(S.B.on)} → ${hhmm(S.B.off)} ${S.B.useDim?"+ dim":""}</td>`:"<td></td><td></td>"}</tr>
+     ${scnRows}
    </tbody></table>
    <p class="exp">${t("ex_astro_note")}</p>
 
-   <h3>${t("exp_dim_title")}</h3>
-   <p class="exp">${t("exp_dim")}</p>
-   <div class="strat">${dimStrategyText()}</div>
+   ${S.A.enabled?`<h3>${t("exp_dim_title")}</h3><p class="exp">${t("exp_dim")}</p><div class="strat">${dimStrategyText()}</div>`:""}
 
    <h3>${t("ex_key")}</h3>
    <p class="exp">${t("exp_key")}</p>
    <div class="kgrid">
-     <div class="kbox"><div class="k">${t("ex_energy")}</div><div class="v">${efmt(x.kAstroDim)}</div><div class="s">${t("ex_op")}: ${k(eqA)} h</div></div>
-     <div class="kbox"><div class="k">${t("ex_cost")}</div><div class="v">${money(x.kAstroDim*S.tariff)}</div><div class="s">US$${nf(S.tariff,3)}/kWh</div></div>
+     <div class="kbox"><div class="k">${t("ex_energy")}</div><div class="v">${efmt(primKwh)}</div><div class="s">${t("ex_op")}: ${k(primRes.equivH)} h</div></div>
+     <div class="kbox"><div class="k">${t("ex_cost")}</div><div class="v">${money(primKwh*S.tariff)}</div><div class="s">US$${nf(S.tariff,3)}/kWh</div></div>
      <div class="kbox"><div class="k">${t("ex_power")}</div><div class="v">${nf(IKW,1)} kW</div><div class="s">${nf(units)} ${t("ex_units")}</div></div>
      ${(()=>{const pb=payback();return (pb.years!=null&&isFinite(pb.years)&&pb.years>0)?`<div class="kbox hl"><div class="k">${t("pay_k")}</div><div class="v">${nf(pb.years,1)} ${t("years")}</div><div class="s">${money(pb.invest)} ${t("pay_invest")} · ${money(pb.annual)}${t("per_year")}</div></div>`:"";})()}
    </div>
 
-   <h3>${t("ex_save_title")}</h3>
-   <p class="exp">${t("exp_save")}</p>
-   ${savBoxes.replace(/^<h3>[^<]*<\/h3>/,"")}
+   ${savBoxes.trim()!=='<div class="kgrid"></div>'?`<h3>${t("ex_save_title")}</h3><p class="exp">${t("exp_save")}</p>${savBoxes}`:""}
 
-   <h3>${t("ex_detail")}</h3>
-   <p class="exp">${t("exp_detail")}</p>
-   ${detailTable.replace(/^<h3>[^<]*<\/h3>/,"")}
+   ${act.length>1?`<h3>${t("ex_detail")}</h3><p class="exp">${t("exp_detail")}</p>${detailTable}`:""}
 
    <div class="twocol" style="margin-top:18px">
      <div><h3>${t("ex_month")}</h3><canvas id="execMonth" width="600" height="300"></canvas></div>
@@ -1399,18 +1451,22 @@ function renderExec(){
 
    <h3>${t("ex_oper_title")}</h3>
    <p class="exp">${t("exp_oper")}</p>
-   ${operBoxes.replace(/^<h3>[^<]*<\/h3>/,"")}
+   ${operBoxes}
    <h3>${t("ex_hours_title")}</h3>
    <p class="exp">${t("exp_hours")}</p>
-   ${hoursTbl.replace(/^<h3>[^<]*<\/h3>/,"")}
+   ${hoursTbl}
    <div class="foott">${t("ex_note")}</div>`;
   // dibujar gráficos del informe
   const series=monthSeries(false);
   const f=makeFmts(series.filter(s=>s.show).map(s=>s.vals),"energy");
   barsChart("execMonth",series,{axisFmt:f.axisFmt,barFmt:f.barFmt,unit:f.unit});
-  renderYear("execYear",{night:true,fixed:S.B.enabled,cprofile:S.C.enabled,excess:S.B.enabled,dst:true});
-  const chh=cumHours();
-  lineChart("execHours",[{vals:chh.cA,color:"#22B0E1",show:true},{vals:chh.cB,color:"#EA561B",show:S.B.enabled}],{fmt:v=>nf(v,0),unit:"h"});
+  renderYear("execYear",{night:S.A.enabled,fixed:S.B.enabled,cprofile:S.C.enabled,excess:S.A.enabled&&S.B.enabled,dst:true});
+  const cPrim=[];let ap=0;for(let i=0;i<N;i++){ap+=primRes.days[i].nightH;cPrim.push(ap);}
+  const cSec=[];let bp=0;if(secRes)for(let i=0;i<N;i++){bp+=secRes.days[i].nightH;cSec.push(bp);}
+  lineChart("execHours",[
+    {vals:cPrim,color:primary.key==="B"?"#EA561B":"#22B0E1",show:true},
+    {vals:secRes?cSec:[...cPrim],color:secondary?.key==="B"?"#EA561B":"#22B0E1",show:!!secRes}
+  ],{fmt:v=>nf(v,0),unit:"h"});
 }
 
 /* ============ PDF ============ */
@@ -1531,6 +1587,7 @@ function exportCSV(){
 
 /* ============ tabs + refresh ============ */
 function renderActive(){
+  syncScnState();
   if(S.tab==="resumen"){renderCards();renderMonth();}
   else if(S.tab==="escenarios"){renderCmp();renderYear("yearChart",S.yearLayers);}
   else if(S.tab==="perfil"){renderDay();renderHeat();}
@@ -1583,7 +1640,7 @@ document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.c
   updateBreadcrumb(activeGroup,tb);
 });
 document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{
-  setGroup("res","resumen");window.scrollTo({top:0,behavior:"smooth"});}));
+  setGroup("cfg","inventario");window.scrollTo({top:0,behavior:"smooth"});}));
 
 function wireSeg(id,key,after){document.getElementById(id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   S[key]=b.dataset.s;b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));after();});}
@@ -1615,8 +1672,63 @@ document.getElementById("offEnc").addEventListener("input",()=>{S.A.offEnc=num("
 document.getElementById("offApag").addEventListener("input",()=>{S.A.offApag=num("offApag");refreshLive();});
 document.getElementById("offEncC").addEventListener("input",()=>{S.C.offEnc=num("offEncC");refreshLive();});
 document.getElementById("offApagC").addEventListener("input",()=>{S.C.offApag=num("offApagC");refreshLive();});
-document.getElementById("enaC").addEventListener("change",e=>{S.C.enabled=e.target.checked;refreshLive();});
-document.getElementById("enaB").addEventListener("change",e=>{S.B.enabled=e.target.checked;refreshLive();});
+/* ── sincronización completa de escenarios activos ── */
+function syncScnState(){
+  // Tarjetas de configuración
+  const cardA=document.getElementById("scnCardA");
+  const cardB=document.getElementById("scnCardB");
+  const cardC=document.getElementById("scnCardC");
+  if(cardA){cardA.classList.toggle("scn-on", S.A.enabled); cardA.classList.toggle("scn-off", !S.A.enabled);}
+  if(cardB){cardB.classList.toggle("scn-on", S.B.enabled); cardB.classList.toggle("scn-off", !S.B.enabled);}
+  if(cardC){cardC.classList.toggle("scn-on", S.C.enabled); cardC.classList.toggle("scn-off", !S.C.enabled);}
+
+  // Botones seg: ocultar escenarios inactivos
+  document.querySelectorAll(".seg button[data-s]").forEach(btn=>{
+    const s=btn.dataset.s;
+    if(s==="A") btn.style.display=S.A.enabled?"":"none";
+    if(s==="B") btn.style.display=S.B.enabled?"":"none";
+    if(s==="C") btn.style.display=S.C.enabled?"":"none";
+  });
+
+  // Si el escenario seleccionado en un seg ya no está activo, pasar al primero activo
+  const firstActive=S.A.enabled?"A":S.B.enabled?"B":S.C.enabled?"C":null;
+  ["invScn","perfilScn","tblScn"].forEach(key=>{
+    const val=S[key];
+    const stillActive=(val==="A"&&S.A.enabled)||(val==="B"&&S.B.enabled)||(val==="C"&&S.C.enabled);
+    if(!stillActive&&firstActive){
+      S[key]=firstActive;
+      const segId=key==="invScn"?"invSeg":key==="perfilScn"?"scnSeg":"tblSeg";
+      const seg=document.getElementById(segId);
+      if(seg)seg.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.s===firstActive));
+    }
+  });
+
+  // Checkboxes de capas del gráfico mensual
+  const mlA=document.querySelector("#monthLayers label:nth-child(1)");
+  const mlC=document.querySelector("#monthLayers label:nth-child(2)");
+  const mlB=document.querySelector("#monthLayers label:nth-child(3)");
+  if(mlA) mlA.style.display=S.A.enabled?"":"none";
+  if(mlC) mlC.style.display=S.C.enabled?"":"none";
+  if(mlB) mlB.style.display=S.B.enabled?"":"none";
+
+  // Checkboxes de capas del gráfico anual
+  const ylFixed=document.querySelector("#yearLayers label:nth-child(2)");
+  const ylProfile=document.querySelector("#yearLayers label:nth-child(3)");
+  const ylExcess=document.querySelector("#yearLayers label:nth-child(4)");
+  if(ylFixed) ylFixed.style.display=S.B.enabled?"":"none";
+  if(ylProfile) ylProfile.style.display=S.C.enabled?"":"none";
+  if(ylExcess) ylExcess.style.display=S.B.enabled?"":"none";
+
+  // Base del %: ocultar botones de escenarios inactivos
+  document.querySelectorAll(".baseSeg button[data-base]").forEach(btn=>{
+    const b=btn.dataset.base;
+    if(b==="B") btn.style.display=S.B.enabled?"":"none";
+    if(b==="C") btn.style.display=S.C.enabled?"":"none";
+  });
+}
+document.getElementById("enaA").addEventListener("change",e=>{S.A.enabled=e.target.checked;syncScnState();refreshLive();});
+document.getElementById("enaC").addEventListener("change",e=>{S.C.enabled=e.target.checked;syncScnState();refreshLive();});
+document.getElementById("enaB").addEventListener("change",e=>{S.B.enabled=e.target.checked;syncScnState();refreshLive();});
 document.getElementById("fixOn").addEventListener("input",e=>{S.B.on=parseTime(e.target.value);refreshLive();});
 document.getElementById("fixOff").addEventListener("input",e=>{S.B.off=parseTime(e.target.value);refreshLive();});
 document.getElementById("dimA").addEventListener("change",e=>{S.A.useDim=e.target.checked;refreshLive();});
@@ -1651,7 +1763,7 @@ document.getElementById("langBtn").addEventListener("click",()=>{LANG=LANG==="es
 });
 
 /* init */
-applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); wireDim(); refreshAll();
+applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); wireDim(); refreshAll(); syncScnState();
 </script>
 </body>
 </html>
