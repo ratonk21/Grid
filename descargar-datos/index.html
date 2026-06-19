@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="es">
 <head>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
@@ -7,11 +9,6 @@
     gtag('js', new Date());
     gtag('config', 'G-K73HD7MSR4');
   </script>
-</head>
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="robots" content="noindex" />
@@ -441,15 +438,17 @@ function buildAnalysis(div, dataIn, vswellIn, vsagIn, powerlossIn){
 
 /* Genera un HTML interactivo autocontenido del análisis (como tu script de Python) */
 function figureToHtml(spec, title){
+  const safeTitle = String(title||'DTM Analytics').replace(/[<>]/g,'');
   return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
-    + '<title>' + title + '</title>'
+    + '<title>' + safeTitle + '</title>'
     + '<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>'
-    + '<style>body{margin:0;font-family:Arial,Helvetica,sans-serif}#chart{width:100%}</style></head>'
-    + '<body><div id="chart"></div><script>'
+    + '<style>body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;background:#EEF0F5;color:#1E2445}header{background:#1E2445;color:#fff;padding:14px 22px;font-weight:700}header b{color:#22B0E1}.msg{margin:18px 22px;padding:14px 16px;background:#fff;border:1px solid #d8dde9;border-radius:10px;color:#464D63}#chart{width:100%;background:#fff}</style></head>'
+    + '<body><header>DTM <b>Analytics</b> — ' + safeTitle + '</header><div id="msg" class="msg">Cargando gráfico…</div><div id="chart"></div><script>'
     + 'var data=' + JSON.stringify(spec.traces) + ';'
     + 'var layout=' + JSON.stringify(spec.layout) + ';'
-    + 'Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false});'
+    + 'function fail(e){document.getElementById("msg").innerHTML="No se pudo renderizar el gráfico. Verifica conexión a internet para cargar Plotly o abre este archivo desde el ZIP ya extraído. Detalle: "+String(e||"");}'
+    + 'if(!window.Plotly){fail("Plotly no cargó desde CDN");}else{try{Plotly.newPlot("chart", data, layout, {responsive:true, displaylogo:false}).then(function(){document.getElementById("msg").style.display="none";});}catch(e){fail(e.message||e);}}'
     + '<\/script></body></html>';
 }
 
@@ -485,7 +484,7 @@ function multiFigureToHtml(figs, title){
     + 'sel.addEventListener("change",function(){render(sel.value);});'
     + 'document.getElementById("prev").addEventListener("click",function(){step(-1);});'
     + 'document.getElementById("next").addEventListener("click",function(){step(1);});'
-    + 'render(sel.value);'
+    + 'if(!window.Plotly){document.getElementById("meta").textContent="No se pudo cargar Plotly desde CDN. Revisa conexión o bloqueo de scripts.";}else{render(sel.value);}'
     + '<\/script></body></html>';
 }
 
@@ -587,7 +586,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
     const intervals=splitRange(start,end,maxDays);
     log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
     if(endClampedMsg) log(endClampedMsg, 'line-err');
-    const zip=new JSZip(); const results={}; let done=0;
+    const zip=new JSZip(); const results={}; const allFigures={}; const allVoltageFigures={}; let done=0;
 
     // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
     async function processImei(imei){
@@ -616,7 +615,17 @@ document.getElementById('go').addEventListener('click', async ()=>{
         if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
         folder.file(`${imei}_combined_data_${type}.csv`, csv);
       }
-      if(acc.DTM2.length){ try{ addLiveVoltage(imei, acc.DTM2); }catch(e){ console.error(e); } }
+      if(acc.DTM2.length){
+        try{
+          const fullSpec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
+          const voltSpec=buildVoltageFigure(acc.DTM2, imei);
+          allFigures[imei]=fullSpec;
+          allVoltageFigures[imei]=voltSpec;
+          folder.file(`${imei}_analysis.html`, figureToHtml(fullSpec, `Análisis DTM — IMEI ${imei}`));
+          folder.file(`${imei}_voltage.html`, figureToHtml(voltSpec, `Voltajes — IMEI ${imei}`));
+        }catch(e){ log(`⚠ ${imei}: no se pudo generar HTML (${e.message||e})`, 'line-err'); }
+        try{ addLiveVoltage(imei, acc.DTM2); }catch(e){ console.error(e); }
+      }
       done++;
       log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
     }
@@ -639,6 +648,10 @@ document.getElementById('go').addEventListener('click', async ()=>{
       log('No se alcanzó a descargar datos.', 'line-err');
     }else{
       log('\nGenerando ZIP…');
+      if(Object.keys(allFigures).length){
+        zip.file('DTM_Analytics_Viewer.html', multiFigureToHtml(allFigures, 'Análisis completo'));
+        zip.file('DTM_Voltage_Viewer.html', multiFigureToHtml(allVoltageFigures, 'Voltajes'));
+      }
       lastBlob=await zip.generateAsync({type:'blob'});
       download(lastBlob, cancelRequested ? 'datos_ubicquia_parcial.zip' : 'datos_ubicquia.zip');
       document.getElementById('redownload').style.display='block';
