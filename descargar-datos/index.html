@@ -104,10 +104,6 @@
   /* Consola de registro */
   #log{background:var(--navy);color:#cfe8f5;border-radius:var(--radius-lg);padding:1.1rem 1.25rem;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;max-height:300px;overflow:auto;margin-top:1.25rem;display:none;border:1px solid #2a3258}
   #log.show{display:block}
-  #zipActions{display:none;margin-top:1rem}
-  #downloadZip{width:100%;padding:.8rem;border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:var(--radius);font-weight:700;cursor:pointer}
-  #downloadZip:hover{background:var(--blue-lt)}
-  #downloadZip:disabled{opacity:.6;cursor:not-allowed}
   .line-err{color:#ff9a9a}.line-ok{color:#bfe88a}
 
   /* DTMs encontrados */
@@ -139,7 +135,7 @@
 <div class="wrap">
   <span class="eyebrow">DTM Analytics</span>
   <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI y muestra el análisis completo caso a caso en el panel derecho. La descarga ZIP queda disponible como respaldo opcional en paralelo.</p>
+  <p class="lead">Consulta transformadores por IMEI y muestra el análisis completo caso a caso en el panel derecho. No descarga ZIP ni genera HTML adicional.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -192,7 +188,6 @@
   </div>
 
   <div id="log"></div>
-  <div id="zipActions"><button id="downloadZip">Descargar datos en ZIP</button></div>
    </div><!-- /col-form -->
    <div class="col-live">
      <div id="analysisDetail"><div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div></div>
@@ -207,7 +202,6 @@
   <span>griddata.cl</span>
 </footer>
 
-<script src="./jszip.min.js"></script>
 <script src="./plotly.min.js"></script>
 <script>if(!window.Plotly){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>');}</script>
 <script>
@@ -507,39 +501,10 @@ function log(msg, cls){ logEl.classList.add('show'); const s=document.createElem
 let latestResults={};
 let selectedImei=null;
 let cancelRequested=false;
-function downloadBlob(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000); }
-function updateZipButton(){ const box=document.getElementById('zipActions'); if(box) box.style.display=Object.keys(latestResults).length ? 'block' : 'none'; }
-async function buildZipBlob(){
-  if(!window.JSZip) throw new Error('JSZip no cargó. Verifica que jszip.min.js esté junto al index.html.');
-  const zip=new JSZip();
-  for(const [imei,acc] of Object.entries(latestResults)){
-    const folder=zip.folder(imei);
-    for(const [type,rows] of Object.entries(acc)){
-      let csv=toCSV(rows);
-      if(!csv && (type==='Powerloss'||type==='Powerrestored')) csv='Subpanel Time\n';
-      folder.file(`${imei}_combined_data_${type}.csv`, csv);
-    }
-  }
-  return await zip.generateAsync({type:'blob'});
-}
 document.getElementById('stop').addEventListener('click', ()=>{
   cancelRequested=true;
   const s=document.getElementById('stop');
   s.disabled=true; s.textContent='Deteniendo…';
-});
-
-document.getElementById('downloadZip').addEventListener('click', async ()=>{
-  const b=document.getElementById('downloadZip');
-  try{
-    b.disabled=true; b.textContent='Generando ZIP…';
-    const blob=await buildZipBlob();
-    downloadBlob(blob,'datos_ubicquia.zip');
-    log('✓ ZIP de datos descargado.', 'line-ok');
-  }catch(e){
-    log('✗ '+(e.message||e), 'line-err');
-  }finally{
-    b.disabled=false; b.textContent='Descargar datos en ZIP';
-  }
 });
 
 function renderResults(results){
@@ -666,7 +631,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
   }
 
   logEl.innerHTML=''; document.getElementById('dtmlist').innerHTML='';
-  latestResults={}; selectedImei=null; updateZipButton();
+  latestResults={}; selectedImei=null;
   const analysisDetail=document.getElementById('analysisDetail');
   if(analysisDetail) analysisDetail.innerHTML='<div class="vplaceholder">Selecciona un IMEI para ver el análisis completo aquí.</div>';
   btn.disabled=true; btn.textContent='Procesando…';
@@ -703,7 +668,6 @@ document.getElementById('go').addEventListener('click', async ()=>{
       results[imei]=acc;
 
       latestResults=results;
-      updateZipButton();
       renderResults(results);
       if(acc.DTM2.length && (!selectedImei || selectedImei===imei)){
         showImeiAnalysis(imei);
@@ -730,7 +694,6 @@ document.getElementById('go').addEventListener('click', async ()=>{
       log('No se alcanzó a consultar datos.', 'line-err');
     }else{
       latestResults=results;
-      updateZipButton();
       renderResults(results);
       if(!selectedImei) showImeiAnalysis(Object.keys(results)[0]);
       log('✓ Listo. Selecciona un IMEI para ver su análisis completo a la derecha.', 'line-ok');
