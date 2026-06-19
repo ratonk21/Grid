@@ -10,6 +10,7 @@ const DTM_METRIX_URL = 'https://api.ubicquia.com/api/ubigrid/transformer/metrix/
 const NOTIFICATIONS_URL = 'https://api.ubicquia.com/api/v2/notification-nodes';
 const PER_PAGE = 20000;
 const MAX_PAGES = 100;
+const BACKEND_VERSION = 'backend-v5-python-equivalent-no-field-filter';
 
 function pageSignature(rows) {
   const first = rows[0] || {};
@@ -223,6 +224,7 @@ export default async function handler(req, res) {
         swell,
         powerloss,
         powerrestored,
+        backendVersion: BACKEND_VERSION,
         counts: {
           metrix: metrix.length,
           sag: sag.length,

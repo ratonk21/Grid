@@ -137,9 +137,9 @@
 </header>
 
 <div class="wrap">
-  <span class="eyebrow">DTM Analytics · v4-full-schema-manifest-2026-06-19</span>
+  <span class="eyebrow">DTM Analytics · v5-schema-plus-extra-diagnostics-2026-06-19</span>
   <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend paginado completo y columnas fijas compatibles con el CSV de referencia.</p>
+  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend paginado completo, columnas fijas, columnas extra detectadas y diagnóstico por IMEI.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -290,8 +290,35 @@ function rowsForCsv(type, rows){
   });
 }
 
+function columnsForCsv(type, rows){
+  const schema = CSV_SCHEMAS[type] || [];
+  const actual=[];
+  for(const r of (rows||[])){
+    for(const k of Object.keys(r||{})){
+      if(!actual.includes(k)) actual.push(k);
+    }
+  }
+  return [...schema, ...actual.filter(k=>!schema.includes(k))];
+}
+
+function nonEmptyCounts(rows, columns){
+  const out={};
+  for(const c of columns){
+    out[c]=(rows||[]).reduce((n,r)=>n+((r[c]!==undefined && r[c]!==null && String(r[c])!=='')?1:0),0);
+  }
+  return out;
+}
+
+function rowsForCsv(type, rows){
+  return (rows||[]).map(r=>{
+    const o={...r};
+    if(type==='DTM2' && o.Date!=null && o.date==null) o.date=o.Date;
+    return o;
+  });
+}
+
 function toCSV(rows, columns){
-  const keys = (columns && columns.length) ? [...columns] : (()=>{
+  const keys = columns || (()=>{
     const k=[]; for(const r of rows) for(const c of Object.keys(r)) if(!k.includes(c)) k.push(c); return k;
   })();
   const esc=v=>{ if(v==null) return ''; const s=String(v); return /[",\n]/.test(s)?'"'+s.split('"').join('""')+'"':s; };
@@ -521,7 +548,7 @@ function multiFigureToHtml(figs, title){
 }
 
 /* ── UI ── */
-const APP_VERSION='v4-full-schema-manifest-2026-06-19';
+const APP_VERSION='v5-schema-plus-extra-diagnostics-2026-06-19';
 const logEl=document.getElementById('log');
 function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
 let latestResults={};
@@ -544,22 +571,31 @@ async function buildZipBlob(){
   const zip=new JSZip();
   for(const [imei, acc] of Object.entries(latestResults)){
     const folder=zip.folder(imei);
+    const diagnostics={};
     for(const [type, rows] of Object.entries(acc)){
-      const schema = CSV_SCHEMAS[type] || null;
       const csvRows = rowsForCsv(type, rows);
-      const csv = toCSV(csvRows, schema);
+      const columns = columnsForCsv(type, csvRows);
+      const csv = toCSV(csvRows, columns);
       folder.file(`${imei}_combined_data_${type}.csv`, csv);
+      diagnostics[type]={
+        rows: csvRows.length,
+        columns: columns.length,
+        schemaColumns: (CSV_SCHEMAS[type]||[]).length,
+        extraColumns: columns.filter(c=>!(CSV_SCHEMAS[type]||[]).includes(c)),
+        nonEmptyCounts: nonEmptyCounts(csvRows, columns)
+      };
     }
+    folder.file(`${imei}_diagnostics.json`, JSON.stringify(diagnostics,null,2));
   }
   const manifest={
     appVersion: APP_VERSION,
     generatedAt: new Date().toISOString(),
     imeis: Object.fromEntries(Object.entries(latestResults).map(([imei,acc])=>[imei,{
-      DTM2: {rows: acc.DTM2.length, columns: CSV_SCHEMAS.DTM2.length},
-      Vsag: {rows: acc.Vsag.length, columns: CSV_SCHEMAS.Vsag.length},
-      Vswell: {rows: acc.Vswell.length, columns: CSV_SCHEMAS.Vswell.length},
-      Powerloss: {rows: acc.Powerloss.length, columns: CSV_SCHEMAS.Powerloss.length},
-      Powerrestored: {rows: acc.Powerrestored.length, columns: CSV_SCHEMAS.Powerrestored.length}
+      DTM2: {rows: acc.DTM2.length, columns: columnsForCsv('DTM2', rowsForCsv('DTM2', acc.DTM2)).length},
+      Vsag: {rows: acc.Vsag.length, columns: columnsForCsv('Vsag', rowsForCsv('Vsag', acc.Vsag)).length},
+      Vswell: {rows: acc.Vswell.length, columns: columnsForCsv('Vswell', rowsForCsv('Vswell', acc.Vswell)).length},
+      Powerloss: {rows: acc.Powerloss.length, columns: columnsForCsv('Powerloss', rowsForCsv('Powerloss', acc.Powerloss)).length},
+      Powerrestored: {rows: acc.Powerrestored.length, columns: columnsForCsv('Powerrestored', rowsForCsv('Powerrestored', acc.Powerrestored)).length}
     }]))
   };
   zip.file('download_manifest.json', JSON.stringify(manifest,null,2));
