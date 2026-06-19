@@ -397,6 +397,42 @@ function figureToHtml(spec, title){
     + '<\/script></body></html>';
 }
 
+/* Visor combinado: un solo HTML con selector para ver los gráficos de TODOS los IMEIs */
+function multiFigureToHtml(figs, title){
+  const imeis=Object.keys(figs);
+  const opts=imeis.map(im=>`<option value="${im}">${im}</option>`).join('');
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8" />'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1.0" />'
+    + '<title>' + title + '</title>'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"><\/script>'
+    + '<style>'
+    + 'body{margin:0;font-family:Lato,Arial,Helvetica,sans-serif;color:#1E2445;background:#EEF0F5}'
+    + 'header{background:#1E2445;color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5}'
+    + 'header h1{font-size:16px;margin:0;font-weight:700}header h1 b{color:#22B0E1}'
+    + '.ctrl{display:flex;align-items:center;gap:8px;font-size:13px;color:#cfe8f5}'
+    + 'select{font:inherit;font-size:14px;padding:7px 12px;border-radius:6px;border:1px solid #3a4368;background:#fff;color:#1E2445;min-width:200px}'
+    + '.nav{display:flex;gap:6px}.nav button{font:inherit;padding:7px 12px;border:1px solid #3a4368;background:#2a3258;color:#fff;border-radius:6px;cursor:pointer}'
+    + '.nav button:hover{background:#22B0E1;border-color:#22B0E1}'
+    + '.meta{padding:8px 22px;font-size:13px;color:#5b6580}'
+    + '#chart{width:100%;background:#fff}'
+    + '</style></head><body>'
+    + '<header><h1>DTM <b>Analytics</b> — Visor de gráficos</h1>'
+    + '<div class="ctrl">IMEI <select id="sel">' + opts + '</select>'
+    + '<span class="nav"><button id="prev">‹ Anterior</button><button id="next">Siguiente ›</button></span></div>'
+    + '</header><div class="meta" id="meta"></div><div id="chart"></div><script>'
+    + 'var FIGS=' + JSON.stringify(figs) + ';'
+    + 'var IMEIS=' + JSON.stringify(imeis) + ';'
+    + 'var sel=document.getElementById("sel");'
+    + 'function render(im){var f=FIGS[im];if(!f)return;Plotly.newPlot("chart",f.traces,f.layout,{responsive:true,displaylogo:false});'
+    + 'document.getElementById("meta").textContent="IMEI "+im+"  ·  "+(IMEIS.indexOf(im)+1)+" de "+IMEIS.length;}'
+    + 'function step(d){var i=IMEIS.indexOf(sel.value)+d;if(i<0)i=IMEIS.length-1;if(i>=IMEIS.length)i=0;sel.value=IMEIS[i];render(sel.value);}'
+    + 'sel.addEventListener("change",function(){render(sel.value);});'
+    + 'document.getElementById("prev").addEventListener("click",function(){step(-1);});'
+    + 'document.getElementById("next").addEventListener("click",function(){step(1);});'
+    + 'render(sel.value);'
+    + '<\/script></body></html>';
+}
+
 /* ── UI ── */
 const logEl=document.getElementById('log');
 function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
@@ -471,7 +507,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
     const intervals=splitRange(start,end,maxDays);
     log(`${imeis.length} IMEI(s), ${intervals.length} intervalo(s) c/u · ${concurrency} en paralelo.`);
     if(endClampedMsg) log(endClampedMsg, 'line-err');
-    const zip=new JSZip(); const results={}; let done=0;
+    const zip=new JSZip(); const results={}; const viewerFigs={}; let done=0;
 
     // Procesa un IMEI completo (sus intervalos + CSV + análisis HTML)
     async function processImei(imei){
@@ -503,6 +539,7 @@ document.getElementById('go').addEventListener('click', async ()=>{
       if(acc.DTM2.length){
         const spec=buildFigure(acc.DTM2, acc.Vswell, acc.Vsag, acc.Powerloss);
         folder.file(`${imei}_Final_Electrical_Parameters_ANALYSIS.html`, figureToHtml(spec, `DTM ${imei} — Electrical Parameter Analysis`));
+        viewerFigs[imei]=spec;
       }
       done++;
       log(`${stopped?'◐':'✓'} ${imei}  (${acc.DTM2.length} registros)${stopped?' — parcial':''}`, stopped?'line-err':'line-ok');
@@ -525,6 +562,13 @@ document.getElementById('go').addEventListener('click', async ()=>{
     if(Object.keys(results).length===0){
       log('No se alcanzó a descargar datos.', 'line-err');
     }else{
+      // Visor combinado: un HTML con TODOS los IMEIs (selector), en una subcarpeta
+      const viewerImeis=Object.keys(viewerFigs);
+      if(viewerImeis.length){
+        zip.folder('VISOR_GRAFICOS').file('index.html', multiFigureToHtml(viewerFigs, 'DTM Analytics — Visor de gráficos'));
+        log(`✓ Visor combinado de ${viewerImeis.length} IMEI(s) → VISOR_GRAFICOS/index.html`, 'line-ok');
+      }
+
       log('\nGenerando ZIP…');
       lastBlob=await zip.generateAsync({type:'blob'});
       download(lastBlob, cancelRequested ? 'datos_ubicquia_parcial.zip' : 'datos_ubicquia.zip');
