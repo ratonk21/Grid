@@ -137,9 +137,9 @@
 </header>
 
 <div class="wrap">
-  <span class="eyebrow">DTM Analytics · v6-python-backend-exact-reference-2026-06-19</span>
+  <span class="eyebrow">DTM Analytics · v5-schema-plus-extra-diagnostics-2026-06-19</span>
   <h1>Consultar y graficar datos</h1>
-  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend Python equivalente al script de referencia, columnas fijas, columnas extra detectadas y diagnóstico por IMEI.</p>
+  <p class="lead">Consulta transformadores por IMEI, muestra el análisis completo caso a caso en el panel derecho y descarga el ZIP opcional usando backend paginado completo, columnas fijas, columnas extra detectadas y diagnóstico por IMEI.</p>
 
   <div class="layout">
    <div class="col-form">
@@ -548,7 +548,7 @@ function multiFigureToHtml(figs, title){
 }
 
 /* ── UI ── */
-const APP_VERSION='v6-python-backend-exact-reference-2026-06-19';
+const APP_VERSION='v5-schema-plus-extra-diagnostics-2026-06-19';
 const logEl=document.getElementById('log');
 function log(msg, cls){ logEl.classList.add('show'); const s=document.createElement('div'); if(cls)s.className=cls; s.textContent=msg; logEl.appendChild(s); logEl.scrollTop=logEl.scrollHeight; }
 let latestResults={};
