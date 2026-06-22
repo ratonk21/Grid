@@ -28,8 +28,8 @@ const ALLOWED_IDS = (process.env.UBI_ALLOWED_IDS || '4')
   .split(',').map(s => s.trim()).filter(Boolean);
 const NODE_LEVEL_TYPE_ID = Number(process.env.UBI_NODE_LEVEL_TYPE_ID || 1);
 const DIM_TYPE  = process.env.UBI_DIM_TYPE || 'string'; // valor probado OK contra setLightDimV2
-const APP_CODE  = process.env.UBI_APP_CODE || '';
-const APP_CODE_HEADER = process.env.UBI_APP_CODE_HEADER || 'app-code';
+// UBI_APP_CODE se reutiliza como CÓDIGO DE ACCESO de la app (gate). Ya NO se manda a Ubicquia.
+const ACCESS_CODE = process.env.UBI_APP_CODE || '';
 
 // --- Token OAuth cacheado en memoria del proceso (se reusa entre invocaciones calientes) ---
 let tokenCache = { value: null, exp: 0 };
@@ -61,7 +61,6 @@ function headers(token, subpanel, withJson) {
   const h = { accept: 'application/json', Authorization: 'Bearer ' + token };
   if (subpanel) h['current-subpanel-id'] = subpanel;
   if (withJson) h['Content-Type'] = 'application/json';
-  if (APP_CODE) h[APP_CODE_HEADER] = APP_CODE; // solo si se configura explícitamente
   return h;
 }
 
@@ -111,6 +110,18 @@ export default async function handler(req, res) {
     const action = String(p.action || 'state');
     const id = String(p.id || ALLOWED_IDS[0] || '');
     const subpanel = String(p.subpanel || SUBPANEL_DEFAULT || '');
+    const code = String(p.code || '');
+
+    // Puerta de acceso (verify): valida el código SIN tocar la API de Ubicquia.
+    if (action === 'verify') {
+      if (!ACCESS_CODE) return res.status(200).json({ ok: true, required: false });
+      if (code === ACCESS_CODE) return res.status(200).json({ ok: true, required: true });
+      return res.status(401).json({ ok: false, error: 'código de acceso inválido' });
+    }
+    // Para cualquier otra acción, exigir el código si está configurado.
+    if (ACCESS_CODE && code !== ACCESS_CODE) {
+      return res.status(401).json({ ok: false, error: 'código de acceso inválido' });
+    }
 
     // Guardas: solo ids y subpaneles autorizados.
     if (!ALLOWED_IDS.includes(id)) {

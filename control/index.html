@@ -1,16 +1,3 @@
-<head>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-K73HD7MSR4');
-  </script>
-  <!-- Resto de tu head... -->
-</head>
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -82,6 +69,14 @@
   .scan{width:34px;height:34px;border-radius:9px;flex:none;background:#e6edf1;border:none;color:var(--teal-deep);
     display:grid;place-items:center;cursor:pointer;font-size:16px}
 
+  .btn-primary{width:100%;padding:15px;border-radius:14px;cursor:pointer;font-family:inherit;font-size:15px;
+    font-weight:600;letter-spacing:.5px;border:none;color:#fff;
+    background:linear-gradient(145deg,var(--teal),var(--teal-deep));box-shadow:0 6px 18px rgba(0,194,199,.32)}
+  .btn-primary:active{transform:scale(.98)}
+  .btn-primary:disabled{opacity:.55;cursor:wait}
+
+  .gate-intro{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:-4px}
+
   .ctx{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .ctxlabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
   .ctxval{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
@@ -123,10 +118,38 @@
   .updated{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#9cabb5;letter-spacing:.5px;padding-left:17px}
   @keyframes pulse{50%{opacity:.3}}
 
+  /* Bloque titulado reutilizable */
+  .block-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .linkbtn{background:none;border:none;color:var(--teal-deep);font-family:inherit;font-size:10px;cursor:pointer;
+    text-transform:uppercase;letter-spacing:1px;padding:2px 4px}
+
+  /* Tabla antes/después */
+  .ba-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:12px}
+  .ba-table th,.ba-table td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  .ba-table th{color:var(--muted);font-weight:500;font-size:9.5px;text-transform:uppercase;letter-spacing:1px}
+  .ba-table th.col,.ba-table td.col{text-align:right}
+  .ba-table td.var{color:var(--muted)}
+  .ba-table td.before{color:var(--muted);text-align:right}
+  .ba-table td.after{color:var(--text);font-weight:500;text-align:right}
+  .ba-table tr.chg td.after{color:var(--teal-deep)}
+  .ba-table tr:last-child td{border-bottom:none}
+
+  /* Registro */
+  .logbox{max-height:160px;overflow-y:auto;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:12px;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+  .logrow{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.4;display:flex;gap:8px;align-items:baseline}
+  .logrow .lt{color:#9cabb5;flex:none}
+  .logrow .lm{color:var(--text);word-break:break-word}
+  .logrow.ok .lm{color:var(--teal-deep)}
+  .logrow.warn .lm{color:#c87f1e}
+  .logrow.err .lm{color:var(--danger)}
+  .logempty{color:#9cabb5;font-family:'JetBrains Mono',monospace;font-size:11px}
+
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body class="on">
+<body>
   <div class="phone">
 
     <div class="bar">
@@ -134,7 +157,7 @@
         <div class="mark">u</div>
         <div><b>UBICQUIA</b><span>UbiLight Control</span></div>
       </div>
-      <div class="conn" id="conn"><span class="dot"></span><span id="connTxt">Conectando…</span></div>
+      <div class="conn" id="conn"><span class="dot"></span><span id="connTxt">Bloqueado</span></div>
     </div>
 
     <div class="stage">
@@ -144,57 +167,92 @@
       </div>
       <div class="state-label">
         <div class="pct" id="pct">--<small style="font-size:20px">%</small></div>
-        <div class="what" id="what">Consultando</div>
+        <div class="what" id="what">Bloqueada</div>
       </div>
     </div>
 
     <div class="card">
 
-      <div class="banner" id="banner"></div>
-
-      <div class="ctx">
-        <span class="ctxlabel">Panel</span>
-        <span class="ctxval" id="panelVal">—</span>
-        <select class="subsel" id="subsel" hidden aria-label="Subpanel"></select>
-      </div>
-
-      <div class="field">
-        <label>Serial / ID de luminaria</label>
-        <div class="input">
-          <input id="serial" value="2416UUGE01812" placeholder="Ingresa el serial o ID">
-          <button class="scan" title="Escanear" aria-label="Escanear código">▦</button>
+      <!-- ===== PUERTA DE ACCESO ===== -->
+      <div id="gate">
+        <div class="field">
+          <label>Código de acceso</label>
+          <div class="input">
+            <input id="code" type="password" inputmode="numeric" placeholder="Ingresa el código" autocomplete="off">
+            <button class="scan" id="codeShow" title="Ver / ocultar" aria-label="Ver código">👁</button>
+          </div>
         </div>
+        <div class="banner" id="gateBanner" style="margin-bottom:16px"></div>
+        <button class="btn-primary" id="btnEnter">Ingresar</button>
+        <p class="gate-intro" style="margin-top:14px">El código se valida en el servidor. Sin él no se puede leer ni controlar la luminaria.</p>
       </div>
 
-      <div class="power">
-        <button id="btnOn"><span class="ic">⏻</span>Encender</button>
-        <button id="btnOff"><span class="ic">○</span>Apagar</button>
-      </div>
+      <!-- ===== PANEL (oculto hasta validar) ===== -->
+      <div id="panel" hidden style="display:flex;flex-direction:column;gap:18px">
 
-      <div class="dimmer" id="dimmer">
-        <div class="row"><span>Nivel de dimerizado</span><b id="dimVal">--%</b></div>
-        <input type="range" id="dim" min="0" max="100" value="80" style="--fill:80%">
-        <div class="presets">
-          <button data-v="25">25%</button>
-          <button data-v="50">50%</button>
-          <button data-v="75">75%</button>
-          <button data-v="100">100%</button>
+        <div class="banner" id="banner"></div>
+
+        <div class="ctx">
+          <span class="ctxlabel">Panel</span>
+          <span class="ctxval" id="panelVal">—</span>
+          <select class="subsel" id="subsel" hidden aria-label="Subpanel"></select>
         </div>
-      </div>
 
-      <div class="statuswrap">
-        <div class="status" id="status"><span class="led"></span><span id="statusTxt">Iniciando…</span></div>
-        <div class="updated" id="updated">— · ping cada 15s</div>
-      </div>
+        <div class="field">
+          <label>Serial / ID de luminaria</label>
+          <div class="input">
+            <input id="serial" value="2416UUGE01812" placeholder="Ingresa el serial o ID">
+            <button class="scan" title="Escanear" aria-label="Escanear código">▦</button>
+          </div>
+        </div>
 
+        <div class="power">
+          <button id="btnOn"><span class="ic">⏻</span>Encender</button>
+          <button id="btnOff"><span class="ic">○</span>Apagar</button>
+        </div>
+
+        <div class="dimmer" id="dimmer">
+          <div class="row"><span>Nivel de dimerizado</span><b id="dimVal">--%</b></div>
+          <input type="range" id="dim" min="0" max="100" value="80" style="--fill:80%">
+          <div class="presets">
+            <button data-v="25">25%</button>
+            <button data-v="50">50%</button>
+            <button data-v="75">75%</button>
+            <button data-v="100">100%</button>
+          </div>
+        </div>
+
+        <div class="statuswrap">
+          <div class="status" id="status"><span class="led"></span><span id="statusTxt">—</span></div>
+          <div class="updated" id="updated">— · ping cada 15s</div>
+        </div>
+
+        <!-- Tabla antes / después -->
+        <div class="ba">
+          <div class="block-title">Estado · antes / después</div>
+          <table class="ba-table">
+            <thead><tr><th>Variable</th><th class="col">Antes</th><th class="col">Después</th></tr></thead>
+            <tbody id="baBody">
+              <tr><td class="var">Encendido</td><td class="before">—</td><td class="after">—</td></tr>
+              <tr><td class="var">Dimerizado</td><td class="before">—</td><td class="after">—</td></tr>
+              <tr><td class="var">Estado nodo</td><td class="before">—</td><td class="after">—</td></tr>
+              <tr><td class="var">Actualizado</td><td class="before">—</td><td class="after">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Registro -->
+        <div class="logwrap">
+          <div class="block-title">Registro <button class="linkbtn" id="logClear">limpiar</button></div>
+          <div class="logbox" id="logbox"><span class="logempty">Sin acciones todavía.</span></div>
+        </div>
+
+      </div>
     </div>
   </div>
 
 <script>
   // ========================= CONFIG =========================
-  // El "id" interno NO es visible al usuario; el usuario ve el serial.
-  // Panel = agrupación de la plataforma. Subpanel = viaja como current-subpanel-id.
-  // Para sumar subpaneles o nodos, agrégalos aquí (y al UBI_ALLOWED_* en Vercel).
   const PANEL = {
     id   : '803956',
     label: 'Default · ubicquia Sales Latam',
@@ -203,14 +261,16 @@
       // { id:'XXXX', label:'Subpanel XXXX', nodes:{ 'SERIAL':'ID' } },
     ]
   };
-  let SUB = PANEL.subpanels[0];       // subpanel activo
-  const ENDPOINT   = '/api/control';  // función de Vercel (los secretos viven allí)
-  const SETTLE_MS  = 3500;            // espera tras el comando antes de consultar el estado real
-  const POLL_DELAYS= [0, 2500, 5000]; // reintentos de consulta hasta confirmar el cambio
-  const BG_PING_MS = 15000;           // refresco de fondo
+  let SUB = PANEL.subpanels[0];
+  const ENDPOINT   = '/api/control';
+  const SETTLE_MS  = 3500;
+  const POLL_DELAYS= [0, 2500, 5000];
+  const BG_PING_MS = 15000;
+  const LOG_MAX    = 60;
 
-  // ========================= ESTADO MOSTRADO =========================
-  let power = null, dim = 80, online = false, locked = false;
+  // ========================= ESTADO =========================
+  let power = null, dim = 80, online = false, locked = true, ACCESS = '';
+  const logRows = [];
 
   const body=document.body, halo=document.getElementById('halo'),
         pctEl=document.getElementById('pct'), whatEl=document.getElementById('what'),
@@ -220,7 +280,12 @@
         btnOn=document.getElementById('btnOn'), btnOff=document.getElementById('btnOff'),
         serialEl=document.getElementById('serial'), conn=document.getElementById('conn'),
         connTxt=document.getElementById('connTxt'), banner=document.getElementById('banner'),
-        panelVal=document.getElementById('panelVal'), subsel=document.getElementById('subsel');
+        panelVal=document.getElementById('panelVal'), subsel=document.getElementById('subsel'),
+        gate=document.getElementById('gate'), panel=document.getElementById('panel'),
+        codeEl=document.getElementById('code'), btnEnter=document.getElementById('btnEnter'),
+        gateBanner=document.getElementById('gateBanner'), codeShow=document.getElementById('codeShow'),
+        baBody=document.getElementById('baBody'), logbox=document.getElementById('logbox'),
+        logClear=document.getElementById('logClear');
 
   let lastSync = 0;
 
@@ -229,7 +294,7 @@
     const on = power === true;
     body.classList.toggle('on', on);
     pctEl.innerHTML = (dim==null?'--':dim) + '<small style="font-size:20px">%</small>';
-    whatEl.textContent = power===null ? 'Sin estado' : (on ? 'Encendida' : 'Apagada');
+    whatEl.textContent = locked ? 'Bloqueada' : (power===null ? 'Sin estado' : (on ? 'Encendida' : 'Apagada'));
     const g = on ? (dim||0)/100 : 0;
     halo.style.opacity = g*0.95;
     halo.style.transform = 'scale(' + (0.6 + g*0.7) + ')';
@@ -239,157 +304,197 @@
     presets.forEach(b => b.classList.toggle('sel', +b.dataset.v === dim));
   }
 
-  function setBusy(b){ locked=b; btnOn.disabled=b; btnOff.disabled=b; dimEl.disabled=b; presets.forEach(p=>p.disabled=b); }
-  function setConn(state){ // 'live' | 'err'
-    online = (state==='live');
-    conn.className = 'conn ' + state;
-    connTxt.textContent = online ? 'En línea' : 'Sin conexión';
-  }
-  function showBanner(msg){ banner.textContent = msg; banner.classList.add('show'); }
+  function locked2(b){ btnOn.disabled=b; btnOff.disabled=b; dimEl.disabled=b; presets.forEach(p=>p.disabled=b); }
+  let busy=false; function setBusyState(b){ busy=b; locked2(b); }
+  function setConn(state){ online=(state==='live'); conn.className='conn '+state;
+    connTxt.textContent = online ? 'En línea' : (locked?'Bloqueado':'Sin conexión'); }
+  function showBanner(msg){ banner.textContent=msg; banner.classList.add('show'); }
   function clearBanner(){ banner.classList.remove('show'); }
   function setStatus(cls, txt){ statusEl.className='status '+cls; statusTxt.textContent=txt; }
-
   function tickUpdated(){
-    if (!lastSync){ updated.textContent = '— · ping cada 15s'; return; }
+    if (!lastSync){ updated.textContent='— · ping cada 15s'; return; }
     const s = Math.round((Date.now()-lastSync)/1000);
     updated.textContent = (s<2 ? 'Actualizado ahora' : `Actualizado hace ${s}s`) + ' · ping cada 15s';
   }
+  function resolveId(){ const s=serialEl.value.trim().toUpperCase(); return (SUB.nodes && SUB.nodes[s]) || null; }
+  function firstSerialOf(sp){ return Object.keys(sp.nodes||{})[0] || ''; }
 
-  function resolveId(){
-    const s = serialEl.value.trim().toUpperCase();
-    return (SUB.nodes && SUB.nodes[s]) || null;
+  // ========================= FORMATO / TABLA / LOG =========================
+  const fmtPower = p => p===true?'Encendida':p===false?'Apagada':'—';
+  const fmtDim   = d => d==null?'—':d+'%';
+  const fmtTs    = t => t || '—';
+
+  function stateText(){ return power ? `Encendida ${dim}%` : (power===false?'Apagada':'sin estado'); }
+
+  function renderBA(before, after){
+    const b = before || {}, a = after || {};
+    const rows = [
+      ['Encendido', fmtPower(b.power), fmtPower(a.power)],
+      ['Dimerizado', fmtDim(b.dim),    fmtDim(a.dim)],
+      ['Estado nodo', b.nodeStatus||'—', a.nodeStatus||'—'],
+      ['Actualizado', fmtTs(b.updatedAt), fmtTs(a.updatedAt)],
+    ];
+    baBody.innerHTML = rows.map(([v,bf,af]) => {
+      const chg = (bf!=='—' && bf!==af) ? ' class="chg"' : '';
+      return `<tr${chg}><td class="var">${v}</td><td class="before">${bf}</td><td class="after">${af}</td></tr>`;
+    }).join('');
   }
-  function firstSerialOf(sp){ return Object.keys(sp.nodes || {})[0] || ''; }
+
+  function logAdd(type, msg){
+    logRows.unshift({ t:new Date(), type, msg });
+    if (logRows.length>LOG_MAX) logRows.length=LOG_MAX;
+    renderLog();
+  }
+  function renderLog(){
+    if (!logRows.length){ logbox.innerHTML='<span class="logempty">Sin acciones todavía.</span>'; return; }
+    logbox.innerHTML = logRows.map(r => {
+      const hh = r.t.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const m = r.msg.replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+      return `<div class="logrow ${r.type}"><span class="lt">${hh}</span><span class="lm">${m}</span></div>`;
+    }).join('');
+  }
+  logClear.onclick = () => { logRows.length=0; renderLog(); };
 
   // ========================= API =========================
   async function api(payload){
     const id = resolveId();
     if (!id) throw new Error('Serial no registrado en este subpanel');
     const r = await fetch(ENDPOINT, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(Object.assign({ id, subpanel: SUB.id }, payload))
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(Object.assign({ id, subpanel: SUB.id, code: ACCESS }, payload))
     });
     let j; try{ j = await r.json(); }catch(_){ j = {}; }
+    if (r.status===401){ lockGate('Sesión expirada · ingresa el código de nuevo'); throw new Error('código de acceso inválido'); }
     if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP '+r.status));
     return j;
   }
 
-  // Lee el estado real del nodo y lo refleja. No envía comandos.
+  const sleep = ms => new Promise(r=>setTimeout(r, ms));
+
+  async function snapshot(){ return await api({action:'state'}); }
+
   async function refreshState(silent){
     try{
       const s = await api({action:'state'});
       setConn('live'); clearBanner();
-      if (s.found){
-        if (s.power != null) power = s.power;
-        if (s.dim   != null) dim   = s.dim;
-      }
-      render(); lastSync = Date.now(); tickUpdated();
-      if (!silent) setStatus('ok', power ? `Estado sincronizado · Encendida ${dim}%` : 'Estado sincronizado · Apagada');
+      if (s.found){ if(s.power!=null)power=s.power; if(s.dim!=null)dim=s.dim; }
+      render(); lastSync=Date.now(); tickUpdated();
+      if (!silent) setStatus('ok', power ? `Estado sincronizado · Encendida ${dim}%` : (power===false?'Estado sincronizado · Apagada':'Sin estado reportado'));
       return s;
     }catch(e){
-      setConn('err');
-      if (!silent){ setStatus('warn','No se pudo leer el estado'); showBanner('No hay conexión con el dispositivo: '+e.message); }
+      if (!locked){ setConn('err'); if(!silent){ setStatus('warn','No se pudo leer el estado'); showBanner('No hay conexión con el dispositivo: '+e.message); } }
       return null;
     }
   }
 
-  const sleep = ms => new Promise(r=>setTimeout(r, ms));
-
-  // ========================= FLUJO: comando -> espera -> ping -> consulta estado real =========================
-  // 1) envía el comando  2) espera que se aplique en el equipo (MQTT)  3) ping para que reporte
-  // 4) consulta currentnodestate hasta confirmar el cambio (varios intentos, tolera latencia)
-  async function runCommand(action, value, expect){
-    if (locked) return;
-    setBusy(true); clearBanner();
+  // ========================= FLUJO COMANDO =========================
+  async function runCommand(action, value, expect, label){
+    if (busy || locked || !ACCESS) return;
+    setBusyState(true); clearBanner();
+    let before=null;
     try{
-      // Fase 1 — enviar comando
+      // estado previo
+      setStatus('busy','Leyendo estado previo…');
+      before = await snapshot();
+
+      // enviar comando
       setStatus('busy','Enviando comando…');
       await api(Object.assign({action}, value!=null ? {value} : {}));
       setConn('live');
 
-      // Fase 2 — esperar que el equipo lo aplique
+      // aplicar en el equipo
       setStatus('busy','Aplicando en el equipo…');
       await sleep(SETTLE_MS);
+      try{ await api({action:'ping'}); }catch(_){}
 
-      // Fase 3 — ping para forzar reporte fresco
-      try{ await api({action:'ping'}); }catch(_){ /* el ping es best-effort */ }
-
-      // Fase 4 — consultar estado real hasta confirmar
+      // estado posterior (varios intentos)
       setStatus('ping','Consultando estado…');
-      let confirmed = false, last = null;
+      let after=null, confirmed=false;
       for (let i=0;i<POLL_DELAYS.length;i++){
         if (POLL_DELAYS[i]) await sleep(POLL_DELAYS[i]);
-        last = await api({action:'state'});
-        if (last.found){
-          if (last.power!=null) power = last.power;
-          if (last.dim!=null)   dim   = last.dim;
-          render();
-          if (expect(last)){ confirmed = true; break; }
-        }
+        after = await api({action:'state'});
+        if (after.found){ if(after.power!=null)power=after.power; if(after.dim!=null)dim=after.dim; render(); if(expect(after)){confirmed=true;break;} }
       }
-      lastSync = Date.now(); tickUpdated();
-      if (confirmed){
-        setStatus('ok', power ? `Estado confirmado · Encendida ${dim}%` : 'Estado confirmado · Apagada');
-      }else{
-        // honesto: el comando salió pero el equipo aún no reporta el cambio
-        setStatus('warn','Comando enviado · el equipo aún reporta el estado anterior');
-      }
+      lastSync=Date.now(); tickUpdated();
+      renderBA(before, after);
+      if (confirmed){ setStatus('ok', 'Estado confirmado · '+stateText()); logAdd('ok', `${label} → confirmado: ${stateText()}`); }
+      else { setStatus('warn','Comando enviado · el equipo aún reporta el estado anterior'); logAdd('warn', `${label} → enviado, sin confirmar aún`); }
     }catch(e){
-      setConn('err');
-      setStatus('warn','El comando no se pudo enviar');
-      showBanner('Error al enviar el comando: '+e.message);
+      if (!locked){ setConn('err'); setStatus('warn','El comando no se pudo enviar'); showBanner('Error al enviar el comando: '+e.message); logAdd('err', `${label} → error: ${e.message}`); }
     }finally{
-      setBusy(false);
+      setBusyState(false);
     }
   }
 
-  // ========================= EXPECTATIVAS DE CONFIRMACIÓN =========================
   const expectPower = want => (s => s.power === want);
   const expectDim   = want => (s => s.dim != null && Math.abs(s.dim - want) <= 2);
 
-  // ========================= EVENTOS =========================
-  btnOn.onclick  = () => runCommand('on',  null, expectPower(true));
-  btnOff.onclick = () => runCommand('off', null, expectPower(false));
-
-  // Dimer independiente del on/off. Arrastrar = preview local; soltar = comando + consulta.
-  dimEl.oninput  = () => { dim = +dimEl.value; render(); };
-  dimEl.onchange = () => runCommand('dim', +dimEl.value, expectDim(+dimEl.value));
-  presets.forEach(b => b.onclick = () => { dim = +b.dataset.v; render(); runCommand('dim', dim, expectDim(dim)); });
-
+  btnOn.onclick  = () => runCommand('on',  null, expectPower(true),  'Encender');
+  btnOff.onclick = () => runCommand('off', null, expectPower(false), 'Apagar');
+  dimEl.oninput  = () => { dim=+dimEl.value; render(); };
+  dimEl.onchange = () => runCommand('dim', +dimEl.value, expectDim(+dimEl.value), `Dimerizar ${+dimEl.value}%`);
+  presets.forEach(b => b.onclick = () => { dim=+b.dataset.v; render(); runCommand('dim', dim, expectDim(dim), `Dimerizar ${dim}%`); });
   serialEl.onchange = () => { if (resolveId()) refreshState(); else showBanner('Serial no registrado en este subpanel'); };
+
+  // ========================= PUERTA DE ACCESO =========================
+  function lockGate(msg){
+    locked=true; ACCESS=''; online=false;
+    panel.hidden=true; gate.style.display='';
+    power=null; render(); setConn('err');
+    if (msg){ gateBanner.textContent=msg; gateBanner.classList.add('show'); }
+    codeEl.value=''; codeEl.focus();
+  }
+  function unlock(){
+    locked=false; gate.style.display='none'; panel.hidden=false;
+    gateBanner.classList.remove('show');
+    initPanel(); render();
+    setStatus('busy','Iniciando…');
+    logAdd('ok', 'Acceso concedido');
+    (async()=>{ const s = await refreshState(); if (s) renderBA(null, s); })();
+  }
+
+  async function tryEnter(codeValue){
+    const code = (codeValue!=null ? codeValue : codeEl.value).trim();
+    gateBanner.classList.remove('show');
+    btnEnter.disabled=true; const prev=btnEnter.textContent; btnEnter.textContent='Validando…';
+    try{
+      const r = await fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'verify', code }) });
+      const j = await r.json().catch(()=> ({}));
+      if (r.ok && j.ok){ ACCESS = j.required===false ? '' : code; unlock(); }
+      else { gateBanner.textContent = j.error || 'Código incorrecto'; gateBanner.classList.add('show'); }
+    }catch(e){
+      gateBanner.textContent = 'No se pudo validar: '+e.message; gateBanner.classList.add('show');
+    }finally{
+      btnEnter.disabled=false; btnEnter.textContent=prev;
+    }
+  }
+
+  btnEnter.onclick = () => tryEnter();
+  codeEl.addEventListener('keydown', e => { if (e.key==='Enter') tryEnter(); });
+  codeShow.onclick = () => { codeEl.type = codeEl.type==='password' ? 'text' : 'password'; };
 
   // ========================= PANEL / SUBPANEL =========================
   function initPanel(){
     panelVal.textContent = PANEL.label + ' · ' + PANEL.id;
-    if (PANEL.subpanels.length > 1){
-      subsel.innerHTML = '';
-      PANEL.subpanels.forEach((sp,i) => {
-        const o = document.createElement('option');
-        o.value = i; o.textContent = sp.label;
-        subsel.appendChild(o);
-      });
-      subsel.hidden = false;
-      subsel.onchange = () => {
-        SUB = PANEL.subpanels[+subsel.value];
-        serialEl.value = firstSerialOf(SUB);
-        power = null; dim = 80; render();
-        refreshState();
-      };
+    if (PANEL.subpanels.length > 1 && subsel.options.length===0){
+      PANEL.subpanels.forEach((sp,i) => { const o=document.createElement('option'); o.value=i; o.textContent=sp.label; subsel.appendChild(o); });
+      subsel.hidden=false;
+      subsel.onchange = () => { SUB=PANEL.subpanels[+subsel.value]; serialEl.value=firstSerialOf(SUB); power=null; dim=80; render(); refreshState(); };
     }
     if (!resolveId()) serialEl.value = firstSerialOf(SUB);
   }
 
   // ========================= ARRANQUE Y FONDO =========================
   setInterval(tickUpdated, 1000);
-  setInterval(() => { if (!locked && online) refreshState(true); }, BG_PING_MS); // refresco silencioso
+  setInterval(() => { if (!locked && !busy && online) refreshState(true); }, BG_PING_MS);
 
-  initPanel();
   render();
-  setStatus('busy','Iniciando…');
-  refreshState();  // primer estado real al cargar
+  // Entrada directa por link: /control/?code=XXXX  (auto-valida)
+  const urlCode = new URLSearchParams(location.search).get('code')
+               || ((location.hash.match(/code=([^&]+)/)||[])[1] || '');
+  if (urlCode) tryEnter(decodeURIComponent(urlCode));
+  else codeEl.focus();
 </script>
 </body>
 </html>
-
-
