@@ -651,6 +651,31 @@
     </div>
   </section>
 
+  <!-- LIVE CONTROL SECTION -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label" data-i18n="section-control">live control</span>
+      <div class="section-line"></div>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">01 <span data-i18n="control-count-label">tool</span></span>
+    </div>
+
+    <div class="grid" id="control-grid">
+
+      <a class="card" href="./control/">
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18h6"/><path d="M10 21h4"/>
+            <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.3 1 2.5h6c0-1.2.3-1.8 1-2.5A6 6 0 0 0 12 3z"/>
+          </svg>
+        </div>
+        <div class="card-name" data-i18n="card-control">Luminaire Control</div>
+        <div class="card-tag" data-i18n="tag-control">UbiLight · Live</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
+      </a>
+
+    </div>
+  </section>
+
   <!-- FOOTER -->
   <footer>
     <div class="footer-brand">
@@ -701,6 +726,10 @@
         'dtm-count-label':    'tool',
         'card-dtm-download':  'Download Data',
         'tag-dtm':            'Data & Charts',
+        'section-control':    'live control',
+        'control-count-label':'tool',
+        'card-control':       'Luminaire Control',
+        'tag-control':        'UbiLight · Live',
         'open':               'open →',
         'footer-reports':     (n) => n + ' report' + (n !== 1 ? 's' : '') + ' available',
         'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reports',
@@ -743,6 +772,10 @@
         'dtm-count-label':    'herramienta',
         'card-dtm-download':  'Descargar Datos',
         'tag-dtm':            'Datos y Gráficos',
+        'section-control':    'control en vivo',
+        'control-count-label':'herramienta',
+        'card-control':       'Control de Luminaria',
+        'tag-control':        'UbiLight · En vivo',
         'open':               'abrir →',
         'footer-reports':     (n) => n + ' reporte' + (n !== 1 ? 's' : '') + ' disponibles',
         'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reportes',

@@ -1,0 +1,395 @@
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-K73HD7MSR4');
+  </script>
+  <!-- Resto de tu head... -->
+</head>
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ubicquia · Control de Luminaria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef2f6; --surface:#ffffff; --surface-2:#f1f5f8;
+    --line:rgba(20,45,60,0.10);
+    --teal:#00c2c7; --teal-deep:#06989c;
+    --amber:#ff9e2c; --amber-hot:#ffd98a;
+    --text:#14242f; --muted:#6a7d89; --danger:#e35d5d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    background:radial-gradient(130% 70% at 50% -10%, #ffffff 0%, var(--bg) 55%);
+    color:var(--text); min-height:100dvh; display:flex; justify-content:center;
+  }
+  .phone{width:100%;max-width:420px;min-height:100dvh;display:flex;flex-direction:column;padding:14px 20px 28px}
+
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:10px 2px 18px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(145deg,var(--teal),var(--teal-deep));
+    display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;box-shadow:0 4px 14px rgba(0,194,199,.35)}
+  .brand b{font-weight:700;letter-spacing:.5px;font-size:17px;color:var(--text)}
+  .brand span{display:block;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:1px}
+  .conn{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;
+    background:var(--surface);border:1px solid var(--line);padding:7px 11px;border-radius:999px;box-shadow:0 1px 3px rgba(20,45,60,.05)}
+  .dot{width:7px;height:7px;border-radius:50%;background:#c4cfd6;transition:.3s}
+  .conn.live .dot{background:var(--teal);box-shadow:0 0 8px var(--teal)}
+  .conn.live{color:var(--text)}
+  .conn.err .dot{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+
+  .stage{flex:0 0 auto;display:grid;place-items:center;padding:30px 0 24px}
+  .lamp-wrap{position:relative;width:200px;height:200px;display:grid;place-items:center}
+  .halo{position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(circle, var(--amber-hot) 0%, var(--amber) 38%, transparent 70%);
+    opacity:0;transform:scale(.6);filter:blur(8px);transition:opacity .5s ease, transform .5s ease}
+  .lamp{position:relative;width:120px;height:120px;border-radius:50%;background:#e3eaef;border:1px solid #d3dde4;
+    display:grid;place-items:center;transition:background .5s ease, box-shadow .5s ease}
+  .lamp .core{width:74px;height:74px;border-radius:50%;background:#d2dce3;transition:background .5s ease}
+  body.on .lamp{background:radial-gradient(circle at 50% 45%, var(--amber-hot), var(--amber) 82%);border-color:transparent}
+  body.on .lamp .core{background:radial-gradient(circle at 50% 40%, #fffaf0, var(--amber-hot))}
+  .state-label{margin-top:10px;text-align:center}
+  .state-label .pct{font-size:40px;font-weight:600;line-height:1;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;transition:color .4s}
+  body:not(.on) .state-label .pct{color:var(--muted)}
+  .state-label .what{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2.5px;margin-top:8px}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;margin-top:auto;
+    display:flex;flex-direction:column;gap:18px;box-shadow:0 8px 30px rgba(20,45,60,.08)}
+
+  .banner{display:none;background:#fdecec;border:1px solid rgba(227,93,93,.35);color:#a23535;
+    border-radius:13px;padding:11px 13px;font-size:12.5px;line-height:1.45;font-family:'JetBrains Mono',monospace}
+  .banner.show{display:block}
+
+  .field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+  .field .input{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:13px;padding:13px 14px;transition:border-color .2s}
+  .field .input:focus-within{border-color:var(--teal)}
+  .field input{flex:1;background:none;border:none;color:var(--text);font-family:'JetBrains Mono',monospace;
+    font-size:15px;letter-spacing:.5px;outline:none}
+  .field input::placeholder{color:#9cabb5}
+  .scan{width:34px;height:34px;border-radius:9px;flex:none;background:#e6edf1;border:none;color:var(--teal-deep);
+    display:grid;place-items:center;cursor:pointer;font-size:16px}
+
+  .ctx{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .ctxlabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+  .ctxval{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+  .subsel{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:6px 9px;outline:none;cursor:pointer}
+  .subsel[hidden]{display:none}
+
+  .power{display:flex;gap:10px}
+  .power button{flex:1;padding:15px;border-radius:14px;cursor:pointer;font-family:inherit;font-size:15px;
+    font-weight:600;letter-spacing:.5px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);transition:.2s}
+  .power button .ic{font-size:18px;margin-right:7px;vertical-align:-2px}
+  body.on #btnOn{background:linear-gradient(145deg,var(--teal),var(--teal-deep));color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(0,194,199,.32)}
+  body:not(.on) #btnOff{background:#273742;color:#fff;border-color:transparent}
+  .power button:active{transform:scale(.98)}
+  .power button:disabled{opacity:.55;cursor:wait}
+
+  .dimmer .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+  .dimmer .row span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+  .dimmer .row b{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:500;color:var(--text)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+    background:linear-gradient(90deg,var(--amber) var(--fill,80%),#dce4ea var(--fill,80%));outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:#fff;border:4px solid var(--amber);box-shadow:0 2px 8px rgba(20,45,60,.25);cursor:grab}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--amber);cursor:grab}
+  input[type=range]:disabled{opacity:.55}
+  .presets{display:flex;gap:8px;margin-top:14px}
+  .presets button{flex:1;padding:9px;border-radius:10px;cursor:pointer;background:var(--surface-2);border:1px solid var(--line);
+    color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;transition:.15s}
+  .presets button.sel{color:#fff;background:var(--amber);border-color:transparent}
+  .presets button:disabled{opacity:.55;cursor:wait}
+
+  .statuswrap{display:flex;flex-direction:column;gap:6px}
+  .status{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted);min-height:18px;font-family:'JetBrains Mono',monospace}
+  .status .led{width:8px;height:8px;border-radius:50%;background:#c4cfd6;flex:none}
+  .status.ok .led{background:var(--teal);box-shadow:0 0 7px var(--teal)}
+  .status.busy .led{background:var(--amber);animation:pulse 1s infinite}
+  .status.ping .led{background:var(--teal-deep);animation:pulse .7s infinite}
+  .status.warn .led{background:var(--amber)}
+  .updated{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#9cabb5;letter-spacing:.5px;padding-left:17px}
+  @keyframes pulse{50%{opacity:.3}}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body class="on">
+  <div class="phone">
+
+    <div class="bar">
+      <div class="brand">
+        <div class="mark">u</div>
+        <div><b>UBICQUIA</b><span>UbiLight Control</span></div>
+      </div>
+      <div class="conn" id="conn"><span class="dot"></span><span id="connTxt">Conectando…</span></div>
+    </div>
+
+    <div class="stage">
+      <div class="lamp-wrap">
+        <div class="halo" id="halo"></div>
+        <div class="lamp"><div class="core"></div></div>
+      </div>
+      <div class="state-label">
+        <div class="pct" id="pct">--<small style="font-size:20px">%</small></div>
+        <div class="what" id="what">Consultando</div>
+      </div>
+    </div>
+
+    <div class="card">
+
+      <div class="banner" id="banner"></div>
+
+      <div class="ctx">
+        <span class="ctxlabel">Panel</span>
+        <span class="ctxval" id="panelVal">—</span>
+        <select class="subsel" id="subsel" hidden aria-label="Subpanel"></select>
+      </div>
+
+      <div class="field">
+        <label>Serial / ID de luminaria</label>
+        <div class="input">
+          <input id="serial" value="2416UUGE01812" placeholder="Ingresa el serial o ID">
+          <button class="scan" title="Escanear" aria-label="Escanear código">▦</button>
+        </div>
+      </div>
+
+      <div class="power">
+        <button id="btnOn"><span class="ic">⏻</span>Encender</button>
+        <button id="btnOff"><span class="ic">○</span>Apagar</button>
+      </div>
+
+      <div class="dimmer" id="dimmer">
+        <div class="row"><span>Nivel de dimerizado</span><b id="dimVal">--%</b></div>
+        <input type="range" id="dim" min="0" max="100" value="80" style="--fill:80%">
+        <div class="presets">
+          <button data-v="25">25%</button>
+          <button data-v="50">50%</button>
+          <button data-v="75">75%</button>
+          <button data-v="100">100%</button>
+        </div>
+      </div>
+
+      <div class="statuswrap">
+        <div class="status" id="status"><span class="led"></span><span id="statusTxt">Iniciando…</span></div>
+        <div class="updated" id="updated">— · ping cada 15s</div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  // ========================= CONFIG =========================
+  // El "id" interno NO es visible al usuario; el usuario ve el serial.
+  // Panel = agrupación de la plataforma. Subpanel = viaja como current-subpanel-id.
+  // Para sumar subpaneles o nodos, agrégalos aquí (y al UBI_ALLOWED_* en Vercel).
+  const PANEL = {
+    id   : '803956',
+    label: 'Default · ubicquia Sales Latam',
+    subpanels: [
+      { id:'1007', label:'Subpanel 1007', nodes:{ '2416UUGE01812':'4', 'D8132ACC4CA47A6F':'4' } }
+      // { id:'XXXX', label:'Subpanel XXXX', nodes:{ 'SERIAL':'ID' } },
+    ]
+  };
+  let SUB = PANEL.subpanels[0];       // subpanel activo
+  const ENDPOINT   = '/api/control';  // función de Vercel (los secretos viven allí)
+  const SETTLE_MS  = 3500;            // espera tras el comando antes de consultar el estado real
+  const POLL_DELAYS= [0, 2500, 5000]; // reintentos de consulta hasta confirmar el cambio
+  const BG_PING_MS = 15000;           // refresco de fondo
+
+  // ========================= ESTADO MOSTRADO =========================
+  let power = null, dim = 80, online = false, locked = false;
+
+  const body=document.body, halo=document.getElementById('halo'),
+        pctEl=document.getElementById('pct'), whatEl=document.getElementById('what'),
+        dimEl=document.getElementById('dim'), dimVal=document.getElementById('dimVal'),
+        statusEl=document.getElementById('status'), statusTxt=document.getElementById('statusTxt'),
+        updated=document.getElementById('updated'), presets=document.querySelectorAll('.presets button'),
+        btnOn=document.getElementById('btnOn'), btnOff=document.getElementById('btnOff'),
+        serialEl=document.getElementById('serial'), conn=document.getElementById('conn'),
+        connTxt=document.getElementById('connTxt'), banner=document.getElementById('banner'),
+        panelVal=document.getElementById('panelVal'), subsel=document.getElementById('subsel');
+
+  let lastSync = 0;
+
+  // ========================= RENDER =========================
+  function render(){
+    const on = power === true;
+    body.classList.toggle('on', on);
+    pctEl.innerHTML = (dim==null?'--':dim) + '<small style="font-size:20px">%</small>';
+    whatEl.textContent = power===null ? 'Sin estado' : (on ? 'Encendida' : 'Apagada');
+    const g = on ? (dim||0)/100 : 0;
+    halo.style.opacity = g*0.95;
+    halo.style.transform = 'scale(' + (0.6 + g*0.7) + ')';
+    document.querySelector('.lamp').style.boxShadow =
+      on ? `0 0 ${20+g*55}px rgba(255,158,44,${0.15+g*0.45})` : 'none';
+    if (dim!=null){ dimEl.value = dim; dimEl.style.setProperty('--fill', dim+'%'); dimVal.textContent = dim+'%'; }
+    presets.forEach(b => b.classList.toggle('sel', +b.dataset.v === dim));
+  }
+
+  function setBusy(b){ locked=b; btnOn.disabled=b; btnOff.disabled=b; dimEl.disabled=b; presets.forEach(p=>p.disabled=b); }
+  function setConn(state){ // 'live' | 'err'
+    online = (state==='live');
+    conn.className = 'conn ' + state;
+    connTxt.textContent = online ? 'En línea' : 'Sin conexión';
+  }
+  function showBanner(msg){ banner.textContent = msg; banner.classList.add('show'); }
+  function clearBanner(){ banner.classList.remove('show'); }
+  function setStatus(cls, txt){ statusEl.className='status '+cls; statusTxt.textContent=txt; }
+
+  function tickUpdated(){
+    if (!lastSync){ updated.textContent = '— · ping cada 15s'; return; }
+    const s = Math.round((Date.now()-lastSync)/1000);
+    updated.textContent = (s<2 ? 'Actualizado ahora' : `Actualizado hace ${s}s`) + ' · ping cada 15s';
+  }
+
+  function resolveId(){
+    const s = serialEl.value.trim().toUpperCase();
+    return (SUB.nodes && SUB.nodes[s]) || null;
+  }
+  function firstSerialOf(sp){ return Object.keys(sp.nodes || {})[0] || ''; }
+
+  // ========================= API =========================
+  async function api(payload){
+    const id = resolveId();
+    if (!id) throw new Error('Serial no registrado en este subpanel');
+    const r = await fetch(ENDPOINT, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(Object.assign({ id, subpanel: SUB.id }, payload))
+    });
+    let j; try{ j = await r.json(); }catch(_){ j = {}; }
+    if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP '+r.status));
+    return j;
+  }
+
+  // Lee el estado real del nodo y lo refleja. No envía comandos.
+  async function refreshState(silent){
+    try{
+      const s = await api({action:'state'});
+      setConn('live'); clearBanner();
+      if (s.found){
+        if (s.power != null) power = s.power;
+        if (s.dim   != null) dim   = s.dim;
+      }
+      render(); lastSync = Date.now(); tickUpdated();
+      if (!silent) setStatus('ok', power ? `Estado sincronizado · Encendida ${dim}%` : 'Estado sincronizado · Apagada');
+      return s;
+    }catch(e){
+      setConn('err');
+      if (!silent){ setStatus('warn','No se pudo leer el estado'); showBanner('No hay conexión con el dispositivo: '+e.message); }
+      return null;
+    }
+  }
+
+  const sleep = ms => new Promise(r=>setTimeout(r, ms));
+
+  // ========================= FLUJO: comando -> espera -> ping -> consulta estado real =========================
+  // 1) envía el comando  2) espera que se aplique en el equipo (MQTT)  3) ping para que reporte
+  // 4) consulta currentnodestate hasta confirmar el cambio (varios intentos, tolera latencia)
+  async function runCommand(action, value, expect){
+    if (locked) return;
+    setBusy(true); clearBanner();
+    try{
+      // Fase 1 — enviar comando
+      setStatus('busy','Enviando comando…');
+      await api(Object.assign({action}, value!=null ? {value} : {}));
+      setConn('live');
+
+      // Fase 2 — esperar que el equipo lo aplique
+      setStatus('busy','Aplicando en el equipo…');
+      await sleep(SETTLE_MS);
+
+      // Fase 3 — ping para forzar reporte fresco
+      try{ await api({action:'ping'}); }catch(_){ /* el ping es best-effort */ }
+
+      // Fase 4 — consultar estado real hasta confirmar
+      setStatus('ping','Consultando estado…');
+      let confirmed = false, last = null;
+      for (let i=0;i<POLL_DELAYS.length;i++){
+        if (POLL_DELAYS[i]) await sleep(POLL_DELAYS[i]);
+        last = await api({action:'state'});
+        if (last.found){
+          if (last.power!=null) power = last.power;
+          if (last.dim!=null)   dim   = last.dim;
+          render();
+          if (expect(last)){ confirmed = true; break; }
+        }
+      }
+      lastSync = Date.now(); tickUpdated();
+      if (confirmed){
+        setStatus('ok', power ? `Estado confirmado · Encendida ${dim}%` : 'Estado confirmado · Apagada');
+      }else{
+        // honesto: el comando salió pero el equipo aún no reporta el cambio
+        setStatus('warn','Comando enviado · el equipo aún reporta el estado anterior');
+      }
+    }catch(e){
+      setConn('err');
+      setStatus('warn','El comando no se pudo enviar');
+      showBanner('Error al enviar el comando: '+e.message);
+    }finally{
+      setBusy(false);
+    }
+  }
+
+  // ========================= EXPECTATIVAS DE CONFIRMACIÓN =========================
+  const expectPower = want => (s => s.power === want);
+  const expectDim   = want => (s => s.dim != null && Math.abs(s.dim - want) <= 2);
+
+  // ========================= EVENTOS =========================
+  btnOn.onclick  = () => runCommand('on',  null, expectPower(true));
+  btnOff.onclick = () => runCommand('off', null, expectPower(false));
+
+  // Dimer independiente del on/off. Arrastrar = preview local; soltar = comando + consulta.
+  dimEl.oninput  = () => { dim = +dimEl.value; render(); };
+  dimEl.onchange = () => runCommand('dim', +dimEl.value, expectDim(+dimEl.value));
+  presets.forEach(b => b.onclick = () => { dim = +b.dataset.v; render(); runCommand('dim', dim, expectDim(dim)); });
+
+  serialEl.onchange = () => { if (resolveId()) refreshState(); else showBanner('Serial no registrado en este subpanel'); };
+
+  // ========================= PANEL / SUBPANEL =========================
+  function initPanel(){
+    panelVal.textContent = PANEL.label + ' · ' + PANEL.id;
+    if (PANEL.subpanels.length > 1){
+      subsel.innerHTML = '';
+      PANEL.subpanels.forEach((sp,i) => {
+        const o = document.createElement('option');
+        o.value = i; o.textContent = sp.label;
+        subsel.appendChild(o);
+      });
+      subsel.hidden = false;
+      subsel.onchange = () => {
+        SUB = PANEL.subpanels[+subsel.value];
+        serialEl.value = firstSerialOf(SUB);
+        power = null; dim = 80; render();
+        refreshState();
+      };
+    }
+    if (!resolveId()) serialEl.value = firstSerialOf(SUB);
+  }
+
+  // ========================= ARRANQUE Y FONDO =========================
+  setInterval(tickUpdated, 1000);
+  setInterval(() => { if (!locked && online) refreshState(true); }, BG_PING_MS); // refresco silencioso
+
+  initPanel();
+  render();
+  setStatus('busy','Iniciando…');
+  refreshState();  // primer estado real al cargar
+</script>
+</body>
+</html>
+
+
