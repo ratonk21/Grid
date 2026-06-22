@@ -1,0 +1,709 @@
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-K73HD7MSR4');
+  </script>
+  <!-- Resto de tu head... -->
+</head>
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe DTM2 · Ubicquia · Plantilla</title>
+<meta name="description" content="Genera un informe técnico de condición de transformador a partir de los datos del DTM2 de Ubicquia. Importa el ZIP y obtén el reporte con narrativa y gráficos en marca.">
+<meta property="og:title" content="Informe DTM2 · Ubicquia">
+<meta property="og:description" content="De datos del DTM2 a un informe que cuenta la historia del transformador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --ubi-navy:#1E2445; --ubi-blue:#22B0E1; --ubi-lime:#AECC53;
+  --ubi-orange:#EA561B; --ubi-x3:#D85A30; --ubi-gray:#EEF0F5; --ubi-ink:#14242F;
+  --ubi-muted:#6A7D89; --ubi-surface:#ffffff; --ubi-line:rgba(30,36,69,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Lato',system-ui,sans-serif;color:var(--ubi-ink);background:var(--ubi-gray);line-height:1.6;-webkit-font-smoothing:antialiased}
+.mono{font-family:'JetBrains Mono',monospace}
+
+header.topbar{position:sticky;top:0;z-index:50;background:var(--ubi-surface);border-bottom:1px solid var(--ubi-line);box-shadow:0 1px 8px rgba(30,36,69,.04)}
+.topbar-in{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 24px;flex-wrap:wrap}
+.logo{font-size:22px;font-weight:400;color:var(--ubi-navy);letter-spacing:-.5px}
+.logo b{font-weight:900;color:var(--ubi-navy)}
+.logo .dot{color:var(--ubi-blue);font-weight:900}
+.tag{font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:.12em}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ubi-navy);background:var(--ubi-gray);padding:5px 11px;border-radius:20px;font-weight:700}
+.pill .led{width:8px;height:8px;border-radius:50%;background:var(--ubi-blue);box-shadow:0 0 0 3px rgba(34,176,225,.18)}
+select.nodesel{font-family:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--ubi-line);background:#fff;color:var(--ubi-navy);font-weight:700}
+.btn{font-family:inherit;cursor:pointer;border:none;background:var(--ubi-blue);color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border-radius:8px;transition:filter .15s}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:var(--ubi-gray);color:var(--ubi-navy)}
+.langtog{display:inline-flex;border:1px solid var(--ubi-line);border-radius:8px;overflow:hidden;font-size:12px;font-weight:700}
+.langtog button{font-family:inherit;border:none;background:#fff;color:var(--ubi-muted);padding:7px 11px;cursor:pointer}
+.langtog button.on{background:var(--ubi-navy);color:#fff}
+.hidden{display:none !important}
+
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 80px}
+section.card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:14px;padding:32px;margin-top:22px;box-shadow:0 1px 3px rgba(30,36,69,.04)}
+
+.landing{margin-top:40px;text-align:center}
+.landing h1{font-size:32px;color:var(--ubi-navy);font-weight:900;letter-spacing:-1px}
+.landing h1 span{color:var(--ubi-blue)}
+.landing p.l{font-size:16px;color:#445;max-width:560px;margin:14px auto 0}
+.dropzone{margin:32px auto 0;max-width:620px;background:#fff;border:2px dashed var(--ubi-blue);border-radius:18px;padding:46px 28px;cursor:pointer;transition:background .15s,border-color .15s}
+.dropzone.drag{background:#f0fafe;border-color:var(--ubi-navy)}
+.dropzone .ic{font-size:42px}
+.dropzone .t{font-size:18px;font-weight:700;color:var(--ubi-navy);margin-top:10px}
+.dropzone .s{font-size:13px;color:var(--ubi-muted);margin-top:6px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;max-width:760px;margin:30px auto 0;text-align:left}
+.steps .st{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:16px}
+.steps .st b{color:var(--ubi-navy);display:block;font-size:14px}
+.steps .st span{font-size:13px;color:var(--ubi-muted)}
+.statusbar{max-width:620px;margin:18px auto 0;font-size:13px;color:var(--ubi-muted);min-height:20px}
+.err{color:var(--ubi-orange);font-weight:700}
+
+.cover{background:linear-gradient(135deg,#1E2445 0%,#243056 60%,#22B0E1 220%);color:#fff;border:none;margin-top:22px;padding:50px 44px;position:relative;overflow:hidden}
+.cover::after{content:"";position:absolute;right:-80px;top:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(34,176,225,.35),transparent 70%)}
+.cover .kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ubi-blue);font-weight:700}
+.cover h1{font-size:36px;line-height:1.14;margin:12px 0 6px;font-weight:900;letter-spacing:-1px}
+.cover h1 span{color:var(--ubi-blue)}
+.cover .sub{font-size:16px;color:#c8d2e6;max-width:600px;margin-top:10px}
+.cover .meta{display:flex;flex-wrap:wrap;gap:24px;margin-top:28px;position:relative;z-index:2}
+.cover .meta div{font-size:13px;color:#aeb9d2}
+.cover .meta b{display:block;font-size:15px;color:#fff;font-weight:700;margin-top:2px}
+.confidential{position:absolute;bottom:14px;right:24px;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.05em}
+.healthtag{display:inline-block;margin-top:18px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;position:relative;z-index:2}
+.h-healthy{background:rgba(174,204,83,.22);color:#cfe08a}
+.h-tight{background:rgba(34,176,225,.22);color:#a7e0f5}
+.h-overload{background:rgba(234,86,27,.22);color:#ffb89a}
+.h-failure{background:rgba(234,86,27,.3);color:#ffc9b3}
+
+h2.sec{font-size:23px;color:var(--ubi-navy);font-weight:900;letter-spacing:-.5px;display:flex;align-items:center;gap:12px}
+h2.sec::before{content:"";width:5px;height:25px;border-radius:3px;background:var(--ubi-blue)}
+h3.sub{font-size:18px;color:var(--ubi-navy);font-weight:700;margin:26px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--ubi-line)}
+p{margin:10px 0;font-size:15px}
+.lead{font-size:16px;color:#33414c}
+em.hl{font-style:normal;color:var(--ubi-blue);font-weight:700}
+strong{color:var(--ubi-navy)}
+ul,ol{margin:10px 0 10px 22px}
+li{margin:6px 0;font-size:15px}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:20px}
+.kpi{background:var(--ubi-gray);border-radius:12px;padding:16px 18px;border:1px solid var(--ubi-line)}
+.kpi .v{font-size:27px;font-weight:900;color:var(--ubi-navy);font-family:'JetBrains Mono',monospace;letter-spacing:-1px}
+.kpi .v.alert{color:var(--ubi-orange)}
+.kpi .v.ok{color:#6f8f1f}
+.kpi .l{font-size:12px;color:var(--ubi-muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+
+.chart-box{margin:18px 0 6px;background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:16px 16px 10px}
+.chart-box .ctitle{font-size:13px;font-weight:700;color:var(--ubi-navy);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.chart-box .csub{font-size:12px;color:var(--ubi-muted);margin-bottom:10px}
+.chart-canvas{position:relative;height:300px}
+.chart-canvas.tall{height:340px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.cover h1{font-size:28px}.cover{padding:36px 24px}section.card{padding:22px}.landing h1{font-size:26px}}
+
+table.data{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+table.data th,table.data td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--ubi-line)}
+table.data th{background:var(--ubi-navy);color:#fff;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+table.data td.num,table.data th.num{text-align:right;font-family:'JetBrains Mono',monospace}
+table.data tr:nth-child(even) td{background:#F5F8F9}
+
+.alerts{display:grid;gap:8px;margin-top:16px}
+.alert-row{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--ubi-line);border-radius:10px;padding:11px 14px}
+.alert-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.alert-row .nm{flex:1;font-weight:700;color:var(--ubi-navy);font-size:14px}
+.alert-row .ct{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;color:var(--ubi-navy)}
+
+.callout{border-left:4px solid var(--ubi-orange);background:#fff6f1;border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+.callout.info{border-color:var(--ubi-blue);background:#f0fafe}
+.callout.ok{border-color:var(--ubi-lime);background:#f7faec}
+.callout b{display:block;margin-bottom:3px}
+
+.terminal{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:16px 0}
+.tcell{background:var(--ubi-navy);color:#fff;border-radius:10px;padding:13px 14px;text-align:center}
+.tcell .tv{font-size:21px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--ubi-blue)}
+.tcell .tl{font-size:11px;color:#aeb9d2;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+
+.seq{counter-reset:step;margin-top:18px}
+.seq .step{position:relative;padding:4px 0 22px 50px;border-left:2px solid var(--ubi-line);margin-left:16px}
+.seq .step:last-child{border-left:2px solid transparent}
+.seq .step::before{counter-increment:step;content:counter(step);position:absolute;left:-17px;top:0;width:32px;height:32px;border-radius:50%;background:var(--ubi-blue);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:15px}
+.seq .step.terminal::before{background:var(--ubi-orange)}
+.seq .step h4{margin:2px 0 0;color:var(--ubi-navy);font-size:15px}
+
+.note{font-size:12px;color:var(--ubi-muted);font-style:italic;margin-top:10px}
+footer{text-align:center;color:var(--ubi-muted);font-size:12px;padding:30px 0 0}
+
+@media print{
+  body{background:#fff}
+  header.topbar{position:static;box-shadow:none}
+  .btn,.nodesel,.langtog,#btnReset{display:none}
+  section.card{box-shadow:none;break-inside:avoid;page-break-inside:avoid}
+  .cover{background:#1E2445 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .chart-box,.kpi,.alert-row,.tcell,table.data th,table.data tr:nth-child(even) td,.healthtag{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div>
+      <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+      <div class="tag">simply connected · simply smart</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill hidden" id="nodePill"><span class="led"></span><span id="nodePillTxt">—</span></span>
+    <select class="nodesel hidden" id="nodeSel"></select>
+    <div class="langtog"><button id="langES" class="on" onclick="setLang('es')">ES</button><button id="langEN" onclick="setLang('en')">EN</button></div>
+    <button class="btn ghost hidden" id="btnReset" onclick="resetApp()">Cargar otro ZIP</button>
+    <button class="btn hidden" id="btnPrint" onclick="window.print()">Exportar PDF</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div id="landing" class="landing">
+    <h1 id="ld_h1">Informe de condición <span>DTM2</span></h1>
+    <p class="l" id="ld_lead"></p>
+    <div class="dropzone" id="dz">
+      <div class="ic">📦</div>
+      <div class="t" id="dz_t"></div>
+      <div class="s" id="dz_s"></div>
+    </div>
+    <input type="file" id="fileInput" accept=".zip,.csv" multiple class="hidden">
+    <div class="statusbar" id="status"></div>
+    <div class="steps">
+      <div class="st"><b id="st1b"></b><span id="st1s"></span></div>
+      <div class="st"><b id="st2b"></b><span id="st2s"></span></div>
+      <div class="st"><b id="st3b"></b><span id="st3s"></span></div>
+    </div>
+  </div>
+
+  <div id="report" class="hidden"></div>
+
+  <footer id="footer" class="hidden">
+    <div class="logo" style="font-size:18px">ubi<b>cquia</b><span class="dot">.</span></div>
+    <p>Ubicquia® Confidential and Proprietary Information</p>
+    <p class="note" id="footNote"></p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+const C={NAVY:"#1E2445",BLUE:"#22B0E1",LIME:"#AECC53",ORANGE:"#EA561B",X3:"#D85A30",MUTED:"#6A7D89"};
+const PHCOL={1:"#22B0E1",2:"#AECC53",3:"#D85A30"};            // X1 azul · X2 lima · X3 naranja
+const PHN=p=>'X'+p;
+function imbalancePct(map,ph){ const m=ph.map(p=>map[p].med); if(m.length<2) return 0; const mn=Math.min.apply(null,m),mx=Math.max.apply(null,m),mean=m.reduce((a,b)=>a+b,0)/m.length; return mean? (mx-mn)/mean*100 : 0; }
+const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+Chart.defaults.font.family="'Lato', sans-serif"; Chart.defaults.color=C.MUTED; Chart.defaults.animation = reduce ? false : {duration:450};
+
+let LANG='es';
+let charts=[], DATA={}, chartQueue=[], CURRENT=null;
+const L=(es,en)=> LANG==='en' ? en : es;
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const HOURS=Array.from({length:24},(_,i)=>i);
+function num(v){ if(v==null) return null; const s=(''+v).trim(); if(s==='') return null; const n=parseFloat(s.replace(',', '.')); return isNaN(n)?null:n; }
+function fmt(n,d){ if(n==null||isNaN(n)) return '—'; const loc=LANG==='en'?'en-US':'es'; return (Math.round(n*Math.pow(10,d||0))/Math.pow(10,d||0)).toLocaleString(loc,{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); }
+function dloc(){ return LANG==='en'?'en-US':'es'; }
+function esc(s){ return (''+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function colGetter(headers){ const map={}; headers.forEach(h=>map[h.toLowerCase().trim()]=h);
+  return (row,cands)=>{ for(const c of cands){ const k=c.toLowerCase().trim(); if(k in map){ const v=row[map[k]]; if(v!=null&&(''+v).trim()!=='') return v; } } return null; }; }
+function findHeader(headers,pred){ for(const h of headers){ if(pred(h.toLowerCase())) return h; } return null; }
+function parseTS(s){ if(!s) return null; s=(''+s).trim(); if(!s) return null;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){ const d=new Date(s.replace(' ','T')); return isNaN(d)?null:d; }
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T]+(\d{1,2}):(\d{2}):(\d{2})\s*([AaPp][Mm])?/);
+  if(m){ let h=+m[4]; const ap=(m[7]||'').toUpperCase(); if(ap==='PM'&&h<12)h+=12; if(ap==='AM'&&h===12)h=0; const d=new Date(+m[3],+m[1]-1,+m[2],h,+m[5],+m[6]); return isNaN(d)?null:d; }
+  const d=new Date(s); return isNaN(d)?null:d; }
+function pctl(sorted,p){ if(!sorted.length) return null; const i=(sorted.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i); return lo===hi?sorted[lo]:sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo); }
+function stats(arr){ const a=arr.filter(v=>v!=null).sort((x,y)=>x-y); if(!a.length) return null;
+  const sum=a.reduce((s,v)=>s+v,0); return {n:a.length,min:a[0],max:a[a.length-1],mean:sum/a.length,med:pctl(a,.5),p10:pctl(a,.1),p90:pctl(a,.9)}; }
+function hourly(records,acc){ const b=Array.from({length:24},()=>[]);
+  records.forEach(r=>{ const v=acc(r); if(v!=null&&r.t) b[r.t.getHours()].push(v); });
+  const med=[],mn=[],mx=[],p10=[],p90=[];
+  for(let h=0;h<24;h++){ const a=b[h].slice().sort((x,y)=>x-y); if(!a.length){med.push(null);mn.push(null);mx.push(null);p10.push(null);p90.push(null);continue;}
+    med.push(+pctl(a,.5).toFixed(2));mn.push(+a[0].toFixed(2));mx.push(+a[a.length-1].toFixed(2));p10.push(+pctl(a,.1).toFixed(2));p90.push(+pctl(a,.9).toFixed(2)); }
+  return {med,mn,mx,p10,p90}; }
+function peakHour(m){ let bi=0,bv=-Infinity; m.forEach((v,h)=>{ if(v!=null&&v>bv){bv=v;bi=h;} }); return {hour:bi,val:bv}; }
+function lowHour(m){ let bi=0,bv=Infinity; m.forEach((v,h)=>{ if(v!=null&&v<bv){bv=v;bi=h;} }); return {hour:bi,val:bv}; }
+const hh=h=>String(h).padStart(2,'0')+':00';
+
+/* ---------- static i18n ---------- */
+function fillStatic(){
+  document.documentElement.lang=LANG;
+  $('#ld_h1').innerHTML = L('Informe de condición <span>DTM2</span>','<span>DTM2</span> condition report');
+  $('#ld_lead').textContent = L('Importa el ZIP de datos del DTM2 de Ubicquia y la plantilla genera el informe técnico — con narrativa y gráficos en marca — contando la historia del transformador a partir de sus datos.','Import the Ubicquia DTM2 data ZIP and the template builds the technical report — with branded narrative and charts — telling the transformer\'s story from its own data.');
+  $('#dz_t').textContent = L('Arrastra el ZIP o los CSV aquí (o haz clic)','Drag the ZIP or the CSVs here (or click)');
+  $('#dz_s').innerHTML = L('Acepta un .zip o los CSV sueltos ','Accepts a .zip or the loose CSVs ')+'<span class="mono">combined_data_DTM2 / Vsag / Vswell / Powerloss / Powerrestored</span>';
+  $('#st1b').textContent=L('1 · Importa','1 · Import'); $('#st1s').textContent=L('Suelta el ZIP del portal. Todo se procesa en tu navegador; nada se sube.','Drop the portal ZIP. Everything runs in your browser; nothing is uploaded.');
+  $('#st2b').textContent=L('2 · Analiza','2 · Analyze'); $('#st2s').textContent=L('Detecta qué variables tienen datos reales y calcula perfiles (mediana, P10–P90, Mín–Máx), eventos y estadísticos.','Detects which variables have real data and computes profiles (median, P10–P90, Min–Max), events and statistics.');
+  $('#st3b').textContent=L('3 · Cuenta la historia','3 · Tell the story'); $('#st3s').textContent=L('Arma el informe con KPIs, narrativa y gráficos. Exporta a PDF o publícalo en griddata.','Builds the report with KPIs, narrative and charts. Export to PDF or publish on griddata.');
+  $('#btnReset').textContent=L('Cargar otro ZIP','Load another ZIP');
+  $('#btnPrint').textContent=L('Exportar PDF','Export PDF');
+  $('#footNote').textContent=L('Informe generado en el navegador a partir de los CSV del DTM2. Las variables sin datos válidos (sensores no conectados, columnas ausentes) se omiten automáticamente.','Report generated in-browser from the DTM2 CSVs. Variables without valid data (disconnected sensors, missing columns) are omitted automatically.');
+}
+window.setLang=function(l){ if(l===LANG) return; LANG=l;
+  $('#langES').classList.toggle('on',l==='es'); $('#langEN').classList.toggle('on',l==='en');
+  fillStatic(); if(CURRENT) renderNode(CURRENT); };
+
+/* ---------- import: ZIP o CSV sueltos ---------- */
+function setStatus(m,e){ const s=$('#status'); s.innerHTML = e? '<span class="err">'+esc(m)+'</span>' : esc(m); }
+function readText(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(new Error('read')); r.readAsText(file); }); }
+function handleFiles(list){ const files=Array.from(list||[]); if(!files.length) return;
+  const zip=files.find(f=>/\.zip$/i.test(f.name));
+  const csvs=files.filter(f=>/\.csv$/i.test(f.name));
+  const rar=files.find(f=>/\.rar$/i.test(f.name));
+  if(csvs.length){ return handleCsvFiles(csvs); }          // CSV sueltos (uno o varios)
+  if(zip){ return readZip(zip); }
+  if(rar){ return setStatus(L('Los .rar no se pueden abrir en el navegador. Descomprímelo y suelta los CSV (combined_data_*) o usa un .zip.','.rar files can\'t be opened in the browser. Extract it and drop the CSVs (combined_data_*), or use a .zip.'),true); }
+  setStatus(L('Suelta un .zip o los CSV (combined_data_*).','Drop a .zip or the CSVs (combined_data_*).'),true);
+}
+function readZip(file){ setStatus(L('Leyendo ','Reading ')+file.name+' …');
+  const r=new FileReader();
+  r.onload=e=>{ JSZip.loadAsync(e.target.result).then(processZip).catch(err=>setStatus(L('No se pudo abrir el ZIP: ','Could not open ZIP: ')+err.message,true)); };
+  r.onerror=()=>setStatus(L('Error leyendo el archivo','Error reading the file'),true);
+  r.readAsArrayBuffer(file);
+}
+function looseKey(name){ const b=name.replace(/^.*[\/\\]/,''); const m=b.match(/^(.*?)_combined_data_/i); if(m&&m[1]) return m[1]; const d=b.match(/(\d{6,})/); return d?d[1]:'nodo'; }
+function storeCsv(buckets,key,ty,txt){ const b=buckets[key]=buckets[key]||{};
+  if(ty==='dtm2'){ const hasK=t=>/(^|,)\s*"?kva"?\s*(,|$)/i.test((t.split(/\r?\n/)[0]||'')); if(!b.dtm2||(hasK(txt)&&!hasK(b.dtm2.txt))) b.dtm2={txt}; }
+  else b[ty]={txt}; }
+function handleCsvFiles(files){ setStatus(L('Leyendo CSV …','Reading CSVs …'));
+  const buckets={};
+  Promise.all(files.map(f=>readText(f).then(txt=>{ const ty=classify(f.name); if(ty) storeCsv(buckets,looseKey(f.name),ty,txt); })))
+    .then(()=>finalizeBuckets(buckets))
+    .catch(err=>setStatus(L('Error leyendo CSV: ','Error reading CSVs: ')+err.message,true));
+}
+function finalizeBuckets(buckets){
+  const keys=Object.keys(buckets).filter(k=>buckets[k].dtm2);
+  if(!keys.length){ setStatus(L('No se encontró ningún CSV de telemetría DTM2 (combined_data_DTM2).','No DTM2 telemetry CSV found (combined_data_DTM2).'),true); return; }
+  DATA={}; keys.forEach(k=>{ DATA[k]=parseNode(buckets[k],k); });
+  const sel=$('#nodeSel'); sel.innerHTML='';
+  keys.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=(DATA[k].meta.node||k); sel.appendChild(o); });
+  sel.classList.toggle('hidden',keys.length<2); sel.onchange=()=>renderNode(sel.value);
+  renderNode(keys[0]);
+}
+function classify(n){ n=n.toLowerCase();
+  if(/vsag/.test(n)) return 'vsag'; if(/vswell/.test(n)) return 'vswell';
+  if(/powerloss/.test(n)) return 'powerloss'; if(/powerrestored/.test(n)) return 'powerrestored';
+  if(/dtm2|kva.?list|voltage.?list|graph.*list|combined_data/.test(n)) return 'dtm2';
+  return null; }
+function nodeKey(p){ const parts=p.split('/').filter(Boolean); if(parts.length>1) return parts[0]; return looseKey(parts[parts.length-1]||p); }
+async function processZip(zip){
+  setStatus(L('Procesando CSV …','Processing CSVs …'));
+  const buckets={}, tasks=[];
+  zip.forEach((rel,entry)=>{ if(entry.dir||!/\.csv$/i.test(rel)) return; const ty=classify(rel); if(!ty) return;
+    tasks.push(entry.async('string').then(txt=>storeCsv(buckets,nodeKey(rel),ty,txt))); });
+  try{ await Promise.all(tasks); }catch(err){ setStatus(L('Error extrayendo CSV: ','Error extracting CSVs: ')+err.message,true); return; }
+  finalizeBuckets(buckets);
+}
+function parseCSV(txt){ if(!txt||!txt.trim()) return []; const r=Papa.parse(txt.trim(),{header:true,skipEmptyLines:true}); return r.data||[]; }
+
+function parseNode(b,key){
+  const _pr=Papa.parse((b.dtm2.txt||'').trim(),{header:true,skipEmptyLines:true});
+  const raw=_pr.data||[];
+  const colMismatch=(_pr.errors||[]).some(e=>e.type==='FieldMismatch'||/TooFew|TooMany/.test(e.code||''));
+  const headers = (_pr.meta&&_pr.meta.fields)||(raw.length?Object.keys(raw[0]):[]);
+  const get=colGetter(headers);
+  // --- Detección robusta de PF y THD (variantes EN/ES, con o sin nº de fase) ---
+  const reFP   = h=>/power\s*factor|factor\s*de\s*potencia|(^|[^a-z])pf([^a-z]|$)|(^|[^a-z])fp([^a-z]|$)/.test(h);
+  const reTHD  = h=>/thd|distors|armón|armon|harmonic/.test(h);
+  const reVOLT = h=>/volt|tensi/.test(h);           // voltage / voltaje / tensión
+  const reCURR = h=>/curr|\bcur\b|amp|corr/.test(h);// current / corriente / amperaje
+  const phaseOf= h=>{ const m=h.match(/line\s*([123])|x\s*([123])|(?:^|[^0-9])([123])(?:[^0-9]|$)/); return m?+(m[1]||m[2]||m[3]):null; };
+  function pick(test){ const r={1:null,2:null,3:null}; let single=null;
+    headers.forEach(H=>{ const h=H.toLowerCase(); if(!test(h)) return; const p=phaseOf(h); if(p){ if(!r[p]) r[p]=H; } else if(!single) single=H; });
+    if(!r[1]&&!r[2]&&!r[3]&&single) r[1]=single;   // columna única sin fase → serie 1
+    return r; }
+  const FP={1:null,2:null,3:null}, TV={1:null,2:null,3:null}, TI={1:null,2:null,3:null};
+  Object.assign(FP, pick(reFP));
+  Object.assign(TV, pick(h=>reTHD(h)&&reVOLT(h)&&!reCURR(h)));
+  Object.assign(TI, pick(h=>reTHD(h)&&reCURR(h)));
+  const rows=[];
+  raw.forEach(r=>{ const t=parseTS(get(r,['Date','date','Fecha','Subpanel Time'])); if(!t) return;
+    let temp=num(get(r,['Oil Temperature','oil_temperature','oilTemperature','Temperatura del Aceite'])); if(temp!=null&&temp<=-39) temp=null;
+    let pres=num(get(r,['Pressure','pressure','Presión','Presion'])); if(pres!=null&&pres===0) pres=null;
+    rows.push({ t, kva:num(get(r,['kVA','kva'])),
+      v1:num(get(r,['X1 Voltage','X1 Voltaje'])), v2:num(get(r,['X2 Voltage','X2 Voltaje'])), v3:num(get(r,['X3 Voltage','X3 Voltaje'])),
+      i1:num(get(r,['X1 Current','Corriente X1'])), i2:num(get(r,['X2 Current','Corriente X2'])), i3:num(get(r,['X3 Current','Corriente X3'])), temp, pres,
+      fp1:FP[1]?num(r[FP[1]]):null, fp2:FP[2]?num(r[FP[2]]):null, fp3:FP[3]?num(r[FP[3]]):null,
+      tv1:TV[1]?num(r[TV[1]]):null, tv2:TV[2]?num(r[TV[2]]):null, tv3:TV[3]?num(r[TV[3]]):null,
+      ti1:TI[1]?num(r[TI[1]]):null, ti2:TI[2]?num(r[TI[2]]):null, ti3:TI[3]?num(r[TI[3]]):null }); });
+  rows.sort((a,b)=>a.t-b.t);
+  const m0=raw[0]||{};
+  const meta={ node:get(m0,['node_name','Nombre del nodo','Node ID','ID de nodo','transformer_id','Identificación del Transformador'])||key, serial:get(m0,['Serial Number','imei','Número de serie','Numero de serie'])||key,
+    substation:get(m0,['substation','Subestación','Subestacion'])||null, feeder:get(m0,['feeder','lateral','Alimentador'])||null, ttype:get(m0,['transformer_type','Tipo de transmisión','Tipo de transmision'])||null,
+    lat:num(get(m0,['Latitude','median_lat','Latitud'])), lon:num(get(m0,['Longitude','median_long','Longitud'])),
+    rating:num(get(m0,['kVA Rating','Clasificación kVA','Clasificacion kVA','operating_kVA','KVA de operación','ratingkVA']))||null, nomV:num(get(m0,['nominalVoltage','operating_voltage','Voltaje Nominal','Voltaje de operación']))||null,
+    colMismatch };
+  return { rows, meta, vsag:parseCSV((b.vsag||{}).txt), vswell:parseCSV((b.vswell||{}).txt),
+    powerloss:parseCSV((b.powerloss||{}).txt).filter(r=>Object.values(r).some(v=>(''+v).trim()!=='')),
+    powerrestored:parseCSV((b.powerrestored||{}).txt).filter(r=>Object.values(r).some(v=>(''+v).trim()!=='')) };
+}
+
+/* ---------- analysis ---------- */
+function avail(rows,key,minN){ const a=rows.map(r=>r[key]).filter(v=>v!=null); if(a.length<(minN||5)) return false; return new Set(a).size>1; }
+function analyze(node){
+  const rows=node.rows, meta=node.meta;
+  const A={meta,rows,n:rows.length,t0:rows[0]&&rows[0].t,t1:rows[rows.length-1]&&rows[rows.length-1].t};
+  A.days=(A.t0&&A.t1)?Math.max(1,Math.round((A.t1-A.t0)/86400000)):null;
+  const dl=[]; for(let i=1;i<rows.length;i++) dl.push((rows[i].t-rows[i-1].t)/60000);
+  A.interval=dl.length?pctl(dl.slice().sort((a,b)=>a-b),.5):15;
+  A.rating=meta.rating||null;
+  // multi-phase (X1/X2/X3): build {ph:[...], s:{p:stats}, h:{p:hourly}} per magnitude
+  const phaseObj=pref=>{ const ph=[1,2,3].filter(p=>avail(rows,pref+p)); if(!ph.length) return null;
+    const s={},h={}; ph.forEach(p=>{ s[p]=stats(rows.map(r=>r[pref+p])); h[p]=hourly(rows,r=>r[pref+p]); }); return {ph,s,h}; };
+  A.has={ kva:avail(rows,'kva'), temp:avail(rows,'temp'), pres:avail(rows,'pres') };
+  if(A.has.kva&&A.rating){ rows.forEach(r=>r.util=r.kva!=null?r.kva/A.rating*100:null);
+    A.kva={stat:stats(rows.map(r=>r.kva)),util:stats(rows.map(r=>r.util)),hr:hourly(rows,r=>r.util),hrKva:hourly(rows,r=>r.kva)};
+    A.over=rows.filter(r=>r.util!=null&&r.util>100).length; A.pctOver=A.over/rows.length*100; A.overHours=A.over*A.interval/60; A.maxUtil=A.kva.util.max;
+  } else if(A.has.kva){ A.kva={stat:stats(rows.map(r=>r.kva)),hrKva:hourly(rows,r=>r.kva)}; }
+  A.v=phaseObj('v'); A.i=phaseObj('i'); A.fp=phaseObj('fp'); A.thdv=phaseObj('tv'); A.thdi=phaseObj('ti');
+  A.phases = A.v? A.v.ph : (A.i? A.i.ph : []);   // active phases (for cover/context)
+  if(A.has.temp) A.temp={stat:stats(rows.map(r=>r.temp)),hr:hourly(rows,r=>r.temp)};
+  if(A.has.pres) A.pres={stat:stats(rows.map(r=>r.pres)),hr:hourly(rows,r=>r.pres)};
+  const sg=colGetter(node.vsag.length?Object.keys(node.vsag[0]):[]);
+  const sagEv=node.vsag.map(r=>({t:parseTS(sg(r,['Time','datecreated','datecreated_utc'])),x1:num(sg(r,['X1 Lowest Value','x1_value'])),x2:num(sg(r,['X2 Lowest Value','x2_value'])),x3:num(sg(r,['X3 Lowest Value','x3_value']))})).filter(e=>e.t);
+  const byHour=Array(24).fill(0); sagEv.forEach(e=>byHour[e.t.getHours()]++);
+  A.events={ sag:{n:sagEv.length,ev:sagEv,byHour,minX1:stats(sagEv.map(e=>e.x1)),minX2:stats(sagEv.map(e=>e.x2)),minX3:stats(sagEv.map(e=>e.x3)),
+      t0:sagEv.length?sagEv.reduce((a,b)=>a.t<b.t?a:b).t:null,t1:sagEv.length?sagEv.reduce((a,b)=>a.t>b.t?a:b).t:null},
+    swell:node.vswell.length, powerloss:node.powerloss.length, powerrestored:node.powerrestored.length };
+  A.terminal=null;
+  if(A.events.powerloss>0){ const pg=colGetter(Object.keys(node.powerloss[0]));
+    const plt=parseTS(pg(node.powerloss[node.powerloss.length-1],['Subpanel Time','Time','datecreated']));
+    let rec=rows.length?rows[rows.length-1]:null; if(plt){ let best=Infinity; rows.forEach(r=>{ const d=Math.abs(r.t-plt); if(d<best){best=d;rec=r;} }); }
+    if(rec) A.terminal={t:plt||rec.t,temp:rec.temp,pres:rec.pres,v1:rec.v1,v2:rec.v2,v3:rec.v3,i1:rec.i1,i2:rec.i2,i3:rec.i3}; }
+  A.health = A.events.powerloss>0?'failure':(A.maxUtil>=100?'overload':(A.maxUtil>=80?'tight':'healthy'));
+  return A;
+}
+
+/* ---------- narrative (bilingual) ---------- */
+function healthLabel(h){ return {healthy:L('Operación saludable','Healthy operation'),tight:L('Margen ajustado','Tight margin'),overload:L('Sobrecarga recurrente','Recurring overload'),failure:L('Falla registrada','Recorded failure')}[h]; }
+function story_intro(A){
+  const loc=[A.meta.substation&&L('subestación ','substation ')+esc(A.meta.substation), A.meta.feeder&&L('alimentador ','feeder ')+esc(A.meta.feeder)].filter(Boolean).join(', ');
+  const tp=A.meta.ttype?(L('transformador ','transformer ')+esc(A.meta.ttype)):L('transformador','transformer');
+  return L(
+    `El monitoreo con el <strong>DTM2 de Ubicquia</strong> permitió analizar el ${tp} <strong>${esc(A.meta.node)}</strong>`+(A.rating?` de <strong>${fmt(A.rating,0)} kVA</strong>`:'')+(loc?` (${loc})`:'')+` durante ${A.days?('<strong>'+A.days+' día'+(A.days>1?'s':'')+'</strong>'):'el periodo monitoreado'}, con ${fmt(A.n,0)} registros cada ~${fmt(A.interval,0)} min.`,
+    `Monitoring with the <strong>Ubicquia DTM2</strong> made it possible to analyze ${tp} <strong>${esc(A.meta.node)}</strong>`+(A.rating?`, rated <strong>${fmt(A.rating,0)} kVA</strong>`:'')+(loc?` (${loc})`:'')+` over ${A.days?('<strong>'+A.days+' day'+(A.days>1?'s':'')+'</strong>'):'the monitored period'}, with ${fmt(A.n,0)} records every ~${fmt(A.interval,0)} min.`);
+}
+function story_load(A){
+  if(!A.kva||!A.kva.util) return A.has.kva? L(`La potencia aparente promedió ${fmt(A.kva.stat.mean,1)} kVA (máx ${fmt(A.kva.stat.max,1)}). No se calculó utilización por falta de capacidad nominal.`,`Apparent power averaged ${fmt(A.kva.stat.mean,1)} kVA (max ${fmt(A.kva.stat.max,1)}). Utilization not computed (no rated capacity).`):'';
+  const u=A.kva.util, ph=peakHour(A.kva.hr.med);
+  let s=L(`La carga promedió <strong>${fmt(u.mean,1)}%</strong> de la nominal (mediana ${fmt(u.med,1)}%), con un <strong>P90 de ${fmt(u.p90,1)}%</strong> (pico robusto) y un máximo absoluto de ${fmt(u.max,1)}%. La mayor exigencia se concentra cerca de las <strong>${hh(ph.hour)}</strong> (mediana ${fmt(ph.val,0)}%). `,
+    `Load averaged <strong>${fmt(u.mean,1)}%</strong> of rated (median ${fmt(u.med,1)}%), with a <strong>P90 of ${fmt(u.p90,1)}%</strong> (robust peak) and an absolute maximum of ${fmt(u.max,1)}%. The heaviest demand concentrates near <strong>${hh(ph.hour)}</strong> (median ${fmt(ph.val,0)}%). `);
+  if(A.health==='overload'||A.health==='failure') s+=L(`El transformador <em class="hl">operó por encima de su capacidad nominal</em> en ${fmt(A.pctOver,1)}% de los registros (~${fmt(A.overHours,0)} h equivalentes): la sobrecarga no fue aislada.`,`The transformer <em class="hl">operated above its rated capacity</em> in ${fmt(A.pctOver,1)}% of records (~${fmt(A.overHours,0)} equivalent h): the overload was not isolated.`);
+  else if(A.health==='tight') s+=L(`La carga se mantuvo bajo el 100%, pero el P90 cercano a la nominal indica un margen operativo ajustado en horas punta.`,`Load stayed below 100%, but a P90 close to rated indicates a tight operating margin at peak hours.`);
+  else s+=L(`La carga se mantuvo cómodamente bajo la nominal durante todo el periodo: hay margen operativo holgado.`,`Load stayed comfortably below rated throughout the period: there is ample operating margin.`);
+  return s;
+}
+function story_close(A){
+  return {
+    failure:L(`La conclusión central es que el DTM no solo muestra que el transformador falló: <strong>reconstruye cómo venía operando y qué señales anticiparon la falla</strong>, convirtiendo datos en evidencia técnica para priorizar mantenimiento y justificar reemplazo o redimensionamiento.`,`The key takeaway is that the DTM not only shows the transformer failed: it <strong>reconstructs how it was operating and which signals foreshadowed the failure</strong>, turning data into technical evidence to prioritize maintenance and justify replacement or resizing.`),
+    overload:L(`El valor del monitoreo aquí es <strong>anticipar el riesgo</strong>: la sobrecarga recurrente reduce la vida útil. El DTM entrega evidencia objetiva para evaluar redimensionamiento o redistribución de carga antes de una falla.`,`The value of monitoring here is to <strong>anticipate risk</strong>: recurring overload shortens service life. The DTM provides objective evidence to evaluate resizing or load redistribution before a failure.`),
+    tight:L(`El monitoreo permite <strong>vigilar el margen</strong>: aunque hoy no hay falla, los picos cercanos a la nominal justifican seguimiento y alertas.`,`Monitoring lets you <strong>watch the margin</strong>: although there is no failure today, peaks near rated justify follow-up and alerts.`),
+    healthy:L(`El monitoreo confirma una <strong>operación saludable</strong> y, más importante, establece la <strong>línea base</strong> del activo: cualquier desviación futura se detecta temprano y con contexto.`,`Monitoring confirms <strong>healthy operation</strong> and, more importantly, sets the asset's <strong>baseline</strong>: any future deviation is caught early and in context.`)
+  }[A.health];
+}
+
+/* ---------- render ---------- */
+function renderNode(key){
+  CURRENT=key;
+  charts.forEach(c=>{try{c.destroy();}catch(e){}}); charts=[]; chartQueue=[];
+  const A=analyze(DATA[key]);
+  $('#report').innerHTML=renderReport(A); $('#report').classList.remove('hidden');
+  $('#footer').classList.remove('hidden');
+  $('#nodePill').classList.remove('hidden'); $('#nodePillTxt').textContent='DTM2 '+(A.meta.serial||A.meta.node);
+  $('#btnPrint').classList.remove('hidden'); $('#btnReset').classList.remove('hidden'); $('#landing').classList.add('hidden');
+  chartQueue.forEach(q=>{ const el=document.getElementById(q.id); if(el){ const ch=q.fn(el); if(ch) charts.push(ch); } });
+  window.scrollTo({top:0,behavior:'auto'});
+}
+function queueChart(id,fn){ chartQueue.push({id,fn}); }
+function kpi(v,l,cls){ return `<div class="kpi"><div class="v ${cls||''}">${v}</div><div class="l">${l}</div></div>`; }
+const BANDSUB=()=>L('Mediana · banda P10–P90 · banda Mín–Máx','Median · P10–P90 band · Min–Max band');
+function chartBox(id,title,sub,tall){ return `<div class="chart-box"><div class="ctitle">${title}</div>${sub?`<div class="csub">${sub}</div>`:''}<div class="chart-canvas ${tall?'tall':''}"><canvas id="${id}"></canvas></div></div>`; }
+
+function renderReport(A){
+  const dr=(A.t0&&A.t1)? A.t0.toLocaleDateString(dloc(),{day:'2-digit',month:'short',year:'numeric'})+' – '+A.t1.toLocaleDateString(dloc(),{day:'2-digit',month:'short',year:'numeric'}):'—';
+  let h='';
+  // COVER
+  h+=`<section class="cover">
+    <div class="kicker">${L('Resultados y Evaluación · Solución DTM2','Results & Evaluation · DTM2 Solution')}</div>
+    <h1>${L('Informe de condición','Condition report')}<br><span>${esc(A.meta.node)}</span></h1>
+    <div class="sub">${L('Análisis histórico-operacional del transformador monitoreado con la solución DTM2 de Ubicquia.','Historical-operational analysis of the transformer monitored with the Ubicquia DTM2 solution.')}</div>
+    <div class="meta">
+      ${A.meta.substation?`<div>${L('Subestación','Substation')}<b>${esc(A.meta.substation)}</b></div>`:''}
+      ${A.meta.feeder?`<div>${L('Alimentador','Feeder')}<b>${esc(A.meta.feeder)}</b></div>`:''}
+      ${A.rating?`<div>${L('Capacidad nominal','Rated capacity')}<b>${fmt(A.rating,0)} kVA</b></div>`:''}
+      ${A.meta.nomV?`<div>${L('Voltaje nominal','Nominal voltage')}<b>${fmt(A.meta.nomV,0)} V</b></div>`:''}
+      <div>${L('Periodo','Period')}<b>${dr}</b></div>
+      <div>${L('Registros','Records')}<b>${fmt(A.n,0)} · ~${fmt(A.interval,0)} min</b></div>
+      ${(A.meta.lat!=null)?`<div>${L('Ubicación','Location')}<b>${fmt(A.meta.lat,4)}, ${fmt(A.meta.lon,4)}</b></div>`:''}
+    </div>
+    <span class="healthtag h-${A.health}">${healthLabel(A.health)}</span>
+    <div class="confidential">Ubicquia® Confidential and Proprietary Information</div>
+  </section>`;
+  // AVISO de alineación (export con encabezado/datos descuadrados)
+  if(A.meta.colMismatch) h+=`<section class="card"><div class="callout"><b>${L('Aviso: alineación de columnas','Notice: column alignment')}</b>${L('El archivo importado tiene un desajuste entre el número de columnas del encabezado y el de los datos. Algunos campos (p. ej. voltaje vs. factor de potencia, o metadatos) podrían quedar mal alineados. Recomendado: usar el export <strong>combined_data_DTM2</strong>, cuyas columnas vienen limpias.','The imported file has a mismatch between header and data column counts. Some fields (e.g. voltage vs. power factor, or metadata) may be misaligned. Recommended: use the <strong>combined_data_DTM2</strong> export, whose columns are clean.')}</div></section>`;
+  // RESUMEN
+  let kpis='';
+  if(A.maxUtil!=null) kpis+=kpi(fmt(A.maxUtil,1)+'%',L('Máx. utilización','Max utilization'),A.maxUtil>=100?'alert':(A.maxUtil>=80?'':'ok'));
+  if(A.kva&&A.kva.util) kpis+=kpi(fmt(A.kva.util.p90,1)+'%',L('P90 utilización','P90 utilization'));
+  if(A.kva&&A.kva.util) kpis+=kpi(fmt(A.kva.util.mean,1)+'%',L('Carga promedio','Average load'));
+  if(A.kva&&A.kva.stat) kpis+=kpi(fmt(A.kva.stat.max,1),L('kVA máximo','Max kVA'));
+  if(A.pctOver!=null) kpis+=kpi(fmt(A.pctOver,1)+'%',L('Tiempo en sobrecarga','Time in overload'),A.pctOver>5?'alert':'ok');
+  kpis+=kpi(fmt(A.events.sag.n,0),L('Eventos Vsag','Vsag events'),A.events.sag.n>0?'':'ok');
+  if(A.temp) kpis+=kpi(fmt(A.temp.stat.max,1)+'°C',L('Temp. máx. aceite','Max oil temp'),A.temp.stat.max>=120?'alert':'');
+  if(A.events.powerloss>0) kpis+=kpi(fmt(A.events.powerloss,0),L('Pérdidas de energía','Power losses'),'alert');
+  h+=`<section class="card"><h2 class="sec">${L('Resumen Ejecutivo','Executive Summary')}</h2>
+    <p class="lead">${story_intro(A)}</p><div class="kpis">${kpis}</div>
+    <p>${story_load(A)}</p>
+    ${A.events.sag.n>0?`<p>${L('En el plano transiente se registraron','On the transient side there were')} <strong>${A.events.sag.n} ${L('evento(s) de caída de tensión (Vsag)','voltage sag event(s) (Vsag)')}</strong>${A.events.sag.t0?L(` entre el ${A.events.sag.t0.toLocaleDateString('es')} y el ${A.events.sag.t1.toLocaleDateString('es')}`,` between ${A.events.sag.t0.toLocaleDateString('en-US')} and ${A.events.sag.t1.toLocaleDateString('en-US')}`):''}.</p>`:''}
+    ${A.terminal?`<p>${L('El <strong>evento terminal</strong> se registró el','The <strong>terminal event</strong> was recorded on')} ${A.terminal.t.toLocaleString(dloc())}${A.terminal.temp!=null?L(`, con temperatura de ${fmt(A.terminal.temp,1)} °C`,`, at ${fmt(A.terminal.temp,1)} °C`):''}.</p>`:''}
+    <div class="callout ${A.health==='healthy'?'ok':(A.health==='tight'?'info':'')}"><b>${L('Lectura central','Key takeaway')}</b>${story_close(A)}</div>
+  </section>`;
+  // CONTEXTO + tabla
+  const tr=(k,v)=>`<tr><td>${k}</td><td class="num">${v}</td></tr>`;
+  let rowsT='';
+  rowsT+=tr(L('Nodo / DTM','Node / DTM'),esc(A.meta.node));
+  rowsT+=tr(L('Serial / IMEI','Serial / IMEI'),esc(A.meta.serial));
+  rowsT+=tr(L('Registros DTM2','DTM2 records'),fmt(A.n,0));
+  rowsT+=tr(L('Periodo','Period'),dr);
+  if(A.days) rowsT+=tr(L('Días analizados','Days analyzed'),A.days);
+  rowsT+=tr(L('Frecuencia','Frequency'),'~'+fmt(A.interval,0)+' min');
+  if(A.rating) rowsT+=tr(L('Capacidad nominal','Rated capacity'),fmt(A.rating,0)+' kVA');
+  if(A.kva&&A.kva.stat) rowsT+=tr(L('kVA máximo registrado','Max kVA recorded'),fmt(A.kva.stat.max,2)+' kVA');
+  if(A.maxUtil!=null) rowsT+=tr(L('Máx. carga respecto a nominal','Max load vs rated'),fmt(A.maxUtil,1)+'%');
+  if(A.kva&&A.kva.util) rowsT+=tr(L('Utilización P10 / P90','Utilization P10 / P90'),fmt(A.kva.util.p10,1)+'% / '+fmt(A.kva.util.p90,1)+'%');
+  if(A.over!=null) rowsT+=tr(L('Registros sobre nominal','Records above rated'),fmt(A.over,0));
+  if(A.pctOver!=null) rowsT+=tr(L('% de datos en sobrecarga','% of data in overload'),fmt(A.pctOver,1)+'%');
+  if(A.temp) rowsT+=tr(L('Temperatura máx. del aceite','Max oil temperature'),fmt(A.temp.stat.max,1)+' °C');
+  if(A.pres) rowsT+=tr(L('Presión máxima','Max pressure'),fmt(A.pres.stat.max,1));
+  if(A.meta.nomV) rowsT+=tr(L('Voltaje nominal','Nominal voltage'),fmt(A.meta.nomV,0)+' V');
+  if(A.phases&&A.phases.length) rowsT+=tr(L('Fases activas','Active phases'),A.phases.map(PHN).join(' · '));
+  if(A.v) A.v.ph.forEach(p=>{ rowsT+=tr(L('Voltaje mín. / P10 ','Min / P10 voltage ')+PHN(p),fmt(A.v.s[p].min,1)+' V / '+fmt(A.v.s[p].p10,1)+' V'); });
+  h+=`<section class="card"><h2 class="sec">${L('Contexto y Alcance','Context & Scope')}</h2>
+    <p>${L(`Reporte histórico-operacional del transformador <strong>${esc(A.meta.node)}</strong> monitoreado mediante la solución <strong>DTM2 de Ubicquia</strong>, reconstruyendo su evolución desde una perspectiva estacionaria (tendencias) y una transiente (eventos).`,`Historical-operational report of transformer <strong>${esc(A.meta.node)}</strong> monitored with the <strong>Ubicquia DTM2</strong> solution, reconstructing its evolution from a steady-state (trends) and a transient (events) perspective.`)}</p>
+    <div class="callout"><b>${L('Alcance','Scope')}</b>${L('El informe se basa en la interpretación técnica de los datos disponibles. No reemplaza una inspección física ni un peritaje. Las variables sin datos válidos se omiten automáticamente.','This report relies on the technical interpretation of available data. It does not replace a physical inspection or forensic assessment. Variables without valid data are omitted automatically.')}</div>
+    <h3 class="sub">${L('Resumen de datos del periodo','Period data summary')}</h3>
+    <table class="data"><tr><th>${L('Ítem','Item')}</th><th class="num">${L('Valor','Value')}</th></tr>${rowsT}</table>
+  </section>`;
+  // ESTACIONARIO — estructura canónica completa; subsecciones siempre presentes
+  let est='';
+  const EMPTY=()=>`<div class="callout info"><b>${L('Sin datos en este periodo','No data this period')}</b>${L('Esta variable no fue sensada o no está disponible en el dataset cargado. La sección se mantiene para conservar la estructura del informe.','This variable was not sensed or is not available in the loaded dataset. The section is kept to preserve the report structure.')}</div>`;
+  // Carga
+  est+=`<h3 class="sub">${L('Carga estimada del transformador','Estimated transformer load')}</h3>`;
+  if(A.kva){
+    est+=`<p>${story_load(A)}</p>`;
+    est+=chartBox('c_kva_ts',L('Potencia aparente — periodo completo','Apparent power — full period'),A.rating?(L('kVA · línea nominal ','kVA · rated line ')+fmt(A.rating,0)+' kVA'):'kVA');
+    if(A.kva.hr) est+=chartBox('c_kva_hr',L('Perfil horario de carga (%kVA)','Hourly load profile (%kVA)'),BANDSUB(),true);
+    queueChart('c_kva_ts',el=>tsChart(el,A));
+    if(A.kva.hr) queueChart('c_kva_hr',el=>profile(el,{prof:A.kva.hr,unit:'%',yt:'%kVA',ymin:0,band:true,lines:[{label:L('Mediana %kVA','Median %kVA'),color:C.LIME,data:A.kva.hr.med}].concat(A.rating?[{label:L('Nominal 100%','Rated 100%'),color:C.ORANGE,data:HOURS.map(()=>100),dash:[6,5]}]:[])}));
+  } else est+=EMPTY();
+  // Voltajes
+  est+=`<h3 class="sub">${L('Voltajes','Voltages')}</h3>`;
+  if(A.v){
+    const parts=A.v.ph.map(p=>{const s=A.v.s[p];return L(`<strong>${PHN(p)}</strong> prom ${fmt(s.mean,1)} V (P10 ${fmt(s.p10,1)} / P90 ${fmt(s.p90,1)})`,`<strong>${PHN(p)}</strong> avg ${fmt(s.mean,1)} V (P10 ${fmt(s.p10,1)} / P90 ${fmt(s.p90,1)})`);});
+    let vt=parts.join('; ')+'. ';
+    if(A.v.ph.length>=2){ const imb=imbalancePct(A.v.s,A.v.ph); vt+=L(`El desbalance de voltaje entre fases es de ~${fmt(imb,1)}% (sobre las medianas). `,`Voltage imbalance across phases is ~${fmt(imb,1)}% (on medians). `); }
+    const hp=A.v.h[A.v.ph[0]]; { const lo=lowHour(hp.med),hi=peakHour(hp.med); vt+=L(`El voltaje es más alto cerca de las ${hh(hi.hour)} (~${fmt(hi.val,1)} V) y cae a ~${fmt(lo.val,1)} V hacia las ${hh(lo.hour)}, coincidiendo con la mayor demanda.`,`Voltage is highest near ${hh(hi.hour)} (~${fmt(hi.val,1)} V) and drops to ~${fmt(lo.val,1)} V around ${hh(lo.hour)}, coinciding with peak demand.`); }
+    est+=`<p>${vt}</p>`;
+    const vl=A.v.ph.map(p=>({label:'V '+PHN(p),color:PHCOL[p],data:A.v.h[p].med}));
+    est+=chartBox('c_v_hr',L('Perfil horario de voltaje','Hourly voltage profile'),BANDSUB());
+    queueChart('c_v_hr',el=>profile(el,{prof:A.v.h[A.v.ph[0]],unit:' V',yt:L('Voltaje (V)','Voltage (V)'),band:true,lines:vl}));
+  } else est+=EMPTY();
+  // Corrientes
+  est+=`<h3 class="sub">${L('Corrientes','Currents')}</h3>`;
+  if(A.i){
+    const parts=A.i.ph.map(p=>{const s=A.i.s[p];return L(`<strong>${PHN(p)}</strong>: prom ${fmt(s.mean,1)} A (P90 ${fmt(s.p90,1)}, máx ${fmt(s.max,1)})`,`<strong>${PHN(p)}</strong>: avg ${fmt(s.mean,1)} A (P90 ${fmt(s.p90,1)}, max ${fmt(s.max,1)})`);});
+    let it=parts.join('; ')+'. ';
+    if(A.i.ph.length>=2){ const ord=A.i.ph.map(p=>({p,med:A.i.s[p].med})).sort((a,b)=>b.med-a.med); const hi=ord[0],lo=ord[ord.length-1]; const ra=hi.med/Math.max(1,lo.med);
+      it+= ra>1.15? L(`La fase ${PHN(hi.p)} lleva ~${fmt(ra,1)}× la corriente de ${PHN(lo.p)}: la distribución entre fases no está equilibrada.`,`Phase ${PHN(hi.p)} carries ~${fmt(ra,1)}× the current of ${PHN(lo.p)}: phase distribution is not balanced.`):L(`Las fases cargan de forma similar.`,`Phases carry similar load.`); }
+    est+=`<p>${it}</p>`;
+    const il=A.i.ph.map(p=>({label:'I '+PHN(p),color:PHCOL[p],data:A.i.h[p].med}));
+    est+=chartBox('c_i_hr',L('Perfil horario de corriente por fase','Hourly current profile by phase'),BANDSUB(),true);
+    queueChart('c_i_hr',el=>profile(el,{prof:A.i.h[A.i.ph[0]],unit:' A',yt:L('Corriente (A)','Current (A)'),ymin:0,band:true,lines:il}));
+  } else est+=EMPTY();
+  // Factor de Potencia
+  est+=`<h3 class="sub">${L('Factor de Potencia','Power Factor')}</h3>`;
+  if(A.fp){
+    const p=A.fp.ph.map(ph=>{const s=A.fp.s[ph];return L(`${PHN(ph)}: mediana ${fmt(s.med,2)} (P10 ${fmt(s.p10,2)})`,`${PHN(ph)}: median ${fmt(s.med,2)} (P10 ${fmt(s.p10,2)})`);});
+    est+=`<p>${p.join('; ')}.</p>`;
+    const fl=A.fp.ph.map(ph=>({label:'FP '+PHN(ph),color:PHCOL[ph],data:A.fp.h[ph].med}));
+    est+=chartBox('c_fp_hr',L('Perfil horario de factor de potencia','Hourly power factor profile'),BANDSUB());
+    queueChart('c_fp_hr',el=>profile(el,{prof:A.fp.h[A.fp.ph[0]],band:true,lines:fl}));
+  } else est+=EMPTY();
+  // THD de Voltaje
+  est+=`<h3 class="sub">${L('THD de Voltaje','Voltage THD')}</h3>`;
+  if(A.thdv){
+    const s=A.thdv.s[A.thdv.ph[0]];
+    est+=`<p>${L(`THD V ${PHN(A.thdv.ph[0])}: mediana ${fmt(s.med,2)}% (P10 ${fmt(s.p10,2)} / P90 ${fmt(s.p90,2)}).`,`Voltage THD ${PHN(A.thdv.ph[0])}: median ${fmt(s.med,2)}% (P10 ${fmt(s.p10,2)} / P90 ${fmt(s.p90,2)}).`)}</p>`;
+    est+=chartBox('c_thdv_hr',L('THD de Voltaje — perfil horario (%)','Voltage THD — hourly profile (%)'),BANDSUB());
+    const l=A.thdv.ph.map(ph=>({label:'THD V '+PHN(ph),color:PHCOL[ph],data:A.thdv.h[ph].med}));
+    queueChart('c_thdv_hr',el=>profile(el,{prof:A.thdv.h[A.thdv.ph[0]],unit:'%',yt:'THD V (%)',ymin:0,band:true,lines:l}));
+  } else est+=EMPTY();
+  // THD de Corriente
+  est+=`<h3 class="sub">${L('THD de Corriente','Current THD')}</h3>`;
+  if(A.thdi){
+    const s=A.thdi.s[A.thdi.ph[0]];
+    est+=`<p>${L(`THD I ${PHN(A.thdi.ph[0])}: mediana ${fmt(s.med,2)}% (P90 ${fmt(s.p90,2)}).`,`Current THD ${PHN(A.thdi.ph[0])}: median ${fmt(s.med,2)}% (P90 ${fmt(s.p90,2)}).`)}</p>`;
+    est+=chartBox('c_thdi_hr',L('THD de Corriente — perfil horario (%)','Current THD — hourly profile (%)'),BANDSUB());
+    const l=A.thdi.ph.map(ph=>({label:'THD I '+PHN(ph),color:PHCOL[ph],data:A.thdi.h[ph].med}));
+    queueChart('c_thdi_hr',el=>profile(el,{prof:A.thdi.h[A.thdi.ph[0]],unit:'%',yt:'THD I (%)',ymin:0,band:true,lines:l}));
+  } else est+=EMPTY();
+  // Presión
+  est+=`<h3 class="sub">${L('Presión','Pressure')}</h3>`;
+  if(A.pres){
+    est+=`<p>${L(`Presión promedio ${fmt(A.pres.stat.mean,1)} (máx ${fmt(A.pres.stat.max,1)}). Variable térmica que acompaña la carga con respuesta retardada.`,`Average pressure ${fmt(A.pres.stat.mean,1)} (max ${fmt(A.pres.stat.max,1)}). A thermal variable that follows load with a delayed response.`)}</p>`;
+    est+=chartBox('c_p_hr',L('Perfil horario de presión','Hourly pressure profile'),BANDSUB());
+    queueChart('c_p_hr',el=>profile(el,{prof:A.pres.hr,yt:L('Presión','Pressure'),band:true,lines:[{label:L('Mediana presión','Median pressure'),color:C.LIME,data:A.pres.hr.med}]}));
+  } else est+=EMPTY();
+  // Temperatura
+  est+=`<h3 class="sub">${L('Temperatura','Temperature')}</h3>`;
+  if(A.temp){
+    est+=`<p>${L(`Temperatura del aceite promedio ${fmt(A.temp.stat.mean,1)} °C (máx ${fmt(A.temp.stat.max,1)} °C). La respuesta térmica aparece con retraso respecto al pico eléctrico.`,`Average oil temperature ${fmt(A.temp.stat.mean,1)} °C (max ${fmt(A.temp.stat.max,1)} °C). The thermal response lags the electrical peak.`)}</p>`;
+    est+=chartBox('c_t_hr',L('Perfil horario de temperatura (°C)','Hourly temperature profile (°C)'),BANDSUB());
+    queueChart('c_t_hr',el=>profile(el,{prof:A.temp.hr,unit:'°C',yt:L('Temp. (°C)','Temp. (°C)'),band:true,lines:[{label:L('Mediana temperatura','Median temperature'),color:C.ORANGE,data:A.temp.hr.med}]}));
+  } else est+=EMPTY();
+  h+=`<section class="card"><h2 class="sec">${L('Análisis estacionario','Steady-state analysis')}</h2><p>${L('Evolución histórica a partir de perfiles diarios de 24 h (mediana, P10–P90 y Mín–Máx) y la serie del periodo. Las variables sin sensado se indican explícitamente para conservar la estructura del informe.','Historical evolution from 24-h daily profiles (median, P10–P90 and Min–Max) and the period series. Variables without sensing are flagged explicitly to keep the report structure.')}</p>${est}</section>`;
+  // TRANSIENTE
+  let t2=`<div class="alerts">`;
+  const arow=(ic,bg,col,nm,ct)=>`<div class="alert-row"><div class="alert-ic" style="background:${bg};color:${col}">${ic}</div><div class="nm">${nm}</div><div class="ct">${ct}</div></div>`;
+  t2+=arow('〰️','#fff6f1',C.ORANGE,L('Caída de voltaje (Vsag)','Voltage sag (Vsag)'),A.events.sag.n);
+  t2+=arow('🔺','#f0fafe',C.BLUE,L('Aumento de voltaje (Vswell)','Voltage swell (Vswell)'),A.events.swell);
+  t2+=arow('⚡','#fff6f1',C.ORANGE,L('Pérdida de energía','Power loss'),A.events.powerloss);
+  t2+=arow('🔌','#f0fafe',C.BLUE,L('Restauración de energía','Power restored'),A.events.powerrestored);
+  if(A.over!=null) t2+=arow('⚠️','#fff6f1',C.ORANGE,L('Registros en sobrecarga','Records in overload'),fmt(A.over,0));
+  t2+=`</div>`;
+  if(A.events.sag.n>0){
+    t2+=`<h3 class="sub">${L('Caídas de Tensión (Vsag)','Voltage Sags (Vsag)')}</h3>`;
+    const ph=peakHour(A.events.sag.byHour);
+    t2+=`<p>${A.events.sag.n} ${L('evento(s) de Vsag','Vsag event(s)')}${A.events.sag.t0?L(` entre el ${A.events.sag.t0.toLocaleString('es')} y el ${A.events.sag.t1.toLocaleString('es')}`,` between ${A.events.sag.t0.toLocaleString('en-US')} and ${A.events.sag.t1.toLocaleString('en-US')}`):''}.`;
+    if(A.events.sag.minX1&&A.events.sag.minX1.n) t2+=L(` Mínimo X1: <strong>${fmt(A.events.sag.minX1.min,1)} V</strong>.`,` X1 minimum: <strong>${fmt(A.events.sag.minX1.min,1)} V</strong>.`);
+    if(A.events.sag.minX2&&A.events.sag.minX2.n) t2+=L(` Mínimo X2: <strong>${fmt(A.events.sag.minX2.min,1)} V</strong>.`,` X2 minimum: <strong>${fmt(A.events.sag.minX2.min,1)} V</strong>.`);
+    if(A.events.sag.minX3&&A.events.sag.minX3.n) t2+=L(` Mínimo X3: <strong>${fmt(A.events.sag.minX3.min,1)} V</strong>.`,` X3 minimum: <strong>${fmt(A.events.sag.minX3.min,1)} V</strong>.`);
+    if(ph.val>0) t2+=L(` Mayor concentración a las <strong>${hh(ph.hour)}</strong> (${ph.val}).`,` Highest concentration at <strong>${hh(ph.hour)}</strong> (${ph.val}).`);
+    t2+=`</p>`+chartBox('c_sag',L('Distribución horaria de eventos de Vsag','Hourly distribution of Vsag events'),L('Conteo por hora del día','Count by hour of day'));
+    queueChart('c_sag',el=>barChart(el,A.events.sag.byHour));
+  } else t2+=`<h3 class="sub">${L('Caídas de Tensión (Vsag)','Voltage Sags (Vsag)')}</h3><div class="callout ok"><b>${L('Sin eventos de Vsag','No Vsag events')}</b>${L('No se registraron caídas de tensión en el periodo.','No voltage sags were recorded during the period.')}</div>`;
+  t2+=`<h3 class="sub">${L('Aumento de Tensión (Vswell)','Voltage Swell (Vswell)')}</h3>`;
+  t2+= A.events.swell>0? `<p>${L('Se registraron','Recorded')} <strong>${A.events.swell}</strong> ${L('evento(s) de sobretensión.','overvoltage event(s).')}</p>` : `<div class="callout ok"><b>${L('Sin eventos de swell','No swell events')}</b>${L('Permite descartar una condición recurrente de sobretensión.','Rules out a recurring overvoltage condition.')}</div>`;
+  if(A.terminal){
+    t2+=`<h3 class="sub">${L('Pérdida de energía — evento terminal','Power loss — terminal event')}</h3><p>${L('Última condición reportada antes del evento','Last condition reported before the event')} (${A.terminal.t.toLocaleString(dloc())}):</p><div class="terminal">`;
+    const tc=(v,l)=>`<div class="tcell"><div class="tv">${v}</div><div class="tl">${l}</div></div>`;
+    if(A.terminal.temp!=null) t2+=tc(fmt(A.terminal.temp,1)+'°C',L('Temp. aceite','Oil temp'));
+    if(A.terminal.pres!=null) t2+=tc(fmt(A.terminal.pres,1),L('Presión','Pressure'));
+    [1,2,3].forEach(p=>{ if(A.terminal['v'+p]!=null) t2+=tc(fmt(A.terminal['v'+p],1)+' V','Voltaje '+PHN(p)); });
+    [1,2,3].forEach(p=>{ if(A.terminal['i'+p]!=null) t2+=tc(fmt(A.terminal['i'+p],1)+' A','Corriente '+PHN(p)); });
+    t2+=`</div>`;
+  }
+  if(A.over>0) t2+=`<h3 class="sub">${L('Sobrecarga','Overload')}</h3><p>${L(`Operó por encima de su nominal en <strong>${fmt(A.over,0)}</strong> registros (${fmt(A.pctOver,1)}%, ~${fmt(A.overHours,0)} h), con magnitud máxima de <strong>${fmt(A.maxUtil,1)}%</strong>. Es una condición repetitiva que reduce el margen y acelera el envejecimiento térmico.`,`Operated above rated in <strong>${fmt(A.over,0)}</strong> records (${fmt(A.pctOver,1)}%, ~${fmt(A.overHours,0)} h), peaking at <strong>${fmt(A.maxUtil,1)}%</strong>. A recurring condition that erodes margin and accelerates thermal aging.`)}</p>`;
+  h+=`<section class="card"><h2 class="sec">${L('Análisis transiente: eventos detectados','Transient analysis: detected events')}</h2><p>${L('Eventos discretos reportados por el DTM2 y condiciones de sobrecarga.','Discrete events reported by the DTM2 and overload conditions.')}</p>${t2}</section>`;
+  // RECONSTRUCCIÓN
+  if(A.health==='failure'){
+    h+=`<section class="card"><h2 class="sec">${L('Reconstrucción de la condición de falla','Failure condition reconstruction')}</h2>
+      <p>${L('Secuencia lógica que conecta el comportamiento previo con el evento terminal.','Logical sequence linking prior behavior to the terminal event.')}</p><div class="seq">
+        ${A.over>0?`<div class="step"><h4>${L('Sobrecarga repetitiva','Recurring overload')}</h4><p>${L('Operó por encima de su nominal de forma recurrente.','Operated above rated repeatedly.')}</p></div>`:''}
+        <div class="step"><h4>${L('Aumento de corriente en horas punta','Rising current at peak hours')}</h4><p>${L('La demanda elevó las corrientes en el bloque de mayor exigencia.','Demand raised currents during the heaviest block.')}</p></div>
+        ${A.v?`<div class="step"><h4>${L('Caída de voltaje','Voltage drop')}</h4><p>${L('El voltaje cae al aumentar la carga.','Voltage drops as load increases.')}</p></div>`:''}
+        ${A.temp?`<div class="step"><h4>${L('Respuesta térmica','Thermal response')}</h4><p>${L('La temperatura del aceite sube como efecto acumulado de la carga.','Oil temperature rises as a cumulative effect of load.')}</p></div>`:''}
+        ${A.events.sag.n>0?`<div class="step"><h4>${L('Eventos sag previos','Prior sag events')}</h4><p>${L('Caídas de tensión concentradas antes de la pérdida de energía.','Voltage sags concentrated before the power loss.')}</p></div>`:''}
+        <div class="step terminal"><h4>${L('Evento terminal','Terminal event')}</h4><p>${L('Pérdida de energía con la condición crítica registrada por el DTM.','Power loss with the critical condition recorded by the DTM.')}</p></div>
+      </div></section>`;
+  }
+  h+=`<section class="card"><h2 class="sec">${L('Conclusiones','Conclusions')}</h2><ol>${concl(A).map(x=>'<li>'+x+'</li>').join('')}</ol></section>`;
+  h+=`<section class="card"><h2 class="sec">${L('Recomendaciones','Recommendations')}</h2><ol>${recs(A).map(x=>'<li>'+x+'</li>').join('')}</ol></section>`;
+  return h;
+}
+function concl(A){
+  const c=[];
+  c.push(L(`<strong>Visión completa del activo.</strong> El DTM permitió evaluar el comportamiento estacionario y los eventos transientes con datos objetivos.`,`<strong>Complete asset view.</strong> The DTM enabled assessment of steady-state behavior and transient events with objective data.`));
+  if(A.kva&&A.kva.util) c.push(L(`<strong>Patrón de carga.</strong> Promedio ${fmt(A.kva.util.mean,1)}%, P90 ${fmt(A.kva.util.p90,1)}% y máximo ${fmt(A.kva.util.max,1)}% respecto a la nominal.`,`<strong>Load pattern.</strong> Average ${fmt(A.kva.util.mean,1)}%, P90 ${fmt(A.kva.util.p90,1)}% and max ${fmt(A.kva.util.max,1)}% of rated.`));
+  if(A.health==='overload'||A.health==='failure') c.push(L(`<strong>Sobrecarga acumulativa.</strong> La operación sobre la nominal fue repetitiva (${fmt(A.pctOver,1)}% del tiempo), no aislada.`,`<strong>Cumulative overload.</strong> Operation above rated was repeated (${fmt(A.pctOver,1)}% of the time), not isolated.`));
+  if(A.health==='healthy') c.push(L(`<strong>Margen holgado.</strong> La carga se mantuvo bajo la nominal; el activo opera en condiciones saludables.`,`<strong>Ample margin.</strong> Load stayed below rated; the asset operates in healthy conditions.`));
+  if(A.events.sag.n>0) c.push(L(`<strong>Calidad de energía.</strong> ${A.events.sag.n} caída(s) de tensión, útiles para correlacionar con la demanda.`,`<strong>Power quality.</strong> ${A.events.sag.n} voltage sag(s), useful to correlate with demand.`));
+  if(A.terminal) c.push(L(`<strong>Condición final coherente.</strong> El evento terminal es consistente con la evolución previa.`,`<strong>Coherent final condition.</strong> The terminal event is consistent with prior evolution.`));
+  c.push(L(`<strong>De reactivo a basado en evidencia.</strong> El DTM convierte la operación del activo en una historia trazable.`,`<strong>From reactive to evidence-based.</strong> The DTM turns asset operation into a traceable story.`));
+  return c;
+}
+function recs(A){
+  const r=[];
+  if(A.health==='overload'||A.health==='failure'){
+    r.push(L(`<strong>Evaluar redimensionamiento o redistribución de carga.</strong>`,`<strong>Evaluate resizing or load redistribution.</strong>`));
+    r.push(L(`<strong>Configurar alertas de sobrecarga y alta temperatura</strong> como señales prioritarias.`,`<strong>Configure overload and high-temperature alerts</strong> as priority signals.`));
+  } else if(A.health==='tight') r.push(L(`<strong>Vigilar el margen en horas punta</strong> con alertas de utilización cercana a la nominal (P90).`,`<strong>Watch the peak-hour margin</strong> with alerts on utilization near rated (P90).`));
+  else r.push(L(`<strong>Mantener este periodo como línea base</strong> del activo.`,`<strong>Keep this period as the asset baseline.</strong>`));
+  r.push(L(`<strong>Revisar perfiles diarios de 24 h</strong> (mediana y P10–P90) para identificar patrones repetitivos.`,`<strong>Review 24-h daily profiles</strong> (median and P10–P90) to spot repeating patterns.`));
+  if(!A.temp||!A.pres) r.push(L(`<strong>Verificar sensores no reportados:</strong> en este periodo ${[!A.temp?'temperatura':null,!A.pres?'presión':null].filter(Boolean).join(' y ')} no entregó datos válidos.`,`<strong>Check unreported sensors:</strong> in this period ${[!A.temp?'temperature':null,!A.pres?'pressure':null].filter(Boolean).join(' and ')} returned no valid data.`));
+  r.push(L(`<strong>Priorizar activos por combinación de señales,</strong> no por una sola variable.`,`<strong>Prioritize assets by a combination of signals,</strong> not a single variable.`));
+  r.push(L(`<strong>Generar reportes periódicos</strong> con esta plantilla para comparar la evolución.`,`<strong>Generate periodic reports</strong> with this template to compare evolution over time.`));
+  return r;
+}
+
+/* ---------- chart builders ---------- */
+function profile(el,o){
+  const ds=[], p=o.prof;
+  if(o.band&&p){
+    ds.push({label:'Máx',data:p.mx,borderColor:'transparent',backgroundColor:'rgba(34,176,225,.08)',fill:'+1',pointRadius:0,tension:.35,spanGaps:true});
+    ds.push({label:'Mín',data:p.mn,borderColor:'transparent',pointRadius:0,fill:false,tension:.35,spanGaps:true});
+    ds.push({label:'P90',data:p.p90,borderColor:'transparent',backgroundColor:'rgba(34,176,225,.18)',fill:'+1',pointRadius:0,tension:.35,spanGaps:true});
+    ds.push({label:'P10',data:p.p10,borderColor:'transparent',pointRadius:0,fill:false,tension:.35,spanGaps:true});
+  }
+  (o.lines||[]).forEach(l=>ds.push({label:l.label,data:l.data,borderColor:l.color,backgroundColor:l.color,borderWidth:2.4,pointRadius:0,tension:.35,fill:false,borderDash:l.dash||[],spanGaps:true}));
+  const skip=['Máx','Mín','P90','P10'];
+  return new Chart(el,{type:'line',data:{labels:HOURS,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:true,labels:{filter:i=>!skip.includes(i.text),usePointStyle:true,boxWidth:8,font:{size:11}}},
+      tooltip:{filter:i=>!skip.includes(i.dataset.label),callbacks:{title:it=>it[0].label+':00 h',label:c=>` ${c.dataset.label}: ${c.parsed.y}${o.unit||''}`}}},
+    scales:{x:{grid:{display:false},title:{display:true,text:L('Hora (0–23)','Hour (0–23)'),font:{size:11}},ticks:{font:{size:10}}},
+      y:{grid:{color:'rgba(30,36,69,.06)'},title:{display:!!o.yt,text:o.yt||'',font:{size:11}},suggestedMin:o.ymin,suggestedMax:o.ymax,ticks:{font:{size:10}}}}}});
+}
+function tsChart(el,A){
+  const rows=A.rows||[]; const max=700,step=Math.max(1,Math.ceil(rows.length/max));
+  const labels=[],vals=[],full=[];
+  for(let i=0;i<rows.length;i+=step){ const r=rows[i]; if(r.kva==null) continue;
+    labels.push(r.t.toLocaleDateString(dloc(),{day:'2-digit',month:'short'}));
+    full.push(r.t.toLocaleString(dloc(),{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}));
+    vals.push(+r.kva.toFixed(2)); }
+  const dssets=[{label:'kVA',data:vals,borderColor:C.BLUE,backgroundColor:'rgba(34,176,225,.08)',borderWidth:1,pointRadius:0,fill:true,tension:.2}];
+  if(A.rating) dssets.push({label:L('Nominal ','Rated ')+fmt(A.rating,0)+' kVA',data:vals.map(()=>A.rating),borderColor:C.ORANGE,borderDash:[6,5],borderWidth:1.5,pointRadius:0,fill:false});
+  return new Chart(el,{type:'line',data:{labels,datasets:dssets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{usePointStyle:true,boxWidth:8,font:{size:11}}},tooltip:{callbacks:{title:it=>full[it[0].dataIndex]||'',label:c=>` ${c.dataset.label}: ${c.parsed.y} kVA`}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:10},autoSkip:true,maxTicksLimit:8,maxRotation:0}},y:{grid:{color:'rgba(30,36,69,.06)'},title:{display:true,text:'kVA',font:{size:11}},ticks:{font:{size:10}}}}}});
+}
+function barChart(el,byHour){ const mx=Math.max.apply(null,byHour);
+  return new Chart(el,{type:'bar',data:{labels:HOURS,datasets:[{label:L('Eventos','Events'),data:byHour,backgroundColor:byHour.map(v=>v>=mx&&v>0?C.ORANGE:'rgba(34,176,225,.6)'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:it=>it[0].label+':00 h',label:c=>` ${c.parsed.y} ${L('evento(s)','event(s)')}`}}},
+      scales:{x:{grid:{display:false},title:{display:true,text:L('Hora (0–23)','Hour (0–23)'),font:{size:11}},ticks:{font:{size:10}}},y:{grid:{color:'rgba(30,36,69,.06)'},title:{display:true,text:L('N° eventos','# events'),font:{size:11}},ticks:{precision:0,font:{size:10}}}}}});
+}
+
+/* ---------- reset & wiring ---------- */
+window.resetApp=function(){ charts.forEach(c=>{try{c.destroy();}catch(e){}}); charts=[]; DATA={}; CURRENT=null;
+  $('#report').innerHTML=''; $('#report').classList.add('hidden'); $('#footer').classList.add('hidden'); $('#landing').classList.remove('hidden');
+  ['nodePill','nodeSel','btnReset','btnPrint'].forEach(id=>$('#'+id).classList.add('hidden')); $('#fileInput').value=''; setStatus(''); };
+
+const dz=$('#dz'), fi=$('#fileInput');
+dz.addEventListener('click',()=>fi.click());
+fi.addEventListener('change',e=>handleFiles(e.target.files));
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+dz.addEventListener('drop',e=>{ if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+fillStatic();
+})();
+</script>
+</body>
+</html>
