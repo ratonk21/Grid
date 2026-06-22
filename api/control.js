@@ -1,9 +1,9 @@
-// api/control.cjs — Función serverless de Vercel (Node 18+, CommonJS forzado por la extensión .cjs)
+// api/control.js — Función serverless de Vercel (Node 18+, sintaxis ES Module / export default)
 // Proxy seguro a la API de Ubicquia: estado / encender / apagar / dimerizar / ping.
 // Los secretos viven SOLO aquí (variables de entorno de Vercel). Nunca en el front.
 //
-// La extensión .cjs garantiza CommonJS aunque el repo tenga "type":"module"
-// (eso evita el 500 "exports is not defined in ES module scope").
+// Se usa `export default` (ESM) porque el repo trata los .js como módulos
+// (package.json con "type":"module"). Por eso NO se usa module.exports.
 //
 // Variables de entorno (Vercel → Settings → Environment Variables):
 //   UBI_CLIENT_ID        (secreto)    p. ej. 803956.ebustos_superuser@ubicquia.com
@@ -104,7 +104,7 @@ async function sendCommand(path, value, id, subpanel, extraBody) {
   return j;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
     const p = Object.assign({}, req.query || {}, (req.body && typeof req.body === 'object') ? req.body : {});
@@ -146,4 +146,4 @@ module.exports = async (req, res) => {
   } catch (e) {
     return res.status(502).json({ ok: false, error: String((e && e.message) || e) });
   }
-};
+}
