@@ -60,11 +60,15 @@
   .gate-h{font-size:1.05rem;font-weight:900;color:var(--ubi-navy);margin-bottom:4px}
   .gate-intro{font-size:.8rem;color:var(--ubi-muted);line-height:1.5;margin:14px 0 0}
 
-  /* ---- Workspace (controles izq · datos der) ---- */
-  .workspace{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
-  @media (max-width:860px){ .workspace{grid-template-columns:1fr} }
+  /* ---- Pestañas: ocultamiento real (id+attr le gana a .top grid) ---- */
+  #tab-control[hidden], #tab-log[hidden]{display:none !important}
+
+  /* ---- Fila superior (controles izq · tabla der) ---- */
+  .top{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start;margin-bottom:18px}
+  @media (max-width:860px){ .top{grid-template-columns:1fr} }
   .col-left{display:flex;flex-direction:column;gap:18px}
   .col-right{display:flex;flex-direction:column;gap:18px}
+  .charts-card{margin-top:0}
 
   /* ---- Lamp ---- */
   .stage{display:grid;place-items:center;padding:6px 0 14px}
@@ -220,8 +224,8 @@
       </div>
 
       <!-- ---- Pestaña Control ---- -->
-      <div id="tab-control" class="workspace">
-
+      <div id="tab-control">
+        <div class="top">
         <!-- Columna izquierda: controles -->
         <div class="col-left">
           <div class="card">
@@ -275,7 +279,7 @@
           </div>
         </div>
 
-        <!-- Columna derecha: datos -->
+        <!-- Columna derecha: tabla antes/después -->
         <div class="col-right">
           <div class="card">
             <div class="block-title">Estado · antes / después</div>
@@ -289,24 +293,27 @@
               </tbody>
             </table>
           </div>
-
-          <div class="card">
-            <div class="block-title">
-              <span>Gráficas en el tiempo · <span id="sampleCount">0 muestras</span></span>
-              <button class="linkbtn" id="chartsClear">limpiar histórico</button>
-            </div>
-            <div class="logempty" id="chartsNote" hidden>Chart.js no cargó · se muestran solo los números.</div>
-            <div class="chartgrid">
-              <div class="chart"><div class="ctitle">Voltaje (V)</div><div class="cbox"><canvas id="cV"></canvas></div></div>
-              <div class="chart"><div class="ctitle">Corriente (A)</div><div class="cbox"><canvas id="cC"></canvas></div></div>
-              <div class="chart"><div class="ctitle">Potencia</div><div class="cbox"><canvas id="cP"></canvas></div></div>
-              <div class="chart"><div class="ctitle">Factor de potencia</div><div class="cbox"><canvas id="cF"></canvas></div></div>
-              <div class="chart"><div class="ctitle">Dim (%) y On/Off</div><div class="cbox"><canvas id="cD"></canvas></div></div>
-            </div>
-          </div>
         </div>
 
       </div>
+
+      <!-- Gráficas a todo el ancho -->
+      <div class="card charts-card">
+        <div class="block-title">
+          <span>Gráficas en el tiempo · <span id="sampleCount">0 muestras</span></span>
+          <button class="linkbtn" id="chartsClear">limpiar histórico</button>
+        </div>
+        <div class="logempty" id="chartsNote" hidden>Chart.js no cargó · se muestran solo los números.</div>
+        <div class="chartgrid">
+          <div class="chart"><div class="ctitle">Voltaje (V)</div><div class="cbox"><canvas id="cV"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Corriente (A)</div><div class="cbox"><canvas id="cC"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Potencia</div><div class="cbox"><canvas id="cP"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Factor de potencia</div><div class="cbox"><canvas id="cF"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Dim (%) y On/Off</div><div class="cbox"><canvas id="cD"></canvas></div></div>
+        </div>
+      </div>
+      </div>
+      <!-- /tab-control -->
 
       <!-- ---- Pestaña Registro ---- -->
       <div id="tab-log" hidden>
