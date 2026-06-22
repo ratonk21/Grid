@@ -432,6 +432,98 @@
       color: rgba(255,255,255,0.8);
     }
 
+    /* ── CONTACTS ── */
+    .contacts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 0.7rem;
+    }
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.95rem 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    }
+    .contact-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--blue), var(--lime));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .contact-card:hover {
+      box-shadow: 0 8px 32px rgba(30,58,123,0.13);
+      transform: translateY(-3px);
+      border-color: #a8bcf0;
+    }
+    .contact-card:hover::before { opacity: 1; }
+
+    .contact-avatar {
+      width: 46px; height: 46px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+    }
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .contact-role {
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-top: 0.18rem;
+    }
+    .contact-lines {
+      margin-top: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+    }
+    .contact-lines a {
+      font-size: 0.66rem;
+      color: var(--text-mid);
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .contact-lines a:hover { color: var(--blue); }
+
+    .contact-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+    .contact-btn {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: transform 0.15s, filter 0.15s;
+    }
+    .contact-btn svg { width: 17px; height: 17px; }
+    .contact-btn.wa { background: var(--green); }
+    .contact-btn.mail { background: var(--blue); }
+    .contact-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       header { padding: 0 1.5rem; }
@@ -676,6 +768,59 @@
     </div>
   </section>
 
+  <!-- CONTACTS SECTION -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label" data-i18n="section-contacts">contacts</span>
+      <div class="section-line"></div>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="contacts-count-label">people</span></span>
+    </div>
+
+    <div class="contacts-grid">
+
+      <div class="contact-card">
+        <div class="contact-avatar">NC</div>
+        <div class="contact-info">
+          <div class="contact-name">Nicolás Cicinelli</div>
+          <div class="contact-role">Partner Sales Manager · LATAM</div>
+          <div class="contact-lines">
+            <a href="tel:+18573523957">+1 (857) 352-3957</a>
+            <a href="mailto:ncicinelli@ubicquia.com">ncicinelli@ubicquia.com</a>
+          </div>
+        </div>
+        <div class="contact-actions">
+          <a class="contact-btn wa" href="https://wa.me/18573523957" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Nicolás Cicinelli">
+            <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
+          </a>
+          <a class="contact-btn mail" href="mailto:ncicinelli@ubicquia.com" title="Email" aria-label="Email Nicolás Cicinelli">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="contact-card">
+        <div class="contact-avatar">EB</div>
+        <div class="contact-info">
+          <div class="contact-name">Elías Quiñones Bustos</div>
+          <div class="contact-role">Field Engineer · LATAM</div>
+          <div class="contact-lines">
+            <a href="tel:+56930647327">+56 9 3064 7327</a>
+            <a href="mailto:ebustos@ubicquia.com">ebustos@ubicquia.com</a>
+          </div>
+        </div>
+        <div class="contact-actions">
+          <a class="contact-btn wa" href="https://wa.me/56930647327" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Elías Quiñones Bustos">
+            <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
+          </a>
+          <a class="contact-btn mail" href="mailto:ebustos@ubicquia.com" title="Email" aria-label="Email Elías Quiñones Bustos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- FOOTER -->
   <footer>
     <div class="footer-brand">
@@ -728,6 +873,8 @@
         'tag-dtm':            'Data & Charts',
         'section-control':    'live control',
         'control-count-label':'tool',
+        'section-contacts':   'contacts',
+        'contacts-count-label':'people',
         'card-control':       'Luminaire Control',
         'tag-control':        'UbiLight · Live',
         'open':               'open →',
@@ -774,6 +921,8 @@
         'tag-dtm':            'Datos y Gráficos',
         'section-control':    'control en vivo',
         'control-count-label':'herramienta',
+        'section-contacts':   'contactos',
+        'contacts-count-label':'personas',
         'card-control':       'Control de Luminaria',
         'tag-control':        'UbiLight · En vivo',
         'open':               'abrir →',
