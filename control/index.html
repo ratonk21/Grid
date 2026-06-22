@@ -466,7 +466,13 @@
         body: JSON.stringify({ action:'verify', code }) });
       const j = await r.json().catch(()=> ({}));
       if (r.ok && j.ok){ ACCESS = j.required===false ? '' : code; unlock(); }
-      else { gateBanner.textContent = j.error || 'Código incorrecto'; gateBanner.classList.add('show'); }
+      else {
+        const msg = j.error
+          || (r.status===404 ? 'No se encontró /api/control · revisa que la función esté desplegada'
+            : r.status===401 ? 'Código incorrecto'
+            : 'Error HTTP ' + r.status);
+        gateBanner.textContent = msg; gateBanner.classList.add('show');
+      }
     }catch(e){
       gateBanner.textContent = 'No se pudo validar: '+e.message; gateBanner.classList.add('show');
     }finally{
