@@ -1,27 +1,32 @@
-<head>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-K73HD7MSR4');
-  </script>
-  <!-- Resto de tu head... -->
-</head>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>TransLoad — Estudio de Cargabilidad</title>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-K73HD7MSR4');
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 :root{
-  /* ── Ubicquia® Brand Palette ── */
+  /* ── Ubicquia® — paleta de marca canónica (salud de transformador) ── */
+  --ubi-navy:#1E2445;     /* texto principal, headers, barras */
+  --ubi-blue:#22B0E1;     /* acento primario, acciones, links activos */
+  --ubi-lime:#AECC53;     /* éxito, estados OK, X2 */
+  --ubi-orange:#EA561B;   /* alertas, énfasis secundario, X3 */
+  --ubi-gray:#EEF0F5;     /* fondos de superficie, separadores */
+  --ubi-ink:#14242F;      /* texto sobre claro */
+  --ubi-muted:#6A7D89;    /* texto secundario, labels */
+
+  /* ── Compatibilidad: nombres previos mapeados a la marca ── */
   --ub-dark-blue:#1E2445;
   --ub-blue:#22B0E1;
   --ub-light-gray:#EEF0F5;
@@ -29,7 +34,8 @@
   --ub-gray:#99A0B4;
   --ub-orange:#EA561B;
   --ub-yellow:#FAB512;
-  --ub-green:#4EB270;
+  --ub-lime:#AECC53;
+  --ub-green:#4EB270;   /* verde legible para texto OK sobre blanco */
   --ub-danger:#D32F2F;
 
   /* ── Semantic aliases ── */
@@ -42,6 +48,7 @@
   --text2:#464D63;
   --text3:#99A0B4;
   --blue:#22B0E1;
+  --lime:#AECC53;
   --green:#4EB270;
   --warn:#FAB512;
   --danger:#EA561B;
@@ -50,7 +57,7 @@
 
   --font:'Lato','Arial',sans-serif;
   --sans:'Lato','Arial',sans-serif;
-  --mono:'Consolas','Courier New',monospace;
+  --mono:'JetBrains Mono','Consolas','Courier New',monospace;
   --r:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -61,6 +68,11 @@ header{background:var(--ub-dark-blue);border-bottom:none;padding:.9rem 2rem;disp
 .logo-pill{background:rgba(34,176,225,.15);border:1px solid rgba(34,176,225,.45);border-radius:20px;padding:3px 13px;font-family:var(--sans);font-size:11px;font-weight:700;color:var(--ub-blue);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 header h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em;}
 header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
+.ubi-logo{font-family:var(--sans);font-size:19px;font-weight:400;color:#fff;letter-spacing:-.01em;line-height:1;white-space:nowrap;}
+.ubi-logo b{font-weight:900;}
+.ubi-logo .dot{color:var(--ubi-blue);font-weight:900;}
+.tool-tag{background:rgba(34,176,225,.15);border:1px solid rgba(34,176,225,.45);border-radius:20px;padding:3px 11px;font-family:var(--mono);font-size:10px;font-weight:500;color:var(--ubi-blue);letter-spacing:.06em;white-space:nowrap;}
+.ubi-sep{width:1px;height:26px;background:rgba(255,255,255,.18);}
 .lang-toggle{display:flex;align-items:center;gap:4px;margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:3px 5px;}
 .lang-btn{background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:4px;transition:all .15s;color:var(--ub-gray);}
 .lang-btn.active{background:var(--ub-blue);color:#fff;}
@@ -268,7 +280,9 @@ header p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
 </head>
 <body>
 <header>
-  <div class="logo-pill">TransLoad v4.2</div>
+  <div class="ubi-logo">ubi<b>cquia</b><span class="dot">.</span></div>
+  <div class="ubi-sep"></div>
+  <div class="tool-tag">TransLoad v4.2</div>
   <div style="flex:1">
     <h1 id="h1Title">Estudio de Cargabilidad — Transformador</h1>
     <p id="headerSub" data-en="Upload a CSV file to begin" data-es="Cargue un CSV para comenzar">Cargue un CSV para comenzar</p>
@@ -543,8 +557,8 @@ function mk(id,cfg){dChart(id);CI[id]=new Chart($(id),cfg);}
 const GR={color:'rgba(153,160,180,0.25)'};
 const TK={color:'#99A0B4',font:{size:10}};
 const TT={backgroundColor:'#fff',borderColor:'#99A0B4',borderWidth:1,titleColor:'#1E2445',bodyColor:'#464D63'};
-/* Ubicquia chart colors */
-const UC={blue:'#22B0E1',dark:'#1E2445',deep:'#464D63',gray:'#99A0B4',green:'#4EB270',orange:'#EA561B',yellow:'#FAB512',purple:'#59509D',danger:'#D32F2F',royal:'#3466AF'};
+/* Ubicquia chart colors — paleta de marca */
+const UC={blue:'#22B0E1',dark:'#1E2445',deep:'#464D63',gray:'#99A0B4',lime:'#AECC53',green:'#AECC53',orange:'#EA561B',yellow:'#FAB512',purple:'#59509D',danger:'#D32F2F',royal:'#3466AF'};
 
 /* ════════════════════════════════════════
    VOLTAGE PRESET
@@ -870,7 +884,7 @@ function buildDashboard(){
       </div>
       <div class="pct-note">${t('pct.note')}</div>
       <div class="pct-pills">
-        <div class="pct-pill"><div class="pct-dot" style="background:#4EB270"></div>P10</div>
+        <div class="pct-pill"><div class="pct-dot" style="background:#AECC53"></div>P10</div>
         <div class="pct-pill"><div class="pct-dot" style="background:#22B0E1"></div>P50</div>
         <div class="pct-pill"><div class="pct-dot" style="background:#EA561B"></div>P90</div>
         <div class="pct-pill"><div class="pct-dot" style="background:rgba(34,176,225,.18);width:28px;height:8px;border-radius:2px"></div>${bandLabel}</div>
@@ -1141,8 +1155,8 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     const dsC=[
       {label:'I X1 (A)',data:subIdx.map(i=>r2(i1Raw[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
     ];
-    if(i2Raw)dsC.push({label:'I X2 (A)',data:subIdx.map(i=>r2(i2Raw[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
-    dsC.push({label:'I X3 (A)',data:subIdx.map(i=>r2(i3Raw[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    if(i2Raw)dsC.push({label:'I X2 (A)',data:subIdx.map(i=>r2(i2Raw[i])),borderColor:UC.lime,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsC.push({label:'I X3 (A)',data:subIdx.map(i=>r2(i3Raw[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
     mk('chartCurrent',{type:'line',data:{labels:lbl,datasets:dsC},options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
       scales:{x:{grid:GR,ticks:{...TK,maxTicksLimit:8,maxRotation:0}},y:{grid:GR,ticks:TK,title:{display:true,text:'A',color:UC.gray,font:{size:11}}}}}});}
@@ -1155,8 +1169,8 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     const ds=[
       {label:'V X1 (V)',data:subIdx.map(i=>r2(v1Raw[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
     ];
-    if(v2Raw)ds.push({label:'V X2 (V)',data:subIdx.map(i=>r2(v2Raw[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
-    ds.push({label:'V X3 (V)',data:subIdx.map(i=>r2(v3Raw[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    if(v2Raw)ds.push({label:'V X2 (V)',data:subIdx.map(i=>r2(v2Raw[i])),borderColor:UC.lime,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    ds.push({label:'V X3 (V)',data:subIdx.map(i=>r2(v3Raw[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
     ds.push({label:`+${pHi}% (${vHi}V)`,data:Array(N).fill(vHi),borderColor:'rgba(234,86,27,.9)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false});
     ds.push({label:`-${pLo}% (${vLo}V)`,data:Array(N).fill(vLo),borderColor:'rgba(34,176,225,.9)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false});
     if(!sameAs5){ds.push({label:`+5%(${vHi5}V)`,data:Array(N).fill(vHi5),borderColor:'rgba(234,86,27,.25)',borderWidth:1,borderDash:[3,4],pointRadius:0,fill:false});ds.push({label:`-5%(${vLo5}V)`,data:Array(N).fill(vLo5),borderColor:'rgba(34,176,225,.25)',borderWidth:1,borderDash:[3,4],pointRadius:0,fill:false});}
@@ -1184,7 +1198,7 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     const bins=Array(nB).fill(0);
     loadPct.forEach(v=>{bins[Math.min(nB-1,Math.floor((v-hMin)/bSz))]++;});
     const bL=Array.from({length:nB},(_,i)=>r2(hMin+i*bSz).toFixed(0)+'%');
-    const bC=bins.map((_,i)=>{const m=hMin+(i+.5)*bSz;return m<p10?'rgba(78,178,112,.75)':m>p90?'rgba(234,86,27,.75)':'rgba(34,176,225,.65)';});
+    const bC=bins.map((_,i)=>{const m=hMin+(i+.5)*bSz;return m<p10?'rgba(174,204,83,.85)':m>p90?'rgba(234,86,27,.75)':'rgba(34,176,225,.65)';});
     const recLabel=LANG==='es'?'Registros':'Records';
     mk('chartHist',{type:'bar',data:{labels:bL,datasets:[{label:recLabel,data:bins,backgroundColor:bC,borderColor:'transparent',borderWidth:0}]},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
@@ -1196,8 +1210,8 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     const dsFP=[
       {label:'|PF| X1',data:subIdx.map(i=>{const v=fp1A[i];return v!=null?r2(v):null;}),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true},
     ];
-    if(fp2A)dsFP.push({label:'|PF| X2',data:subIdx.map(i=>{const v=fp2A[i];return v!=null?r2(v):null;}),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true});
-    dsFP.push({label:'|PF| X3',data:subIdx.map(i=>{const v=fp3A[i];return v!=null?r2(v):null;}),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true});
+    if(fp2A)dsFP.push({label:'|PF| X2',data:subIdx.map(i=>{const v=fp2A[i];return v!=null?r2(v):null;}),borderColor:UC.lime,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true});
+    dsFP.push({label:'|PF| X3',data:subIdx.map(i=>{const v=fp3A[i];return v!=null?r2(v):null;}),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.1,spanGaps:true});
     dsFP.push({label:'PF=0.90',data:Array(N).fill(.9),borderColor:'rgba(234,86,27,.7)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false});
     mk('chartFP',{type:'line',data:{labels:lbl,datasets:dsFP},options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
@@ -1208,8 +1222,8 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     const dsTHDI=[
       {label:'THD I X1 (%)',data:subIdx.map(i=>r2(thd1[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
     ];
-    if(thd2)dsTHDI.push({label:'THD I X2 (%)',data:subIdx.map(i=>r2(thd2[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
-    dsTHDI.push({label:'THD I X3 (%)',data:subIdx.map(i=>r2(thd3[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    if(thd2)dsTHDI.push({label:'THD I X2 (%)',data:subIdx.map(i=>r2(thd2[i])),borderColor:UC.lime,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsTHDI.push({label:'THD I X3 (%)',data:subIdx.map(i=>r2(thd3[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
     dsTHDI.push({label:'5% IEEE 519',data:Array(N).fill(5),borderColor:'rgba(234,86,27,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false});
     mk('chartTHDI',{type:'line',data:{labels:lbl,datasets:dsTHDI},options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
@@ -1220,8 +1234,8 @@ function renderCharts(sel,data,kvaFull,loadFull,loadPct,loadSub,lbl,N,subIdx,ts,
     const dsTHDV=[
       {label:'THD V X1 (%)',data:subIdx.map(i=>r2(thdV1[i])),borderColor:UC.blue,borderWidth:1.2,pointRadius:0,fill:false,tension:.15},
     ];
-    if(thdV2)dsTHDV.push({label:'THD V X2 (%)',data:subIdx.map(i=>r2(thdV2[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
-    dsTHDV.push({label:'THD V X3 (%)',data:subIdx.map(i=>r2(thdV3[i])),borderColor:UC.green,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    if(thdV2)dsTHDV.push({label:'THD V X2 (%)',data:subIdx.map(i=>r2(thdV2[i])),borderColor:UC.lime,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
+    dsTHDV.push({label:'THD V X3 (%)',data:subIdx.map(i=>r2(thdV3[i])),borderColor:UC.orange,borderWidth:1.2,pointRadius:0,fill:false,tension:.15});
     dsTHDV.push({label:LANG==='es'?'5% límite':'5% limit',data:Array(N).fill(5),borderColor:'rgba(234,86,27,.5)',borderWidth:1.2,borderDash:[5,3],pointRadius:0,fill:false});
     mk('chartTHDV',{type:'line',data:{labels:lbl,datasets:dsTHDV},options:{responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{legend:{labels:{color:UC.deep,font:{size:10},boxWidth:14}},tooltip:TT},
