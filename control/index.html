@@ -3,184 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ubicquia® · Control de Luminaria</title>
+<title>ubicquia® · Telegestión de Luminarias</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --ubi-navy:#1E2445; --ubi-blue:#22B0E1; --ubi-lime:#AECC53; --ubi-orange:#EA561B;
     --ubi-gray:#EEF0F5; --ubi-ink:#14242F; --ubi-muted:#6A7D89;
-    --ubi-surface:#ffffff; --ubi-line:rgba(30,36,69,.10); --ubi-surface2:#f5f7fb;
-    --glow:#ffd98a; --glow-hot:#ff9e2c;   /* solo la ampolleta (luz física) */
-    --danger:#e35d5d;
-    --mono:'JetBrains Mono',monospace;
+    --ubi-surface:#fff; --ubi-line:rgba(30,36,69,.10); --ubi-surface2:#f5f7fb;
+    --danger:#e35d5d; --mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{min-height:100%}
   body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:var(--ubi-gray);color:var(--ubi-ink);
     -webkit-font-smoothing:antialiased;min-height:100dvh}
 
-  /* ---- Header ---- */
   header{background:var(--ubi-navy);display:flex;align-items:center;justify-content:space-between;
     padding:0 clamp(16px,4vw,40px);height:60px;position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(255,255,255,.08)}
   .brand{display:flex;align-items:center;gap:10px}
   .logomark{width:26px;height:32px;flex:none}
   .wm{font-weight:900;letter-spacing:-.02em;color:#fff;text-transform:lowercase;font-size:1.05rem}
-  .wm .reg{font-weight:400}
-  .wm .dot{color:var(--ubi-blue)}
-  .wm sup{font-size:.45rem;color:rgba(255,255,255,.5);font-weight:700}
+  .wm .reg{font-weight:400}.wm .dot{color:var(--ubi-blue)}.wm sup{font-size:.45rem;color:rgba(255,255,255,.5);font-weight:700}
   .brand .sub{color:rgba(255,255,255,.5);font-size:.62rem;text-transform:uppercase;letter-spacing:.18em;
     padding-left:10px;margin-left:6px;border-left:1px solid rgba(255,255,255,.15)}
   .conn{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(255,255,255,.55);font-family:var(--mono);
     background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:6px 11px;border-radius:999px}
   .dot7{width:7px;height:7px;border-radius:50%;background:#5b6478;transition:.3s}
-  .conn.live .dot7{background:var(--ubi-blue);box-shadow:0 0 8px var(--ubi-blue)}
-  .conn.live{color:#fff}
+  .conn.live .dot7{background:var(--ubi-blue);box-shadow:0 0 8px var(--ubi-blue)}.conn.live{color:#fff}
   .conn.err .dot7{background:var(--danger);box-shadow:0 0 8px var(--danger)}
 
   main{max-width:1140px;margin:0 auto;padding:20px clamp(16px,4vw,40px) 48px}
-
   .card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:14px;padding:20px;
     box-shadow:0 4px 20px rgba(10,22,40,.05)}
   .card + .card{margin-top:18px}
 
-  /* ---- Tabs ---- */
   .tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--ubi-line)}
   .tab{font-family:inherit;font-size:.8rem;font-weight:700;letter-spacing:.02em;color:var(--ubi-muted);
     background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;margin-bottom:-1px}
   .tab.active{color:var(--ubi-navy);border-bottom-color:var(--ubi-blue)}
   .tab .badge{display:inline-block;min-width:16px;font-family:var(--mono);font-size:.62rem;color:#fff;
     background:var(--ubi-blue);border-radius:9px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+  #tab-control[hidden], #tab-log[hidden]{display:none !important}
 
-  /* ---- Gate ---- */
   #gate{max-width:420px;margin:6vh auto 0}
   .gate-h{font-size:1.05rem;font-weight:900;color:var(--ubi-navy);margin-bottom:4px}
   .gate-intro{font-size:.8rem;color:var(--ubi-muted);line-height:1.5;margin:14px 0 0}
 
-  /* ---- Pestañas: ocultamiento real (id+attr le gana a .top grid) ---- */
-  #tab-control[hidden], #tab-log[hidden]{display:none !important}
+  .block-title{font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1.5px;
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .linkbtn{background:none;border:none;color:var(--ubi-blue);font-family:inherit;font-size:10px;cursor:pointer;
+    text-transform:uppercase;letter-spacing:1px;padding:2px 4px;font-weight:700}
 
-  /* ---- Fila superior (controles izq · tabla der) ---- */
-  .top{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start;margin-bottom:18px}
-  @media (max-width:860px){ .top{grid-template-columns:1fr} }
-  .col-left{display:flex;flex-direction:column;gap:18px}
-  .col-right{display:flex;flex-direction:column;gap:18px}
-  .charts-card{margin-top:0}
-
-  /* ---- Lamp ---- */
-  .stage{display:grid;place-items:center;padding:6px 0 14px}
-  .lamp-wrap{position:relative;width:150px;height:150px;display:grid;place-items:center}
-  .halo{position:absolute;inset:0;border-radius:50%;
-    background:radial-gradient(circle, var(--glow) 0%, var(--glow-hot) 38%, transparent 70%);
-    opacity:0;transform:scale(.6);filter:blur(8px);transition:opacity .5s ease, transform .5s ease}
-  .lamp{position:relative;width:96px;height:96px;border-radius:50%;background:#e3eaef;border:1px solid #d3dde4;
-    display:grid;place-items:center;transition:background .5s ease, box-shadow .5s ease}
-  .lamp .core{width:58px;height:58px;border-radius:50%;background:#d2dce3;transition:background .5s ease}
-  body.on .lamp{background:radial-gradient(circle at 50% 45%, var(--glow), var(--glow-hot) 82%);border-color:transparent}
-  body.on .lamp .core{background:radial-gradient(circle at 50% 40%, #fffaf0, var(--glow))}
-  .state-label{margin-top:10px;text-align:center}
-  .state-label .pct{font-size:38px;font-weight:500;line-height:1;font-family:var(--mono);letter-spacing:-1px;color:var(--ubi-navy)}
-  body:not(.on) .state-label .pct{color:var(--ubi-muted)}
-  .state-label .what{font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:2.5px;margin-top:8px}
-
-  .banner{display:none;background:#fdecec;border:1px solid rgba(227,93,93,.35);color:#a23535;
-    border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.45;font-family:var(--mono)}
-  .banner.show{display:block}
-  .banner.show + *{margin-top:14px}
-
-  .field{margin-top:0}
   .field label{display:block;font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
-  .field .input{display:flex;align-items:center;gap:10px;background:var(--ubi-surface2);border:1px solid var(--ubi-line);
-    border-radius:10px;padding:12px 13px;transition:border-color .2s}
-  .field .input:focus-within{border-color:var(--ubi-blue)}
-  .field input{flex:1;background:none;border:none;color:var(--ubi-ink);font-family:var(--mono);font-size:14px;letter-spacing:.5px;outline:none}
-  .field input::placeholder{color:#9cabb5}
-  .scan{width:32px;height:32px;border-radius:8px;flex:none;background:#e6edf1;border:none;color:var(--ubi-blue);
-    display:grid;place-items:center;cursor:pointer;font-size:15px}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap}
+  .searchrow .inp{flex:1;min-width:220px;display:flex;align-items:center;gap:10px;background:var(--ubi-surface2);
+    border:1px solid var(--ubi-line);border-radius:10px;padding:11px 13px;transition:border-color .2s}
+  .searchrow .inp:focus-within{border-color:var(--ubi-blue)}
+  .searchrow input[type=text]{flex:1;background:none;border:none;color:var(--ubi-ink);font-family:var(--mono);font-size:13.5px;outline:none}
+  .searchrow input::placeholder{color:#9cabb5}
+  .btn{padding:11px 16px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;border:1px solid var(--ubi-line);
+    background:var(--ubi-surface2);color:var(--ubi-ink);transition:.15s;white-space:nowrap}
+  .btn:active{transform:scale(.99)}
+  .btn.primary{background:var(--ubi-blue);color:#fff;border-color:transparent}
+  .btn.navy{background:var(--ubi-navy);color:#fff;border-color:transparent}
+  .btn.ghost{background:none}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
 
-  .btn-primary{width:100%;padding:14px;border-radius:11px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;
-    letter-spacing:.02em;border:none;color:#fff;background:var(--ubi-blue)}
-  .btn-primary:active{transform:scale(.99)}
-  .btn-primary:disabled{opacity:.55;cursor:wait}
+  .subline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--ubi-muted)}
+  .subline .mono{font-family:var(--mono);color:var(--ubi-ink)}
+  .subline input{width:74px;font-family:var(--mono);font-size:12px;background:var(--ubi-surface2);border:1px solid var(--ubi-line);
+    border-radius:7px;padding:5px 7px;color:var(--ubi-ink);outline:none}
 
-  .ctx{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:16px}
-  .ctxlabel{font-size:10px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1.5px}
-  .ctxval{font-family:var(--mono);font-size:12px;color:var(--ubi-ink)}
-  .subsel{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ubi-ink);background:var(--ubi-surface2);
-    border:1px solid var(--ubi-line);border-radius:8px;padding:6px 9px;outline:none;cursor:pointer}
-  .subsel[hidden]{display:none}
+  .banner{display:none;border-radius:10px;padding:10px 13px;font-size:12.5px;line-height:1.45;font-family:var(--mono);margin-top:12px}
+  .banner.show{display:block}
+  .banner.warn{background:#fff3e8;border:1px solid rgba(234,86,27,.3);color:#a8470f}
+  .banner.err{background:#fdecec;border:1px solid rgba(227,93,93,.35);color:#a23535}
 
-  .power{display:flex;gap:10px;margin-top:16px}
-  .power button{flex:1;padding:14px;border-radius:11px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;
-    letter-spacing:.02em;border:1px solid var(--ubi-line);background:var(--ubi-surface2);color:var(--ubi-muted);transition:.2s}
-  .power button .ic{font-size:17px;margin-right:7px;vertical-align:-2px}
-  body.on #btnOn{background:var(--ubi-blue);color:#fff;border-color:transparent}
-  body:not(.on) #btnOff{background:var(--ubi-navy);color:#fff;border-color:transparent}
-  .power button:active{transform:scale(.99)}
-  .power button:disabled{opacity:.55;cursor:wait}
+  .summary{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-family:var(--mono);font-size:12.5px}
+  .summary b{color:var(--ubi-navy);font-weight:700}
+  .summary .k{display:inline-flex;align-items:center;gap:6px;color:var(--ubi-muted)}
+  .kd{width:9px;height:9px;border-radius:50%}
+  .kd.on{background:var(--ubi-lime)} .kd.off{background:#9aa7b1} .kd.unk{background:#cdd6dd} .kd.pen{background:var(--ubi-orange)}
 
-  .dimmer{margin-top:18px}
-  .dimmer .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
-  .dimmer .row span{font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1.5px}
-  .dimmer .row b{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--ubi-navy)}
-  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:7px;border-radius:99px;
+  .tablewrap{margin-top:14px;max-height:46vh;overflow:auto;border:1px solid var(--ubi-line);border-radius:10px}
+  table.nodes{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  table.nodes th,table.nodes td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--ubi-line);white-space:nowrap}
+  table.nodes th{position:sticky;top:0;background:var(--ubi-surface);color:var(--ubi-muted);font-weight:500;
+    font-size:9.5px;text-transform:uppercase;letter-spacing:1px;z-index:1}
+  table.nodes tr:last-child td{border-bottom:none}
+  table.nodes tr.pending{box-shadow:inset 3px 0 0 var(--ubi-orange)}
+  table.nodes tr.confirmed{box-shadow:inset 3px 0 0 var(--ubi-lime)}
+  table.nodes tr.fail{box-shadow:inset 3px 0 0 var(--danger)}
+  .sdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#cdd6dd}
+  .sdot.on{background:var(--ubi-lime);box-shadow:0 0 6px var(--ubi-lime)} .sdot.off{background:#9aa7b1} .sdot.pen{background:var(--ubi-orange)}
+  .rowact{display:flex;gap:6px;align-items:center}
+  .rowact button{width:30px;height:28px;border-radius:7px;border:1px solid var(--ubi-line);background:var(--ubi-surface2);
+    cursor:pointer;font-size:13px;color:var(--ubi-ink);display:grid;place-items:center}
+  .rowact button.on{color:var(--ubi-blue)} .rowact button.rm{color:var(--danger)}
+  .rowact input.rowdim{width:50px;font-family:var(--mono);font-size:12px;background:var(--ubi-surface2);
+    border:1px solid var(--ubi-line);border-radius:7px;padding:4px 6px;color:var(--ubi-ink);outline:none}
+  .empty{padding:22px;text-align:center;color:#9cabb5;font-family:var(--mono);font-size:12.5px}
+
+  .gcmd{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .gcmd .grp{display:flex;gap:8px;align-items:center;background:var(--ubi-surface2);border:1px solid var(--ubi-line);
+    border-radius:10px;padding:8px 10px}
+  .gcmd .grp label{font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:150px;height:6px;border-radius:99px;
     background:linear-gradient(90deg,var(--ubi-lime) var(--fill,80%),#dce4ea var(--fill,80%));outline:none;cursor:pointer}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;
-    border:4px solid var(--ubi-lime);box-shadow:0 2px 8px rgba(20,45,60,.25);cursor:grab}
-  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid var(--ubi-lime);cursor:grab}
-  input[type=range]:disabled{opacity:.55}
-  .presets{display:flex;gap:8px;margin-top:14px}
-  .presets button{flex:1;padding:9px;border-radius:9px;cursor:pointer;background:var(--ubi-surface2);border:1px solid var(--ubi-line);
-    color:var(--ubi-muted);font-family:var(--mono);font-size:13px;transition:.15s}
-  .presets button.sel{color:#fff;background:var(--ubi-blue);border-color:transparent}
-  .presets button:disabled{opacity:.55;cursor:wait}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;
+    border:4px solid var(--ubi-lime);box-shadow:0 2px 6px rgba(20,45,60,.25)}
+  .gdimval{font-family:var(--mono);font-size:14px;color:var(--ubi-navy);min-width:40px;text-align:right}
+  .hint{font-size:11px;color:var(--ubi-muted);margin-top:10px;font-family:var(--mono)}
 
-  .statuswrap{display:flex;flex-direction:column;gap:6px;margin-top:18px}
-  .status{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ubi-muted);min-height:18px;font-family:var(--mono)}
+  .status{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ubi-muted);min-height:18px;font-family:var(--mono);margin-top:14px}
   .status .led{width:8px;height:8px;border-radius:50%;background:#c4cfd6;flex:none}
   .status.ok .led{background:var(--ubi-lime);box-shadow:0 0 7px var(--ubi-lime)}
   .status.busy .led{background:var(--ubi-orange);animation:pulse 1s infinite}
   .status.ping .led{background:var(--ubi-blue);animation:pulse .7s infinite}
   .status.warn .led{background:var(--ubi-orange)}
-  .updated{font-family:var(--mono);font-size:10.5px;color:#9cabb5;letter-spacing:.5px;padding-left:17px}
   @keyframes pulse{50%{opacity:.3}}
 
-  .block-title{font-size:11px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1.5px;
-    display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  .linkbtn{background:none;border:none;color:var(--ubi-blue);font-family:inherit;font-size:10px;cursor:pointer;
-    text-transform:uppercase;letter-spacing:1px;padding:2px 4px;font-weight:700}
+  .result .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .chip{font-family:var(--mono);font-size:11px;background:#fff3e8;border:1px solid rgba(234,86,27,.3);color:#a8470f;
+    border-radius:7px;padding:3px 8px}
+  .result .line{font-family:var(--mono);font-size:13px;color:var(--ubi-ink)}
 
-  /* ---- Tabla antes/después ---- */
-  .ba-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
-  .ba-table th,.ba-table td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--ubi-line)}
-  .ba-table th{color:var(--ubi-muted);font-weight:500;font-size:9.5px;text-transform:uppercase;letter-spacing:1px}
-  .ba-table th.col,.ba-table td.before,.ba-table td.after{text-align:right}
-  .ba-table td.var{color:var(--ubi-muted)}
-  .ba-table td.before{color:var(--ubi-muted)}
-  .ba-table td.after{color:var(--ubi-ink);font-weight:500}
-  .ba-table tr.chg td.after{color:var(--ubi-blue)}
-  .ba-table tr:last-child td{border-bottom:none}
-
-  /* ---- Gráficas ---- */
-  .chartgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-  .ctitle{font-size:10px;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-  .cbox{position:relative;height:200px;background:var(--ubi-surface2);border:1px solid var(--ubi-line);border-radius:10px;padding:8px 10px}
-  #sampleCount{color:#9cabb5;font-family:var(--mono)}
-
-  /* ---- Registro ---- */
   .logbox{max-height:60vh;overflow-y:auto;background:var(--ubi-surface2);border:1px solid var(--ubi-line);
     border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:7px}
   .logrow{font-family:var(--mono);font-size:12px;line-height:1.4;display:flex;gap:10px;align-items:baseline}
-  .logrow .lt{color:#9cabb5;flex:none}
-  .logrow .lm{color:var(--ubi-ink);word-break:break-word}
-  .logrow.ok .lm{color:#2c7d3f}
-  .logrow.warn .lm{color:var(--ubi-orange)}
-  .logrow.err .lm{color:var(--danger)}
+  .logrow .lt{color:#9cabb5;flex:none}.logrow .lm{color:var(--ubi-ink);word-break:break-word}
+  .logrow.ok .lm{color:#2c7d3f}.logrow.warn .lm{color:var(--ubi-orange)}.logrow.err .lm{color:var(--danger)}
   .logempty{color:#9cabb5;font-family:var(--mono);font-size:12px}
-
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -193,7 +148,7 @@
         <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#ffffff"/>
       </svg>
       <span class="wm"><span class="reg">ubi</span>cquia<span class="dot">.</span><sup>®</sup></span>
-      <span class="sub">UbiLight Control</span>
+      <span class="sub">Telegestión</span>
     </div>
     <div class="conn" id="conn"><span class="dot7"></span><span id="connTxt">Bloqueado</span></div>
   </header>
@@ -202,22 +157,21 @@
 
     <!-- ===== PUERTA DE ACCESO ===== -->
     <div id="gate" class="card">
-      <div class="gate-h">Control de luminaria</div>
+      <div class="gate-h">Telegestión de luminarias</div>
       <div class="field">
         <label>Código de acceso</label>
-        <div class="input">
-          <input id="code" type="password" inputmode="numeric" placeholder="Ingresa el código" autocomplete="off">
-          <button class="scan" id="codeShow" title="Ver / ocultar" aria-label="Ver código">👁</button>
-        </div>
+        <div class="searchrow"><div class="inp">
+          <input id="code" type="password" inputmode="numeric" placeholder="Ingresa el código" autocomplete="off" style="font-family:var(--mono)">
+          <button class="linkbtn" id="codeShow" title="Ver / ocultar">👁</button>
+        </div></div>
       </div>
-      <div class="banner" id="gateBanner" style="margin-top:14px"></div>
-      <button class="btn-primary" id="btnEnter" style="margin-top:16px">Ingresar</button>
-      <p class="gate-intro">El código se valida en el servidor. Sin él no se puede leer ni controlar la luminaria.</p>
+      <div class="banner err" id="gateBanner"></div>
+      <button class="btn primary" id="btnEnter" style="margin-top:16px;width:100%">Ingresar</button>
+      <p class="gate-intro">El código se valida en el servidor. Dentro de un subpanel autorizado puedes comandar cualquier nodo por su serial o id.</p>
     </div>
 
     <!-- ===== APP ===== -->
     <div id="app" hidden>
-
       <div class="tabs">
         <button class="tab active" data-tab="control">Control</button>
         <button class="tab" data-tab="log">Registro <span class="badge" id="logBadge">0</span></button>
@@ -225,93 +179,72 @@
 
       <!-- ---- Pestaña Control ---- -->
       <div id="tab-control">
-        <div class="top">
-        <!-- Columna izquierda: controles -->
-        <div class="col-left">
-          <div class="card">
-            <div class="stage">
-              <div class="lamp-wrap">
-                <div class="halo" id="halo"></div>
-                <div class="lamp"><div class="core"></div></div>
+
+        <!-- Selección -->
+        <div class="card">
+          <div class="block-title"><span>Selección de nodos</span>
+            <button class="linkbtn" id="clearSel">limpiar selección</button></div>
+          <div class="field">
+            <label>Ids o seriales separados por coma</label>
+            <div class="searchrow">
+              <div class="inp">
+                <input id="search" type="text" list="serials" placeholder="ej: 2416UUGE01812, 4, d8132acc4ca47a6f" autocomplete="off">
               </div>
-              <div class="state-label">
-                <div class="pct" id="pct">--<small style="font-size:18px">%</small></div>
-                <div class="what" id="what">Bloqueada</div>
-              </div>
+              <button class="btn primary" id="addBtn">Agregar</button>
+              <button class="btn ghost" id="clearSearch">Limpiar</button>
             </div>
-
-            <div class="banner" id="banner"></div>
-
-            <div class="ctx">
-              <span class="ctxlabel">Panel</span>
-              <span class="ctxval" id="panelVal">—</span>
-              <select class="subsel" id="subsel" hidden aria-label="Subpanel"></select>
-            </div>
-
-            <div class="field">
-              <label>Serial / ID de luminaria</label>
-              <div class="input">
-                <input id="serial" value="2416UUGE01812" placeholder="Ingresa el serial o ID">
-                <button class="scan" title="Escanear" aria-label="Escanear código">▦</button>
-              </div>
-            </div>
-
-            <div class="power">
-              <button id="btnOn"><span class="ic">⏻</span>Encender</button>
-              <button id="btnOff"><span class="ic">○</span>Apagar</button>
-            </div>
-
-            <div class="dimmer" id="dimmer">
-              <div class="row"><span>Nivel de dimerizado</span><b id="dimVal">--%</b></div>
-              <input type="range" id="dim" min="0" max="100" value="80" style="--fill:80%">
-              <div class="presets">
-                <button data-v="25">25%</button>
-                <button data-v="50">50%</button>
-                <button data-v="75">75%</button>
-                <button data-v="100">100%</button>
-              </div>
-            </div>
-
-            <div class="statuswrap">
-              <div class="status" id="status"><span class="led"></span><span id="statusTxt">—</span></div>
-              <div class="updated" id="updated">— · ping cada 15s</div>
-            </div>
+            <datalist id="serials"></datalist>
           </div>
-        </div>
+          <div class="subline">
+            Subpanel <input id="subpanel" value="1007" inputmode="numeric">
+            · <span id="nodeCount" class="mono">— nodos</span>
+            · <button class="linkbtn" id="reloadNodes">recargar</button>
+            · <button class="linkbtn" id="addActive">agregar activos</button>
+          </div>
+          <div class="banner" id="selBanner"></div>
 
-        <!-- Columna derecha: tabla antes/después -->
-        <div class="col-right">
-          <div class="card">
-            <div class="block-title">Estado · antes / después</div>
-            <table class="ba-table">
-              <thead><tr><th>Variable</th><th class="col">Antes</th><th class="col">Después</th></tr></thead>
-              <tbody id="baBody">
-                <tr><td class="var">Encendido</td><td class="before">—</td><td class="after">—</td></tr>
-                <tr><td class="var">Dimerizado</td><td class="before">—</td><td class="after">—</td></tr>
-                <tr><td class="var">Estado nodo</td><td class="before">—</td><td class="after">—</td></tr>
-                <tr><td class="var">Actualizado</td><td class="before">—</td><td class="after">—</td></tr>
-              </tbody>
+          <div class="summary">
+            <span class="k"><b id="cSel">0</b>&nbsp;seleccionados</span>
+            <span class="k"><span class="kd on"></span> <b id="cOn">0</b> encendidas</span>
+            <span class="k"><span class="kd off"></span> <b id="cOff">0</b> apagadas</span>
+            <span class="k"><span class="kd unk"></span> <b id="cUnk">0</b> sin leer</span>
+            <span class="k"><span class="kd pen"></span> <b id="cPen">0</b> pendientes</span>
+          </div>
+
+          <div class="tablewrap">
+            <table class="nodes">
+              <thead><tr><th></th><th>Serial</th><th>ID</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="selBody"><tr><td colspan="5" class="empty">Agrega nodos por serial o id para empezar.</td></tr></tbody>
             </table>
           </div>
         </div>
 
-      </div>
+        <!-- Comandos generales -->
+        <div class="card">
+          <div class="block-title"><span>Comandos generales · aplican a la selección</span></div>
+          <div class="gcmd">
+            <button class="btn primary" id="gOn">⏻ Encender todas</button>
+            <button class="btn navy" id="gOff">○ Apagar todas</button>
+            <div class="grp">
+              <label>Dim</label>
+              <input type="range" id="gdim" min="0" max="100" value="80" style="--fill:80%">
+              <span class="gdimval" id="gdimVal">80%</span>
+              <button class="btn" id="gDimApply">Dimerizar todas</button>
+            </div>
+            <button class="btn ghost" id="gRead">Leer estado</button>
+          </div>
+          <div class="hint">Se envían en un solo comando por lote (id_list). La confirmación lee el estado y reintenta solo a los pendientes.</div>
+          <div class="status" id="status"><span class="led"></span><span id="statusTxt">—</span></div>
+        </div>
 
-      <!-- Gráficas a todo el ancho -->
-      <div class="card charts-card">
-        <div class="block-title">
-          <span>Gráficas en el tiempo · <span id="sampleCount">0 muestras</span></span>
-          <button class="linkbtn" id="chartsClear">limpiar histórico</button>
+        <!-- Resultado -->
+        <div class="card result">
+          <div class="block-title"><span>Resultado de la última acción</span></div>
+          <div class="line" id="resultLine">Sin acciones todavía.</div>
+          <div class="chips" id="pendingChips"></div>
+          <button class="btn" id="retryBtn" style="margin-top:12px;display:none">Reintentar pendientes</button>
         </div>
-        <div class="logempty" id="chartsNote" hidden>Chart.js no cargó · se muestran solo los números.</div>
-        <div class="chartgrid">
-          <div class="chart"><div class="ctitle">Voltaje (V)</div><div class="cbox"><canvas id="cV"></canvas></div></div>
-          <div class="chart"><div class="ctitle">Corriente (A)</div><div class="cbox"><canvas id="cC"></canvas></div></div>
-          <div class="chart"><div class="ctitle">Potencia</div><div class="cbox"><canvas id="cP"></canvas></div></div>
-          <div class="chart"><div class="ctitle">Factor de potencia</div><div class="cbox"><canvas id="cF"></canvas></div></div>
-          <div class="chart"><div class="ctitle">Dim (%) y On/Off</div><div class="cbox"><canvas id="cD"></canvas></div></div>
-        </div>
-      </div>
+
       </div>
       <!-- /tab-control -->
 
@@ -327,110 +260,46 @@
   </main>
 
 <script>
-  // ========================= CONFIG =========================
-  const PANEL = {
-    id   : '803956',
-    label: 'Default · ubicquia Sales Latam',
-    subpanels: [
-      { id:'1007', label:'Subpanel 1007', nodes:{ '2416UUGE01812':'4', 'D8132ACC4CA47A6F':'4' } }
-      // { id:'XXXX', label:'Subpanel XXXX', nodes:{ 'SERIAL':'ID' } },
-    ]
-  };
-  let SUB = PANEL.subpanels[0];
+  // ===================== CONFIG =====================
   const ENDPOINT   = '/api/control';
-  const SETTLE_MS       = 8000;   // empieza a confirmar ~al límite del comando más rápido visto (9.7s)
-  const CONFIRM_INTERVAL= 3000;   // reintenta cada 3s hasta confirmar (latencia real ~10-22s)
-  const CONFIRM_MAX     = 8;      // cubre hasta ~32s (máx observado 22s)
-  const BG_PING_MS      = 15000;
-  const LOG_MAX         = 80;
-  const MAX_SAMPLES     = 800;
+  const SETTLE_MS  = 8000;   // calibrado con latencia real ~10-22s
+  const POLL_MS    = 3000;
+  const POLL_MAX   = 8;      // ~32s
+  const READ_CHUNK = 50;     // tamaño de lectura de estado por llamada
+  const DIM_TOL    = 3;      // tolerancia de dim al confirmar
+  const LOG_MAX    = 120;
+  const DATALIST_MAX = 500;
 
-  // Series a graficar (ya podadas: V ambos · C ambos · power · powerFactorState · dim+onoff)
-  const CHARTS = [
-    { id:'cV', series:[ {k:'VState',label:'VState',color:'#22B0E1'}, {k:'V1State',label:'V1State',color:'#AECC53'} ] },
-    { id:'cC', series:[ {k:'CState',label:'CState',color:'#22B0E1'}, {k:'C1State',label:'C1State',color:'#AECC53'} ] },
-    { id:'cP', series:[ {k:'power',label:'power',color:'#22B0E1'} ] },
-    { id:'cF', series:[ {k:'powerFactorState',label:'powerFactorState',color:'#22B0E1'} ] },
-    { id:'cD', series:[ {k:'LD1State',label:'Dim %',color:'#AECC53'}, {k:'on',label:'On/Off (×100)',color:'#22B0E1',stepped:true,scale100:true} ] },
-  ];
-
-  // ========================= ESTADO =========================
-  let power = null, dim = 80, online = false, locked = true, ACCESS = '';
+  // ===================== ESTADO =====================
+  let locked = true, ACCESS = '', online = false, busy = false;
+  let allNodes = { nodes:[], byId:new Map(), bySerial:new Map(), byEui:new Map(), total:0, capped:false };
+  let selection = [];          // [{id, serial, dev_eui, node, isActive, power, dim, nodeStatus, updatedAt, status}]
+  const selById = new Map();
+  let lastAction = null;       // {op, value, label, pendingIds}
   const logRows = [];
-  let history = [];
-  let chartObjs = [], chartsReady = false;
-  let busy = false;
 
-  const body=document.body, halo=document.getElementById('halo'),
-        pctEl=document.getElementById('pct'), whatEl=document.getElementById('what'),
-        dimEl=document.getElementById('dim'), dimVal=document.getElementById('dimVal'),
-        statusEl=document.getElementById('status'), statusTxt=document.getElementById('statusTxt'),
-        updated=document.getElementById('updated'), presets=document.querySelectorAll('.presets button'),
-        btnOn=document.getElementById('btnOn'), btnOff=document.getElementById('btnOff'),
-        serialEl=document.getElementById('serial'), conn=document.getElementById('conn'),
-        connTxt=document.getElementById('connTxt'), banner=document.getElementById('banner'),
-        panelVal=document.getElementById('panelVal'), subsel=document.getElementById('subsel'),
-        gate=document.getElementById('gate'), appEl=document.getElementById('app'),
-        codeEl=document.getElementById('code'), btnEnter=document.getElementById('btnEnter'),
-        gateBanner=document.getElementById('gateBanner'), codeShow=document.getElementById('codeShow'),
-        baBody=document.getElementById('baBody'), logbox=document.getElementById('logbox'),
-        logClear=document.getElementById('logClear'), logBadge=document.getElementById('logBadge'),
-        sampleCount=document.getElementById('sampleCount'), chartsClear=document.getElementById('chartsClear'),
-        chartsNote=document.getElementById('chartsNote'),
-        tabBtns=document.querySelectorAll('.tab'),
-        tabControl=document.getElementById('tab-control'), tabLog=document.getElementById('tab-log');
+  const $ = id => document.getElementById(id);
+  const body=document.body, conn=$('conn'), connTxt=$('connTxt'),
+        gate=$('gate'), appEl=$('app'), codeEl=$('code'), btnEnter=$('btnEnter'),
+        gateBanner=$('gateBanner'), codeShow=$('codeShow'),
+        searchEl=$('search'), addBtn=$('addBtn'), clearSearch=$('clearSearch'), clearSel=$('clearSel'),
+        subpanelEl=$('subpanel'), nodeCount=$('nodeCount'), reloadNodes=$('reloadNodes'), addActive=$('addActive'),
+        selBanner=$('selBanner'), selBody=$('selBody'), serials=$('serials'),
+        gOn=$('gOn'), gOff=$('gOff'), gdim=$('gdim'), gdimVal=$('gdimVal'), gDimApply=$('gDimApply'), gRead=$('gRead'),
+        statusEl=$('status'), statusTxt=$('statusTxt'),
+        resultLine=$('resultLine'), pendingChips=$('pendingChips'), retryBtn=$('retryBtn'),
+        logbox=$('logbox'), logClear=$('logClear'), logBadge=$('logBadge'),
+        cSel=$('cSel'), cOn=$('cOn'), cOff=$('cOff'), cUnk=$('cUnk'), cPen=$('cPen'),
+        tabBtns=document.querySelectorAll('.tab'), tabControl=$('tab-control'), tabLog=$('tab-log');
 
-  let lastSync = 0;
-
-  // ========================= RENDER =========================
-  function render(){
-    const on = power === true;
-    body.classList.toggle('on', on);
-    pctEl.innerHTML = (dim==null?'--':dim) + '<small style="font-size:18px">%</small>';
-    whatEl.textContent = locked ? 'Bloqueada' : (power===null ? 'Sin estado' : (on ? 'Encendida' : 'Apagada'));
-    const g = on ? (dim||0)/100 : 0;
-    halo.style.opacity = g*0.95;
-    halo.style.transform = 'scale(' + (0.6 + g*0.7) + ')';
-    document.querySelector('.lamp').style.boxShadow =
-      on ? `0 0 ${18+g*45}px rgba(255,158,44,${0.15+g*0.4})` : 'none';
-    if (dim!=null){ dimEl.value = dim; dimEl.style.setProperty('--fill', dim+'%'); dimVal.textContent = dim+'%'; }
-    presets.forEach(b => b.classList.toggle('sel', +b.dataset.v === dim));
-  }
-
-  function setBusyState(b){ busy=b; btnOn.disabled=b; btnOff.disabled=b; dimEl.disabled=b; presets.forEach(p=>p.disabled=b); }
-  function setConn(state){ online=(state==='live'); conn.className='conn '+state;
-    connTxt.textContent = online ? 'En línea' : (locked?'Bloqueado':'Sin conexión'); }
-  function showBanner(msg){ banner.textContent=msg; banner.classList.add('show'); }
-  function clearBanner(){ banner.classList.remove('show'); }
+  const sleep = ms => new Promise(r=>setTimeout(r, ms));
+  function setConn(s){ online=(s==='live'); conn.className='conn '+s; connTxt.textContent = online?'En línea':(locked?'Bloqueado':'Sin conexión'); }
   function setStatus(cls, txt){ statusEl.className='status '+cls; statusTxt.textContent=txt; }
-  function tickUpdated(){
-    if (!lastSync){ updated.textContent='— · ping cada 15s'; return; }
-    const s = Math.round((Date.now()-lastSync)/1000);
-    updated.textContent = (s<2 ? 'Actualizado ahora' : `Actualizado hace ${s}s`) + ' · ping cada 15s';
-  }
-  function resolveId(){ const s=serialEl.value.trim().toUpperCase(); return (SUB.nodes && SUB.nodes[s]) || null; }
-  function firstSerialOf(sp){ return Object.keys(sp.nodes||{})[0] || ''; }
+  function setBusy(b){ busy=b; [gOn,gOff,gDimApply,gRead,addBtn,addActive,reloadNodes].forEach(x=>x.disabled=b); }
+  function showSel(cls, msg){ selBanner.className='banner '+cls+' show'; selBanner.textContent=msg; }
+  function clearSelBanner(){ selBanner.className='banner'; }
 
-  // ========================= FORMATO / TABLA / LOG =========================
-  const fmtPower = p => p===true?'Encendida':p===false?'Apagada':'—';
-  const fmtDim   = d => d==null?'—':d+'%';
-  const fmtTs    = t => t || '—';
-  function stateText(){ return power ? `Encendida ${dim}%` : (power===false?'Apagada':'sin estado'); }
-
-  function renderBA(before, after){
-    const b = before || {}, a = after || {};
-    const rows = [
-      ['Encendido', fmtPower(b.power), fmtPower(a.power)],
-      ['Dimerizado', fmtDim(b.dim),    fmtDim(a.dim)],
-      ['Estado nodo', b.nodeStatus||'—', a.nodeStatus||'—'],
-      ['Actualizado', fmtTs(b.updatedAt), fmtTs(a.updatedAt)],
-    ];
-    baBody.innerHTML = rows.map(([v,bf,af]) => {
-      const chg = (bf!=='—' && bf!==af) ? ' class="chg"' : '';
-      return `<tr${chg}><td class="var">${v}</td><td class="before">${bf}</td><td class="after">${af}</td></tr>`;
-    }).join('');
-  }
-
+  // ===================== LOG =====================
   function logAdd(type, msg){
     logRows.unshift({ t:new Date(), type, msg });
     if (logRows.length>LOG_MAX) logRows.length=LOG_MAX;
@@ -439,238 +308,242 @@
   function renderLog(){
     logBadge.textContent = logRows.length;
     if (!logRows.length){ logbox.innerHTML='<span class="logempty">Sin acciones todavía.</span>'; return; }
-    logbox.innerHTML = logRows.map(r => {
-      const hh = r.t.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      const m = r.msg.replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+    logbox.innerHTML = logRows.map(r=>{
+      const hh=r.t.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const m=r.msg.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
       return `<div class="logrow ${r.type}"><span class="lt">${hh}</span><span class="lm">${m}</span></div>`;
     }).join('');
   }
-  logClear.onclick = () => { logRows.length=0; renderLog(); };
+  logClear.onclick=()=>{ logRows.length=0; renderLog(); };
 
-  // ========================= HISTÓRICO + GRÁFICAS =========================
-  const num = v => (v!=null && !isNaN(Number(v))) ? Number(v) : null;
-  function parseTs(s){ if(!s) return null; const d=new Date(String(s).replace(' ','T')); return isNaN(d)?null:d; }
-  const fmtClock = d => d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-
-  function histKey(){ return 'ubilight-hist-' + SUB.id + '-' + (resolveId()||'x'); }
-  function loadHistory(){ try{ const raw=localStorage.getItem(histKey()); history = raw?JSON.parse(raw):[]; }catch(_){ history=[]; } }
-  function saveHistory(){ try{ localStorage.setItem(histKey(), JSON.stringify(history)); }catch(_){ } }
-  function clearHistory(){ history=[]; try{ localStorage.removeItem(histKey()); }catch(_){ } updateCharts(); }
-
-  function recordSample(s){
-    if (!s || !s.found || !s.m) return;
-    if (history.length && history[history.length-1].ts === s.updatedAt) return;
-    const d = parseTs(s.updatedAt) || new Date();
-    const m = s.m;
-    history.push({ ts:s.updatedAt, lbl:fmtClock(d),
-      VState:m.VState, V1State:m.V1State, CState:m.CState, C1State:m.C1State,
-      power:m.power, PFState:m.PFState, powerFactorState:m.powerFactorState,
-      LD1State:m.LD1State, on:m.on });
-    if (history.length>MAX_SAMPLES) history.splice(0, history.length-MAX_SAMPLES);
-    saveHistory(); updateCharts();
-  }
-
-  function initCharts(){
-    if (chartsReady) return;
-    if (typeof Chart === 'undefined'){ chartsNote.hidden=false; return; }
-    chartObjs = CHARTS.map(cfg => {
-      const ds = cfg.series.map(se => ({
-        label: se.label, data: [], borderColor: se.color, backgroundColor: se.color,
-        borderWidth: 2, pointRadius: 0, tension: 0.25, stepped: !!se.stepped,
-        yAxisID: se.axis || 'y', spanGaps: true
-      }));
-      const scales = {
-        x: { ticks:{ maxTicksLimit:7, font:{size:9}, color:'#9cabb5' }, grid:{display:false} },
-        y: { position:'left', ticks:{ font:{size:9}, color:'#9cabb5' }, grid:{color:'rgba(30,36,69,0.06)'} }
-      };
-      if (cfg.dual) scales.y2 = { position:'right', ticks:{ font:{size:9}, color:'#9cabb5' }, grid:{display:false} };
-      return new Chart(document.getElementById(cfg.id), {
-        type:'line', data:{ labels:[], datasets:ds },
-        options:{ responsive:true, maintainAspectRatio:false, animation:false,
-          plugins:{ legend:{ labels:{ boxWidth:10, font:{size:10, family:'Lato'}, color:'#6A7D89' } } },
-          scales }
-      });
-    });
-    chartsReady = true;
-  }
-
-  function updateCharts(){
-    if (sampleCount) sampleCount.textContent = history.length + (history.length===1?' muestra':' muestras');
-    if (!chartsReady) return;
-    const labels = history.map(h => h.lbl);
-    CHARTS.forEach((cfg, ci) => {
-      const ch = chartObjs[ci]; if (!ch) return;
-      ch.data.labels = labels;
-      cfg.series.forEach((se, si) => {
-        ch.data.datasets[si].data = history.map(h => {
-          let v = h[se.k];
-          if (se.scale100 && v!=null) v = v*100;
-          return v;
-        });
-      });
-      ch.update('none');
-    });
-  }
-  chartsClear.onclick = clearHistory;
-
-  // ========================= API =========================
+  // ===================== API =====================
   async function api(payload){
-    const id = resolveId();
-    if (!id) throw new Error('Serial no registrado en este subpanel');
-    const r = await fetch(ENDPOINT, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(Object.assign({ id, subpanel: SUB.id, code: ACCESS }, payload))
-    });
+    const r = await fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(Object.assign({ subpanel: subpanelEl.value.trim(), code: ACCESS }, payload)) });
     let j; try{ j = await r.json(); }catch(_){ j = {}; }
-    if (r.status===401){ lockGate('Sesión expirada · ingresa el código de nuevo'); throw new Error('código de acceso inválido'); }
-    if (!r.ok || j.ok === false) throw new Error(j.error || ('HTTP '+r.status));
+    if (r.status===401){ lockGate('Sesión expirada · ingresa el código de nuevo'); throw new Error('código inválido'); }
+    if (!r.ok || j.ok===false) throw new Error(j.error || ('HTTP '+r.status));
     return j;
   }
-  const sleep = ms => new Promise(r=>setTimeout(r, ms));
-  async function snapshot(){ return await api({action:'state'}); }
 
-  async function refreshState(silent){
+  // ===================== NODOS / RESOLUCIÓN =====================
+  async function loadNodes(){
+    setStatus('busy','Cargando nodos del subpanel…');
     try{
-      const s = await api({action:'state'});
-      setConn('live'); clearBanner();
-      if (s.found){ if(s.power!=null)power=s.power; if(s.dim!=null)dim=s.dim; }
-      render(); lastSync=Date.now(); tickUpdated();
-      recordSample(s);
-      if (!silent) setStatus('ok', power ? `Estado sincronizado · Encendida ${dim}%` : (power===false?'Estado sincronizado · Apagada':'Sin estado reportado'));
-      return s;
-    }catch(e){
-      if (!locked){ setConn('err'); if(!silent){ setStatus('warn','No se pudo leer el estado'); showBanner('No hay conexión con el dispositivo: '+e.message); } }
-      return null;
-    }
+      const j = await api({ action:'nodes' });
+      const byId=new Map(), bySerial=new Map(), byEui=new Map();
+      j.nodes.forEach(n=>{
+        byId.set(Number(n.id), n);
+        if (n.serial) bySerial.set(String(n.serial).toUpperCase(), n);
+        if (n.dev_eui) byEui.set(String(n.dev_eui).toLowerCase(), n);
+      });
+      allNodes = { nodes:j.nodes, byId, bySerial, byEui, total:j.total, capped:j.capped };
+      nodeCount.textContent = j.total + ' nodos' + (j.capped?' (lista truncada)':'');
+      serials.innerHTML = j.nodes.slice(0, DATALIST_MAX).map(n=>`<option value="${n.serial||n.id}">`).join('');
+      setConn('live'); setStatus('ok', 'Subpanel '+j.subpanel+' · '+j.total+' nodos');
+    }catch(e){ setConn('err'); setStatus('warn','No se pudieron cargar los nodos: '+e.message); }
+  }
+  function resolveToken(tok){
+    const t = tok.trim(); if (!t) return null;
+    const up = t.toUpperCase(), lo = t.toLowerCase();
+    if (allNodes.bySerial.has(up)) return allNodes.bySerial.get(up);
+    if (allNodes.byEui.has(lo))    return allNodes.byEui.get(lo);
+    if (/^\d+$/.test(t) && allNodes.byId.has(Number(t))) return allNodes.byId.get(Number(t));
+    return null;
+  }
+  function addTokens(str){
+    clearSelBanner();
+    const toks = str.split(/[,\n;]+/).map(s=>s.trim()).filter(Boolean);
+    if (!toks.length) return;
+    let added=0; const missing=[];
+    toks.forEach(tok=>{
+      const n = resolveToken(tok);
+      if (!n){ missing.push(tok); return; }
+      if (selById.has(Number(n.id))) return;
+      const row = { id:Number(n.id), serial:n.serial, dev_eui:n.dev_eui, node:n.node, isActive:n.isActive,
+                    power:null, dim:null, nodeStatus:null, updatedAt:null, status:'idle' };
+      selection.push(row); selById.set(row.id, row); added++;
+    });
+    renderSel();
+    if (missing.length) showSel('warn', 'No encontrados en el subpanel: '+missing.join(', '));
+    else if (added) clearSelBanner();
+    searchEl.value='';
   }
 
-  // ========================= FLUJO COMANDO =========================
-  async function runCommand(action, value, expect, label){
-    if (busy || locked || !ACCESS) return;
-    setBusyState(true); clearBanner();
-    let before=null;
-    try{
-      setStatus('busy','Leyendo estado previo…');
-      before = await snapshot();
+  // ===================== RENDER SELECCIÓN =====================
+  function dotClass(r){ if (r.status==='pending') return 'pen'; if (r.power===true) return 'on'; if (r.power===false) return 'off'; return ''; }
+  function stateTxt(r){ if (r.power==null) return '—'; return r.power ? ('on · '+(r.dim==null?'?':r.dim+'%')) : 'off'; }
+  function renderSel(){
+    if (!selection.length){
+      selBody.innerHTML = '<tr><td colspan="5" class="empty">Agrega nodos por serial o id para empezar.</td></tr>';
+    } else {
+      selBody.innerHTML = selection.map(r=>`
+        <tr data-id="${r.id}" class="${r.status}">
+          <td><span class="sdot ${dotClass(r)}"></span></td>
+          <td>${r.serial||'—'}</td>
+          <td>${r.id}</td>
+          <td>${stateTxt(r)}</td>
+          <td><div class="rowact">
+            <button class="on" data-act="on" title="Encender">⏻</button>
+            <button data-act="off" title="Apagar">○</button>
+            <input class="rowdim" data-act="dimv" type="number" min="0" max="100" placeholder="dim">
+            <button class="rm" data-act="rm" title="Quitar">✕</button>
+          </div></td>
+        </tr>`).join('');
+    }
+    updateSummary();
+  }
+  function updateSummary(){
+    let on=0,off=0,unk=0,pen=0;
+    selection.forEach(r=>{ if(r.status==='pending')pen++; if(r.power===true)on++; else if(r.power===false)off++; else unk++; });
+    cSel.textContent=selection.length; cOn.textContent=on; cOff.textContent=off; cUnk.textContent=unk; cPen.textContent=pen;
+  }
 
-      // enviar comando (t0 = instante de envío, para medir cuánto tarda en confirmarse)
-      setStatus('busy','Enviando comando…');
-      const t0 = Date.now();
-      await api(Object.assign({action}, value!=null ? {value} : {}));
+  // delegación de eventos en la tabla
+  selBody.addEventListener('click', e=>{
+    const btn = e.target.closest('button'); if (!btn) return;
+    const tr = e.target.closest('tr'); const id = Number(tr.dataset.id); const act = btn.dataset.act;
+    if (act==='rm'){ selection = selection.filter(r=>r.id!==id); selById.delete(id); renderSel(); return; }
+    if (act==='on')  commandOne(id, 'on');
+    if (act==='off') commandOne(id, 'off');
+  });
+  selBody.addEventListener('change', e=>{
+    const inp = e.target.closest('input.rowdim'); if (!inp) return;
+    const tr = e.target.closest('tr'); const id = Number(tr.dataset.id);
+    let v = Math.round(+inp.value); if (isNaN(v)||v<0||v>100){ inp.value=''; return; }
+    inp.value=''; commandOne(id, 'dim', v);
+  });
+
+  // ===================== CONFIRMACIÓN =====================
+  function expectFn(op, value){
+    if (op==='on')  return r => r.power===true;
+    if (op==='off') return r => r.power===false;
+    return r => r.dim!=null && Math.abs(r.dim - value) <= DIM_TOL;
+  }
+  async function readStates(ids){
+    for (let i=0; i<ids.length; i+=READ_CHUNK){
+      const chunk = ids.slice(i, i+READ_CHUNK);
+      const j = await api({ action:'states', ids: chunk });
+      (j.states||[]).forEach(s=>{
+        const r = selById.get(Number(s.id)); if (!r || !s.found) return;
+        if (s.power!=null) r.power=s.power; if (s.dim!=null) r.dim=s.dim;
+        r.nodeStatus=s.nodeStatus; r.updatedAt=s.updatedAt;
+      });
+    }
+    renderSel();
+  }
+  async function confirm(ids, op, value, label, t0){
+    const expect = expectFn(op, value);
+    await sleep(SETTLE_MS);
+    let pending = ids.slice();
+    for (let i=1; i<=POLL_MAX && pending.length; i++){
+      setStatus('ping', `Confirmando… ${((Date.now()-t0)/1000).toFixed(0)}s · ${ids.length-pending.length}/${ids.length}`);
+      await readStates(pending);
+      pending = pending.filter(id=>{ const r=selById.get(id); return !(r && expect(r)); });
+      pending.forEach(id=>{ const r=selById.get(id); if(r) r.status='pending'; });
+      ids.forEach(id=>{ const r=selById.get(id); if(r && expect(r)) r.status='confirmed'; });
+      renderSel();
+      if (pending.length && i<POLL_MAX) await sleep(POLL_MS);
+    }
+    pending.forEach(id=>{ const r=selById.get(id); if(r) r.status='fail'; });
+    renderSel();
+    const ok = ids.length - pending.length, el = ((Date.now()-t0)/1000).toFixed(1);
+    const pendSerials = pending.map(id=>{ const r=selById.get(id); return r? (r.serial||r.id):id; });
+    if (!pending.length){ setStatus('ok', `Confirmado en ${el}s · ${ok}/${ids.length}`); logAdd('ok', `${label} → confirmados ${ok}/${ids.length} en ${el}s`); }
+    else { setStatus('warn', `Confirmados ${ok}/${ids.length} · ${pending.length} pendientes`); logAdd('warn', `${label} → confirmados ${ok}/${ids.length}, pendientes: ${pendSerials.join(', ')}`); }
+    showResult(label, ok, ids.length, pending, op, value);
+  }
+  function showResult(label, ok, total, pending, op, value){
+    resultLine.textContent = `${label} · confirmados ${ok}/${total}` + (pending.length?` · ${pending.length} pendientes`:'');
+    pendingChips.innerHTML = pending.map(id=>{ const r=selById.get(id); return `<span class="chip">${r?(r.serial||r.id):id}</span>`; }).join('');
+    if (pending.length){ lastAction={op,value,label,pendingIds:pending.slice()}; retryBtn.style.display='inline-block'; }
+    else { lastAction=null; retryBtn.style.display='none'; }
+  }
+  retryBtn.onclick = ()=>{ if (lastAction) runCommand(lastAction.pendingIds, lastAction.op, lastAction.value, lastAction.label+' (reintento)'); };
+
+  // ===================== COMANDOS =====================
+  async function runCommand(ids, op, value, label){
+    if (busy || locked) return;
+    ids = ids.map(Number).filter(id=>selById.has(id));
+    if (!ids.length){ showSel('warn','Selecciona al menos un nodo.'); return; }
+    setBusy(true); clearSelBanner();
+    ids.forEach(id=>{ const r=selById.get(id); if(r) r.status='pending'; }); renderSel();
+    const t0 = Date.now();
+    try{
+      setStatus('busy', `Enviando comando a ${ids.length} nodo(s)…`);
+      const out = await api({ action:'command', op, value, ids });
       setConn('live');
-
-      // breve respiro y a confirmar (sin ping)
-      setStatus('busy','Aplicando en el equipo…');
-      await sleep(SETTLE_MS);
-
-      // consulta current hasta que el equipo reporte el cambio
-      setStatus('ping','Consultando estado…');
-      let after=null, confirmed=false;
-      for (let i=1; i<=CONFIRM_MAX; i++){
-        after = await api({action:'state'});
-        if (after.found){
-          if (after.power!=null) power=after.power;
-          if (after.dim!=null)   dim=after.dim;
-          render(); renderBA(before, after);
-          lastSync=Date.now(); tickUpdated();
-          recordSample(after);
-          if (expect(after)){ confirmed=true; break; }
-        }
-        setStatus('ping', `Confirmando… ${((Date.now()-t0)/1000).toFixed(0)}s (intento ${i}/${CONFIRM_MAX})`);
-        if (i < CONFIRM_MAX) await sleep(CONFIRM_INTERVAL);
-      }
-      const elapsed = ((Date.now()-t0)/1000).toFixed(1);
-      if (confirmed){ setStatus('ok', `Confirmado en ${elapsed}s · ${stateText()}`); logAdd('ok', `${label} → confirmado en ${elapsed}s: ${stateText()}`); }
-      else { setStatus('warn', `Sin confirmar tras ${elapsed}s`); logAdd('warn', `${label} → enviado, sin confirmar tras ${elapsed}s`); }
+      logAdd('ok', `${label} → enviado a ${out.sent} nodo(s) en ${out.batches} lote(s)`);
+      await confirm(ids, op, value, label, t0);
     }catch(e){
-      if (!locked){ setConn('err'); setStatus('warn','El comando no se pudo enviar'); showBanner('Error al enviar el comando: '+e.message); logAdd('err', `${label} → error: ${e.message}`); }
-    }finally{
-      setBusyState(false);
-    }
+      setConn('err'); setStatus('warn','El comando no se pudo enviar');
+      showSel('err','Error: '+e.message); logAdd('err', `${label} → error: ${e.message}`);
+      ids.forEach(id=>{ const r=selById.get(id); if(r) r.status='idle'; }); renderSel();
+    }finally{ setBusy(false); }
+  }
+  function commandOne(id, op, value){
+    const r = selById.get(id); const name = r? (r.serial||id):id;
+    const label = op==='on'?`Encender ${name}`:op==='off'?`Apagar ${name}`:`Dimerizar ${name} a ${value}%`;
+    runCommand([id], op, value, label);
   }
 
-  const expectPower = want => (s => s.power === want);
-  const expectDim   = want => (s => s.dim != null && Math.abs(s.dim - want) <= 2);
+  // general
+  gOn.onclick  = ()=> runCommand(selection.map(r=>r.id), 'on',  null, `Encender ${selection.length} nodos`);
+  gOff.onclick = ()=> runCommand(selection.map(r=>r.id), 'off', null, `Apagar ${selection.length} nodos`);
+  gDimApply.onclick = ()=> runCommand(selection.map(r=>r.id), 'dim', +gdim.value, `Dimerizar ${selection.length} nodos a ${+gdim.value}%`);
+  gRead.onclick = async ()=>{
+    if (!selection.length){ showSel('warn','Selecciona nodos.'); return; }
+    setBusy(true); setStatus('ping','Leyendo estado…');
+    try{ await readStates(selection.map(r=>r.id)); setStatus('ok','Estado actualizado'); logAdd('ok',`Lectura de estado · ${selection.length} nodos`); }
+    catch(e){ setStatus('warn','No se pudo leer: '+e.message); }
+    finally{ setBusy(false); }
+  };
+  gdim.oninput = ()=>{ gdim.style.setProperty('--fill', gdim.value+'%'); gdimVal.textContent=gdim.value+'%'; };
 
-  btnOn.onclick  = () => runCommand('on',  null, expectPower(true),  'Encender');
-  btnOff.onclick = () => runCommand('off', null, expectPower(false), 'Apagar');
-  dimEl.oninput  = () => { dim=+dimEl.value; render(); };
-  dimEl.onchange = () => runCommand('dim', +dimEl.value, expectDim(+dimEl.value), `Dimerizar ${+dimEl.value}%`);
-  presets.forEach(b => b.onclick = () => { dim=+b.dataset.v; render(); runCommand('dim', dim, expectDim(dim), `Dimerizar ${dim}%`); });
-  serialEl.onchange = () => { if (resolveId()){ loadHistory(); updateCharts(); refreshState(); } else showBanner('Serial no registrado en este subpanel'); };
+  // buscador
+  function doAdd(){ addTokens(searchEl.value); }
+  addBtn.onclick = doAdd;
+  searchEl.addEventListener('keydown', e=>{ if (e.key==='Enter'){ e.preventDefault(); doAdd(); } });
+  clearSearch.onclick = ()=>{ searchEl.value=''; clearSelBanner(); searchEl.focus(); };
+  clearSel.onclick = ()=>{ selection=[]; selById.clear(); renderSel(); resultLine.textContent='Sin acciones todavía.'; pendingChips.innerHTML=''; retryBtn.style.display='none'; };
+  reloadNodes.onclick = loadNodes;
+  addActive.onclick = ()=>{
+    const act = allNodes.nodes.filter(n=>n.isActive);
+    addTokens(act.map(n=>n.serial||n.id).join(','));
+  };
+  subpanelEl.addEventListener('change', ()=>{ selection=[]; selById.clear(); renderSel(); loadNodes(); });
 
-  // ========================= PESTAÑAS =========================
+  // ===================== PESTAÑAS =====================
   function showTab(name){
-    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab===name));
-    tabControl.hidden = name!=='control';
-    tabLog.hidden = name!=='log';
-    if (name==='control' && chartsReady) chartObjs.forEach(c => { try{ c.resize(); }catch(_){ } });
+    tabBtns.forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    tabControl.hidden = name!=='control'; tabLog.hidden = name!=='log';
   }
-  tabBtns.forEach(b => b.onclick = () => showTab(b.dataset.tab));
+  tabBtns.forEach(b=> b.onclick=()=>showTab(b.dataset.tab));
 
-  // ========================= PUERTA DE ACCESO =========================
-  function lockGate(msg){
-    locked=true; ACCESS=''; online=false;
-    appEl.hidden=true; gate.style.display='';
-    power=null; render(); setConn('err');
-    if (msg){ gateBanner.textContent=msg; gateBanner.classList.add('show'); }
-    codeEl.value=''; codeEl.focus();
-  }
-  function unlock(){
-    locked=false; gate.style.display='none'; appEl.hidden=false;
-    gateBanner.classList.remove('show');
-    initPanel(); render();
-    initCharts(); loadHistory(); updateCharts();
-    setStatus('busy','Iniciando…');
-    logAdd('ok', 'Acceso concedido');
-    (async()=>{ const s = await refreshState(); if (s) renderBA(null, s); })();
-  }
+  // ===================== PUERTA DE ACCESO =====================
+  function lockGate(msg){ locked=true; ACCESS=''; appEl.hidden=true; gate.style.display=''; setConn('err');
+    if (msg){ gateBanner.textContent=msg; gateBanner.classList.add('show'); } codeEl.value=''; codeEl.focus(); }
+  function unlock(){ locked=false; gate.style.display='none'; appEl.hidden=false; gateBanner.classList.remove('show');
+    setStatus('busy','Iniciando…'); loadNodes(); }
   async function tryEnter(codeValue){
     const code = (codeValue!=null ? codeValue : codeEl.value).trim();
-    gateBanner.classList.remove('show');
-    btnEnter.disabled=true; const prev=btnEnter.textContent; btnEnter.textContent='Validando…';
+    gateBanner.classList.remove('show'); btnEnter.disabled=true; const prev=btnEnter.textContent; btnEnter.textContent='Validando…';
     try{
-      const r = await fetch(ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ action:'verify', code }) });
-      const j = await r.json().catch(()=> ({}));
+      const r = await fetch(ENDPOINT,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'verify', code }) });
+      const j = await r.json().catch(()=>({}));
       if (r.ok && j.ok){ ACCESS = j.required===false ? '' : code; unlock(); }
-      else {
-        const msg = j.error
-          || (r.status===404 ? 'No se encontró /api/control · revisa que la función esté desplegada'
-            : r.status===401 ? 'Código incorrecto'
-            : 'Error HTTP ' + r.status);
-        gateBanner.textContent = msg; gateBanner.classList.add('show');
-      }
-    }catch(e){
-      gateBanner.textContent = 'No se pudo validar: '+e.message; gateBanner.classList.add('show');
-    }finally{
-      btnEnter.disabled=false; btnEnter.textContent=prev;
-    }
+      else { gateBanner.textContent = j.error || (r.status===404?'No se encontró /api/control':r.status===401?'Código incorrecto':'Error HTTP '+r.status); gateBanner.classList.add('show'); }
+    }catch(e){ gateBanner.textContent='No se pudo validar: '+e.message; gateBanner.classList.add('show'); }
+    finally{ btnEnter.disabled=false; btnEnter.textContent=prev; }
   }
-  btnEnter.onclick = () => tryEnter();
-  codeEl.addEventListener('keydown', e => { if (e.key==='Enter') tryEnter(); });
-  codeShow.onclick = () => { codeEl.type = codeEl.type==='password' ? 'text' : 'password'; };
+  btnEnter.onclick=()=>tryEnter();
+  codeEl.addEventListener('keydown', e=>{ if(e.key==='Enter') tryEnter(); });
+  codeShow.onclick=()=>{ codeEl.type = codeEl.type==='password'?'text':'password'; };
 
-  // ========================= PANEL / SUBPANEL =========================
-  function initPanel(){
-    panelVal.textContent = PANEL.label + ' · ' + PANEL.id;
-    if (PANEL.subpanels.length > 1 && subsel.options.length===0){
-      PANEL.subpanels.forEach((sp,i) => { const o=document.createElement('option'); o.value=i; o.textContent=sp.label; subsel.appendChild(o); });
-      subsel.hidden=false;
-      subsel.onchange = () => { SUB=PANEL.subpanels[+subsel.value]; serialEl.value=firstSerialOf(SUB); power=null; dim=80; render(); loadHistory(); updateCharts(); refreshState(); };
-    }
-    if (!resolveId()) serialEl.value = firstSerialOf(SUB);
-  }
-
-  // ========================= ARRANQUE Y FONDO =========================
-  setInterval(tickUpdated, 1000);
-  setInterval(() => { if (!locked && !busy && online) refreshState(true); }, BG_PING_MS);
-
-  render();
-  const urlCode = new URLSearchParams(location.search).get('code')
-               || ((location.hash.match(/code=([^&]+)/)||[])[1] || '');
-  if (urlCode) tryEnter(decodeURIComponent(urlCode));
-  else codeEl.focus();
+  // ===================== ARRANQUE =====================
+  renderSel();
+  const urlCode = new URLSearchParams(location.search).get('code') || ((location.hash.match(/code=([^&]+)/)||[])[1]||'');
+  if (urlCode) tryEnter(decodeURIComponent(urlCode)); else codeEl.focus();
 </script>
 </body>
 </html>

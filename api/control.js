@@ -1,172 +1,202 @@
-// api/control.js — Función serverless de Vercel (Node 18+, sintaxis ES Module / export default)
-// Proxy seguro a la API de Ubicquia: estado / encender / apagar / dimerizar / ping.
-// Los secretos viven SOLO aquí (variables de entorno de Vercel). Nunca en el front.
+// api/control.js — Proxy serverless Ubicquia (ESM). Multi-nodo.
+// Acciones: verify · nodes · state · states · command
 //
-// Se usa `export default` (ESM) porque el repo trata los .js como módulos
-// (package.json con "type":"module"). Por eso NO se usa module.exports.
+// Seguridad: código de acceso (server-side) en CADA acción + allowlist por
+// SUBPANEL. Dentro de un subpanel permitido, cualquier id real del subpanel es
+// válido (resuelto vía /v3/nodes). No se enumeran ids en variables de entorno.
 //
-// Variables de entorno (Vercel → Settings → Environment Variables):
-//   UBI_CLIENT_ID        (secreto)    p. ej. 803956.ebustos_superuser@ubicquia.com
-//   UBI_CLIENT_SECRET    (secreto)    client_secret de UbiHub
-//   UBI_SUBPANEL_ID      recomendado  current-subpanel-id por defecto (1007)
-//   UBI_ALLOWED_SUBPANELS recomendado subpaneles permitidos, coma-separados (def. = UBI_SUBPANEL_ID)
-//   UBI_ALLOWED_IDS      recomendado  ids de nodo controlables, coma-separados (def. "4")
-//   UBI_DIM_TYPE         opcional     dim_type para setLightDimV2 (def. "string", valor probado OK)
-//   UBI_API_BASE         opcional     def. https://api.ubicquia.com/api
-//   UBI_AUTH_URL         opcional     def. realms/ubivu-prd
-//   UBI_NODE_LEVEL_TYPE_ID opcional   def. 1
-//   UBI_APP_CODE / UBI_APP_CODE_HEADER  opcional  (los curls que funcionan NO lo usan; dejar vacío)
+// Variables de entorno (Vercel · Production):
+//   UBI_CLIENT_ID, UBI_CLIENT_SECRET   (secretos OAuth)
+//   UBI_APP_CODE                       (código de acceso; gate en cada acción)
+//   UBI_SUBPANEL_ID                    (subpanel por defecto, ej. 1007)
+//   UBI_ALLOWED_SUBPANELS              (csv de subpaneles permitidos, ej. "1007")
+//   UBI_API_BASE        = https://api.ubicquia.com/api
+//   UBI_AUTH_URL        = https://auth.ubihub.ubicquia.com/auth/realms/ubivu-prd/protocol/openid-connect/token
+//   UBI_NODE_LEVEL_TYPE_ID = 1
+//   UBI_DIM_TYPE        = string
+//   UBI_BATCH_SIZE      = 250   (troceo de id_list por comando)
+//   UBI_NODES_PER_PAGE  = 250
+//   UBI_NODES_MAX_PAGES = 40    (tope de páginas al cargar el subpanel)
+//   UBI_NODES_TTL_MS    = 300000 (caché de la lista de nodos)
+//   UBI_STATES_MAX      = 80    (tope de nodos por lectura de estado)
+//   UBI_STATES_CONCURRENCY = 6
 
+const API_BASE  = process.env.UBI_API_BASE  || 'https://api.ubicquia.com/api';
 const AUTH_URL  = process.env.UBI_AUTH_URL  || 'https://auth.ubihub.ubicquia.com/auth/realms/ubivu-prd/protocol/openid-connect/token';
-const API_BASE  = (process.env.UBI_API_BASE || 'https://api.ubicquia.com/api').replace(/\/$/, '');
-const CLIENT_ID = process.env.UBI_CLIENT_ID;
-const CLIENT_SECRET = process.env.UBI_CLIENT_SECRET;
-const SUBPANEL_DEFAULT = process.env.UBI_SUBPANEL_ID || '';
-const ALLOWED_SUBPANELS = (process.env.UBI_ALLOWED_SUBPANELS || SUBPANEL_DEFAULT || '')
+const NLT_ID    = Number(process.env.UBI_NODE_LEVEL_TYPE_ID || 1);
+const DIM_TYPE  = process.env.UBI_DIM_TYPE  || 'string';
+const BATCH     = Number(process.env.UBI_BATCH_SIZE      || 250);
+const PER_PAGE  = Number(process.env.UBI_NODES_PER_PAGE  || 250);
+const MAX_PAGES = Number(process.env.UBI_NODES_MAX_PAGES || 40);
+const NODES_TTL = Number(process.env.UBI_NODES_TTL_MS    || 300000);
+const STATES_MAX= Number(process.env.UBI_STATES_MAX      || 80);
+const CONC      = Number(process.env.UBI_STATES_CONCURRENCY || 6);
+const ACCESS    = (process.env.UBI_APP_CODE || '').trim();
+const DEF_SUB   = (process.env.UBI_SUBPANEL_ID || '1007').trim();
+const ALLOWED_SUBS = (process.env.UBI_ALLOWED_SUBPANELS || DEF_SUB)
   .split(',').map(s => s.trim()).filter(Boolean);
-const ALLOWED_IDS = (process.env.UBI_ALLOWED_IDS || '4')
-  .split(',').map(s => s.trim()).filter(Boolean);
-const NODE_LEVEL_TYPE_ID = Number(process.env.UBI_NODE_LEVEL_TYPE_ID || 1);
-const DIM_TYPE  = process.env.UBI_DIM_TYPE || 'string'; // valor probado OK contra setLightDimV2
-// UBI_APP_CODE se reutiliza como CÓDIGO DE ACCESO de la app (gate). Ya NO se manda a Ubicquia.
-// .trim() evita el falso "incorrecto" si la variable de Vercel quedó con un salto de línea o espacio.
-const ACCESS_CODE = (process.env.UBI_APP_CODE || '').trim();
 
-// --- Token OAuth cacheado en memoria del proceso (se reusa entre invocaciones calientes) ---
-let tokenCache = { value: null, exp: 0 };
-
-async function getToken() {
-  const now = Date.now();
-  if (tokenCache.value && now < tokenCache.exp) return tokenCache.value;
-  if (!CLIENT_ID || !CLIENT_SECRET) throw new Error('Faltan UBI_CLIENT_ID / UBI_CLIENT_SECRET en Vercel');
-
+// ---- OAuth token (cache) ----
+let _tok = { v:null, exp:0 };
+async function getToken(){
+  if (_tok.v && Date.now() < _tok.exp) return _tok.v;
   const body = new URLSearchParams({
-    grant_type: 'client_credentials',
-    scope: 'openid',
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
+    grant_type:'client_credentials', scope:'openid',
+    client_id: process.env.UBI_CLIENT_ID, client_secret: process.env.UBI_CLIENT_SECRET
   });
-  const r = await fetch(AUTH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-  if (!r.ok) throw new Error('Auth falló (' + r.status + ')');
+  const r = await fetch(AUTH_URL, { method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+  if (!r.ok) throw new Error('Auth falló ('+r.status+')');
   const j = await r.json();
-  tokenCache = { value: j.access_token, exp: now + ((j.expires_in || 300) - 30) * 1000 };
-  return tokenCache.value;
+  _tok = { v:j.access_token, exp: Date.now() + ((j.expires_in||300)-30)*1000 };
+  return _tok.v;
 }
-
-// Headers idénticos a los curls que funcionan: accept + current-subpanel-id + Authorization (+ Content-Type en POST).
-function headers(token, subpanel, withJson) {
-  const h = { accept: 'application/json', Authorization: 'Bearer ' + token };
-  if (subpanel) h['current-subpanel-id'] = subpanel;
+function headers(token, subpanel, withJson){
+  const h = { accept:'application/json', Authorization:'Bearer '+token, 'current-subpanel-id': String(subpanel) };
   if (withJson) h['Content-Type'] = 'application/json';
   return h;
 }
 
-// Lee el estado real del nodo. /v3/nodes/{id}?type=light devuelve el nodo directo en data.
-// Campos confirmados: light_status ("ON"/"OFF") = encendido; LD1State (0-100) = dimerizado.
-async function fetchState(id, subpanel) {
+// ---- Caché de nodos por subpanel (serial/id/dev_eui → nodo) ----
+const _nodes = {}; // { [subpanel]: { t, list } }
+async function loadNodes(subpanel){
+  const c = _nodes[subpanel];
+  if (c && (Date.now()-c.t) < NODES_TTL) return c.list;
   const token = await getToken();
-  const url = API_BASE + '/v3/nodes/' + encodeURIComponent(id) + '?type=light';
-  const r = await fetch(url, { headers: headers(token, subpanel, false) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error((j && j.message) || ('v3/nodes ' + r.status));
-  const n = j && j.data;
-  if (!n || typeof n !== 'object') return { found: false, power: null, dim: null };
+  let page = 1, last = 1, out = [], capped = false;
+  do {
+    const url = `${API_BASE}/v3/nodes?query=1&page=${page}&per_page=${PER_PAGE}`;
+    const r = await fetch(url, { headers: headers(token, subpanel) });
+    if (!r.ok) throw new Error('No se pudo listar nodos ('+r.status+')');
+    const j = await r.json();
+    (j.data || []).forEach(n => out.push({
+      id:n.id, serial:n.serial_number, dev_eui:n.dev_eui, node:n.node,
+      state:n.state, isActive:n.isActive
+    }));
+    last = (j.meta && j.meta.last_page) || 1;
+    page++;
+    if (page > MAX_PAGES && page <= last){ capped = true; break; }
+  } while (page <= last);
+  const list = { nodes: out, total: out.length, capped };
+  _nodes[subpanel] = { t: Date.now(), list };
+  return list;
+}
+function idSet(list){ return new Set(list.nodes.map(n => Number(n.id))); }
 
-  const ls = (n.light_status == null ? '' : String(n.light_status)).toLowerCase();
-  const power = (ls === 'on') ? true : (ls === 'off') ? false : null;
-  const dim = (n.LD1State != null && !isNaN(Number(n.LD1State))) ? Number(n.LD1State) : null;
-
-  // Campos crudos para graficar en el tiempo (todos los candidatos; el front decide cuáles mostrar).
-  const num = v => (v != null && !isNaN(Number(v))) ? Number(v) : null;
-  const m = {
-    VState: num(n.VState), V1State: num(n.V1State),
-    CState: num(n.CState), C1State: num(n.C1State),
-    power: num(n.power),
-    PFState: num(n.PFState), powerFactorState: num(n.powerFactorState),
-    LD1State: num(n.LD1State),
-    on: power === true ? 1 : (power === false ? 0 : null),
+// ---- Lectura de estado de un nodo (luz) ----
+function mapState(n){
+  if (!n) return { found:false };
+  const onTxt = String(n.light_status ?? '').toUpperCase();
+  const power = onTxt==='ON' ? true : onTxt==='OFF' ? false : null;
+  const dim   = n.LD1State!=null ? Number(n.LD1State) : null;
+  return {
+    found:true, power, dim,
+    nodeStatus: n.node_status || n.state || null,
+    updatedAt:  n.updatedDateTime || n.updated_at || null,
+    serial: n.serial_number, dev_eui: n.dev_eui,
+    m:{ VState:n.VState, V1State:n.V1State, CState:n.CState, C1State:n.C1State,
+        power:n.power, PFState:n.PFState, powerFactorState:n.powerFactorState,
+        LD1State:n.LD1State, on: power===true?1:0 }
   };
-
-  return { found: true, power, dim, nodeStatus: n.node_status || null, updatedAt: n.updatedDateTime || null, m };
+}
+async function readOne(token, subpanel, id){
+  const r = await fetch(`${API_BASE}/v3/nodes/${id}?type=light`, { headers: headers(token, subpanel) });
+  if (!r.ok) return { id, found:false, error:'HTTP '+r.status };
+  const j = await r.json();
+  const node = Array.isArray(j.data) ? j.data[0] : j.data;
+  return Object.assign({ id }, mapState(node));
+}
+async function readMany(token, subpanel, ids){
+  const out = []; let i = 0;
+  async function worker(){ while (i < ids.length){ const k = i++; out[k] = await readOne(token, subpanel, ids[k]); } }
+  await Promise.all(Array.from({length: Math.min(CONC, ids.length)}, worker));
+  return out;
 }
 
-// Envía un comando V2 (setLightStateV2 / setLightDimV2 / setMQTTPing).
-async function sendCommand(path, value, id, subpanel, extraBody) {
-  const token = await getToken();
-  const body = {
-    id_list: [{ id: Number(id) }],
-    value,
-    node_level_type_id: NODE_LEVEL_TYPE_ID,
-    ...(extraBody || {}),
-  };
-  const r = await fetch(API_BASE + path, {
-    method: 'POST',
-    headers: headers(token, subpanel, true),
-    body: JSON.stringify(body),
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok || (j && j.status === 'failed')) {
-    throw new Error((j && j.message) || (path + ' ' + r.status));
+// ---- Comando en lote ----
+async function sendCommand(token, subpanel, op, value, ids){
+  const endpoint = op==='dim' ? 'setLightDimV2' : 'setLightStateV2';
+  const val = op==='on' ? 1 : op==='off' ? 0 : Number(value);
+  const batches = [];
+  for (let i=0; i<ids.length; i+=BATCH) batches.push(ids.slice(i, i+BATCH));
+  let sent = 0;
+  for (const chunk of batches){
+    const body = { id_list: chunk.map(id => ({ id: Number(id) })), value: val, node_level_type_id: NLT_ID };
+    if (op==='dim') body.dim_type = DIM_TYPE;
+    const r = await fetch(`${API_BASE}/nodes/${endpoint}`, {
+      method:'POST', headers: headers(token, subpanel, true), body: JSON.stringify(body) });
+    let j; try{ j = await r.json(); }catch(_){ j = {}; }
+    if (!r.ok || j.status==='failed') throw new Error(j.message || ('Comando falló ('+r.status+')'));
+    sent += chunk.length;
   }
-  return j;
+  return { sent, batches: batches.length };
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
+// ===================== HANDLER =====================
+export default async function handler(req, res){
+  if (req.method !== 'POST') return res.status(405).json({ ok:false, error:'Método no permitido' });
+  let b = req.body;
+  if (typeof b === 'string'){ try{ b = JSON.parse(b); }catch(_){ b = {}; } }
+  b = b || {};
+  const action = b.action;
+
+  // Gate: el código se valida en CADA acción
+  const codeReq = ACCESS.length > 0;
+  const codeOk  = !codeReq || (String(b.code || '').trim() === ACCESS);
+
   try {
-    const p = Object.assign({}, req.query || {}, (req.body && typeof req.body === 'object') ? req.body : {});
-    const action = String(p.action || 'state');
-    const id = String(p.id || ALLOWED_IDS[0] || '');
-    const subpanel = String(p.subpanel || SUBPANEL_DEFAULT || '');
-    const code = String(p.code || '').trim();
-
-    // Puerta de acceso (verify): valida el código SIN tocar la API de Ubicquia.
-    if (action === 'verify') {
-      if (!ACCESS_CODE) return res.status(200).json({ ok: true, required: false });
-      if (code === ACCESS_CODE) return res.status(200).json({ ok: true, required: true });
-      return res.status(401).json({ ok: false, error: 'código de acceso inválido' });
+    if (action === 'verify'){
+      if (!codeOk) return res.status(401).json({ ok:false, error:'Código incorrecto' });
+      return res.status(200).json({ ok:true, required: codeReq });
     }
-    // Para cualquier otra acción, exigir el código si está configurado.
-    if (ACCESS_CODE && code !== ACCESS_CODE) {
-      return res.status(401).json({ ok: false, error: 'código de acceso inválido' });
+    if (!codeOk) return res.status(401).json({ ok:false, error:'Código de acceso inválido' });
+
+    const subpanel = String(b.subpanel || DEF_SUB).trim();
+    if (!ALLOWED_SUBS.includes(subpanel))
+      return res.status(403).json({ ok:false, error:'Subpanel no permitido: '+subpanel });
+
+    if (action === 'nodes'){
+      const list = await loadNodes(subpanel);
+      return res.status(200).json({ ok:true, nodes:list.nodes, total:list.total, capped:list.capped, subpanel });
     }
 
-    // Guardas: solo ids y subpaneles autorizados.
-    if (!ALLOWED_IDS.includes(id)) {
-      return res.status(403).json({ ok: false, error: 'id no autorizado' });
-    }
-    if (ALLOWED_SUBPANELS.length && subpanel && !ALLOWED_SUBPANELS.includes(subpanel)) {
-      return res.status(403).json({ ok: false, error: 'subpanel no autorizado' });
+    const token = await getToken();
+
+    if (action === 'state'){
+      const id = Number(b.id);
+      if (!id) return res.status(400).json({ ok:false, error:'Falta id' });
+      const list = await loadNodes(subpanel);
+      if (!idSet(list).has(id)) return res.status(403).json({ ok:false, error:'id fuera del subpanel' });
+      const s = await readOne(token, subpanel, id);
+      return res.status(200).json(Object.assign({ ok:true }, s));
     }
 
-    if (action === 'state') {
-      const s = await fetchState(id, subpanel);
-      return res.status(200).json({ ok: true, ...s });
+    if (action === 'states'){
+      let ids = (b.ids || []).map(Number).filter(Boolean);
+      if (!ids.length) return res.status(400).json({ ok:false, error:'Falta ids[]' });
+      const list = await loadNodes(subpanel); const allow = idSet(list);
+      ids = ids.filter(id => allow.has(id));
+      let capped = false;
+      if (ids.length > STATES_MAX){ ids = ids.slice(0, STATES_MAX); capped = true; }
+      const states = await readMany(token, subpanel, ids);
+      return res.status(200).json({ ok:true, states, capped, max:STATES_MAX });
     }
-    if (action === 'on') {
-      await sendCommand('/nodes/setLightStateV2', 1, id, subpanel);
-      return res.status(200).json({ ok: true });
+
+    if (action === 'command'){
+      const op = b.op; // on | off | dim
+      if (!['on','off','dim'].includes(op)) return res.status(400).json({ ok:false, error:'op inválida' });
+      let ids = (b.ids || []).map(Number).filter(Boolean);
+      if (!ids.length) return res.status(400).json({ ok:false, error:'Falta ids[]' });
+      if (op==='dim'){ const v = Number(b.value); if (isNaN(v) || v<0 || v>100) return res.status(400).json({ ok:false, error:'value 0-100' }); }
+      const list = await loadNodes(subpanel); const allow = idSet(list);
+      const bad = ids.filter(id => !allow.has(id));
+      if (bad.length) return res.status(403).json({ ok:false, error:'ids fuera del subpanel: '+bad.join(',') });
+      const out = await sendCommand(token, subpanel, op, b.value, ids);
+      return res.status(200).json(Object.assign({ ok:true, op }, out));
     }
-    if (action === 'off') {
-      await sendCommand('/nodes/setLightStateV2', 0, id, subpanel);
-      return res.status(200).json({ ok: true });
-    }
-    if (action === 'dim') {
-      const value = Math.max(0, Math.min(100, Math.round(Number(p.value))));
-      if (isNaN(value)) return res.status(400).json({ ok: false, error: 'value inválido' });
-      await sendCommand('/nodes/setLightDimV2', value, id, subpanel, { dim_type: DIM_TYPE });
-      return res.status(200).json({ ok: true, value });
-    }
-    if (action === 'ping') {
-      await sendCommand('/nodes/setMQTTPing', 0, id, subpanel);
-      return res.status(200).json({ ok: true });
-    }
-    return res.status(400).json({ ok: false, error: 'acción desconocida: ' + action });
-  } catch (e) {
-    return res.status(502).json({ ok: false, error: String((e && e.message) || e) });
+
+    return res.status(400).json({ ok:false, error:'Acción desconocida' });
+  } catch (e){
+    return res.status(502).json({ ok:false, error: e.message || 'Error en la pasarela' });
   }
 }
