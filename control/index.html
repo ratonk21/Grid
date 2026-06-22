@@ -267,10 +267,12 @@
   };
   let SUB = PANEL.subpanels[0];
   const ENDPOINT   = '/api/control';
-  const SETTLE_MS  = 3500;
-  const POLL_DELAYS= [0, 2500, 5000];
-  const BG_PING_MS = 15000;
-  const LOG_MAX    = 60;
+  const SETTLE_MS       = 2500;   // espera antes del primer chequeo de estado
+  const CONFIRM_INTERVAL= 3000;   // cada cuánto se consulta current mientras confirma
+  const CONFIRM_MAX     = 10;     // intentos máximos (~35s) antes de rendirse
+  const REPING_EVERY    = 3;      // re-ping cada N intentos para apurar el reporte del equipo
+  const BG_PING_MS      = 15000;
+  const LOG_MAX         = 60;
 
   // ========================= ESTADO =========================
   let power = null, dim = 80, online = false, locked = true, ACCESS = '';
@@ -411,18 +413,24 @@
       await sleep(SETTLE_MS);
       try{ await api({action:'ping'}); }catch(_){}
 
-      // estado posterior (varios intentos)
+      // estado posterior: consulta current periódicamente hasta que el equipo reporte el cambio
       setStatus('ping','Consultando estado…');
       let after=null, confirmed=false;
-      for (let i=0;i<POLL_DELAYS.length;i++){
-        if (POLL_DELAYS[i]) await sleep(POLL_DELAYS[i]);
+      for (let i=1; i<=CONFIRM_MAX; i++){
         after = await api({action:'state'});
-        if (after.found){ if(after.power!=null)power=after.power; if(after.dim!=null)dim=after.dim; render(); if(expect(after)){confirmed=true;break;} }
+        if (after.found){
+          if (after.power!=null) power=after.power;
+          if (after.dim!=null)   dim=after.dim;
+          render(); renderBA(before, after);
+          lastSync=Date.now(); tickUpdated();
+          if (expect(after)){ confirmed=true; break; }
+        }
+        setStatus('ping', `Confirmando… intento ${i}/${CONFIRM_MAX}`);
+        if (i % REPING_EVERY === 0){ try{ await api({action:'ping'}); }catch(_){} }
+        if (i < CONFIRM_MAX) await sleep(CONFIRM_INTERVAL);
       }
-      lastSync=Date.now(); tickUpdated();
-      renderBA(before, after);
       if (confirmed){ setStatus('ok', 'Estado confirmado · '+stateText()); logAdd('ok', `${label} → confirmado: ${stateText()}`); }
-      else { setStatus('warn','Comando enviado · el equipo aún reporta el estado anterior'); logAdd('warn', `${label} → enviado, sin confirmar aún`); }
+      else { setStatus('warn','Comando enviado · el equipo aún no reporta el cambio'); logAdd('warn', `${label} → enviado, el equipo aún reporta el valor anterior`); }
     }catch(e){
       if (!locked){ setConn('err'); setStatus('warn','El comando no se pudo enviar'); showBanner('Error al enviar el comando: '+e.message); logAdd('err', `${label} → error: ${e.message}`); }
     }finally{
