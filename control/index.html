@@ -93,9 +93,12 @@
   .tab.active{color:var(--ubi-navy);border-bottom-color:var(--ubi-blue)}
   .tab .badge{display:inline-block;min-width:16px;font-family:var(--mono);font-size:.62rem;color:#fff;background:var(--ubi-blue);border-radius:9px;padding:1px 5px;margin-left:6px;vertical-align:1px}
   .tabbody{flex:1;min-height:0;overflow:auto}
-  .tabbody[hidden]{display:none !important}
+  /* Blindaje hidden: clases con display propio (grid/flex) le ganan a [hidden] del navegador
+     (misma especificidad → gana el autor). Forzamos el ocultamiento con id+attr. */
+  .tabbody[hidden], #noSel[hidden], #ctrl[hidden], #hdrCtx[hidden], #app[hidden], #exitBtn[hidden]{display:none !important}
 
   .noSel{height:100%;display:grid;place-items:center;color:#9cabb5;font-family:var(--mono);font-size:13px;text-align:center;padding:20px}
+  .noSel-inner{display:flex;flex-direction:column;align-items:center;gap:14px;line-height:1.6}
 
   .control-grid{display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start}
   @media (max-width:1024px){ .control-grid{grid-template-columns:1fr} }
@@ -165,10 +168,23 @@
 
   @media (max-width:900px){
     html,body{overflow:auto;height:auto}
-    main{overflow:visible}
-    .layout{grid-template-columns:1fr;height:auto}
-    .nodelist{max-height:38vh}
+    main{overflow:visible;padding:12px}
+    .layout{grid-template-columns:1fr;height:auto;gap:12px}
+    .right{height:auto}
+    .nodes-panel{max-height:none}
+    .nodelist{max-height:32vh}
     .tabbody{overflow:visible}
+    .control-grid{grid-template-columns:1fr}
+    .nodeitem{padding:13px 12px}
+    .power button{padding:15px}
+    .presets button{padding:11px}
+    .chartgrid{grid-template-columns:1fr}
+    .cbox{height:200px}
+  }
+  @media (max-width:600px){
+    header{height:52px;padding:0 12px;gap:8px}
+    .hdr-ctx{display:none}      /* panel/subpanel ya se ven en el ingreso; liberar el header */
+    .gate-card{padding:22px}
   }
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -233,7 +249,14 @@
 
           <!-- Pestaña Control -->
           <div id="tab-control" class="tabbody">
-            <div id="noSel" class="noSel">Selecciona un nodo de la lista para monitorear y controlar.</div>
+            <div id="noSel" class="noSel">
+              <div class="noSel-inner">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#cdd6dd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18h6M10 21h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/>
+                </svg>
+                <div>Selecciona un nodo de la lista<br>para monitorear y controlar.</div>
+              </div>
+            </div>
 
             <div id="ctrl" hidden class="control-grid">
               <!-- esencia: encendido/apagado -->
