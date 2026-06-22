@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#eef2f6; --surface:#ffffff; --surface-2:#f1f5f8;
@@ -150,6 +151,12 @@
   .logrow.err .lm{color:var(--danger)}
   .logempty{color:#9cabb5;font-family:'JetBrains Mono',monospace;font-size:11px}
 
+  /* Gráficas en el tiempo */
+  .chart{margin-top:12px}
+  .ctitle{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+  .cbox{position:relative;height:130px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:6px 8px}
+  #sampleCount{color:#9cabb5}
+
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -251,6 +258,20 @@
           <div class="logbox" id="logbox"><span class="logempty">Sin acciones todavía.</span></div>
         </div>
 
+        <!-- Gráficas en el tiempo -->
+        <div class="chartswrap">
+          <div class="block-title">
+            <span>Gráficas en el tiempo · <span id="sampleCount">0 muestras</span></span>
+            <button class="linkbtn" id="chartsClear">limpiar histórico</button>
+          </div>
+          <div class="logempty" id="chartsNote" hidden>Chart.js no cargó · se muestran solo los números.</div>
+          <div class="chart"><div class="ctitle">Voltaje (V)</div><div class="cbox"><canvas id="cV"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Corriente (A)</div><div class="cbox"><canvas id="cC"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Potencia</div><div class="cbox"><canvas id="cP"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Factor de potencia</div><div class="cbox"><canvas id="cF"></canvas></div></div>
+          <div class="chart"><div class="ctitle">Dim (%) y On/Off</div><div class="cbox"><canvas id="cD"></canvas></div></div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -267,16 +288,27 @@
   };
   let SUB = PANEL.subpanels[0];
   const ENDPOINT   = '/api/control';
-  const SETTLE_MS       = 2500;   // espera antes del primer chequeo de estado
-  const CONFIRM_INTERVAL= 3000;   // cada cuánto se consulta current mientras confirma
-  const CONFIRM_MAX     = 10;     // intentos máximos (~35s) antes de rendirse
-  const REPING_EVERY    = 3;      // re-ping cada N intentos para apurar el reporte del equipo
+  const SETTLE_MS       = 1500;   // breve respiro antes de empezar a confirmar/medir
+  const CONFIRM_INTERVAL= 2000;   // chequeo frecuente para confirmar (y medir la latencia real)
+  const CONFIRM_MAX     = 20;     // hasta ~40s buscando el cambio antes de rendirse
   const BG_PING_MS      = 15000;
   const LOG_MAX         = 60;
+  const MAX_SAMPLES     = 800;    // tope de muestras guardadas por nodo en localStorage
+
+  // Definición de gráficas (todos los candidatos; poda los que no quieras quitando series).
+  const CHARTS = [
+    { id:'cV', series:[ {k:'VState',label:'VState',color:'#00c2c7'}, {k:'V1State',label:'V1State',color:'#ff9e2c'} ] },
+    { id:'cC', series:[ {k:'CState',label:'CState',color:'#00c2c7'}, {k:'C1State',label:'C1State',color:'#ff9e2c'} ] },
+    { id:'cP', series:[ {k:'power',label:'power',color:'#06989c'} ] },
+    { id:'cF', dual:true, series:[ {k:'PFState',label:'PFState (izq)',color:'#00c2c7',axis:'y'}, {k:'powerFactorState',label:'powerFactorState (der)',color:'#ff9e2c',axis:'y2'} ] },
+    { id:'cD', series:[ {k:'LD1State',label:'Dim %',color:'#ff9e2c'}, {k:'on',label:'On/Off (×100)',color:'#00c2c7',stepped:true,scale100:true} ] },
+  ];
 
   // ========================= ESTADO =========================
   let power = null, dim = 80, online = false, locked = true, ACCESS = '';
   const logRows = [];
+  let history = [];          // muestras en el tiempo (persisten en localStorage por nodo)
+  let chartObjs = [], chartsReady = false;
 
   const body=document.body, halo=document.getElementById('halo'),
         pctEl=document.getElementById('pct'), whatEl=document.getElementById('what'),
@@ -291,7 +323,9 @@
         codeEl=document.getElementById('code'), btnEnter=document.getElementById('btnEnter'),
         gateBanner=document.getElementById('gateBanner'), codeShow=document.getElementById('codeShow'),
         baBody=document.getElementById('baBody'), logbox=document.getElementById('logbox'),
-        logClear=document.getElementById('logClear');
+        logClear=document.getElementById('logClear'),
+        sampleCount=document.getElementById('sampleCount'), chartsClear=document.getElementById('chartsClear'),
+        chartsNote=document.getElementById('chartsNote');
 
   let lastSync = 0;
 
@@ -361,6 +395,74 @@
   }
   logClear.onclick = () => { logRows.length=0; renderLog(); };
 
+  // ========================= HISTÓRICO + GRÁFICAS =========================
+  const num = v => (v!=null && !isNaN(Number(v))) ? Number(v) : null;
+  function parseTs(s){ if(!s) return null; const d=new Date(String(s).replace(' ','T')); return isNaN(d)?null:d; }
+  const fmtClock = d => d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  function histKey(){ return 'ubilight-hist-' + SUB.id + '-' + (resolveId()||'x'); }
+  function loadHistory(){ try{ const raw=localStorage.getItem(histKey()); history = raw?JSON.parse(raw):[]; }catch(_){ history=[]; } }
+  function saveHistory(){ try{ localStorage.setItem(histKey(), JSON.stringify(history)); }catch(_){ /* sin localStorage o cuota: seguimos en memoria */ } }
+  function clearHistory(){ history=[]; try{ localStorage.removeItem(histKey()); }catch(_){ } updateCharts(); }
+
+  // Agrega una muestra desde una lectura de estado. Deduplica por updatedAt (instante real del equipo).
+  function recordSample(s){
+    if (!s || !s.found || !s.m) return;
+    if (history.length && history[history.length-1].ts === s.updatedAt) return;
+    const d = parseTs(s.updatedAt) || new Date();
+    const m = s.m;
+    history.push({ ts:s.updatedAt, lbl:fmtClock(d),
+      VState:m.VState, V1State:m.V1State, CState:m.CState, C1State:m.C1State,
+      power:m.power, PFState:m.PFState, powerFactorState:m.powerFactorState,
+      LD1State:m.LD1State, on:m.on });
+    if (history.length>MAX_SAMPLES) history.splice(0, history.length-MAX_SAMPLES);
+    saveHistory(); updateCharts();
+  }
+
+  function initCharts(){
+    if (chartsReady) return;
+    if (typeof Chart === 'undefined'){ chartsNote.hidden=false; return; }
+    chartObjs = CHARTS.map(cfg => {
+      const ds = cfg.series.map(se => ({
+        label: se.label, data: [], borderColor: se.color, backgroundColor: se.color,
+        borderWidth: 2, pointRadius: 0, tension: 0.25, stepped: !!se.stepped,
+        yAxisID: se.axis || 'y', spanGaps: true
+      }));
+      const scales = {
+        x: { ticks:{ maxTicksLimit:6, font:{size:9}, color:'#9cabb5' }, grid:{display:false} },
+        y: { position:'left', ticks:{ font:{size:9}, color:'#9cabb5' }, grid:{color:'rgba(20,45,60,0.06)'} }
+      };
+      if (cfg.dual) scales.y2 = { position:'right', ticks:{ font:{size:9}, color:'#9cabb5' }, grid:{display:false} };
+      return new Chart(document.getElementById(cfg.id), {
+        type:'line', data:{ labels:[], datasets:ds },
+        options:{ responsive:true, maintainAspectRatio:false, animation:false,
+          plugins:{ legend:{ labels:{ boxWidth:10, font:{size:10}, color:'#6a7d89' } }, tooltip:{ enabled:true } },
+          scales }
+      });
+    });
+    chartsReady = true;
+  }
+
+  function updateCharts(){
+    if (sampleCount) sampleCount.textContent = history.length + (history.length===1?' muestra':' muestras');
+    if (!chartsReady) return;
+    const labels = history.map(h => h.lbl);
+    CHARTS.forEach((cfg, ci) => {
+      const ch = chartObjs[ci]; if (!ch) return;
+      ch.data.labels = labels;
+      cfg.series.forEach((se, si) => {
+        ch.data.datasets[si].data = history.map(h => {
+          let v = h[se.k];
+          if (se.scale100 && v!=null) v = v*100;
+          return v;
+        });
+      });
+      ch.update('none');
+    });
+  }
+
+  chartsClear.onclick = clearHistory;
+
   // ========================= API =========================
   async function api(payload){
     const id = resolveId();
@@ -385,6 +487,7 @@
       setConn('live'); clearBanner();
       if (s.found){ if(s.power!=null)power=s.power; if(s.dim!=null)dim=s.dim; }
       render(); lastSync=Date.now(); tickUpdated();
+      recordSample(s);
       if (!silent) setStatus('ok', power ? `Estado sincronizado · Encendida ${dim}%` : (power===false?'Estado sincronizado · Apagada':'Sin estado reportado'));
       return s;
     }catch(e){
@@ -403,15 +506,15 @@
       setStatus('busy','Leyendo estado previo…');
       before = await snapshot();
 
-      // enviar comando
+      // enviar comando (t0 = instante de envío, para medir cuánto tarda en confirmarse)
       setStatus('busy','Enviando comando…');
+      const t0 = Date.now();
       await api(Object.assign({action}, value!=null ? {value} : {}));
       setConn('live');
 
-      // aplicar en el equipo
+      // breve respiro y a confirmar (sin ping)
       setStatus('busy','Aplicando en el equipo…');
       await sleep(SETTLE_MS);
-      try{ await api({action:'ping'}); }catch(_){}
 
       // estado posterior: consulta current periódicamente hasta que el equipo reporte el cambio
       setStatus('ping','Consultando estado…');
@@ -423,14 +526,15 @@
           if (after.dim!=null)   dim=after.dim;
           render(); renderBA(before, after);
           lastSync=Date.now(); tickUpdated();
+          recordSample(after);
           if (expect(after)){ confirmed=true; break; }
         }
-        setStatus('ping', `Confirmando… intento ${i}/${CONFIRM_MAX}`);
-        if (i % REPING_EVERY === 0){ try{ await api({action:'ping'}); }catch(_){} }
+        setStatus('ping', `Confirmando… ${((Date.now()-t0)/1000).toFixed(0)}s (intento ${i}/${CONFIRM_MAX})`);
         if (i < CONFIRM_MAX) await sleep(CONFIRM_INTERVAL);
       }
-      if (confirmed){ setStatus('ok', 'Estado confirmado · '+stateText()); logAdd('ok', `${label} → confirmado: ${stateText()}`); }
-      else { setStatus('warn','Comando enviado · el equipo aún no reporta el cambio'); logAdd('warn', `${label} → enviado, el equipo aún reporta el valor anterior`); }
+      const elapsed = ((Date.now()-t0)/1000).toFixed(1);
+      if (confirmed){ setStatus('ok', `Confirmado en ${elapsed}s · ${stateText()}`); logAdd('ok', `${label} → confirmado en ${elapsed}s: ${stateText()}`); }
+      else { setStatus('warn', `Sin confirmar tras ${elapsed}s`); logAdd('warn', `${label} → enviado, sin confirmar tras ${elapsed}s`); }
     }catch(e){
       if (!locked){ setConn('err'); setStatus('warn','El comando no se pudo enviar'); showBanner('Error al enviar el comando: '+e.message); logAdd('err', `${label} → error: ${e.message}`); }
     }finally{
@@ -446,7 +550,7 @@
   dimEl.oninput  = () => { dim=+dimEl.value; render(); };
   dimEl.onchange = () => runCommand('dim', +dimEl.value, expectDim(+dimEl.value), `Dimerizar ${+dimEl.value}%`);
   presets.forEach(b => b.onclick = () => { dim=+b.dataset.v; render(); runCommand('dim', dim, expectDim(dim), `Dimerizar ${dim}%`); });
-  serialEl.onchange = () => { if (resolveId()) refreshState(); else showBanner('Serial no registrado en este subpanel'); };
+  serialEl.onchange = () => { if (resolveId()){ loadHistory(); updateCharts(); refreshState(); } else showBanner('Serial no registrado en este subpanel'); };
 
   // ========================= PUERTA DE ACCESO =========================
   function lockGate(msg){
@@ -460,6 +564,7 @@
     locked=false; gate.style.display='none'; panel.hidden=false;
     gateBanner.classList.remove('show');
     initPanel(); render();
+    initCharts(); loadHistory(); updateCharts();
     setStatus('busy','Iniciando…');
     logAdd('ok', 'Acceso concedido');
     (async()=>{ const s = await refreshState(); if (s) renderBA(null, s); })();
@@ -498,7 +603,7 @@
     if (PANEL.subpanels.length > 1 && subsel.options.length===0){
       PANEL.subpanels.forEach((sp,i) => { const o=document.createElement('option'); o.value=i; o.textContent=sp.label; subsel.appendChild(o); });
       subsel.hidden=false;
-      subsel.onchange = () => { SUB=PANEL.subpanels[+subsel.value]; serialEl.value=firstSerialOf(SUB); power=null; dim=80; render(); refreshState(); };
+      subsel.onchange = () => { SUB=PANEL.subpanels[+subsel.value]; serialEl.value=firstSerialOf(SUB); power=null; dim=80; render(); loadHistory(); updateCharts(); refreshState(); };
     }
     if (!resolveId()) serialEl.value = firstSerialOf(SUB);
   }

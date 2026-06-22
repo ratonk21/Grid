@@ -80,7 +80,18 @@ async function fetchState(id, subpanel) {
   const power = (ls === 'on') ? true : (ls === 'off') ? false : null;
   const dim = (n.LD1State != null && !isNaN(Number(n.LD1State))) ? Number(n.LD1State) : null;
 
-  return { found: true, power, dim, nodeStatus: n.node_status || null, updatedAt: n.updatedDateTime || null };
+  // Campos crudos para graficar en el tiempo (todos los candidatos; el front decide cuáles mostrar).
+  const num = v => (v != null && !isNaN(Number(v))) ? Number(v) : null;
+  const m = {
+    VState: num(n.VState), V1State: num(n.V1State),
+    CState: num(n.CState), C1State: num(n.C1State),
+    power: num(n.power),
+    PFState: num(n.PFState), powerFactorState: num(n.powerFactorState),
+    LD1State: num(n.LD1State),
+    on: power === true ? 1 : (power === false ? 0 : null),
+  };
+
+  return { found: true, power, dim, nodeStatus: n.node_status || null, updatedAt: n.updatedDateTime || null, m };
 }
 
 // Envía un comando V2 (setLightStateV2 / setLightDimV2 / setMQTTPing).
