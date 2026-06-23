@@ -36,8 +36,8 @@ const BATCH     = Number(process.env.UBI_BATCH_SIZE     || 250);
 const PER_PAGE  = Number(process.env.UBI_NODES_PER_PAGE || 250);
 const MAX_PAGES = Number(process.env.UBI_NODES_MAX_PAGES|| 40);
 const NODES_TTL = Number(process.env.UBI_NODES_TTL_MS   || 300000);
-const STATES_MAX= Number(process.env.UBI_STATES_MAX     || 80);
-const CONC      = Number(process.env.UBI_STATES_CONCURRENCY || 6);
+const STATES_MAX= Number(process.env.UBI_STATES_MAX     || 160);
+const CONC      = Number(process.env.UBI_STATES_CONCURRENCY || 4);
 const APP_ACCESS_CODE = (process.env.APP_ACCESS_CODE || process.env.UBI_APP_CODE || '').trim();
 
 // ÁMBITOS (scopes) — cada código habilita un conjunto de acciones.
@@ -125,27 +125,60 @@ function headers(token, subpanel, withJson){
   return h;
 }
 
+// fetch con reintento ante 429 (Too Many Requests), respetando Retry-After
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function fetchRetry(url, opts, tries = 3){
+  for (let i = 0; ; i++){
+    const r = await fetch(url, opts);
+    if (r.status === 429 && i < tries){
+      const ra = Number(r.headers.get('retry-after'));
+      await sleep(ra ? ra*1000 : Math.min(2500, 350*Math.pow(2, i)));
+      continue;
+    }
+    return r;
+  }
+}
+
 // ---- Caché de nodos por panel:subpanel ----
 const _nodes = {}; // { "panel:subpanel": { t, list } }
+// estado en vivo si el listado lo trae (evita leer nodo por nodo)
+function liveOf(n){
+  return (n.light_status != null || n.node_status != null || n.LD1State != null) ? mapState(n) : null;
+}
+async function listPage(token, subpanel, page, withLight){
+  const url = `${API_BASE}/v3/nodes?query=1${withLight ? '&type=light' : ''}&page=${page}&per_page=${PER_PAGE}`;
+  const r = await fetchRetry(url, { headers: headers(token, subpanel) });
+  if (!r.ok){ const e = new Error('No se pudo listar nodos ('+r.status+')'); e.http = r.status===429 ? 429 : 502; throw e; }
+  return r.json();
+}
 async function loadNodes(panelId, subpanel){
   const key = panelId + ':' + subpanel;
   const c = _nodes[key];
   if (c && (Date.now()-c.t) < NODES_TTL) return c.list;
   const token = await getToken(panelId);
-  let page = 1, last = 1, out = [], capped = false;
-  do {
-    const url = `${API_BASE}/v3/nodes?query=1&page=${page}&per_page=${PER_PAGE}`;
-    const r = await fetch(url, { headers: headers(token, subpanel) });
-    if (!r.ok){ const e = new Error('No se pudo listar nodos ('+r.status+')'); e.http = 502; throw e; }
-    const j = await r.json();
-    (j.data || []).forEach(n => out.push({
-      id:n.id, serial:n.serial_number, dev_eui:n.dev_eui, node:n.node, state:n.state, isActive:n.isActive
-    }));
-    last = (j.meta && j.meta.last_page) || 1;
+
+  // intento con type=light (estado en bloque); si falla o viene vacía, listado normal
+  let withLight = true, first;
+  try { first = await listPage(token, subpanel, 1, true); }
+  catch(_){ withLight = false; first = await listPage(token, subpanel, 1, false); }
+  if (withLight && !(first.data && first.data.length)){ withLight = false; first = await listPage(token, subpanel, 1, false); }
+
+  let out = [], capped = false, hasLive = 0;
+  const take = j => (j.data || []).forEach(n => {
+    const live = liveOf(n);
+    if (live) hasLive++;
+    out.push({ id:n.id, serial:n.serial_number, dev_eui:n.dev_eui, node:n.node, state:n.state, isActive:n.isActive, live });
+  });
+  take(first);
+  let last = (first.meta && first.meta.last_page) || 1, page = 2;
+  while (page <= last){
+    if (page > MAX_PAGES){ capped = true; break; }
+    const j = await listPage(token, subpanel, page, withLight);
+    take(j);
+    last = (j.meta && j.meta.last_page) || last;
     page++;
-    if (page > MAX_PAGES && page <= last){ capped = true; break; }
-  } while (page <= last);
-  const list = { nodes: out, total: out.length, capped };
+  }
+  const list = { nodes: out, total: out.length, capped, hasLive, withLive: hasLive > 0 };
   _nodes[key] = { t: Date.now(), list };
   return list;
 }
@@ -168,7 +201,7 @@ function mapState(n){
   };
 }
 async function readOne(token, subpanel, id){
-  const r = await fetch(`${API_BASE}/v3/nodes/${id}?type=light`, { headers: headers(token, subpanel) });
+  const r = await fetchRetry(`${API_BASE}/v3/nodes/${id}?type=light`, { headers: headers(token, subpanel) });
   if (!r.ok) return { id, found:false, error:'HTTP '+r.status };
   const j = await r.json();
   const node = Array.isArray(j.data) ? j.data[0] : j.data;
@@ -257,7 +290,7 @@ export default async function handler(req, res){
 
     if (action === 'nodes'){
       const list = await loadNodes(panel.id, subpanel);
-      return res.status(200).json({ ok:true, nodes:list.nodes, total:list.total, capped:list.capped, panel:panel.id, subpanel });
+      return res.status(200).json({ ok:true, nodes:list.nodes, total:list.total, capped:list.capped, withLive:list.withLive, panel:panel.id, subpanel });
     }
 
     const token = await getToken(panel.id);

@@ -229,8 +229,9 @@
     try{
       const j=await api({action:'nodes'}); setConn('live');
       allNodes=j.nodes||[];
-      nodesById=new Map(); nodesBySerial=new Map();
-      allNodes.forEach(n=>{ nodesById.set(Number(n.id),n); if(n.serial)nodesBySerial.set(String(n.serial).toLowerCase(),n); if(n.dev_eui)nodesBySerial.set(String(n.dev_eui).toLowerCase(),n); });
+      nodesById=new Map(); nodesBySerial=new Map(); statusById=new Map();
+      allNodes.forEach(n=>{ nodesById.set(Number(n.id),n); if(n.serial)nodesBySerial.set(String(n.serial).toLowerCase(),n); if(n.dev_eui)nodesBySerial.set(String(n.dev_eui).toLowerCase(),n);
+        if(n.live) statusById.set(Number(n.id), Object.assign({id:Number(n.id)}, n.live)); });
       logAdd('ok',`${allNodes.length} nodos en el subpanel ${SUBPANEL}`);
       renderList();
       await loadStates();
@@ -238,16 +239,17 @@
   }
 
   async function loadStates(){
-    if(!allNodes.length) return;
+    const missing=allNodes.filter(n=>!statusById.has(Number(n.id))).map(n=>Number(n.id));
+    if(!missing.length){ logAdd('ok','Estado en vivo cargado desde el listado'); renderList(); return; }
     try{
-      const ids=allNodes.map(n=>Number(n.id));
-      const j=await api({action:'states',ids}); setConn('live');
+      const j=await api({action:'states',ids:missing}); setConn('live');
       (j.states||[]).forEach(s=>{ if(s&&s.id!=null) statusById.set(Number(s.id),s); });
-      if(j.capped) logAdd('warn',`Estado en vivo solo de los primeros ${j.max} nodos`);
+      if(j.capped) logAdd('warn',`Estado nodo-por-nodo solo de ${j.max} de los ${missing.length} sin estado en el listado`);
+      else logAdd('ok',`Estado de ${missing.length} nodos restantes`);
       renderList();
     }catch(e){ logAdd('warn','Estado en vivo → '+e.message); }
   }
-  $('reloadBtn').onclick=()=>{ statusById=new Map(); loadStates(); };
+  $('reloadBtn').onclick=()=>{ statusById=new Map(); loadNodes(); };
 
   function stHtml(id){
     const s=statusById.get(Number(id));
