@@ -34,7 +34,8 @@ input,select{font-family:inherit}
 .status-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:#A9B4C6}
 .status-pill .d{width:8px;height:8px;border-radius:50%;background:var(--ubi-blue)}
 
-.wrap{max-width:760px;margin:0 auto;padding:18px}
+.wrap{max-width:1100px;margin:0 auto;padding:18px}
+.card.form{max-width:720px;margin-left:auto;margin-right:auto}
 .card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:14px;padding:20px;margin-bottom:16px}
 .card h2{margin:0 0 4px;font-size:17px;color:var(--ubi-navy)}
 .card .sub{margin:0 0 16px;font-size:13px;color:var(--ubi-muted)}
@@ -69,6 +70,9 @@ input,select{font-family:inherit}
 .preview{width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid var(--ubi-line);background:#000}
 .preview-x{position:absolute;top:8px;right:8px;background:rgba(30,36,69,.85);color:#fff;width:34px;height:34px;
   border-radius:50%;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+.pdfbox{display:flex;align-items:center;gap:12px;padding:26px 18px;border:1px solid var(--ubi-line);
+  border-radius:12px;background:var(--ubi-row);font-weight:700;color:var(--ubi-navy);word-break:break-all}
+.pdfbox .pdficon{font-size:30px}
 
 .spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;
   border-radius:50%;animation:sp .7s linear infinite}
@@ -111,8 +115,9 @@ details.raw pre{white-space:pre-wrap;word-break:break-word;font-family:'JetBrain
 .rate-row input:focus{outline:none;border-color:var(--ubi-blue)}
 
 .tbl-wrap{overflow-x:auto;margin-top:6px;-webkit-overflow-scrolling:touch}
-table{border-collapse:collapse;width:100%;font-size:13px;min-width:760px}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--ubi-line);white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ubi-line);white-space:nowrap}
+td.cellwrap{white-space:normal;max-width:220px;min-width:120px}
 th{background:var(--ubi-navy);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0}
 tr:nth-child(even) td{background:var(--ubi-row)}
 td .num{font-family:'JetBrains Mono',monospace}
@@ -157,9 +162,9 @@ tfoot td.usd{background:#0f3d51}
   <div class="wrap">
     <div id="banner" class="banner"></div>
 
-    <div class="card" id="captureCard">
+    <div class="card form" id="captureCard">
       <h2>1 · Captura la boleta</h2>
-      <p class="sub">Cámara → se marca como <b>Papel</b>. Adjuntar → se marca como <b>Digital</b>.</p>
+      <p class="sub">Cámara → <b>Papel</b> · Adjuntar (imagen o PDF) → <b>Digital</b>.</p>
       <div id="drop" class="drop">
         <div class="icon">📄</div>
         <p>Arrastra una imagen aquí o usa los botones</p>
@@ -170,16 +175,17 @@ tfoot td.usd{background:#0f3d51}
       </div>
       <div id="previewWrap" class="preview-wrap hidden">
         <img id="preview" class="preview" alt="Vista previa">
+        <div id="pdfPreview" class="pdfbox hidden"><span class="pdficon">📄</span><span id="pdfName"></span></div>
         <button class="preview-x" onclick="clearImage()" title="Quitar">×</button>
       </div>
       <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
-      <input id="fileIn" type="file" accept="image/*" class="hidden">
+      <input id="fileIn" type="file" accept="image/*,application/pdf" class="hidden">
       <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
         <span id="scanLabel">⚡ Escanear contenido</span>
       </button>
     </div>
 
-    <div class="card hidden" id="resultCard">
+    <div class="card form hidden" id="resultCard">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <h2 style="margin:0">2 · Datos extraídos</h2>
         <span class="tag" id="docTag">documento</span>
@@ -211,7 +217,7 @@ tfoot td.usd{background:#0f3d51}
       <button class="btn full" style="margin-top:16px" onclick="saveCurrent()">💾 Guardar en histórico</button>
     </div>
 
-    <div class="card" id="ratesCard">
+    <div class="card form" id="ratesCard">
       <h2>Tasas de cambio (a USD)</h2>
       <p class="sub">Carga manualmente el valor del dólar para cada moneda. <b>USD = monto local ÷ tasa.</b></p>
       <div id="ratesBody"><p class="empty" style="padding:8px">Agrega boletas para configurar las tasas.</p></div>
@@ -276,7 +282,7 @@ const CUR_COUNTRY = {};
 Object.entries(COUNTRIES).forEach(([c,m])=>{ if(m.code && !CUR_COUNTRY[m.code]) CUR_COUNTRY[m.code]=c; });
 
 const PROMPT = `Eres un extractor de datos de facturas y boletas de Latinoamérica.
-Analiza la imagen del documento y devuelve SOLO un objeto JSON válido, sin texto adicional ni markdown.
+Analiza el documento (imagen o PDF) y devuelve SOLO un objeto JSON válido, sin texto adicional ni markdown.
 Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valores):
 {
  "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
@@ -365,8 +371,26 @@ function wireInputs(){
 }
 function handleFile(file,origen){
   if(!file) return;
-  if(!file.type.startsWith('image/')){ banner('El archivo no es una imagen.'); return; }
+  const isPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
+  const isImg = file.type.startsWith('image/');
+  if(!isPdf && !isImg){ banner('Sube una imagen o un PDF.'); return; }
   clearBanner();
+  if(isPdf){
+    if(file.size > 3.3*1024*1024){ banner('El PDF supera ~3 MB (límite del servidor). Súbelo más liviano o tómale una foto.'); return; }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const dataUrl=reader.result;
+      curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'application/pdf',isPdf:true,w:0,h:0,origen,name:file.name||'documento.pdf'};
+      document.getElementById('preview').classList.add('hidden');
+      const pp=document.getElementById('pdfPreview'); pp.classList.remove('hidden');
+      document.getElementById('pdfName').textContent=curImg.name;
+      document.getElementById('previewWrap').classList.remove('hidden');
+      document.getElementById('scanBtn').disabled=false;
+    };
+    reader.onerror=()=>banner('No se pudo leer el PDF.');
+    reader.readAsDataURL(file);
+    return;
+  }
   const reader=new FileReader();
   reader.onload=()=>{
     const img=new Image();
@@ -378,12 +402,13 @@ function handleFile(file,origen){
         const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
         cv.getContext('2d').drawImage(img,0,0,w,h);
         const dataUrl=cv.toDataURL('image/jpeg',0.85);
-        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',w,h,origen};
+        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
       }catch(err){
         const dataUrl=reader.result;
-        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:file.type,w:0,h:0,origen};
+        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:file.type,isPdf:false,w:0,h:0,origen};
       }
-      document.getElementById('preview').src=curImg.dataUrl;
+      const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
+      const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src=curImg.dataUrl;
       document.getElementById('previewWrap').classList.remove('hidden');
       document.getElementById('scanBtn').disabled=false;
     };
@@ -396,7 +421,8 @@ function handleFile(file,origen){
 function clearImage(){
   curImg=null;
   document.getElementById('previewWrap').classList.add('hidden');
-  document.getElementById('preview').src='';
+  const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src='';
+  const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
   document.getElementById('scanBtn').disabled=true;
   if(camIn) camIn.value=''; if(fileIn) fileIn.value='';
 }
@@ -428,9 +454,11 @@ async function scan(b64,mediaType){
   return await scanDirect(b64,mediaType);
 }
 async function scanDirect(b64,mediaType){
+  const fileBlock = mediaType==='application/pdf'
+    ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}
+    : {type:'image',source:{type:'base64',media_type:mediaType,data:b64}};
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:'user',content:[
-      {type:'image',source:{type:'base64',media_type:mediaType,data:b64}},{type:'text',text:PROMPT}]}]})});
+    body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:'user',content:[fileBlock,{type:'text',text:PROMPT}]}]})});
   const data=await r.json();
   if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
   return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
@@ -554,11 +582,11 @@ function renderHistory(){
     return `<tr>
       <td class="num">${i+1}</td>
       <td class="num">${esc(r.fecha)||'—'}</td>
-      <td>${esc(r.emisor)||'—'}</td>
+      <td class="cellwrap">${esc(r.emisor)||'—'}</td>
       <td>${esc(r.pais)||'—'}</td>
       ${totalCells}
       <td class="usd"><span class="num">${u!=null?'$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</span></td>
-      <td>${esc(r.desc)||'—'}</td>
+      <td class="cellwrap">${esc(r.desc)||'—'}</td>
       <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
       <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
     </tr>`;

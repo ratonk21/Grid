@@ -10,7 +10,7 @@
 const MODEL = 'claude-sonnet-4-6';
 
 const PROMPT = `Eres un extractor de datos de facturas y boletas de Latinoamérica.
-Analiza la imagen del documento y devuelve SOLO un objeto JSON válido, sin texto adicional ni markdown.
+Analiza el documento (imagen o PDF) y devuelve SOLO un objeto JSON válido, sin texto adicional ni markdown.
 Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valores):
 {
  "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
@@ -71,7 +71,9 @@ export default async function handler(req, res) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: media_type || 'image/jpeg', data: image } },
+            (media_type === 'application/pdf'
+              ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: image } }
+              : { type: 'image', source: { type: 'base64', media_type: media_type || 'image/jpeg', data: image } }),
             { type: 'text', text: PROMPT }
           ]
         }]
