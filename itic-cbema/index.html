@@ -79,6 +79,11 @@ tbody tr:nth-child(even){background:#F5F8F9}
 .summary-grid{display:grid;grid-template-columns:1fr;gap:18px}
 @media(min-width:760px){.summary-grid{grid-template-columns:1fr 1fr}}
 .resbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+#selInfo{margin-bottom:10px}
+#selInfo a{color:var(--ubi-blue);text-decoration:none;font-weight:700}
+#selInfo a:hover{text-decoration:underline}
+.sel-on{color:var(--ubi-navy);font-weight:700}
+.hlchk{accent-color:var(--ubi-blue);cursor:pointer;width:15px;height:15px}
 .resmeta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ubi-muted)}
 .backlink{display:inline-flex;align-items:center;gap:6px;color:var(--ubi-muted);text-decoration:none;font-size:13px;margin-bottom:12px;transition:.15s}
 .backlink:hover{color:var(--ubi-navy)}
@@ -191,6 +196,7 @@ footer{color:var(--ubi-muted);font-size:11px;text-align:center;padding:14px 0 24
 
     <div class="card">
       <h2 data-i18n="zonesTitle">4 · Eventos por zona</h2>
+      <div id="selInfo" class="note"></div>
       <div class="tables" id="zoneTables"></div>
     </div>
 
@@ -392,6 +398,8 @@ function buildCount(filesArr){
 const UNAME={cycles:{es:'ciclos',en:'cycles'},us:{es:'microsegundos',en:'microseconds'},ms:{es:'milisegundos',en:'milliseconds'},s:{es:'segundos',en:'seconds'}};
 const I18N={
   es:{subtitle:"Análisis de calidad de energía · Curvas ITIC / CBEMA",ready:"Listo",back:"← Volver a DTM Analytics",editBtn:"✎ Datos / parámetros",
+    selHint:"Tip: haz clic en un punto (o usa la caja ▢ / lazo) para filtrar las tablas a esa estampa de tiempo — sag y swell, todas las fases.",
+    selShowing:"Mostrando {n} de {m} eventos seleccionados",selClear:"Limpiar selección",
     cfgTitle:"1 · Cargar datos y parámetros",dropMain:"Arrastra aquí tus CSV (o haz clic)",
     dropSub:"Reconoce Sag / Swell / Power por el contenido (Template Name), no por el nombre. Sube uno, varios o todos juntos; si falta alguno, no importa.",
     refLbl:"Nominal de respaldo (V)",freqLbl:"Frecuencia de red",unitLbl:"Unidad de duración",runBtn:"Analizar",
@@ -406,10 +414,12 @@ const I18N={
     countAgg:"Eje = hora del reloj: se suman todos los días en un perfil de 24 h. Sirve para ver patrones horarios (p. ej. swells al subir la carga), no la cronología real.",
     znames:{free:"Libre de daño",normal:"Operación normal",prohibited:"Prohibida (daño)"},
     k:{total:"Eventos clasificables",sag:"Sag",swell:"Swell",powerloss:"Cortes de energía",free:"Libre de daño",normal:"Operación normal",prohibited:"Zona prohibida"},
-    th:{n:"N°",time:"Hora",phase:"Fase",type:"Tipo",dur:"Duración (s)",mag:"Magnitud (%)"},
+    th:{n:"N°",time:"Hora",phase:"Fase",type:"Tipo",dur:"Duración (s)",mag:"Magnitud (%)",mark:"★"},
     noplot:"No hay eventos con duración y magnitud para graficar.",empty:"Sin eventos en esta zona.",
     recon:(s,d,c,drop)=>`Buckets por contenido — Sag: ${d.SAG.X1+d.SAG.X3>0?'sí':'—'} · Swell: ${d.SWELL.X1+d.SWELL.X3>0?'sí':'—'} · Cortes: ${s.powerloss}. Unidad de duración inferida — Sag: ${UNAME[s.unitUsed.SAG].es}; Swell: ${UNAME[s.unitUsed.SWELL].es}. Detectados (magnitud): SAG X1=${d.SAG.X1}/X2=${d.SAG.X2}/X3=${d.SAG.X3}, SWELL X1=${d.SWELL.X1}/X2=${d.SWELL.X2}/X3=${d.SWELL.X3}. Clasificables (con duración): ${c}; descartados sin duración: ${drop}.`},
   en:{subtitle:"Power quality analysis · ITIC / CBEMA curves",ready:"Ready",back:"← Back to DTM Analytics",editBtn:"✎ Data / parameters",
+    selHint:"Tip: click a point (or use the box ▢ / lasso) to filter the tables to that timestamp — sag & swell, all phases.",
+    selShowing:"Showing {n} of {m} selected events",selClear:"Clear selection",
     cfgTitle:"1 · Load data & parameters",dropMain:"Drop your CSVs here (or click)",
     dropSub:"Detects Sag / Swell / Power by content (Template Name), not by file name. Upload one, several or all together; missing one is fine.",
     refLbl:"Fallback nominal (V)",freqLbl:"Grid frequency",unitLbl:"Duration unit",runBtn:"Analyze",
@@ -424,7 +434,7 @@ const I18N={
     countAgg:"Axis = clock time: all days are summed into a single 24 h profile. Use it for hourly patterns (e.g. swells at load pickup), not the real chronology.",
     znames:{free:"No damage",normal:"Normal operation",prohibited:"Prohibited (damage)"},
     k:{total:"Classifiable events",sag:"Sag",swell:"Swell",powerloss:"Power outages",free:"No damage",normal:"Normal operation",prohibited:"Prohibited zone"},
-    th:{n:"#",time:"Time",phase:"Phase",type:"Type",dur:"Duration (s)",mag:"Magnitude (%)"},
+    th:{n:"#",time:"Time",phase:"Phase",type:"Type",dur:"Duration (s)",mag:"Magnitude (%)",mark:"★"},
     noplot:"No events with both duration and magnitude to plot.",empty:"No events in this zone.",
     recon:(s,d,c,drop)=>`Content buckets — Sag: ${d.SAG.X1+d.SAG.X3>0?'yes':'—'} · Swell: ${d.SWELL.X1+d.SWELL.X3>0?'yes':'—'} · Outages: ${s.powerloss}. Inferred duration unit — Sag: ${UNAME[s.unitUsed.SAG].en}; Swell: ${UNAME[s.unitUsed.SWELL].en}. Detected (magnitude): SAG X1=${d.SAG.X1}/X2=${d.SAG.X2}/X3=${d.SAG.X3}, SWELL X1=${d.SWELL.X1}/X2=${d.SWELL.X2}/X3=${d.SWELL.X3}. Classifiable (with duration): ${c}; dropped w/o duration: ${drop}.`}
 };
@@ -440,6 +450,9 @@ function setLang(l){
 
 let FILES=[];let LAST=null;
 const FILTER={hidden:new Set()}; // claves TIPO-FASE ocultas, compartidas entre gráficos
+const SELECTION={keys:null}; // Set de estampas de tiempo seleccionadas (null = sin selección)
+const HIGHLIGHT=new Set(); // _idx de eventos resaltados desde el check de la tabla
+let _justSelected=false; // evita que el click de fin-de-arrastre pise la selección de caja
 function showConfig(){
   const cc=document.getElementById('configCard');
   cc.classList.remove('hidden');
@@ -471,7 +484,60 @@ function rerenderCharts(){
   try{renderPlot(LAST);}catch(e){console.error(e);}
   try{drawCount(LAST);}catch(e){console.error(e);}
 }
-const PHCOLOR={X1:'#22B0E1',X2:'#AECC53',X3:'#D85A30'};
+function eventKey(e){return (e.Time&&String(e.Time).trim())?String(e.Time).trim():('#'+e._idx);}
+function currentEvents(res){
+  if(SELECTION.keys&&SELECTION.keys.size)return res.events.filter(e=>SELECTION.keys.has(eventKey(e)));
+  return res.events;
+}
+function keysFromPoints(points){
+  const s=new Set();
+  (points||[]).forEach(p=>{if(p&&p.customdata!==undefined&&p.customdata!==null)s.add(p.customdata);});
+  return s;
+}
+function selOpacity(e){
+  if(HIGHLIGHT.has(e._idx))return 1;
+  if(SELECTION.keys&&SELECTION.keys.size)return SELECTION.keys.has(eventKey(e))?1:0.1;
+  return 0.9;
+}
+function selColor(e){return PHCOLOR[e.Phase];}
+function selSize(e){return HIGHLIGHT.has(e._idx)?16:9;}
+function applySelection(){ // reconstruye gráfico (atenúa no seleccionados) y tabla, fuera del evento de Plotly
+  setTimeout(()=>{
+    if(!LAST)return;
+    try{renderPlot(LAST);}catch(e){console.error(e);}
+    try{renderZones(LAST);}catch(e){console.error(e);}
+    updateSelectionUI();
+  },0);
+}
+function onIticSelected(ev){ // caja / lazo
+  _justSelected=true;setTimeout(()=>{_justSelected=false;},300);
+  if(!ev||!ev.points||!ev.points.length){SELECTION.keys=null;}
+  else{const s=keysFromPoints(ev.points);SELECTION.keys=s.size?s:null;}
+  applySelection();
+}
+function onIticClick(ev){ // clic en un punto = su estampa de tiempo
+  if(_justSelected)return; // no pisar la selección de caja recién hecha
+  if(!ev||!ev.points||!ev.points.length)return;
+  const s=keysFromPoints(ev.points);
+  SELECTION.keys=s.size?s:null;
+  applySelection();
+}
+function onIticDeselect(){SELECTION.keys=null;applySelection();}
+function clearSelection(){SELECTION.keys=null;if(LAST){renderPlot(LAST);renderZones(LAST);updateSelectionUI();}}
+function toggleHighlight(idx,on){
+  if(on)HIGHLIGHT.add(idx);else HIGHLIGHT.delete(idx);
+  if(LAST){try{renderPlot(LAST);}catch(e){console.error(e);}}
+}
+function updateSelectionUI(){
+  const el=document.getElementById('selInfo');if(!el||!LAST)return;
+  const tt=t();const total=LAST.events.length;
+  if(SELECTION.keys&&SELECTION.keys.size){
+    const shown=currentEvents(LAST).length;
+    el.innerHTML=`<span class="sel-on">${tt.selShowing.replace('{n}',shown).replace('{m}',total)}</span> · <a href="#" onclick="clearSelection();return false;">${tt.selClear}</a>`;
+  }else{el.textContent=tt.selHint;}
+}
+const UBI={navy:'#1E2445',blue:'#22B0E1',lime:'#AECC53',orange:'#EA561B',x3:'#D85A30',gray:'#EEF0F5',ink:'#14242F',muted:'#6A7D89'};
+const PHCOLOR={X1:UBI.blue,X2:UBI.lime,X3:UBI.x3};
 function showBanner(m){const b=document.getElementById('banner');b.textContent=m;b.classList.add('show');}
 function clearBanner(){document.getElementById('banner').classList.remove('show');}
 
@@ -513,7 +579,7 @@ function renderFiles(){
 
 function analyze(){
   clearBanner();
-  FILTER.hidden.clear();
+  FILTER.hidden.clear();SELECTION.keys=null;HIGHLIGHT.clear();
   const ref=Number(document.getElementById('ref').value)||120;
   const freq=Number(document.getElementById('freq').value)||60;
   const durUnit=document.getElementById('durunit').value||'auto';
@@ -550,40 +616,45 @@ function renderKpis(res){
 }
 function renderPlot(res){
   const evs=res.events;const traces=[];
-  traces.push({x:ITIC.PROH_X,y:ITIC.PROH_Y,mode:'lines',name:(LANG==='es'?'Límite prohibido':'Prohibited limit'),line:{color:'#EA561B',width:2},hoverinfo:'skip'});
-  traces.push({x:ITIC.FREE_X,y:ITIC.FREE_Y,mode:'lines',name:(LANG==='es'?'Límite libre de daño':'No-damage limit'),line:{color:'#22B0E1',width:2,dash:'dash'},hoverinfo:'skip'});
+  evs.forEach((e,i)=>e._idx=i);
+  traces.push({x:ITIC.PROH_X,y:ITIC.PROH_Y,mode:'lines',name:(LANG==='es'?'Límite prohibido':'Prohibited limit'),line:{color:UBI.orange,width:2},hoverinfo:'skip'});
+  traces.push({x:ITIC.FREE_X,y:ITIC.FREE_Y,mode:'lines',name:(LANG==='es'?'Límite libre de daño':'No-damage limit'),line:{color:UBI.blue,width:2,dash:'dash'},hoverinfo:'skip'});
   for(const type of ['SAG','SWELL'])for(const ph of PHASES){
     const d=evs.filter(e=>e.Type===type&&e.Phase===ph);if(!d.length)continue;
     const key=type+'-'+ph;
     traces.push({x:d.map(e=>e.DurationS),y:d.map(e=>e.MagPct),mode:'markers',name:`${type==='SAG'?'Sag':'Swell'} ${ph}`,
-      meta:{key},visible:FILTER.hidden.has(key)?'legendonly':true,
-      marker:{color:PHCOLOR[ph],symbol:type==='SAG'?'triangle-down':'triangle-up',size:9,line:{width:.5,color:'#1E2445'}},
+      meta:{key},visible:FILTER.hidden.has(key)?'legendonly':true,customdata:d.map(eventKey),
+      marker:{color:d.map(selColor),symbol:type==='SAG'?'triangle-down':'triangle-up',size:d.map(selSize),opacity:d.map(selOpacity),line:{width:d.map(e=>HIGHLIGHT.has(e._idx)?3:0.5),color:UBI.navy}},
       text:d.map(e=>`${e.Time}<br>${type} ${ph}<br>${(LANG==='es'?'Duración':'Duration')}: ${e.DurationS}s (${e.DurationRaw} ${UNAME[e.Unit][LANG]})<br>${(LANG==='es'?'Magnitud':'Magnitude')}: ${e.MagPct}% (${e.Value} V / nom ${e.Nominal})<br>${(LANG==='es'?'Zona':'Zone')}: ${t().znames[e.Zone]}<br>Nodo: ${e.Node}`),
       hoverinfo:'text'});
   }
   const tickx=[1e-6,1e-5,1e-4,1e-3,3e-3,20e-3,0.1,0.5,1,10,100,1000];
   const ticktxt=['1µs','10µs','100µs','1ms','3ms','20ms','100ms','0.5s','1s','10s','100s','1000s'];
-  const layout={height:560,margin:{l:60,r:20,t:10,b:55},
-    xaxis:{type:'log',title:(LANG==='es'?'Duración (s)':'Duration (s)'),tickvals:tickx,ticktext:ticktxt,gridcolor:'#EEF0F5'},
-    yaxis:{title:(LANG==='es'?'Magnitud (% del nominal)':'Magnitude (% of nominal)'),range:[0,500],gridcolor:'#EEF0F5'},
+  const layout={height:560,margin:{l:60,r:20,t:10,b:55},dragmode:'select',
+    xaxis:{type:'log',title:(LANG==='es'?'Duración (s)':'Duration (s)'),tickvals:tickx,ticktext:ticktxt,gridcolor:UBI.gray},
+    yaxis:{title:(LANG==='es'?'Magnitud (% del nominal)':'Magnitude (% of nominal)'),range:[0,500],gridcolor:UBI.gray},
     hovermode:'closest',plot_bgcolor:'#fff',paper_bgcolor:'#fff',font:{family:'Lato'},
     legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'left',x:0,font:{size:11}}};
   if(typeof Plotly==='undefined'){document.getElementById('plotMsg').textContent=(LANG==='es'?'Plotly no cargó; los conteos y tablas siguen disponibles.':'Plotly failed to load; counts and tables still available.');return;}
   Plotly.newPlot('plot',traces,layout,{responsive:true,displaylogo:false});
   wireLegend('plot');
+  const gd=document.getElementById('plot');
+  if(gd&&gd.on){gd.removeAllListeners&&gd.removeAllListeners('plotly_selected');gd.removeAllListeners&&gd.removeAllListeners('plotly_deselect');gd.removeAllListeners&&gd.removeAllListeners('plotly_click');
+    gd.on('plotly_selected',onIticSelected);gd.on('plotly_deselect',onIticDeselect);gd.on('plotly_click',onIticClick);}
+  updateSelectionUI();
   document.getElementById('plotMsg').textContent=(evs.length?'':t().noplot);
 }
 function renderZones(res){
   const box=document.getElementById('zoneTables');box.innerHTML='';
   const order=['prohibited','normal','free'];const zcolor={free:'var(--z-free)',normal:'var(--z-normal)',prohibited:'var(--z-proh)'};
   for(const z of order){
-    const rows=res.events.filter(e=>e.Zone===z).sort((a,b)=>b.MagPct-a.MagPct);
+    const rows=currentEvents(res).filter(e=>e.Zone===z).sort((a,b)=>b.MagPct-a.MagPct);
     const col=document.createElement('div');
     let html=`<div class="zhead"><span class="zdot" style="background:${zcolor[z]}"></span>${t().znames[z]} <span class="mono" style="color:var(--ubi-muted);font-weight:400">(${rows.length})</span></div>`;
     if(!rows.length){html+=`<div class="empty-state">${t().empty}</div>`;}
     else{const th=t().th;
-      html+=`<div class="tbl-wrap"><table><thead><tr><th>${th.n}</th><th>${th.time}</th><th>${th.phase}</th><th>${th.type}</th><th>${th.dur}</th><th>${th.mag}</th></tr></thead><tbody>`;
-      rows.forEach((e,i)=>{html+=`<tr><td class="mono">${i+1}</td><td>${e.Time}</td><td class="mono">${e.Phase}</td><td>${e.Type}</td><td class="mono">${e.DurationS}</td><td class="mono">${e.MagPct}</td></tr>`;});
+      html+=`<div class="tbl-wrap"><table><thead><tr><th>${th.mark}</th><th>${th.n}</th><th>${th.time}</th><th>${th.phase}</th><th>${th.type}</th><th>${th.dur}</th><th>${th.mag}</th></tr></thead><tbody>`;
+      rows.forEach((e,i)=>{html+=`<tr><td style="text-align:center"><input type="checkbox" class="hlchk" ${HIGHLIGHT.has(e._idx)?'checked':''} onchange="toggleHighlight(${e._idx},this.checked)"></td><td class="mono">${i+1}</td><td>${e.Time}</td><td class="mono">${e.Phase}</td><td>${e.Type}</td><td class="mono">${e.DurationS}</td><td class="mono">${e.MagPct}</td></tr>`;});
       html+='</tbody></table></div>';}
     col.innerHTML=html;box.appendChild(col);
   }
@@ -624,18 +695,17 @@ function drawCount(res){
   const msg=document.getElementById('countMsg');const c=res.count;const tt=t();
   if(!c||!c.parsed){document.getElementById('countPlot').innerHTML='';msg.textContent=tt.countNone+(c&&c.noTime?(' '+tt.countNoTime+c.noTime):'');return;}
   if(typeof Plotly==='undefined'){msg.textContent='Plotly no cargó; usa Exportar conteo (Excel).';return;}
-  const SC={X1:'#2E6B1F',X2:'#6BA539',X3:'#A7CE72',Total:'#4E9A2A'};
-  const WC={X1:'#A8380F',X2:'#EA561B',X3:'#F39B6E',Total:'#C7470F'};
+  const PHOP={X1:.95,X2:.65,X3:.4}; // fase distinguida por opacidad sobre el mismo color de marca
   const tr=[];
-  ['X1','X2','X3'].forEach(ph=>tr.push({x:c.labels,y:c.sag[ph],type:'bar',name:tt.countSag+' '+ph,meta:{key:'SAG-'+ph},visible:FILTER.hidden.has('SAG-'+ph)?'legendonly':true,marker:{color:SC[ph]},opacity:.9}));
-  ['X1','X2','X3'].forEach(ph=>tr.push({x:c.labels,y:c.swell[ph],type:'bar',name:tt.countSwell+' '+ph,meta:{key:'SWELL-'+ph},visible:FILTER.hidden.has('SWELL-'+ph)?'legendonly':true,marker:{color:WC[ph]},opacity:.9}));
-  tr.push({x:c.labels,y:c.power,type:'bar',name:tt.countPower,marker:{color:'#1E2445'},opacity:.95});
-  tr.push({x:c.labels,y:c.sag.Total,type:'bar',name:tt.countSag+' '+tt.countTotal,marker:{color:SC.Total},visible:'legendonly'});
-  tr.push({x:c.labels,y:c.swell.Total,type:'bar',name:tt.countSwell+' '+tt.countTotal,marker:{color:WC.Total},visible:'legendonly'});
+  ['X1','X2','X3'].forEach(ph=>tr.push({x:c.labels,y:c.sag[ph],type:'bar',name:tt.countSag+' '+ph,meta:{key:'SAG-'+ph},visible:FILTER.hidden.has('SAG-'+ph)?'legendonly':true,marker:{color:UBI.lime},opacity:PHOP[ph]}));
+  ['X1','X2','X3'].forEach(ph=>tr.push({x:c.labels,y:c.swell[ph],type:'bar',name:tt.countSwell+' '+ph,meta:{key:'SWELL-'+ph},visible:FILTER.hidden.has('SWELL-'+ph)?'legendonly':true,marker:{color:UBI.orange},opacity:PHOP[ph]}));
+  tr.push({x:c.labels,y:c.power,type:'bar',name:tt.countPower,marker:{color:UBI.navy},opacity:.92});
+  tr.push({x:c.labels,y:c.sag.Total,type:'bar',name:tt.countSag+' '+tt.countTotal,marker:{color:UBI.lime},opacity:1,visible:'legendonly'});
+  tr.push({x:c.labels,y:c.swell.Total,type:'bar',name:tt.countSwell+' '+tt.countTotal,marker:{color:UBI.orange},opacity:1,visible:'legendonly'});
   const ticks=c.labels.filter((_,i)=>i%12===0);
   const layout={height:480,barmode:'stack',margin:{l:55,r:20,t:10,b:50},
-    xaxis:{type:'category',title:tt.countX,tickmode:'array',tickvals:ticks,gridcolor:'#EEF0F5'},
-    yaxis:{title:tt.countY,gridcolor:'#EEF0F5'},
+    xaxis:{type:'category',title:tt.countX,tickmode:'array',tickvals:ticks,gridcolor:UBI.gray},
+    yaxis:{title:tt.countY,gridcolor:UBI.gray},
     plot_bgcolor:'#fff',paper_bgcolor:'#fff',font:{family:'Lato'},hovermode:'closest',
     legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'left',x:0,font:{size:11}}};
   Plotly.newPlot('countPlot',tr,layout,{responsive:true,displaylogo:false});

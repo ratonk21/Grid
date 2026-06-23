@@ -773,24 +773,6 @@
 
     <div class="grid" id="projects-grid">
 
-      <a class="card" href="./cargabilidad-transformadores/" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5a8 8 0 0 1 16 0"/><path d="M12 17.5l4-3.2"/><circle cx="12" cy="17.5" r="1.2" fill="#ffffff" stroke="none"/><path d="M4.4 16.2h1.3M18.3 16.2h1.3"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-transformers">Transformer Loading</div>
-        <div class="card-tag" data-i18n="tag-grid">Grid Monitoring</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./salud-transformador/indexsalud.html" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-salud">DTM2 Condition Report</div>
-        <div class="card-tag" data-i18n="tag-salud">Transformer Health</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
   <a class="card" href="./ahorro-energia/" target="_blank">
         <div class="card-icon" style="background:var(--green);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.2"/><rect x="7.6" y="4.8" width="8.8" height="5.2" rx="0.7"/><path d="M13 5.6 10.7 8.4h1.7l-1.4 2"/><path d="M8.6 13.6h0M12 13.6h0M15.4 13.6h0M8.6 17.6h0M12 17.6h0M15.4 17.6h0"/></svg>
@@ -892,10 +874,28 @@
     <div class="section-header">
       <span class="section-label" data-i18n="section-dtm">DTM Analytics</span>
       <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="dtm-count-label">tools</span></span>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);"><span id="dtm-count">04</span> <span data-i18n="dtm-count-label">tools</span></span>
     </div>
 
     <div class="grid" id="dtm-grid">
+
+      <a class="card" href="./cargabilidad-transformadores/" target="_blank">
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5a8 8 0 0 1 16 0"/><path d="M12 17.5l4-3.2"/><circle cx="12" cy="17.5" r="1.2" fill="#ffffff" stroke="none"/><path d="M4.4 16.2h1.3M18.3 16.2h1.3"/></svg>
+        </div>
+        <div class="card-name" data-i18n="card-transformers">Transformer Loading</div>
+        <div class="card-tag" data-i18n="tag-grid">Grid Monitoring</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
+      </a>
+
+      <a class="card" href="./salud-transformador/indexsalud.html" target="_blank">
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg>
+        </div>
+        <div class="card-name" data-i18n="card-salud">DTM2 Condition Report</div>
+        <div class="card-tag" data-i18n="tag-salud">Transformer Health</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
+      </a>
 
       <a class="card" href="./descargar-datos/">
         <div class="card-icon" style="background:var(--blue);">
@@ -1202,6 +1202,7 @@
     const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
     document.getElementById('stat-count').textContent = count;
     document.getElementById('stat-guides').textContent = document.querySelectorAll('#guides-grid .card').length;
+    document.getElementById('dtm-count').textContent = String(document.querySelectorAll('#dtm-grid .card:not(.card-add)').length).padStart(2,'0');
     var _validTabs = ['team','projects','guides','dtm','control'];
     var _initTab = (location.hash || '').replace('#','');
     setTab(_validTabs.indexOf(_initTab) >= 0 ? _initTab : 'team');
