@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-lime:#AECC53;--ubi-orange:#EA561B;
@@ -243,6 +244,7 @@ tfoot td.usd{background:#0f3d51}
       <div class="usd-sum" id="usdSum"></div>
       <div class="btn-row" style="margin-top:14px">
         <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled>📄 PDF boletas en papel</button>
+        <button class="btn" id="zipBtn" onclick="exportPdfZip()" disabled>🗜 ZIP de PDFs</button>
         <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled>⬇ Excel</button>
         <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled>{ } JSON</button>
         <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled>🗑 Limpiar todo</button>
@@ -526,6 +528,7 @@ function saveCurrent(){
     total:num(document.getElementById('f_total').value),
     texto:document.getElementById('rawText').textContent,
     img:isPaper&&curImg?curImg.dataUrl:'',
+    pdf:(!isPaper&&curImg&&curImg.isPdf)?curImg.dataUrl:'',
     imgW:curImg?curImg.w:0, imgH:curImg?curImg.h:0, ts:Date.now()
   };
   if(!row.desc&&!row.emisor&&row.total===''){ banner('Completa al menos descripción, emisor o total.'); return; }
@@ -573,7 +576,9 @@ function renderHistory(){
   document.getElementById('histCount').textContent=history.length;
   const has=history.length>0;
   const papers=history.filter(r=>r.origen==='Papel'&&r.img).length;
+  const pdfs=history.filter(r=>r.origen==='Digital'&&r.pdf).length;
   document.getElementById('pdfBtn').disabled=!papers;
+  document.getElementById('zipBtn').disabled=!pdfs;
   document.getElementById('xlsxBtn').disabled=!has;
   document.getElementById('jsonBtn').disabled=!has;
   document.getElementById('clrBtn').disabled=!has;
@@ -660,6 +665,29 @@ function exportPapelPDF(){
   }catch(e){ banner('No se pudo generar el PDF: '+e.message); }
 }
 
+/* ================= ZIP DE PDFs (Digital) ================= */
+function sanitizeName(s){ return String(s||'').replace(/[\/\\:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(); }
+async function exportPdfZip(){
+  const pdfs=history.map((r,i)=>({r,n:i+1})).filter(x=>x.r.origen==='Digital'&&x.r.pdf);
+  if(!pdfs.length){ banner('No hay PDFs digitales cargados.'); return; }
+  if(!window.JSZip){ banner('No se pudo cargar el compresor ZIP (revisa tu conexión).'); return; }
+  try{
+    const zip=new JSZip(); const used={};
+    pdfs.forEach(({r,n})=>{
+      const base=`${n} ${sanitizeName(r.desc)||'documento'}`;
+      let name=base+'.pdf', k=2;
+      while(used[name]){ name=`${base} (${k++}).pdf`; }
+      used[name]=1;
+      const b64=(r.pdf.split(',')[1])||'';
+      zip.file(name, b64, {base64:true});
+    });
+    const blob=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`bill_pdfs_${stamp()}.zip`; a.click(); URL.revokeObjectURL(a.href);
+    banner(`ZIP generado con ${pdfs.length} PDF(s).`,'ok');
+  }catch(e){ banner('No se pudo generar el ZIP: '+e.message); }
+}
+
 /* ================= EXPORT ================= */
 function curOf(p){ const rec=history.find(r=>r.pais===p&&r.moneda); return rec?rec.moneda:''; }
 function exportXlsx(){
@@ -699,7 +727,7 @@ function exportXlsx(){
 function exportJson(){
   if(!history.length) return;
   try{
-    const payload=history.map(r=>{ const c=Object.assign({},r); delete c.img; return c; });
+    const payload=history.map(r=>{ const c=Object.assign({},r); delete c.img; delete c.pdf; return c; });
     const blob=new Blob([JSON.stringify({rates,boletas:payload},null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_boletas_${stamp()}.json`;
     a.click(); URL.revokeObjectURL(a.href);
