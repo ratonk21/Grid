@@ -65,6 +65,11 @@ const scopeOf = code => { const t = String(code || '').trim(); return Object.key
 const scopeAllows = (scope, action) => !!(SCOPE_ACTIONS[scope] && SCOPE_ACTIONS[scope].includes(action));
 
 // ---- Registro de paneles ----
+function normSubs(subs){
+  return (subs || []).map(s => (s && typeof s === 'object')
+    ? { id: String(s.id), name: s.name || String(s.id) }
+    : { id: String(s), name: String(s) });
+}
 function loadPanels(){
   const raw = process.env.UBI_PANELS;
   if (raw){
@@ -73,7 +78,7 @@ function loadPanels(){
       return arr.map(p => ({
         id: String(p.id),
         name: p.name || ('Panel ' + p.id),
-        subpanels: (p.subpanels || []).map(String)
+        subpanels: normSubs(p.subpanels)
       })).filter(p => p.id);
     }catch(_){ /* cae a compat abajo */ }
   }
@@ -82,7 +87,7 @@ function loadPanels(){
   if (legacyId){
     const subs = (process.env.UBI_ALLOWED_SUBPANELS || process.env.UBI_SUBPANEL_ID || '')
       .split(',').map(s => s.trim()).filter(Boolean);
-    return [{ id: legacyId, name: 'Panel ' + legacyId, subpanels: subs }];
+    return [{ id: legacyId, name: 'Panel ' + legacyId, subpanels: normSubs(subs) }];
   }
   return [];
 }
@@ -246,8 +251,8 @@ export default async function handler(req, res){
     if (!panel) return res.status(500).json({ ok:false, error:'No hay paneles configurados (UBI_PANELS)' });
 
     // resolver + validar subpanel
-    const subpanel = String(b.subpanel || (panel.subpanels[0] || '')).trim();
-    if (panel.subpanels.length && subpanel && !panel.subpanels.includes(subpanel))
+    const subpanel = String(b.subpanel || (panel.subpanels[0] ? panel.subpanels[0].id : '')).trim();
+    if (panel.subpanels.length && subpanel && !panel.subpanels.some(x => x.id === subpanel))
       return res.status(403).json({ ok:false, error:'Subpanel no permitido para el panel '+panel.id+': '+subpanel });
 
     if (action === 'nodes'){

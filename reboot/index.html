@@ -50,6 +50,10 @@
   .ptitle{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:900;color:var(--navy);margin-bottom:10px}
   .filter{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;margin-bottom:10px}
   .filter input{border:none;outline:none;width:100%;font-size:13px;font-family:inherit}
+  .filterrow{display:flex;gap:8px;margin-bottom:10px}
+  .filterrow .filter{flex:1;margin-bottom:0}
+  .stfilter{border:1px solid var(--line);border-radius:9px;padding:0 9px;font-size:12.5px;font-family:inherit;color:var(--navy);background:#fff;outline:none;cursor:pointer}
+  .stfilter:focus{border-color:var(--blue)}
   .nodelist{overflow:auto;flex:1;min-height:120px;margin:-4px;padding:4px}
   .nrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;cursor:pointer;background:#fff}
   .nrow:hover{border-color:var(--blue)}
@@ -115,7 +119,16 @@
       <!-- IZQUIERDA: lista con estado (referencia) -->
       <div class="card nodes-panel">
         <div class="ptitle"><span>Nodos del subpanel</span><button class="iconbtn" id="reloadBtn" title="Actualizar estado" style="font-size:14px">↻</button></div>
-        <div class="filter"><span style="color:#9cabb5">⌕</span><input id="filter" placeholder="Filtrar serial / id"></div>
+        <div class="filterrow">
+          <div class="filter"><span style="color:#9cabb5">⌕</span><input id="filter" placeholder="Filtrar serial / id"></div>
+          <select id="stFilter" class="stfilter" title="Filtrar por estado">
+            <option value="">Todos</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+            <option value="on">Encendidos</option>
+            <option value="off">Apagados</option>
+          </select>
+        </div>
         <div class="nodelist" id="nodelist"><div class="empty">Cargando…</div></div>
         <div class="listfoot" id="listfoot">—</div>
       </div>
@@ -163,7 +176,9 @@
   // login
   $('codeShow').onclick=()=>{ const c=$('code'); c.type=c.type==='password'?'text':'password'; };
   function fillPanels(){ const ps=$('panelSel'); if(!PANELS.length){ps.innerHTML='';return;} ps.innerHTML=PANELS.map((p,i)=>`<option value="${i}">${p.name} · ${p.id}</option>`).join(''); onPanelChange(); }
-  function onPanelChange(){ PANEL=PANELS[+$('panelSel').value||0]; if(!PANEL)return; $('subOptions').innerHTML=(PANEL.subpanels||[]).map(s=>`<option value="${s}">`).join(''); $('subpanelInp').value=(PANEL.subpanels||[])[0]||''; }
+  function onPanelChange(){ PANEL=PANELS[+$('panelSel').value||0]; if(!PANEL)return; const subs=PANEL.subpanels||[]; $('subOptions').innerHTML=subs.map(s=>`<option value="${s.id}">${s.id} · ${s.name}</option>`).join(''); $('subpanelInp').value=subs[0]?subs[0].id:''; }
+  function subName(id){ const subs=(PANEL&&PANEL.subpanels)||[]; const s=subs.find(x=>x.id===String(id)); return s?s.name:''; }
+  function subLabel(id){ const n=subName(id); return (n&&n!==String(id))?(id+' · '+n):String(id); }
   $('panelSel').onchange=onPanelChange;
 
   async function tryEnter(){
@@ -191,7 +206,7 @@
 
   async function unlock(){
     locked=false; $('gate').hidden=true; $('app').hidden=false; $('exitBtn').hidden=false; $('ctx').hidden=false; setConn('live');
-    $('hPanel').textContent=PANEL.id; $('hSub').textContent=SUBPANEL;
+    $('hPanel').textContent=(PANEL.name?PANEL.name+' · ':'')+PANEL.id; $('hSub').textContent=subLabel(SUBPANEL);
     logAdd('ok',`Acceso · panel ${PANEL.id} · subpanel ${SUBPANEL}`);
     await loadNodes();
   }
@@ -248,9 +263,20 @@
 
   function renderList(){
     const q=($('filter').value||'').trim().toLowerCase();
-    const items=allNodes.filter(n=>!q||String(n.serial||'').toLowerCase().includes(q)||String(n.id).includes(q)||String(n.dev_eui||'').toLowerCase().includes(q));
+    const sf=$('stFilter')?$('stFilter').value:'';
+    let items=allNodes.filter(n=>!q||String(n.serial||'').toLowerCase().includes(q)||String(n.id).includes(q)||String(n.dev_eui||'').toLowerCase().includes(q));
+    if(sf) items=items.filter(n=>{
+      const s=statusById.get(Number(n.id));
+      if(!s||s.error||s.found===false) return false;
+      const online=String(s.nodeStatus||'').toUpperCase()==='ONLINE';
+      if(sf==='online') return online;
+      if(sf==='offline') return !online;
+      if(sf==='on') return s.power===true;
+      if(sf==='off') return s.power===false;
+      return true;
+    });
     const L=$('nodelist');
-    if(!items.length){ L.innerHTML='<div class="empty">Sin nodos.</div>'; }
+    if(!items.length){ L.innerHTML='<div class="empty">Sin nodos'+((q||sf)?' con ese filtro.':'.')+'</div>'; }
     else L.innerHTML=items.map(n=>{
       const isSel=selected.some(x=>x.id===Number(n.id));
       return `<div class="nrow ${isSel?'sel':''}" data-id="${n.id}"><div class="ninfo"><div class="nser">${n.serial||('id '+n.id)} <span class="nid">· id ${n.id}</span></div>${stHtml(n.id)}</div><button class="nadd" data-id="${n.id}">${isSel?'✓':'＋'}</button></div>`;
@@ -259,6 +285,7 @@
     $('listfoot').textContent=`${items.length} de ${allNodes.length} nodos`;
   }
   $('filter').oninput=renderList;
+  $('stFilter').onchange=renderList;
 
   // selección
   function toggleNode(id){

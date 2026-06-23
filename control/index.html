@@ -379,7 +379,9 @@
 
   // ===================== LOGIN =====================
   function fillPanels(){ if(!PANELS.length){ panelSel.innerHTML=''; return; } panelSel.innerHTML=PANELS.map((p,i)=>`<option value="${i}">${p.name} · ${p.id}</option>`).join(''); onPanelChange(); }
-  function onPanelChange(){ PANEL=PANELS[+panelSel.value||0]; if(!PANEL)return; subOptions.innerHTML=(PANEL.subpanels||[]).map(s=>`<option value="${s}">`).join(''); subpanelInp.value=(PANEL.subpanels||[])[0]||''; }
+  function onPanelChange(){ PANEL=PANELS[+panelSel.value||0]; if(!PANEL)return; const subs=PANEL.subpanels||[]; subOptions.innerHTML=subs.map(s=>`<option value="${s.id}">${s.id} · ${s.name}</option>`).join(''); subpanelInp.value=subs[0]?subs[0].id:''; }
+  function subName(id){ const subs=(PANEL&&PANEL.subpanels)||[]; const s=subs.find(x=>x.id===String(id)); return s?s.name:''; }
+  function subLabel(id){ const n=subName(id); return (n&&n!==String(id))?(id+' · '+n):String(id); }
   panelSel.onchange=onPanelChange;
   codeShow.onclick=()=>{ codeEl.type=codeEl.type==='password'?'text':'password'; };
 
@@ -409,7 +411,7 @@
 
   function unlock(){
     locked=false; gate.style.display='none'; appEl.hidden=false; hdrCtx.hidden=false; exitBtn.hidden=false;
-    hPanel.innerHTML='Panel <b>'+PANEL.id+'</b>'; hSub.innerHTML='Subpanel <b>'+SUBPANEL+'</b>';
+    hPanel.innerHTML='Panel <b>'+(PANEL.name?PANEL.name+' · ':'')+PANEL.id+'</b>'; hSub.innerHTML='Subpanel <b>'+subLabel(SUBPANEL)+'</b>';
     loadNodes();
     bg=setInterval(()=>{ if(!locked&&!busy&&SEL&&online) refreshSel(true); }, BG_MS);
   }
