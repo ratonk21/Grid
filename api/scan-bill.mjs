@@ -1,4 +1,4 @@
-// api/scan-bill.js  —  Vercel Serverless Function
+// api/scan-bill.mjs  —  Vercel Serverless Function (ES Module)
 // Proxy seguro: recibe la imagen del front, llama a la API de Anthropic con la
 // clave guardada en el servidor y valida el código de acceso. La clave NUNCA
 // viaja al navegador.
@@ -29,7 +29,7 @@ Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valore
 Pistas de país por identificador: RUT=Chile, NIT=Colombia, RUC=Perú o Ecuador, CUIT=Argentina, RFC=México.
 Los montos como números sin separador de miles ni símbolo. Responde únicamente el JSON.`;
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -40,8 +40,9 @@ module.exports = async function handler(req, res) {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   body = body || {};
 
-  const ACCESS = process.env.BILL_ACCESS_CODE;
-  const { code, image, media_type, check } = body;
+  const ACCESS = (process.env.BILL_ACCESS_CODE || '').trim();
+  const code = (typeof body.code === 'string' ? body.code : '').trim();
+  const { image, media_type, check } = body;
 
   // 1) Validación de código (gate real del lado servidor)
   if (ACCESS) {
