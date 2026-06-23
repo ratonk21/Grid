@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bill · Escáner de facturas — ubicquia.</title>
+<meta name="description" content="Escáner de facturas y boletas: saca una foto o adjunta una imagen y extrae los datos automáticamente.">
+<meta property="og:title" content="Bill · Escáner de facturas">
+<meta property="og:description" content="Saca una foto de tu factura o boleta y extrae los datos al instante.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-lime:#AECC53;--ubi-orange:#EA561B;
+  --ubi-gray:#EEF0F5;--ubi-ink:#14242F;--ubi-muted:#6A7D89;--ubi-surface:#fff;
+  --ubi-line:rgba(30,36,69,.10);--ubi-row:#F5F8F9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:'Lato',system-ui,sans-serif;color:var(--ubi-ink);background:var(--ubi-gray);
+  line-height:1.5;padding-bottom:env(safe-area-inset-bottom)}
+.mono{font-family:'JetBrains Mono',monospace}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select{font-family:inherit}
+
+.app-header{background:var(--ubi-navy);color:#fff;padding:16px 18px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:20;padding-top:calc(16px + env(safe-area-inset-top))}
+.logo{font-size:22px;font-weight:400;letter-spacing:-.5px}
+.logo b{font-weight:900}.logo .dot{color:var(--ubi-blue)}
+.app-title{font-size:12px;color:#A9B4C6;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.status-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:#A9B4C6}
+.status-pill .d{width:8px;height:8px;border-radius:50%;background:var(--ubi-blue)}
+
+.wrap{max-width:760px;margin:0 auto;padding:18px}
+.card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:14px;padding:20px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--ubi-navy)}
+.card .sub{margin:0 0 16px;font-size:13px;color:var(--ubi-muted)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:11px;
+  font-weight:700;font-size:15px;background:var(--ubi-blue);color:#fff;transition:filter .15s,transform .05s}
+.btn:active{transform:scale(.98)}.btn:hover{filter:brightness(1.05)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn.ghost{background:var(--ubi-gray);color:var(--ubi-navy);border:1px solid var(--ubi-line)}
+.btn.full{width:100%}.btn.lime{background:var(--ubi-lime);color:var(--ubi-navy)}
+.btn.danger{background:#FDECE4;color:#9c3206;border:1px solid #f6c4ab}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn-row .btn{flex:1;min-width:150px}
+
+#lock{position:fixed;inset:0;background:var(--ubi-navy);z-index:50;display:flex;align-items:center;
+  justify-content:center;padding:24px;flex-direction:column}
+#lock .box{background:#fff;border-radius:18px;padding:30px 26px;width:100%;max-width:360px;text-align:center}
+#lock .logo{color:var(--ubi-navy);font-size:30px;margin-bottom:6px}
+#lock h1{font-size:18px;color:var(--ubi-navy);margin:8px 0 4px}
+#lock p{font-size:13px;color:var(--ubi-muted);margin:0 0 20px}
+#lock input{width:100%;padding:14px;font-size:18px;text-align:center;letter-spacing:3px;border:2px solid var(--ubi-line);
+  border-radius:11px;outline:none;font-family:'JetBrains Mono',monospace;margin-bottom:14px}
+#lock input:focus{border-color:var(--ubi-blue)}
+#lockErr{color:var(--ubi-orange);font-size:13px;font-weight:700;min-height:18px;margin-bottom:10px}
+
+.drop{border:2px dashed var(--ubi-line);border-radius:14px;padding:26px 18px;text-align:center;
+  background:var(--ubi-row);transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--ubi-blue);background:#EAF7FD}
+.drop .icon{font-size:38px;line-height:1}
+.drop p{margin:10px 0 16px;color:var(--ubi-muted);font-size:14px}
+.preview-wrap{position:relative;margin-top:4px}
+.preview{width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid var(--ubi-line);background:#000}
+.preview-x{position:absolute;top:8px;right:8px;background:rgba(30,36,69,.85);color:#fff;width:34px;height:34px;
+  border-radius:50%;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+
+.spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.banner{border-radius:11px;padding:13px 15px;font-size:14px;margin-bottom:14px;display:none}
+.banner.err{background:#FDECE4;color:#9c3206;border:1px solid #f6c4ab}
+.banner.ok{background:#F0F6DD;color:#5a6e1f;border:1px solid #cfe08f}
+.banner.info{background:#EAF7FD;color:#0b5a78;border:1px solid #bce6f6}
+.banner.show{display:block}
+
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ubi-muted);font-weight:700}
+.field input,.field select{padding:11px 12px;border:1px solid var(--ubi-line);border-radius:9px;font-size:15px;background:var(--ubi-surface)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--ubi-blue)}
+.field input.mono{font-family:'JetBrains Mono',monospace}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.totals{background:var(--ubi-row);border-radius:11px;padding:14px;margin-top:6px}
+.totals .row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:15px}
+.totals .row.big{font-size:20px;font-weight:900;color:var(--ubi-navy);border-top:1px solid var(--ubi-line);margin-top:4px;padding-top:12px}
+.totals input{font-family:'JetBrains Mono',monospace;text-align:right;border:none;background:transparent;width:140px}
+.totals input:focus{outline:none}
+.tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  padding:4px 10px;border-radius:20px;background:var(--ubi-blue);color:#fff}
+.tag.paper{background:var(--ubi-orange)}
+.tag.digital{background:var(--ubi-blue)}
+details.raw{margin-top:14px}
+details.raw summary{cursor:pointer;font-size:13px;color:var(--ubi-muted);font-weight:700}
+details.raw pre{white-space:pre-wrap;word-break:break-word;font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:var(--ubi-row);border-radius:9px;padding:12px;margin-top:8px;max-height:240px;overflow:auto}
+
+/* tasas */
+.rate-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--ubi-line)}
+.rate-row:last-child{border-bottom:none}
+.rate-row .lbl{font-weight:700;color:var(--ubi-navy);font-size:14px}
+.rate-row .lbl small{display:block;color:var(--ubi-muted);font-weight:400;font-size:12px}
+.rate-row .eq{font-size:13px;color:var(--ubi-muted);white-space:nowrap}
+.rate-row input{width:120px;padding:9px 10px;border:1px solid var(--ubi-line);border-radius:8px;
+  font-family:'JetBrains Mono',monospace;text-align:right;font-size:14px}
+.rate-row input:focus{outline:none;border-color:var(--ubi-blue)}
+
+.tbl-wrap{overflow-x:auto;margin-top:6px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:760px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--ubi-line);white-space:nowrap}
+th{background:var(--ubi-navy);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0}
+tr:nth-child(even) td{background:var(--ubi-row)}
+td .num{font-family:'JetBrains Mono',monospace}
+th.usd,td.usd{background:#0f3d51;color:#fff}
+tr:nth-child(even) td.usd{background:#0f3d51}
+td.usd .num{color:#fff}
+tfoot td{font-weight:700;border-top:2px solid var(--ubi-navy);background:var(--ubi-row)}
+tfoot td.usd{background:#0f3d51}
+.pill-mini{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;color:#fff;text-transform:uppercase;letter-spacing:.4px}
+.pill-mini.paper{background:var(--ubi-orange)}
+.pill-mini.digital{background:var(--ubi-blue)}
+.empty{text-align:center;color:var(--ubi-muted);padding:24px;font-size:14px}
+.usd-sum{text-align:right;font-weight:900;color:var(--ubi-navy);font-size:16px;margin-top:12px}
+.usd-sum span{font-family:'JetBrains Mono',monospace;color:#0f3d51}
+.hidden{display:none!important}
+.foot{text-align:center;color:var(--ubi-muted);font-size:12px;padding:8px 0 28px}
+.foot .logo{font-size:14px;color:var(--ubi-navy)}
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div class="box">
+    <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+    <h1>Bill · Escáner de facturas</h1>
+    <p>Ingresa el código de acceso para continuar.</p>
+    <input id="codeInput" type="password" inputmode="text" placeholder="• • • • • •" autocomplete="off">
+    <div id="lockErr"></div>
+    <button class="btn full" id="unlockBtn" onclick="doUnlock()">Entrar</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div>
+      <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+      <div class="app-title">Bill · Escáner de facturas</div>
+    </div>
+    <div class="status-pill"><span class="d"></span><span id="modeLabel">en línea</span></div>
+  </header>
+
+  <div class="wrap">
+    <div id="banner" class="banner"></div>
+
+    <div class="card" id="captureCard">
+      <h2>1 · Captura la boleta</h2>
+      <p class="sub">Cámara → se marca como <b>Papel</b>. Adjuntar → se marca como <b>Digital</b>.</p>
+      <div id="drop" class="drop">
+        <div class="icon">📄</div>
+        <p>Arrastra una imagen aquí o usa los botones</p>
+        <div class="btn-row">
+          <button class="btn" onclick="document.getElementById('camIn').click()">📷 Tomar foto · Papel</button>
+          <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 Adjuntar · Digital</button>
+        </div>
+      </div>
+      <div id="previewWrap" class="preview-wrap hidden">
+        <img id="preview" class="preview" alt="Vista previa">
+        <button class="preview-x" onclick="clearImage()" title="Quitar">×</button>
+      </div>
+      <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
+      <input id="fileIn" type="file" accept="image/*" class="hidden">
+      <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
+        <span id="scanLabel">⚡ Escanear contenido</span>
+      </button>
+    </div>
+
+    <div class="card hidden" id="resultCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">2 · Datos extraídos</h2>
+        <span class="tag" id="docTag">documento</span>
+      </div>
+      <p class="sub">Revisa y corrige si hace falta, luego guarda.</p>
+
+      <div class="grid2">
+        <div class="field"><label>Clasificación</label><input id="f_clase" placeholder="factura / boleta"></div>
+        <div class="field"><label>Descripción</label><input id="f_desc" placeholder="Ej: combustible, materiales…"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>País</label><select id="f_pais" onchange="onCountry()"></select></div>
+        <div class="field"><label>Moneda local</label><input id="f_moneda" class="mono" placeholder="CLP"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Fecha</label><input id="f_fecha" class="mono" placeholder="AAAA-MM-DD"></div>
+        <div class="field"><label>Folio / N°</label><input id="f_folio" class="mono" placeholder="—"></div>
+      </div>
+      <div class="field"><label>Emisor</label><input id="f_emisor" placeholder="Nombre del emisor"></div>
+      <div class="field"><label>RUT / NIT / RUC</label><input id="f_rut" class="mono" placeholder="—"></div>
+
+      <div class="totals">
+        <div class="row"><span>Neto</span><span><input id="f_neto" class="mono" placeholder="0"></span></div>
+        <div class="row"><span>Impuesto / IVA</span><span><input id="f_iva" class="mono" placeholder="0"></span></div>
+        <div class="row big"><span>Total</span><span><input id="f_total" class="mono" style="width:160px;font-weight:900;font-size:20px;color:var(--ubi-navy)" placeholder="0"></span></div>
+      </div>
+
+      <details class="raw"><summary>Texto completo / detalle</summary><pre id="rawText"></pre></details>
+      <button class="btn full" style="margin-top:16px" onclick="saveCurrent()">💾 Guardar en histórico</button>
+    </div>
+
+    <div class="card" id="ratesCard">
+      <h2>Tasas de cambio (a USD)</h2>
+      <p class="sub">Carga manualmente el valor del dólar para cada moneda. <b>USD = monto local ÷ tasa.</b></p>
+      <div id="ratesBody"><p class="empty" style="padding:8px">Agrega boletas para configurar las tasas.</p></div>
+    </div>
+
+    <div class="card" id="histCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">3 · Histórico</h2>
+        <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
+      </div>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas.</p>
+      <div class="tbl-wrap">
+        <table id="histTbl">
+          <thead id="histHead"></thead>
+          <tbody id="histBody"><tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr></tbody>
+          <tfoot id="histFoot"></tfoot>
+        </table>
+      </div>
+      <div class="usd-sum" id="usdSum"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled>📄 PDF boletas en papel</button>
+        <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled>⬇ Excel</button>
+        <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled>{ } JSON</button>
+        <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled>🗑 Limpiar todo</button>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+      Procesamiento de imagen vía IA · histórico guardado en tu dispositivo
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================================================================
+   Bill · Escáner de facturas — Ubicquia  (v3)
+   - Papel (cámara) / Digital (adjuntar).
+   - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
+   - PDF de boletas en papel, empacando varias por hoja según tamaño.
+   - Histórico en localStorage; se limpia SOLO manualmente.
+   - Escaneo IA: proxy /api/scan-bill (producción) o directo (artifact).
+   ================================================================= */
+
+const DEMO = false;
+const DEMO_SEED = [];
+const DEMO_RATES = {};
+
+const DEMO_CODE = 'BILL-2026';   // solo para pruebas sin servidor
+const MODEL     = 'claude-sonnet-4-6';
+const MAX_EDGE  = 1568;
+const LS_KEY    = 'bill_history_v3';
+const LS_RATES  = 'bill_rates_v3';
+
+const COUNTRIES = {
+  'Chile':{code:'CLP',sym:'$'},'Colombia':{code:'COP',sym:'$'},'Perú':{code:'PEN',sym:'S/'},
+  'Argentina':{code:'ARS',sym:'$'},'México':{code:'MXN',sym:'$'},'Ecuador':{code:'USD',sym:'$'},
+  'Bolivia':{code:'BOB',sym:'Bs'},'Brasil':{code:'BRL',sym:'R$'},'Uruguay':{code:'UYU',sym:'$'},
+  'Paraguay':{code:'PYG',sym:'₲'},'Panamá':{code:'USD',sym:'$'},'Estados Unidos':{code:'USD',sym:'$'},'Otro':{code:'',sym:''}
+};
+const CUR_COUNTRY = {};
+Object.entries(COUNTRIES).forEach(([c,m])=>{ if(m.code && !CUR_COUNTRY[m.code]) CUR_COUNTRY[m.code]=c; });
+
+const PROMPT = `Eres un extractor de datos de facturas y boletas de Latinoamérica.
+Analiza la imagen del documento y devuelve SOLO un objeto JSON válido, sin texto adicional ni markdown.
+Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valores):
+{
+ "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
+ "descripcion": "resumen corto del gasto (ej: combustible, materiales, hospedaje)",
+ "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos u Otro)",
+ "moneda": "código de moneda local (CLP, COP, PEN, ARS, MXN, USD, BOB, BRL...)",
+ "emisor": {"nombre": "", "rut": ""},
+ "folio": "",
+ "fecha_emision": "AAAA-MM-DD",
+ "neto": 0,
+ "iva": 0,
+ "total": 0,
+ "items": [{"descripcion":"", "cantidad":0, "total":0}],
+ "texto_completo": "transcripción legible de todo el documento"
+}
+Pistas de país por identificador: RUT=Chile, NIT=Colombia, RUC=Perú o Ecuador, CUIT=Argentina, RFC=México.
+Los montos como números sin separador de miles ni símbolo. Responde únicamente el JSON.`;
+
+let appCode = '';
+let curImg  = null;
+let history = [];
+let rates   = {USD:1};
+let lsOK    = true;
+
+/* ---------- Banner ---------- */
+function banner(msg,type='err'){ const b=document.getElementById('banner');
+  b.textContent=msg; b.className='banner show '+type; if(type!=='err') setTimeout(()=>b.classList.remove('show'),4000); }
+function clearBanner(){ document.getElementById('banner').classList.remove('show'); }
+
+/* ---------- Storage ---------- */
+function loadHistory(){ try{ const r=localStorage.getItem(LS_KEY); history=r?JSON.parse(r):[]; if(!Array.isArray(history)) history=[]; }
+  catch(e){ lsOK=false; history=[]; } }
+function persist(){ if(!lsOK) return; try{ localStorage.setItem(LS_KEY,JSON.stringify(history)); }
+  catch(e){ lsOK=false; banner('No se pudo guardar en el dispositivo (espacio lleno). El histórico durará solo esta sesión.','info'); } }
+function loadRates(){ try{ const r=localStorage.getItem(LS_RATES); rates=r?JSON.parse(r):{USD:1}; }catch(e){ rates={USD:1}; } if(!rates.USD) rates.USD=1; }
+function persistRates(){ if(!lsOK) return; try{ localStorage.setItem(LS_RATES,JSON.stringify(rates)); }catch(e){} }
+
+/* ---------- País ---------- */
+function buildCountrySelect(){ const sel=document.getElementById('f_pais');
+  sel.innerHTML='<option value="">—</option>'+Object.keys(COUNTRIES).map(c=>`<option value="${c}">${c}</option>`).join(''); }
+function onCountry(){ const c=document.getElementById('f_pais').value;
+  if(c&&COUNTRIES[c]&&COUNTRIES[c].code) document.getElementById('f_moneda').value=COUNTRIES[c].code; }
+function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function matchCountry(name){ const n=norm(name);
+  for(const k of Object.keys(COUNTRIES)){ if(norm(k)===n) return k; }
+  if(n.includes('chil'))return 'Chile'; if(n.includes('colomb'))return 'Colombia'; if(n.includes('peru'))return 'Perú';
+  if(n.includes('argentin'))return 'Argentina'; if(n.includes('mexic'))return 'México'; if(n.includes('ecuad'))return 'Ecuador';
+  if(n.includes('boliv'))return 'Bolivia'; if(n.includes('brasil')||n.includes('brazil'))return 'Brasil';
+  if(n.includes('urugu'))return 'Uruguay'; if(n.includes('paragu'))return 'Paraguay'; if(n.includes('panam'))return 'Panamá'; return ''; }
+
+/* ================= LOCK ================= */
+async function doUnlock(){
+  const code=document.getElementById('codeInput').value.trim();
+  const err=document.getElementById('lockErr'), btn=document.getElementById('unlockBtn');
+  err.textContent='';
+  if(!code){ err.textContent='Ingresa el código.'; return; }
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  let ok=false; try{ ok=await validateCode(code); }catch(e){ ok=false; }
+  btn.disabled=false; btn.textContent='Entrar';
+  if(ok){ appCode=code; enterApp(); } else { err.textContent='Código incorrecto.'; }
+}
+function enterApp(){
+  const lk=document.getElementById('lock'); if(lk) lk.classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  if(!lsOK) banner('Este entorno no guarda en disco: el histórico durará solo esta sesión.','info');
+}
+async function validateCode(code){
+  try{ const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({check:true,code})});
+    if(r.ok) return true; if(r.status===401) return false;
+  }catch(e){}
+  document.getElementById('modeLabel').textContent='modo demo';
+  return code===DEMO_CODE;
+}
+
+/* ================= IMAGEN ================= */
+let camIn,fileIn,drop;
+function wireInputs(){
+  camIn=document.getElementById('camIn'); fileIn=document.getElementById('fileIn'); drop=document.getElementById('drop');
+  camIn.addEventListener('change', e=>handleFile(e.target.files[0],'Papel'));
+  fileIn.addEventListener('change', e=>handleFile(e.target.files[0],'Digital'));
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f,'Digital'); });
+  document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
+}
+function handleFile(file,origen){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ banner('El archivo no es una imagen.'); return; }
+  clearBanner();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        let {width:w,height:h}=img;
+        const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
+        w=Math.round(w*scale); h=Math.round(h*scale);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl=cv.toDataURL('image/jpeg',0.85);
+        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',w,h,origen};
+      }catch(err){
+        const dataUrl=reader.result;
+        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:file.type,w:0,h:0,origen};
+      }
+      document.getElementById('preview').src=curImg.dataUrl;
+      document.getElementById('previewWrap').classList.remove('hidden');
+      document.getElementById('scanBtn').disabled=false;
+    };
+    img.onerror=()=>banner('No se pudo leer la imagen.');
+    img.src=reader.result;
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsDataURL(file);
+}
+function clearImage(){
+  curImg=null;
+  document.getElementById('previewWrap').classList.add('hidden');
+  document.getElementById('preview').src='';
+  document.getElementById('scanBtn').disabled=true;
+  if(camIn) camIn.value=''; if(fileIn) fileIn.value='';
+}
+
+/* ================= ESCANEO ================= */
+async function runScan(){
+  if(!curImg){ banner('Primero captura o adjunta una imagen.'); return; }
+  clearBanner();
+  const btn=document.getElementById('scanBtn'), lbl=document.getElementById('scanLabel');
+  btn.disabled=true; lbl.innerHTML='<span class="spin"></span> Escaneando…';
+  try{
+    const raw=await scan(curImg.b64,curImg.mediaType);
+    const data=extractJSON(raw);
+    if(!data) throw new Error('La IA no devolvió datos legibles. Intenta otra foto con mejor luz.');
+    fillResult(data);
+    document.getElementById('resultCard').classList.remove('hidden');
+    document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+    banner('Datos extraídos. Revísalos antes de guardar.','ok');
+  }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
+  finally{ btn.disabled=false; lbl.textContent='⚡ Escanear contenido'; }
+}
+async function scan(b64,mediaType){
+  try{
+    const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({image:b64,media_type:mediaType,code:appCode})});
+    if(r.ok){ const j=await r.json(); return j.raw||''; }
+    if(r.status===401) throw new Error('Código rechazado por el servidor.');
+  }catch(e){ if(/servidor/.test(e.message||'')) throw e; }
+  return await scanDirect(b64,mediaType);
+}
+async function scanDirect(b64,mediaType){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:mediaType,data:b64}},{type:'text',text:PROMPT}]}]})});
+  const data=await r.json();
+  if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+function extractJSON(text){
+  if(!text) return null;
+  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const a=t.indexOf('{'), b=t.lastIndexOf('}'); if(a>=0&&b>a) t=t.slice(a,b+1);
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
+
+/* ================= RESULTADO ================= */
+function num(v){ const n=Number(String(v??'').replace(/[^\d.-]/g,'')); return isNaN(n)?'':n; }
+function setTag(origen){
+  const t=document.getElementById('docTag');
+  t.textContent=origen||'documento';
+  t.className='tag '+(origen==='Papel'?'paper':origen==='Digital'?'digital':'');
+}
+function fillResult(d){
+  const em=d.emisor||{};
+  setTag(curImg?curImg.origen:'');
+  document.getElementById('f_clase').value=d.tipo_documento||'';
+  document.getElementById('f_desc').value=d.descripcion||'';
+  document.getElementById('f_fecha').value=d.fecha_emision||'';
+  document.getElementById('f_emisor').value=em.nombre||'';
+  document.getElementById('f_rut').value=em.rut||'';
+  document.getElementById('f_folio').value=d.folio||'';
+  const pais=matchCountry(d.pais);
+  document.getElementById('f_pais').value=pais||(d.pais?'Otro':'');
+  document.getElementById('f_moneda').value=(pais&&COUNTRIES[pais].code)?COUNTRIES[pais].code:(d.moneda||'');
+  document.getElementById('f_neto').value=num(d.neto);
+  document.getElementById('f_iva').value=num(d.iva);
+  document.getElementById('f_total').value=num(d.total);
+  let detail=d.texto_completo||'';
+  if(Array.isArray(d.items)&&d.items.length)
+    detail+='\n\n— Ítems —\n'+d.items.map(it=>`• ${it.descripcion||''}  x${it.cantidad??''}  = ${it.total??''}`).join('\n');
+  document.getElementById('rawText').textContent=detail.trim()||'(sin texto)';
+}
+function saveCurrent(){
+  const origen=(curImg&&curImg.origen)||document.getElementById('docTag').textContent;
+  const isPaper=origen==='Papel';
+  const row={
+    origen, clase:document.getElementById('f_clase').value.trim(),
+    desc:document.getElementById('f_desc').value.trim(),
+    pais:document.getElementById('f_pais').value.trim(),
+    moneda:document.getElementById('f_moneda').value.trim().toUpperCase(),
+    fecha:document.getElementById('f_fecha').value.trim(),
+    folio:document.getElementById('f_folio').value.trim(),
+    emisor:document.getElementById('f_emisor').value.trim(),
+    rut:document.getElementById('f_rut').value.trim(),
+    neto:num(document.getElementById('f_neto').value),
+    iva:num(document.getElementById('f_iva').value),
+    total:num(document.getElementById('f_total').value),
+    texto:document.getElementById('rawText').textContent,
+    img:isPaper&&curImg?curImg.dataUrl:'',
+    imgW:curImg?curImg.w:0, imgH:curImg?curImg.h:0, ts:Date.now()
+  };
+  if(!row.desc&&!row.emisor&&row.total===''){ banner('Completa al menos descripción, emisor o total.'); return; }
+  if(row.moneda&&rates[row.moneda]==null) rates[row.moneda]=''; // crea fila de tasa pendiente
+  history.unshift(row); persist(); persistRates();
+  renderRates(); renderHistory();
+  clearImage();
+  document.getElementById('resultCard').classList.add('hidden');
+  banner('Boleta guardada en el histórico.','ok');
+  document.getElementById('histCard').scrollIntoView({behavior:'smooth'});
+}
+
+/* ================= TASAS / USD ================= */
+function currenciesInUse(){ const s=new Set(); history.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); return [...s]; }
+function toUSD(r){
+  if(r.total===''||r.total==null) return null;
+  if(r.moneda==='USD') return r.total;
+  const rate=Number(rates[r.moneda]);
+  if(!rate||isNaN(rate)) return null;
+  return r.total/rate;
+}
+function renderRates(){
+  const cont=document.getElementById('ratesBody');
+  const curs=currenciesInUse().filter(c=>c!=='USD');
+  if(!curs.length){ cont.innerHTML='<p class="empty" style="padding:8px">Agrega boletas para configurar las tasas.</p>'; return; }
+  cont.innerHTML=curs.map(c=>{
+    const pais=CUR_COUNTRY[c]||''; const val=(rates[c]==null?'':rates[c]);
+    return `<div class="rate-row">
+      <div class="lbl">${c}<small>${pais}</small></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="eq">1 USD =</span>
+        <input type="number" inputmode="decimal" step="0.0001" min="0" value="${val}"
+          placeholder="tasa" oninput="setRate('${c}', this.value)">
+        <span class="eq">${c}</span>
+      </div></div>`;
+  }).join('');
+}
+function setRate(cur,val){ rates[cur]=(val===''?'':Number(val)); persistRates(); renderHistory(); }
+
+/* ================= HISTÓRICO ================= */
+function renderHistory(){
+  const head=document.getElementById('histHead');
+  const body=document.getElementById('histBody');
+  const foot=document.getElementById('histFoot');
+  document.getElementById('histCount').textContent=history.length;
+  const has=history.length>0;
+  const papers=history.filter(r=>r.origen==='Papel'&&r.img).length;
+  document.getElementById('pdfBtn').disabled=!papers;
+  document.getElementById('xlsxBtn').disabled=!has;
+  document.getElementById('jsonBtn').disabled=!has;
+  document.getElementById('clrBtn').disabled=!has;
+  const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];   // una columna de Total por país
+  const totalCols=paises.map(p=>`Total ${p}${curOf(p)?' ('+curOf(p)+')':''}`);
+  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
+    + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
+    + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
+  if(!has){
+    body.innerHTML='<tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr>';
+    foot.innerHTML=''; document.getElementById('usdSum').textContent=''; return;
+  }
+  let sum=0, anyUSD=false;
+  body.innerHTML=history.map((r,i)=>{
+    const u=toUSD(r); if(u!=null){ sum+=u; anyUSD=true; }
+    const pcls=r.origen==='Papel'?'paper':'digital';
+    const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
+    return `<tr>
+      <td class="num">${i+1}</td>
+      <td class="num">${esc(r.fecha)||'—'}</td>
+      <td>${esc(r.emisor)||'—'}</td>
+      <td>${esc(r.pais)||'—'}</td>
+      ${totalCells}
+      <td class="usd"><span class="num">${u!=null?'$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</span></td>
+      <td>${esc(r.desc)||'—'}</td>
+      <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
+      <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+  const totFootCells=paises.map(p=>{
+    const s=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0);
+    return `<td class="num">${fmt(s)}</td>`;
+  }).join('');
+  foot.innerHTML=`<tr>
+    <td></td><td></td><td></td><td>TOTAL</td>
+    ${totFootCells}
+    <td class="usd"><span class="num">${anyUSD?'$ '+sum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</span></td>
+    <td></td><td></td><td></td>
+  </tr>`;
+  document.getElementById('usdSum').innerHTML = anyUSD
+    ? `Total en USD ≈ <span>$ ${sum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`
+    : 'Carga las tasas para ver el total en USD';
+}
+function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
+function clearAll(){
+  if(!history.length) return;
+  if(!confirm('¿Borrar TODO el histórico? Esta acción no se puede deshacer.')) return;
+  history=[]; persist(); renderRates(); renderHistory(); banner('Histórico limpiado.','ok');
+}
+function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmt(n){ return typeof n==='number'?n.toLocaleString('es-CL'):n; }
+
+/* ================= PDF BOLETAS EN PAPEL ================= */
+function exportPapelPDF(){
+  const papers=history.filter(r=>r.origen==='Papel'&&r.img);
+  if(!papers.length){ banner('No hay boletas en papel con foto.'); return; }
+  if(!window.jspdf||!window.jspdf.jsPDF){ banner('No se pudo cargar el generador de PDF (revisa tu conexión).'); return; }
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'pt',format:'a4'});
+    const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+    const MX=30, MY=40, gap=14, capH=16;
+    const cw=pageW-2*MX, ch=pageH-2*MY-22;          // -22 para el título
+    const maxH=ch*0.46;                              // al menos 2 filas por hoja
+    let x=MX, y=MY+22, rowH=0;
+    doc.setFontSize(13); doc.setTextColor(30,36,69);
+    doc.text('Boletas en papel · Bill', MX, MY+8);
+    papers.forEach(r=>{
+      const iw=r.imgW||1000, ih=r.imgH||1400;
+      const scale=Math.min(cw/iw, maxH/ih);
+      const dw=iw*scale, dh=ih*scale, blockH=dh+capH;
+      if(x+dw > MX+cw+0.5){ x=MX; y+=rowH+gap; rowH=0; }        // salto de fila
+      if(y+blockH > MY+22+ch+0.5){ doc.addPage(); x=MX; y=MY; rowH=0; } // nueva hoja
+      try{ doc.addImage(r.img,'JPEG',x,y,dw,dh); }catch(e){ /* salta imagen corrupta */ }
+      doc.setFontSize(8); doc.setTextColor(90,90,90);
+      const cap=`${r.fecha||''}  ${r.emisor||''}  ${r.total!==''?fmt(r.total)+' '+(r.moneda||''):''}`.trim();
+      doc.text(cap.substring(0,58), x, y+dh+11);
+      x+=dw+gap; rowH=Math.max(rowH,blockH);
+    });
+    doc.save(`bill_boletas_papel_${stamp()}.pdf`);
+  }catch(e){ banner('No se pudo generar el PDF: '+e.message); }
+}
+
+/* ================= EXPORT ================= */
+function curOf(p){ const rec=history.find(r=>r.pais===p&&r.moneda); return rec?rec.moneda:''; }
+function exportXlsx(){
+  if(!history.length) return;
+  try{
+    const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];        // una columna de Total por país
+    const totalKey=p=>`Total ${p}${curOf(p)?' ('+curOf(p)+')':''}`;
+    // Orden: N° · Fecha · Emisor · País · Total(por país) · USD · Descripción · Tipo
+    const rows=history.map((r,i)=>{
+      const o={'N°':i+1,'Fecha':r.fecha,'Emisor':r.emisor,'País':r.pais};
+      paises.forEach(p=>{ o[totalKey(p)] = (r.pais===p && r.total!=='') ? r.total : ''; });
+      const u=toUSD(r);
+      o['USD']      = u!=null?Number(u.toFixed(2)):'';
+      o['Descripción']=r.desc;
+      o['Tipo']     = r.origen;
+      return o;
+    });
+    // fila de totales: suma por país + USD
+    const tot={'N°':'','Fecha':'','Emisor':'','País':'TOTAL'};
+    paises.forEach(p=>{ tot[totalKey(p)]=history.filter(r=>r.pais===p)
+      .reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
+    tot['USD']=Number(history.reduce((a,r)=>{const u=toUSD(r);return a+(u!=null?u:0);},0).toFixed(2));
+    tot['Descripción']=''; tot['Tipo']='';
+    rows.push(tot);
+    const ws=XLSX.utils.json_to_sheet(rows);
+    // Tabla de conversiones a USD, a la derecha (una columna de separación)
+    const startCol=(7+paises.length)+1;
+    XLSX.utils.sheet_add_aoa(ws,[['Conversión a USD']],{origin:{r:0,c:startCol}});
+    const ratesRows=paises.map(p=>({'País':p,'Moneda':curOf(p),
+      '1 USD =':(rates[curOf(p)]===''||rates[curOf(p)]==null)?'':Number(rates[curOf(p)])}));
+    XLSX.utils.sheet_add_json(ws,ratesRows,{origin:{r:1,c:startCol}});
+    ws['!cols']=[{wch:5},{wch:11},{wch:24},{wch:12},...paises.map(()=>({wch:18})),{wch:11},{wch:24},{wch:9},{wch:3},{wch:14},{wch:9},{wch:12}];
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Boletas');
+    XLSX.writeFile(wb,`bill_boletas_${stamp()}.xlsx`);
+  }catch(e){ banner('No se pudo exportar Excel: '+e.message); }
+}
+function exportJson(){
+  if(!history.length) return;
+  try{
+    const payload=history.map(r=>{ const c=Object.assign({},r); delete c.img; return c; });
+    const blob=new Blob([JSON.stringify({rates,boletas:payload},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_boletas_${stamp()}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){ banner('No se pudo exportar JSON: '+e.message); }
+}
+function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
+
+/* ================= INIT ================= */
+function init(){
+  buildCountrySelect(); wireInputs(); loadHistory(); loadRates();
+  if(DEMO){
+    appCode='demo'; enterApp();
+    if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); persist(); }
+    if(Object.keys(rates).length<=1){ rates=Object.assign({USD:1},DEMO_RATES); persistRates(); }
+  }
+  renderRates(); renderHistory();
+}
+init();
+</script>
+</body>
+</html>
