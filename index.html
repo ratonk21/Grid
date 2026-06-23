@@ -524,6 +524,87 @@
     .contact-btn.mail { background: var(--blue); }
     .contact-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
 
+    /* ── ABOUT / TEAM ── */
+    .about-grid { display:grid; grid-template-columns:1.25fr 1fr; gap:0.7rem; align-items:start; }
+    .about-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.1rem 1.2rem; position:relative; overflow:hidden; }
+    .about-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--blue), var(--lime)); }
+    .about-title { font-size:0.95rem; font-weight:700; letter-spacing:-0.02em; color:var(--text); margin-bottom:0.35rem; }
+    .about-lead { font-size:0.72rem; line-height:1.5; color:var(--text-mid); margin-bottom:0.2rem; max-width:48ch; }
+    .about-block { margin-top:0.8rem; }
+    .about-block-label { font-size:0.58rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--muted); margin-bottom:0.4rem; }
+    .about-chips { display:flex; flex-wrap:wrap; gap:0.35rem; }
+    .about-chip { font-size:0.62rem; font-weight:600; color:var(--text); background:var(--surface2); border:1px solid var(--border); padding:0.22rem 0.55rem; border-radius:20px; }
+    .about-products { display:flex; flex-direction:column; gap:0.4rem; }
+    .prod { display:flex; align-items:baseline; gap:0.6rem; }
+    .prod-name { font-weight:900; font-size:0.72rem; color:var(--blue); min-width:64px; letter-spacing:-0.01em; }
+    .prod-desc { font-size:0.68rem; color:var(--text-mid); }
+    .about-ways { font-size:0.67rem; color:var(--text-mid); line-height:1.8; }
+    .about-way { font-weight:700; color:var(--text); }
+    .about-sep { color:var(--border); margin:0 0.3rem; }
+    .about-contacts { display:flex; flex-direction:column; gap:0.7rem; }
+    @media (max-width:760px) { .about-grid { grid-template-columns:1fr; } }
+
+    /* ── TABS ── */
+    .tabs {
+      margin: 1rem 3rem 0;
+      display: flex;
+      gap: 0.2rem;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 0.6rem 0.9rem;
+      margin-bottom: -1px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* ── TEAM PANEL: profile components ── */
+    .team-sub-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      font-weight: 700;
+      margin: 1.2rem 0 0.6rem;
+    }
+    .cap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 0.7rem; }
+    .cap-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 0.95rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; }
+    .cap-ic { width: 34px; height: 34px; border-radius: 9px; background: var(--surface2); display: flex; align-items: center; justify-content: center; }
+    .cap-ic svg { width: 18px; height: 18px; stroke: var(--blue); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .cap-item h4 { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+    .cap-item p { font-size: 0.68rem; color: var(--text-mid); line-height: 1.45; }
+    .lines-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .line-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; }
+    .line-tag { display: inline-block; font-size: 0.6rem; font-weight: 700; color: var(--blue); background: var(--blue-lt); padding: 3px 9px; border-radius: 6px; margin-bottom: 0.5rem; letter-spacing: 0.02em; }
+    .line-item h4 { font-size: 0.95rem; font-weight: 900; color: var(--navy); margin-bottom: 0.3rem; }
+    .line-item p { font-size: 0.7rem; color: var(--text-mid); line-height: 1.5; }
+    .how-band { background: var(--navy); border-radius: var(--radius-lg); padding: 1.2rem 1.3rem; }
+    .how-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--blue); font-weight: 700; margin-bottom: 0.85rem; }
+    .how-ways { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.95rem; }
+    .how-way h5 { font-size: 0.78rem; font-weight: 900; color: #ffffff; margin-bottom: 0.22rem; }
+    .how-way h5 .dash { color: var(--lime); }
+    .how-way p { font-size: 0.66rem; color: rgba(255,255,255,0.8); line-height: 1.45; }
+    @media (max-width: 640px) {
+      .tabs { margin: 1rem 1.5rem 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .lines-grid { grid-template-columns: 1fr; }
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       header { padding: 0 1.5rem; }
@@ -595,8 +676,129 @@
 
   </div>
 
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="team"     data-i18n="tab-team"     onclick="setTab('team')">Who we are</button>
+    <button class="tab"        data-tab="projects" data-i18n="tab-projects" onclick="setTab('projects')">Projects</button>
+    <button class="tab"        data-tab="guides"   data-i18n="tab-guides"   onclick="setTab('guides')">User guides</button>
+    <button class="tab"        data-tab="dtm"      data-i18n="tab-dtm"      onclick="setTab('dtm')">DTM Analytics</button>
+    <button class="tab"        data-tab="control"  data-i18n="tab-control"  onclick="setTab('control')">Live control</button>
+  </div>
+
+  <!-- WHO WE ARE / LATAM TEAM SECTION -->
+  <section class="section tab-panel active" data-panel="team" id="team-section">
+    <div class="section-header">
+      <span class="section-label" data-i18n="section-team">latam team</span>
+      <div class="section-line"></div>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="team-count-label">people</span></span>
+    </div>
+
+    <p class="about-lead" data-i18n="about-lead" style="max-width:74ch; margin-bottom:1.3rem;">An agile, end-to-end regional operation: we accompany every project from technical validation to post-sales support, across two product lines throughout Latin America.</p>
+
+    <div class="team-sub-label" data-i18n="about-do-label">What we do</div>
+    <div class="cap-grid">
+      <div class="cap-item">
+        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 18 0v4a2 2 0 0 1-2 2h-1v-6h3M3 12v4a2 2 0 0 0 2 2h1v-6H3"/></svg></div>
+        <h4 data-i18n="cap-support">Technical support</h4>
+        <p data-i18n="cap-support-d">Hands-on technical support in the field: installation, commissioning, training and issue resolution for clients and distributors.</p>
+      </div>
+      <div class="cap-item">
+        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 3l8 4v5c0 4.5-3 8-8 9-5-1-8-4.5-8-9V7l8-4z"/></svg></div>
+        <h4 data-i18n="cap-qa">Quality assurance</h4>
+        <p data-i18n="cap-qa-d">Field quality control, validating firmware, connectivity and electrical parameters on every deployment.</p>
+      </div>
+      <div class="cap-item">
+        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="6" cy="7" r="0.5"/></svg></div>
+        <h4 data-i18n="cap-deploy">Regional deployment</h4>
+        <p data-i18n="cap-deploy-d">Validation and rollout of new deployments across countries, with presence at industry events and expos.</p>
+      </div>
+      <div class="cap-item">
+        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9"/></svg></div>
+        <h4 data-i18n="cap-presales">Technical pre-sales</h4>
+        <p data-i18n="cap-presales-d">Technical review of tenders and technical-commercial strategy, providing differentiation versus competitors.</p>
+      </div>
+      <div class="cap-item">
+        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg></div>
+        <h4 data-i18n="cap-commercial">Commercial support</h4>
+        <p data-i18n="cap-commercial-d">Executive-level presentations to utilities and support to client and distributor relationships across the region.</p>
+      </div>
+      <div class="cap-item">
+        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M14 6l4 4M3 21l9-9M14 6l4-4 3 3-4 4M14 6l-9 9-2 5 5-2"/></svg></div>
+        <h4 data-i18n="cap-tools">Tools & analytics</h4>
+        <p data-i18n="cap-tools-d">In-house analysis tools and automated reporting that cut turnaround time and improve diagnostic consistency.</p>
+      </div>
+    </div>
+
+    <div class="team-sub-label" data-i18n="about-prod-label">Product lines</div>
+    <div class="lines-grid">
+      <div class="line-item">
+        <span class="line-tag">Smart Streetlighting</span>
+        <h4>Ubicells</h4>
+        <p data-i18n="prod-ubicells-d">Smart streetlighting controllers that cut energy use and operating costs.</p>
+      </div>
+      <div class="line-item">
+        <span class="line-tag">Grid Monitoring</span>
+        <h4>DTM</h4>
+        <p data-i18n="prod-dtm-d">Transformer and grid monitoring telemetry.</p>
+      </div>
+    </div>
+
+    <div class="how-band">
+      <div class="how-label" data-i18n="about-how-label">How we work</div>
+      <div class="how-ways">
+        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-1">Lean</span></h5><p data-i18n="way-1-d">A compact structure that covers the whole region without losing closeness to each project.</p></div>
+        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-2">End-to-end</span></h5><p data-i18n="way-2-d">From the first technical test to post-sales continuity: we own the full cycle.</p></div>
+        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-3">Regional technical face</span></h5><p data-i18n="way-3-d">Technical representation of Ubicquia before clients, distributors and industry executives.</p></div>
+        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-4">Results-oriented</span></h5><p data-i18n="way-4-d">Beyond transferring technical information: concrete impact on the customer experience and outcomes.</p></div>
+      </div>
+    </div>
+
+    <div class="team-sub-label" data-i18n="contacts-label">Contacts</div>
+    <div class="contacts-grid">
+      <div class="contact-card">
+      <div class="contact-avatar">NC</div>
+      <div class="contact-info">
+      <div class="contact-name">Nicolás Cicinelli</div>
+      <div class="contact-role">Partner Sales Manager · LATAM</div>
+      <div class="contact-lines">
+      <a href="tel:+18573523957">+1 (857) 352-3957</a>
+      <a href="mailto:ncicinelli@ubicquia.com">ncicinelli@ubicquia.com</a>
+      </div>
+      </div>
+      <div class="contact-actions">
+      <a class="contact-btn wa" data-wa="18573523957" data-name="Nicolás" href="https://wa.me/18573523957?text=Hola%20Nicol%C3%A1s%2C%20te%20escribo%20desde%20griddata.cl." target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Nicolás Cicinelli">
+      <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
+      </a>
+      <a class="contact-btn mail" href="mailto:ncicinelli@ubicquia.com" title="Email" aria-label="Email Nicolás Cicinelli">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      </a>
+      </div>
+      </div>
+
+      <div class="contact-card">
+      <div class="contact-avatar">EB</div>
+      <div class="contact-info">
+      <div class="contact-name">Elías Quiñones Bustos</div>
+      <div class="contact-role">Field Service Engineer · LATAM</div>
+      <div class="contact-lines">
+      <a href="tel:+56930647327">+56 9 3064 7327</a>
+      <a href="mailto:ebustos@ubicquia.com">ebustos@ubicquia.com</a>
+      </div>
+      </div>
+      <div class="contact-actions">
+      <a class="contact-btn wa" data-wa="56930647327" data-name="Elías" href="https://wa.me/56930647327?text=Hola%20El%C3%ADas%2C%20te%20escribo%20desde%20griddata.cl." target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Elías Quiñones Bustos">
+      <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
+      </a>
+      <a class="contact-btn mail" href="mailto:ebustos@ubicquia.com" title="Email" aria-label="Email Elías Quiñones Bustos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      </a>
+      </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PROJECTS SECTION -->
-  <section class="section">
+  <section class="section tab-panel" data-panel="projects">
     <div class="section-header">
       <span class="section-label" data-i18n="section-projects">projects</span>
       <div class="section-line"></div>
@@ -681,7 +883,7 @@
   </section>
 
   <!-- USER GUIDES SECTION -->
-  <section class="section">
+  <section class="section tab-panel" data-panel="guides">
     <div class="section-header">
       <span class="section-label" data-i18n="section-guides">user guides</span>
       <div class="section-line"></div>
@@ -720,7 +922,7 @@
   </section>
 
   <!-- DTM ANALYTICS SECTION -->
-  <section class="section">
+  <section class="section tab-panel" data-panel="dtm">
     <div class="section-header">
       <span class="section-label" data-i18n="section-dtm">DTM Analytics</span>
       <div class="section-line"></div>
@@ -744,11 +946,11 @@
   </section>
 
   <!-- LIVE CONTROL SECTION -->
-  <section class="section">
+  <section class="section tab-panel" data-panel="control">
     <div class="section-header">
       <span class="section-label" data-i18n="section-control">live control</span>
       <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">01 <span data-i18n="control-count-label">tool</span></span>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="control-count-label">tools</span></span>
     </div>
 
     <div class="grid" id="control-grid">
@@ -765,61 +967,20 @@
         <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
+      <a class="card" href="./control/reboot/">
+        <div class="card-icon" style="background:var(--navy);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/><path d="M12 8v4l2.5 1.5"/>
+          </svg>
+        </div>
+        <div class="card-name" data-i18n="card-reboot">Luminaire Reboot</div>
+        <div class="card-tag" data-i18n="tag-reboot">UbiLight · Reboot</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
+      </a>
+
     </div>
   </section>
 
-  <!-- CONTACTS SECTION -->
-  <section class="section">
-    <div class="section-header">
-      <span class="section-label" data-i18n="section-contacts">contacts</span>
-      <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="contacts-count-label">people</span></span>
-    </div>
-
-    <div class="contacts-grid">
-
-      <div class="contact-card">
-        <div class="contact-avatar">NC</div>
-        <div class="contact-info">
-          <div class="contact-name">Nicolás Cicinelli</div>
-          <div class="contact-role">Partner Sales Manager · LATAM</div>
-          <div class="contact-lines">
-            <a href="tel:+18573523957">+1 (857) 352-3957</a>
-            <a href="mailto:ncicinelli@ubicquia.com">ncicinelli@ubicquia.com</a>
-          </div>
-        </div>
-        <div class="contact-actions">
-          <a class="contact-btn wa" data-wa="18573523957" data-name="Nicolás" href="https://wa.me/18573523957?text=Hola%20Nicol%C3%A1s%2C%20te%20escribo%20desde%20griddata.cl." target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Nicolás Cicinelli">
-            <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
-          </a>
-          <a class="contact-btn mail" href="mailto:ncicinelli@ubicquia.com" title="Email" aria-label="Email Nicolás Cicinelli">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <div class="contact-card">
-        <div class="contact-avatar">EB</div>
-        <div class="contact-info">
-          <div class="contact-name">Elías Quiñones Bustos</div>
-          <div class="contact-role">Field Service Engineer · LATAM</div>
-          <div class="contact-lines">
-            <a href="tel:+56930647327">+56 9 3064 7327</a>
-            <a href="mailto:ebustos@ubicquia.com">ebustos@ubicquia.com</a>
-          </div>
-        </div>
-        <div class="contact-actions">
-          <a class="contact-btn wa" data-wa="56930647327" data-name="Elías" href="https://wa.me/56930647327?text=Hola%20El%C3%ADas%2C%20te%20escribo%20desde%20griddata.cl." target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Elías Quiñones Bustos">
-            <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
-          </a>
-          <a class="contact-btn mail" href="mailto:ebustos@ubicquia.com" title="Email" aria-label="Email Elías Quiñones Bustos">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-          </a>
-        </div>
-      </div>
-
-    </div>
-  </section>
 
   <!-- FOOTER -->
   <footer>
@@ -872,15 +1033,54 @@
         'card-dtm-download':  'Download Data',
         'tag-dtm':            'Data & Charts',
         'section-control':    'live control',
-        'control-count-label':'tool',
+        'control-count-label':'tools',
         'section-contacts':   'contacts',
         'contacts-count-label':'people',
         'wa-msg':             (name) => 'Hi ' + name + ', I\'m reaching out from griddata.cl.',
         'card-control':       'Luminaire Control',
         'tag-control':        'UbiLight · Live',
+        'card-reboot':        'Luminaire Reboot',
+        'tag-reboot':         'UbiLight · Reboot',
         'open':               'open →',
         'footer-reports':     (n) => n + ' report' + (n !== 1 ? 's' : '') + ' available',
         'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reports',
+        'section-team':       'latam team',
+        'team-count-label':   'people',
+        'about-title':        'Who we are',
+        'about-lead':         'An agile, end-to-end regional operation: we accompany every project from technical validation to post-sales support, across two product lines throughout Latin America.',
+        'about-do-label':     'What we do',
+        'cap-support':        'Technical support',
+        'cap-qa':             'Quality assurance',
+        'cap-deploy':         'Regional deployment',
+        'cap-presales':       'Technical pre-sales',
+        'cap-commercial':     'Commercial support',
+        'cap-tools':          'Tools & analytics',
+        'about-prod-label':   'Product lines',
+        'prod-ubicells':      'Smart streetlighting control',
+        'prod-dtm':           'Transformer & grid monitoring',
+        'about-how-label':    'How we work',
+        'way-1':              'Lean',
+        'way-2':              'End-to-end',
+        'way-3':              'Regional technical face',
+        'way-4':              'Results-oriented',
+        'tab-team':           'Who we are',
+        'tab-projects':       'Projects',
+        'tab-guides':         'User guides',
+        'tab-dtm':            'DTM Analytics',
+        'tab-control':        'Live control',
+        'contacts-label':     'Contacts',
+        'cap-support-d':      'Hands-on technical support in the field: installation, commissioning, training and issue resolution for clients and distributors.',
+        'cap-qa-d':           'Field quality control, validating firmware, connectivity and electrical parameters on every deployment.',
+        'cap-deploy-d':       'Validation and rollout of new deployments across countries, with presence at industry events and expos.',
+        'cap-presales-d':     'Technical review of tenders and technical-commercial strategy, providing differentiation versus competitors.',
+        'cap-commercial-d':   'Executive-level presentations to utilities and support to client and distributor relationships across the region.',
+        'cap-tools-d':        'In-house analysis tools and automated reporting that cut turnaround time and improve diagnostic consistency.',
+        'prod-ubicells-d':    'Smart streetlighting controllers that cut energy use and operating costs, with point-to-point remote management.',
+        'prod-dtm-d':         'Transformer and grid monitoring: voltage, current and load telemetry to improve system visibility and resilience.',
+        'way-1-d':            'A compact structure that covers the whole region without losing closeness to each project.',
+        'way-2-d':            'From the first technical test to post-sales continuity: we own the full cycle.',
+        'way-3-d':            'Technical representation of Ubicquia before clients, distributors and industry executives.',
+        'way-4-d':            'Beyond transferring technical information: concrete impact on the customer experience and outcomes.',
         'date-locale':        'en-US',
       },
       es: {
@@ -921,15 +1121,54 @@
         'card-dtm-download':  'Descargar Datos',
         'tag-dtm':            'Datos y Gráficos',
         'section-control':    'control en vivo',
-        'control-count-label':'herramienta',
+        'control-count-label':'herramientas',
         'section-contacts':   'contactos',
         'contacts-count-label':'personas',
         'wa-msg':             (name) => 'Hola ' + name + ', te escribo desde griddata.cl.',
         'card-control':       'Control de Luminaria',
         'tag-control':        'UbiLight · En vivo',
+        'card-reboot':        'Reinicio de Luminaria',
+        'tag-reboot':         'UbiLight · Reinicio',
         'open':               'abrir →',
         'footer-reports':     (n) => n + ' reporte' + (n !== 1 ? 's' : '') + ' disponibles',
         'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reportes',
+        'section-team':       'equipo latam',
+        'team-count-label':   'personas',
+        'about-title':        'Quiénes somos',
+        'about-lead':         'Operación regional ágil y de extremo a extremo: acompañamos cada proyecto desde la validación técnica hasta el soporte post-venta, en dos líneas de producto a lo largo de América Latina.',
+        'about-do-label':     'Qué hacemos',
+        'cap-support':        'Soporte técnico',
+        'cap-qa':             'Aseguramiento de calidad',
+        'cap-deploy':         'Implementación regional',
+        'cap-presales':       'Pre-venta técnica',
+        'cap-commercial':     'Soporte comercial',
+        'cap-tools':          'Herramientas y análisis',
+        'about-prod-label':   'Líneas de producto',
+        'prod-ubicells':      'Control inteligente de alumbrado',
+        'prod-dtm':           'Monitoreo de transformadores y red',
+        'about-how-label':    'Cómo trabajamos',
+        'way-1':              'Ágil',
+        'way-2':              'De extremo a extremo',
+        'way-3':              'Cara técnica regional',
+        'way-4':              'Orientados a resultados',
+        'tab-team':           'Quiénes somos',
+        'tab-projects':       'Proyectos',
+        'tab-guides':         'Guías',
+        'tab-dtm':            'DTM Analytics',
+        'tab-control':        'Control en vivo',
+        'contacts-label':     'Contactos',
+        'cap-support-d':      'Acompañamiento técnico en terreno: instalación, puesta en marcha, capacitación y resolución para clientes y distribuidores.',
+        'cap-qa-d':           'Control de calidad de implementaciones, validando firmware, conectividad y parámetros eléctricos en cada despliegue.',
+        'cap-deploy-d':       'Validación e implementación de nuevos despliegues en distintos países, con presencia en eventos y ferias del sector.',
+        'cap-presales-d':     'Revisión técnica de licitaciones y estrategias técnico-comerciales, aportando diferenciación frente a la competencia.',
+        'cap-commercial-d':   'Presentaciones a ejecutivos de empresas eléctricas y apoyo a la relación con clientes y distribuidores en la región.',
+        'cap-tools-d':        'Desarrollo de herramientas propias de análisis y reportería automatizada que reducen tiempos y mejoran la consistencia del diagnóstico.',
+        'prod-ubicells-d':    'Controladores inteligentes de alumbrado público que reducen el consumo energético y los costos de operación, con telegestión punto a punto.',
+        'prod-dtm-d':         'Monitoreo de transformadores y red eléctrica: telemetría de voltaje, corriente y carga para mejorar la visibilidad y la resiliencia del sistema.',
+        'way-1-d':            'Estructura compacta que cubre toda la región sin perder cercanía con cada proyecto.',
+        'way-2-d':            'Del primer test técnico a la continuidad post-venta: nos hacemos cargo del ciclo completo.',
+        'way-3-d':            'Representación técnica de Ubicquia ante clientes, distribuidores y ejecutivos del sector.',
+        'way-4-d':            'Más allá de transferir información técnica: impacto concreto en la experiencia y los resultados del cliente.',
         'date-locale':        'es-CL',
       }
     };
@@ -963,6 +1202,15 @@
       currentLang = lang;
     }
 
+    function setTab(name) {
+      document.querySelectorAll('.tab-panel').forEach(function(p){
+        p.classList.toggle('active', p.getAttribute('data-panel') === name);
+      });
+      document.querySelectorAll('.tab').forEach(function(t){
+        t.classList.toggle('active', t.getAttribute('data-tab') === name);
+      });
+    }
+
     function setLang(lang) {
       applyLang(lang);
     }
@@ -971,6 +1219,7 @@
     const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
     document.getElementById('stat-count').textContent = count;
     document.getElementById('stat-guides').textContent = document.querySelectorAll('#guides-grid .card').length;
+    setTab('team');
     applyLang('es');
   </script>
 

@@ -38,22 +38,31 @@ const MAX_PAGES = Number(process.env.UBI_NODES_MAX_PAGES|| 40);
 const NODES_TTL = Number(process.env.UBI_NODES_TTL_MS   || 300000);
 const STATES_MAX= Number(process.env.UBI_STATES_MAX     || 80);
 const CONC      = Number(process.env.UBI_STATES_CONCURRENCY || 6);
-const ACCESS    = (process.env.APP_ACCESS_CODE || process.env.UBI_APP_CODE || '').trim();
+const APP_ACCESS_CODE = (process.env.APP_ACCESS_CODE || process.env.UBI_APP_CODE || '').trim();
 
-// Códigos por acción (ESCALABLE): variable  APP_CODE_<ACCION>  protege esa acción
-// con un código aparte del de control. Ej: APP_CODE_REBOOT, APP_CODE_FIRMWARE…
-// Para proteger una acción nueva, basta crear su variable; no hay que tocar código.
-function loadStepCodes(){
-  const m = {};
+// ÁMBITOS (scopes) — cada código habilita un conjunto de acciones.
+// ESCALABLE: define APP_CODE_<NOMBRE> y agrega su ámbito a SCOPE_ACTIONS.
+//   APP_ACCESS_CODE → ámbito "control"  (encender/apagar/dim)
+//   APP_CODE_REBOOT → ámbito "reboot"   (reiniciar unidades)
+// Cada app (control/, reboot/) usa SU código y solo puede lo de su ámbito.
+const SCOPE_ACTIONS = {
+  control: ['panels','verify','nodes','state','states','command'],
+  reboot:  ['panels','verify','nodes','state','reboot'],
+};
+function loadCodes(){
+  const c = {};
+  if (APP_ACCESS_CODE) c.control = APP_ACCESS_CODE;
   for (const k of Object.keys(process.env)){
     const mt = k.match(/^APP_CODE_(.+)$/);
-    if (mt){ const v = (process.env[k] || '').trim(); if (v) m[mt[1].toLowerCase()] = v; }
+    if (mt){ const v = (process.env[k] || '').trim(); if (v) c[mt[1].toLowerCase()] = v; }
   }
   const legacyReboot = (process.env.APP_REBOOT_CODE || '').trim(); // retro-compat
-  if (legacyReboot && !m.reboot) m.reboot = legacyReboot;
-  return m;
+  if (legacyReboot && !c.reboot) c.reboot = legacyReboot;
+  return c;
 }
-const STEP_CODES = loadStepCodes();
+const CODES = loadCodes();
+const scopeOf = code => { const t = String(code || '').trim(); return Object.keys(CODES).find(s => CODES[s] === t) || null; };
+const scopeAllows = (scope, action) => !!(SCOPE_ACTIONS[scope] && SCOPE_ACTIONS[scope].includes(action));
 
 // ---- Registro de paneles ----
 function loadPanels(){
@@ -201,27 +210,21 @@ export default async function handler(req, res){
   if (typeof b === 'string'){ try{ b = JSON.parse(b); }catch(_){ b = {}; } }
   b = b || {};
   const action = b.action;
-
-  const codeReq = ACCESS.length > 0;
-  const codeOk  = !codeReq || (String(b.code || '').trim() === ACCESS);
+  const scope  = scopeOf(b.code);   // 'control' | 'reboot' | null
 
   try {
-    // verify (compat) — sólo valida el código
-    if (action === 'verify'){
-      if (!codeOk) return res.status(401).json({ ok:false, error:'Código incorrecto' });
-      return res.status(200).json({ ok:true, required: codeReq });
-    }
-    if (!codeOk) return res.status(401).json({ ok:false, error:'Código de acceso inválido' });
+    if (!scope) return res.status(401).json({ ok:false, error:'Código de acceso inválido' });
 
-    // panels — registro de paneles (sin secretos); valida el código
+    // verify — valida y devuelve el ámbito
+    if (action === 'verify') return res.status(200).json({ ok:true, scope });
+
+    // cada código solo puede las acciones de su ámbito
+    if (!scopeAllows(scope, action))
+      return res.status(403).json({ ok:false, error:'Acción no permitida para este acceso («'+scope+'»)' });
+
+    // panels — registro de paneles (sin secretos)
     if (action === 'panels'){
-      return res.status(200).json({ ok:true, panels: PANELS.map(p => ({ id:p.id, name:p.name, subpanels:p.subpanels })), gated: Object.keys(STEP_CODES) });
-    }
-
-    // Gate por acción (escalable): si existe APP_CODE_<accion>, exige stepCode
-    if (STEP_CODES[action]){
-      if (String(b.stepCode || '').trim() !== STEP_CODES[action])
-        return res.status(403).json({ ok:false, error:'Código requerido inválido para «'+action+'»' });
+      return res.status(200).json({ ok:true, scope, panels: PANELS.map(p => ({ id:p.id, name:p.name, subpanels:p.subpanels })) });
     }
 
     // resolver + validar panel

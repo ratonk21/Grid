@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reinicio de unidades · ubicquia.</title>
+<meta name="description" content="Reinicio puntual de nodos Ubicquia (máx 5) por ID o serial, con estado del nodo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1E2445;--blue:#22B0E1;--lime:#AECC53;--orange:#EA561B;--gray:#EEF0F5;--ink:#14242F;--muted:#6A7D89;--surf:#fff;--line:rgba(30,36,69,.12);--mono:'JetBrains Mono',monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Lato',Arial,sans-serif;background:var(--gray);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100dvh}
+  header{background:var(--navy);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px clamp(16px,4vw,32px)}
+  .wm{font-weight:900;font-size:1rem;text-transform:lowercase}.wm .b{font-weight:400}.wm .d{color:var(--blue)}
+  .htitle{font-size:.8rem;color:#aeb6c7;font-weight:700;letter-spacing:.5px}
+  .hr{display:flex;align-items:center;gap:12px}
+  .conn{display:flex;align-items:center;gap:7px;font-size:12px;color:#aeb6c7;font-family:var(--mono)}
+  .dot7{width:8px;height:8px;border-radius:50%;background:#6A7D89}
+  .conn.live .dot7{background:var(--lime)}.conn.err .dot7{background:var(--orange)}
+  .exitbtn{background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+  main{max-width:760px;margin:0 auto;padding:clamp(16px,4vw,32px)}
+  .card{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px}
+  h2{font-size:1.05rem;color:var(--navy);font-weight:900;margin-bottom:4px}
+  .sub{font-size:.86rem;color:var(--muted);margin-bottom:16px}
+  label{display:block;font-size:12px;font-weight:700;color:var(--navy);margin:0 0 5px}
+  .ctl,textarea,.inp input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--ink);outline:none;background:#fff}
+  .ctl:focus,textarea:focus,.inp input:focus{border-color:var(--blue)}
+  textarea{resize:vertical;min-height:72px;font-family:var(--mono);font-size:13px}
+  .field{margin-bottom:13px}
+  .inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .inp input{border:none;border-radius:0}
+  .iconbtn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 11px}
+  .btn{background:var(--blue);color:var(--navy);border:none;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn:hover{filter:brightness(1.04)}.btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.block{width:100%}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--navy)}
+  .btn.warn{background:var(--orange);color:#fff}
+  .row{display:flex;gap:10px;align-items:center}
+  .banner{border-radius:10px;padding:10px 13px;font-size:13px;margin-top:10px;display:none}
+  .banner.show{display:block}
+  .banner.err{background:#fff3e8;color:#a8470f;border:1px solid rgba(234,86,27,.3)}
+  .banner.ok{background:#f3f8e8;color:#5f7d1f;border:1px solid rgba(174,204,83,.5)}
+  /* lista resuelta */
+  .node{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .node:last-child{border-bottom:none}
+  .nserial{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--navy)}
+  .nmeta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;background:#9cabb5}
+  .sdot.on{background:var(--lime)}.sdot.off{background:var(--orange)}
+  .badge{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:6px;background:var(--gray);color:var(--navy)}
+  .badge.no{background:#fff3e8;color:var(--orange)}
+  .rm{background:none;border:none;color:var(--orange);cursor:pointer;font-size:16px}
+  .count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .empty{font-size:13px;color:#9cabb5;padding:8px 0}
+  .log{font-family:var(--mono);font-size:11.5px;color:var(--ink);max-height:180px;overflow:auto}
+  .logrow{padding:5px 0;border-bottom:1px solid var(--line)}
+  .logrow.ok{color:#5f7d1f}.logrow.err{color:var(--orange)}.logrow.warn{color:#a8470f}
+  .lt{color:var(--muted);margin-right:8px}
+  [hidden]{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="wm"><span class="b">ubi</span>cquia<span class="d">.</span></div><div class="htitle">REINICIO DE UNIDADES</div></div>
+  <div class="hr"><div class="conn" id="conn"><span class="dot7"></span><span id="connTxt">Bloqueado</span></div>
+    <button class="exitbtn" id="exitBtn" hidden>Salir</button></div>
+</header>
+
+<main>
+  <!-- GATE -->
+  <div id="gate">
+    <div class="card" style="max-width:420px;margin:6vh auto 0">
+      <h2>Acceso a reinicio</h2>
+      <div class="sub" id="gateSub">Ingresa el código de reinicio para continuar.</div>
+      <div class="field"><label>Código de reinicio</label>
+        <div class="inp"><input id="code" type="password" inputmode="numeric" placeholder="Código de reinicio" autocomplete="off">
+        <button class="iconbtn" id="codeShow" title="Ver / ocultar">👁</button></div></div>
+      <div id="panelStep" hidden>
+        <div class="field"><label>Panel</label><select id="panelSel" class="ctl"></select></div>
+        <div class="field"><label>Subpanel</label>
+          <input id="subpanelInp" class="ctl" inputmode="numeric" list="subOptions" placeholder="437">
+          <datalist id="subOptions"></datalist></div>
+      </div>
+      <div class="banner err" id="gateBanner"></div>
+      <button class="btn block" id="btnEnter" style="margin-top:6px">Continuar</button>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" hidden>
+    <div class="card">
+      <h2>Nodos a reiniciar</h2>
+      <div class="sub">Pega o escribe hasta <b>5</b> IDs o seriales — separados por coma, espacio o salto de línea.</div>
+      <div class="field"><textarea id="tokens" placeholder="Ej:&#10;2416UUGE01812&#10;54, 4&#10;d8132acc4ca47a6f"></textarea></div>
+      <div class="row"><button class="btn ghost" id="resolveBtn">Resolver y ver estado</button>
+        <span class="count" id="count">0 / 5</span></div>
+      <div class="banner err" id="appBanner"></div>
+    </div>
+
+    <div class="card" id="listCard" hidden>
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Resueltos</h2>
+        <button class="iconbtn" id="refreshBtn" title="Actualizar estado" style="font-size:14px">↻</button></div>
+      <div id="nodelist"></div>
+      <button class="btn warn block" id="rebootBtn" style="margin-top:16px" disabled>Reiniciar (0/5)</button>
+      <div class="banner ok" id="okBanner"></div>
+    </div>
+
+    <div class="card">
+      <h2>Registro</h2>
+      <div class="log" id="log"><span class="empty">Sin acciones todavía.</span></div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const ENDPOINT='/api/control';
+  const MAX=5;
+  const $=id=>document.getElementById(id);
+  let PANELS=[], PANEL=null, SUBPANEL='', ACCESS='', panelsLoaded=false, locked=true;
+  let nodesById=new Map(), nodesBySerial=new Map(), resolved=[];
+
+  const conn=$('conn'),connTxt=$('connTxt');
+  function setConn(s){ conn.className='conn '+s; connTxt.textContent=s==='live'?'En línea':(locked?'Bloqueado':'Sin conexión'); }
+  function banner(el,msg,kind){ el.className='banner '+(kind||'err')+(msg?' show':''); el.textContent=msg||''; }
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+  // log
+  const logRows=[];
+  function logAdd(type,msg){ logRows.unshift({t:new Date(),type,msg}); if(logRows.length>80)logRows.length=80; renderLog(); }
+  function renderLog(){ const L=$('log'); if(!logRows.length){ L.innerHTML='<span class="empty">Sin acciones todavía.</span>'; return; }
+    L.innerHTML=logRows.map(r=>{const hh=r.t.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const m=r.msg.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+      return `<div class="logrow ${r.type}"><span class="lt">${hh}</span>${m}</div>`;}).join(''); }
+
+  // login
+  $('codeShow').onclick=()=>{ const c=$('code'); c.type=c.type==='password'?'text':'password'; };
+  function fillPanels(){ const ps=$('panelSel'); if(!PANELS.length){ps.innerHTML='';return;} ps.innerHTML=PANELS.map((p,i)=>`<option value="${i}">${p.name} · ${p.id}</option>`).join(''); onPanelChange(); }
+  function onPanelChange(){ PANEL=PANELS[+$('panelSel').value||0]; if(!PANEL)return; $('subOptions').innerHTML=(PANEL.subpanels||[]).map(s=>`<option value="${s}">`).join(''); $('subpanelInp').value=(PANEL.subpanels||[])[0]||''; }
+  $('panelSel').onchange=onPanelChange;
+
+  async function tryEnter(){
+    const code=$('code').value.trim(); const btn=$('btnEnter'); banner($('gateBanner'),''); btn.disabled=true; const pv=btn.textContent; btn.textContent='Validando…';
+    try{
+      if(!panelsLoaded){
+        if(!code){ banner($('gateBanner'),'Ingresa el código.'); return; }
+        const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'panels',code})});
+        const j=await r.json().catch(()=>({}));
+        if(r.status===401){ banner($('gateBanner'),'Código incorrecto'); return; }
+        if(r.status===403){ banner($('gateBanner'),'Ese código no tiene permiso de reinicio'); return; }
+        if(!r.ok||!j.ok){ banner($('gateBanner'),j.error||(r.status===404?'No se encontró /api/control':'Error HTTP '+r.status)); return; }
+        PANELS=j.panels||[]; ACCESS=code; panelsLoaded=true;
+        if(!PANELS.length){ banner($('gateBanner'),'No hay paneles configurados.'); return; }
+        fillPanels(); $('panelStep').hidden=false; $('gateSub').textContent='Elige el panel y subpanel, y entra.'; btn.textContent='Entrar'; $('subpanelInp').focus(); return;
+      }
+      SUBPANEL=$('subpanelInp').value.trim();
+      if(!SUBPANEL){ banner($('gateBanner'),'Indica el subpanel.'); return; }
+      unlock();
+    }catch(e){ banner($('gateBanner'),'No se pudo validar: '+e.message); }
+    finally{ btn.disabled=false; if(btn.textContent==='Validando…') btn.textContent=(panelsLoaded?'Entrar':pv); }
+  }
+  $('btnEnter').onclick=tryEnter;
+  ['code','subpanelInp'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') tryEnter(); }));
+
+  async function unlock(){
+    locked=false; $('gate').hidden=true; $('app').hidden=false; $('exitBtn').hidden=false; setConn('live');
+    logAdd('ok',`Acceso · panel ${PANEL.id} · subpanel ${SUBPANEL}`);
+    await loadNodes();
+  }
+  $('exitBtn').onclick=()=>{ locked=true; ACCESS=''; panelsLoaded=false; PANEL=null; resolved=[];
+    $('app').hidden=true; $('gate').hidden=false; $('exitBtn').hidden=true; $('panelStep').hidden=true;
+    $('btnEnter').textContent='Continuar'; $('gateSub').textContent='Ingresa el código de reinicio para continuar.';
+    $('code').value=''; $('tokens').value=''; $('listCard').hidden=true; setConn('err'); $('code').focus(); };
+
+  // api
+  async function api(payload){
+    const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({panel:PANEL?PANEL.id:undefined,subpanel:SUBPANEL,code:ACCESS},payload))});
+    let j; try{ j=await r.json(); }catch(_){ j={}; }
+    if(r.status===401){ $('exitBtn').click(); throw new Error('código inválido'); }
+    if(!r.ok||j.ok===false) throw new Error(j.error||('HTTP '+r.status));
+    return j;
+  }
+
+  async function loadNodes(){
+    try{
+      const j=await api({action:'nodes'}); setConn('live');
+      nodesById=new Map(); nodesBySerial=new Map();
+      (j.nodes||[]).forEach(n=>{ nodesById.set(Number(n.id),n); if(n.serial) nodesBySerial.set(String(n.serial).toLowerCase(),n); if(n.dev_eui) nodesBySerial.set(String(n.dev_eui).toLowerCase(),n); });
+      logAdd('ok',`${nodesById.size} nodos cargados del subpanel ${SUBPANEL}`);
+    }catch(e){ setConn('err'); banner($('appBanner'),'No se pudieron cargar los nodos: '+e.message); logAdd('err','Carga de nodos → '+e.message); }
+  }
+
+  // resolver tokens → nodos
+  function parseTokens(){ return ($('tokens').value||'').split(/[\s,;]+/).map(t=>t.trim()).filter(Boolean); }
+  function updateCount(){ $('count').textContent=`${resolved.length} / ${MAX}`; }
+
+  $('resolveBtn').onclick=async()=>{
+    banner($('appBanner'),''); banner($('okBanner'),'');
+    let toks=[...new Set(parseTokens().map(t=>t.toLowerCase()))];
+    if(!toks.length){ banner($('appBanner'),'Pega o escribe al menos un ID o serial.'); return; }
+    if(toks.length>MAX){ banner($('appBanner'),`Máximo ${MAX} dispositivos · se tomarán los primeros ${MAX}.`); toks=toks.slice(0,MAX); }
+    resolved = toks.map(t=>{
+      let n=null;
+      if(/^\d+$/.test(t) && nodesById.has(Number(t))) n=nodesById.get(Number(t));
+      else if(nodesBySerial.has(t)) n=nodesBySerial.get(t);
+      return n ? {id:Number(n.id), serial:n.serial, found:true, st:null} : {token:t, found:false};
+    });
+    updateCount(); $('listCard').hidden=false; render();
+    // estado de los encontrados
+    for(const r of resolved){ if(r.found){ try{ const s=await api({action:'state',id:r.id}); r.st=s; }catch(_){ r.st={error:true}; } render(); } }
+    setConn('live');
+  };
+  $('refreshBtn').onclick=()=>$('resolveBtn').click();
+
+  function render(){
+    const L=$('nodelist');
+    if(!resolved.length){ L.innerHTML='<div class="empty">Nada resuelto aún.</div>'; }
+    else L.innerHTML=resolved.map((r,i)=>{
+      if(!r.found) return `<div class="node"><div><div class="nserial">${r.token}</div><div class="nmeta"><span class="badge no">no encontrado en el subpanel</span></div></div><button class="rm" data-i="${i}">×</button></div>`;
+      const s=r.st; let meta='cargando estado…';
+      if(s&&!s.error){ const on=s.power===true; const dot=on?'on':(s.power===false?'off':'');
+        const upd=s.updatedAt?String(s.updatedAt).replace('T',' ').slice(0,16):'—';
+        meta=`<span><span class="sdot ${s.nodeStatus==='ONLINE'?'on':''}"></span>${s.nodeStatus||'—'}</span><span class="badge">${on?'ON':(s.power===false?'OFF':'—')}${s.dim!=null?(' · dim '+s.dim+'%'):''}</span><span>últ. reporte ${upd}</span>`; }
+      else if(s&&s.error) meta='<span class="badge no">sin estado</span>';
+      return `<div class="node"><div><div class="nserial">${r.serial||('id '+r.id)} <span style="color:#9cabb5;font-weight:400">· id ${r.id}</span></div><div class="nmeta">${meta}</div></div><button class="rm" data-i="${i}">×</button></div>`;
+    }).join('');
+    L.querySelectorAll('.rm').forEach(b=>b.onclick=()=>{ resolved.splice(+b.dataset.i,1); updateCount(); render(); });
+    const okIds=resolved.filter(r=>r.found);
+    $('rebootBtn').disabled=!okIds.length;
+    $('rebootBtn').textContent=`Reiniciar (${okIds.length}/${MAX})`;
+  }
+
+  $('rebootBtn').onclick=async()=>{
+    const ids=resolved.filter(r=>r.found).map(r=>r.id);
+    if(!ids.length) return;
+    if(ids.length>MAX){ banner($('appBanner'),`Máximo ${MAX} dispositivos.`); return; }
+    const lbl=resolved.filter(r=>r.found).map(r=>r.serial||('id '+r.id)).join(', ');
+    if(!confirm(`¿Reiniciar ${ids.length} unidad(es)?\n${lbl}\n\nLa unidad se desconectará y volverá a registrarse (puede tardar varios minutos).`)) return;
+    const btn=$('rebootBtn'); btn.disabled=true; btn.textContent='Reiniciando…'; banner($('okBanner'),'');
+    try{
+      const j=await api({action:'reboot',ids}); setConn('live');
+      if(j.ok){ banner($('okBanner'),`Reinicio enviado a ${ids.length} unidad(es). Se reiniciarán y reconectarán en breve.`,'ok');
+        logAdd('ok',`Reinicio enviado a ${ids.length}: ${lbl}`); }
+      else { banner($('appBanner'),'Reinicio sin confirmación.'); logAdd('warn',`Reinicio sin confirmación: ${lbl}`); }
+    }catch(e){ setConn('err'); banner($('appBanner'),'Error: '+e.message); logAdd('err','Reinicio → '+e.message); }
+    finally{ render(); }
+  };
+
+  // arranque
+  setConn('err'); $('code').focus();
+  const urlCode=new URLSearchParams(location.search).get('code')||''; if(urlCode) $('code').value=urlCode;
+</script>
+</body>
+</html>

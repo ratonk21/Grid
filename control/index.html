@@ -187,22 +187,6 @@
     .gate-card{padding:22px}
   }
   @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
-  .reboot{margin-top:14px;padding-top:14px;border-top:1px solid rgba(30,36,69,.10)}
-  .rb-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#1E2445;margin-bottom:8px}
-  .rb-max{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6A7D89;font-weight:500}
-  .rb-basket{display:flex;flex-wrap:wrap;gap:6px;min-height:30px;align-items:center;margin-bottom:9px}
-  .rb-empty{font-size:12px;color:#9cabb5}
-  .rb-chip{display:inline-flex;align-items:center;gap:6px;background:#EEF0F5;border:1px solid rgba(30,36,69,.10);border-radius:7px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#1E2445}
-  .rb-chip button{border:none;background:none;color:#EA561B;cursor:pointer;font-size:13px;line-height:1;padding:0}
-  .rb-actions{display:flex;gap:8px}
-  .rb-code{width:100%;box-sizing:border-box;margin-bottom:9px;padding:8px 10px;border:1px solid rgba(30,36,69,.14);border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1E2445;outline:none}
-  .rb-code:focus{border-color:#EA561B}
-  .rb-add{flex:1;background:#fff;border:1px solid rgba(30,36,69,.14);color:#1E2445;border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
-  .rb-add:hover{border-color:#22B0E1;color:#22B0E1}
-  .rb-add:disabled{opacity:.45;cursor:not-allowed}
-  .rb-go{flex:1;background:#EA561B;border:none;color:#fff;border-radius:9px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
-  .rb-go:hover{filter:brightness(1.05)}
-  .rb-go:disabled{background:#f0c3ad;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -293,15 +277,6 @@
                 <div class="dimrow"><input type="range" id="dim" min="0" max="100" value="80" style="--fill:80%"><b id="dimVal">80%</b></div>
                 <div class="presets"><button data-v="25">25%</button><button data-v="50">50%</button><button data-v="75">75%</button><button data-v="100">100%</button></div>
                 <div class="status" id="status"><span class="led"></span><span id="statusTxt">—</span></div>
-                <div class="reboot" id="rebootBox">
-                  <div class="rb-top"><span>Reinicio de unidad</span><span class="rb-max">máx 5</span></div>
-                  <div class="rb-basket" id="rbBasket"><span class="rb-empty">Añade nodos para reiniciar</span></div>
-                  <input id="rbCode" class="rb-code" type="password" inputmode="numeric" placeholder="Código de reinicio" autocomplete="off">
-                  <div class="rb-actions">
-                    <button class="rb-add" id="rbAdd">＋ Añadir nodo actual</button>
-                    <button class="rb-go" id="rbGo" disabled>Reiniciar (0/5)</button>
-                  </div>
-                </div>
               </div>
 
               <!-- datos -->
@@ -365,8 +340,8 @@
 
   // ===================== ESTADO =====================
   let locked=true, ACCESS='', online=false, busy=false;
-  let PANEL=null, SUBPANEL='', panelsLoaded=false, GATED=[];
-  let nodes=[], SEL=null, power=null, dim=80, bg=null, rbSet=[];
+  let PANEL=null, SUBPANEL='', panelsLoaded=false;
+  let nodes=[], SEL=null, power=null, dim=80, bg=null;
   let history=[], chartObjs=[], chartsReady=false;
   const logRows=[];
 
@@ -388,7 +363,7 @@
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   function setConn(s){ online=(s==='live'); conn.className='conn '+s; connTxt.textContent=online?'En línea':(locked?'Bloqueado':'Sin conexión'); }
   function setStatus(c,t){ statusEl.className='status '+c; statusTxt.textContent=t; }
-  function setBusy(b){ busy=b; [btnOn,btnOff,dimEl,...presets,readBtn].forEach(x=>x.disabled=b); if(typeof renderBasket==='function')renderBasket(); }
+  function setBusy(b){ busy=b; [btnOn,btnOff,dimEl,...presets,readBtn].forEach(x=>x.disabled=b); }
   const fmt=(v,u,d=1)=> (v==null||isNaN(+v))?'—':(+v).toFixed(d)+(u||'');
 
   // ===================== LOG =====================
@@ -418,10 +393,9 @@
         const j=await r.json().catch(()=>({}));
         if(r.status===401){ gateBanner.textContent='Código incorrecto'; gateBanner.classList.add('show'); return; }
         if(!r.ok||!j.ok){ gateBanner.textContent=j.error||(r.status===404?'No se encontró /api/control':'Error HTTP '+r.status); gateBanner.classList.add('show'); return; }
-        PANELS=j.panels||[]; GATED=j.gated||[]; ACCESS=code; panelsLoaded=true;
+        PANELS=j.panels||[]; ACCESS=code; panelsLoaded=true;
         if(!PANELS.length){ gateBanner.textContent='No hay paneles configurados (UBI_PANELS).'; gateBanner.classList.add('show'); return; }
         fillPanels(); $('panelStep').hidden=false; $('gateSub').textContent='Elige el panel y subpanel, y entra.';
-        { const rc=$('rbCode'); if(rc) rc.style.display = GATED.includes('reboot') ? '' : 'none'; }
         btnEnter.textContent='Entrar'; subpanelInp.focus(); return;
       }
       SUBPANEL=subpanelInp.value.trim();
@@ -442,7 +416,7 @@
   function lockGate(msg){
     locked=true; ACCESS=''; SEL=null; if(bg)clearInterval(bg);
     panelsLoaded=false; PANEL=null; $('panelStep').hidden=true; btnEnter.textContent='Continuar';
-    $('gateSub').textContent='Ingresa el código de acceso para continuar.'; rbSet=[]; renderBasket();
+    $('gateSub').textContent='Ingresa el código de acceso para continuar.';
     appEl.hidden=true; gate.style.display=''; hdrCtx.hidden=true; exitBtn.hidden=true; setConn('err'); body.classList.remove('on');
     if(msg){ gateBanner.textContent=msg; gateBanner.classList.add('show'); } codeEl.value=''; codeEl.focus();
   }
@@ -577,41 +551,6 @@
   dimEl.oninput=()=>{ dim=+dimEl.value; render(); };
   dimEl.onchange=()=>runCommand('dim',+dimEl.value,`Dimerizar ${+dimEl.value}%`);
   presets.forEach(b=>b.onclick=()=>{ dim=+b.dataset.v; render(); runCommand('dim',dim,`Dimerizar ${dim}%`); });
-
-  // ===================== REINICIO (máx 5) =====================
-  const REBOOT_MAX=5;
-  const rbBasket=$('rbBasket'), rbAdd=$('rbAdd'), rbGo=$('rbGo'), rbCodeEl=$('rbCode');
-  function renderBasket(){
-    if(!rbBasket) return;
-    if(!rbSet.length){ rbBasket.innerHTML='<span class="rb-empty">Añade nodos para reiniciar</span>'; }
-    else{ rbBasket.innerHTML=rbSet.map(n=>`<span class="rb-chip">${(n.serial||('id '+n.id))}<button data-rid="${n.id}" title="Quitar">×</button></span>`).join(''); }
-    rbBasket.querySelectorAll('button[data-rid]').forEach(btn=>btn.onclick=()=>{ rbSet=rbSet.filter(x=>String(x.id)!==btn.dataset.rid); renderBasket(); });
-    rbGo.textContent=`Reiniciar (${rbSet.length}/${REBOOT_MAX})`;
-    rbGo.disabled=!rbSet.length||busy||locked;
-    rbAdd.disabled=rbSet.length>=REBOOT_MAX;
-  }
-  if(rbAdd) rbAdd.onclick=()=>{
-    if(!SEL){ logAdd('warn','Reinicio → selecciona un nodo primero'); return; }
-    if(rbSet.some(x=>x.id===SEL.id)){ return; }
-    if(rbSet.length>=REBOOT_MAX){ logAdd('warn',`Reinicio → máximo ${REBOOT_MAX} dispositivos`); return; }
-    rbSet.push({id:SEL.id, serial:SEL.serial}); renderBasket();
-  };
-  if(rbGo) rbGo.onclick=async()=>{
-    if(!rbSet.length||busy||locked) return;
-    const need=GATED.includes('reboot');
-    const stepCode=(rbCodeEl&&rbCodeEl.value.trim())||'';
-    if(need&&!stepCode){ setStatus('warn','Ingresa el código de reinicio'); logAdd('warn','Reinicio → falta el código de reinicio'); if(rbCodeEl)rbCodeEl.focus(); return; }
-    const ids=rbSet.map(x=>x.id);
-    const lbl=ids.map(i=>{const n=rbSet.find(x=>x.id===i);return n.serial||('id '+i);}).join(', ');
-    if(!confirm(`¿Reiniciar ${ids.length} unidad(es)?\n${lbl}\n\nLa unidad se desconectará y volverá a registrarse (puede tardar).`)) return;
-    setBusy(true); rbGo.disabled=true; rbGo.textContent='Reiniciando…';
-    try{
-      const j=await api({action:'reboot',ids,stepCode}); setConn('live');
-      if(j.ok){ setStatus('ok',`Reinicio enviado a ${ids.length} unidad(es)`); logAdd('ok',`Reinicio enviado a ${ids.length}: ${lbl} · la unidad se reiniciará y reconectará en breve`); rbSet=[]; if(rbCodeEl)rbCodeEl.value=''; }
-      else{ setStatus('warn','Reinicio no confirmado'); logAdd('warn',`Reinicio → respuesta sin confirmación: ${lbl}`); }
-    }catch(e){ setConn('err'); setStatus('warn','Error: '+e.message); logAdd('err',`Reinicio → error: ${e.message}`); }
-    finally{ setBusy(false); renderBasket(); }
-  };
 
   // ===================== PESTAÑAS =====================
   function showTab(name){
