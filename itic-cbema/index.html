@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Análisis de calidad de energía Sag/Swell sobre curvas ITIC/CBEMA — Ubicquia / griddata.cl">
+<title>ITIC / CBEMA · Análisis Sag-Swell · Ubicquia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ubi-navy:#1E2445; --ubi-blue:#22B0E1; --ubi-lime:#AECC53; --ubi-orange:#EA561B;
+  --ubi-gray:#EEF0F5; --ubi-ink:#14242F; --ubi-muted:#6A7D89; --ubi-surface:#fff;
+  --ubi-line:rgba(30,36,69,.10);
+  --ph-x1:#22B0E1; --ph-x2:#AECC53; --ph-x3:#D85A30;
+  --z-free:#22B0E1; --z-normal:#AECC53; --z-proh:#EA561B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Lato',system-ui,sans-serif;color:var(--ubi-ink);background:var(--ubi-gray);line-height:1.45}
+.mono{font-family:'JetBrains Mono',monospace}
+.wrap{max-width:1240px;margin:0 auto;padding:20px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.logo{font-size:26px;font-weight:400;color:var(--ubi-navy);letter-spacing:-.5px}
+.logo b{font-weight:900}
+.logo .dot{color:var(--ubi-blue)}
+.subtitle{color:var(--ubi-muted);font-size:13px;margin-top:2px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--ubi-muted)}
+.pill .led{width:8px;height:8px;border-radius:50%;background:var(--ubi-blue)}
+.langtog{display:flex;border:1px solid var(--ubi-line);border-radius:999px;overflow:hidden;background:#fff}
+.langtog button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-family:inherit;font-size:12px;color:var(--ubi-muted)}
+.langtog button.on{background:var(--ubi-navy);color:#fff}
+.card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:14px;padding:20px;margin-bottom:18px}
+.card h2{margin:0 0 14px;font-size:16px;color:var(--ubi-navy)}
+.config{display:grid;grid-template-columns:1fr;gap:16px}
+.drop{border:2px dashed var(--ubi-line);border-radius:12px;padding:22px;text-align:center;transition:.15s;cursor:pointer;background:#FAFBFC}
+.drop.hover{border-color:var(--ubi-blue);background:#F2FAFE}
+.drop strong{color:var(--ubi-navy)}
+.drop small{display:block;color:var(--ubi-muted);margin-top:6px;font-size:12px}
+.files{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.fchip{display:inline-flex;align-items:center;gap:8px;background:var(--ubi-gray);border:1px solid var(--ubi-line);border-radius:999px;padding:5px 10px;font-size:12px}
+.fchip b{font-weight:700}
+.fchip .x{cursor:pointer;color:var(--ubi-orange);font-weight:900}
+.fchip.ok{background:#F1F8E4}
+.fchip.empty{background:#FFF4EE}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--ubi-muted);font-weight:700}
+.field input,.field select{font-family:'JetBrains Mono',monospace;font-size:14px;padding:9px 12px;border:1px solid var(--ubi-line);border-radius:9px;background:#fff;color:var(--ubi-ink)}
+.field input:focus,.field select:focus{outline:0;border-color:var(--ubi-blue);box-shadow:0 0 0 3px rgba(34,176,225,.15)}
+.btn{font-family:inherit;font-weight:700;font-size:14px;border:0;border-radius:9px;padding:11px 20px;cursor:pointer}
+.btn.primary{background:var(--ubi-blue);color:#fff}
+.btn.primary:hover{background:#1B97C2}
+.btn.ghost{background:#fff;border:1px solid var(--ubi-line);color:var(--ubi-navy)}
+.btn.ghost:hover{border-color:var(--ubi-blue)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.kpi{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:14px}
+.kpi .n{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;color:var(--ubi-navy);line-height:1}
+.kpi .l{font-size:12px;color:var(--ubi-muted);margin-top:6px}
+.kpi.proh .n{color:var(--ubi-orange)}
+.kpi.free .n{color:var(--ubi-blue)}
+.kpi.normal .n{color:#6E9C1F}
+#plot{width:100%;min-height:540px}
+.tables{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:900px){.tables{grid-template-columns:repeat(3,1fr)}}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--ubi-line)}
+th{background:var(--ubi-navy);color:#fff;font-size:11px;position:sticky;top:0}
+tbody tr:nth-child(even){background:#F5F8F9}
+.tbl-wrap{max-height:340px;overflow:auto;border:1px solid var(--ubi-line);border-radius:10px}
+.zhead{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:14px;font-weight:700;color:var(--ubi-navy)}
+.zdot{width:11px;height:11px;border-radius:3px}
+.empty-state{padding:18px;text-align:center;color:var(--ubi-muted);font-size:13px;background:#FAFBFC;border:1px dashed var(--ubi-line);border-radius:10px}
+.banner{display:none;background:#FFF0EA;border:1px solid var(--ubi-orange);color:#9c3a10;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px}
+.banner.show{display:block}
+.note{font-size:12px;color:var(--ubi-muted);margin-top:10px}
+.summary-grid{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:760px){.summary-grid{grid-template-columns:1fr 1fr}}
+.resbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.resmeta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ubi-muted)}
+.backlink{display:inline-flex;align-items:center;gap:6px;color:var(--ubi-muted);text-decoration:none;font-size:13px;margin-bottom:12px;transition:.15s}
+.backlink:hover{color:var(--ubi-navy)}
+.tabbar{display:flex;gap:6px;border-bottom:2px solid var(--ubi-line);margin:0 0 16px}
+.tabbar button{border:0;background:transparent;padding:11px 18px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;color:var(--ubi-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:.15s}
+.tabbar button:hover{color:var(--ubi-navy)}
+.tabbar button.on{color:var(--ubi-navy);border-bottom-color:var(--ubi-blue)}
+.hidden{display:none!important}
+footer{color:var(--ubi-muted);font-size:11px;text-align:center;padding:14px 0 24px}
+@media print{.config,.actions,.langtog,.drop,.btn{display:none!important}.card{break-inside:avoid;border-color:#ccc}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="backlink" href="../#dtm" data-i18n="back">← Volver a DTM Analytics</a>
+
+  <header>
+    <div>
+      <div class="logo"><span>ubi</span><b>cquia</b><span class="dot">.</span></div>
+      <div class="subtitle" data-i18n="subtitle">Análisis de calidad de energía · Curvas ITIC / CBEMA</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="pill"><span class="led"></span><span data-i18n="ready">Listo</span></span>
+      <div class="langtog">
+        <button id="es" class="on" onclick="setLang('es')">ES</button>
+        <button id="en" onclick="setLang('en')">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="banner" class="banner"></div>
+
+  <!-- CONFIG -->
+  <div class="card" id="configCard">
+    <h2 data-i18n="cfgTitle">1 · Cargar datos y parámetros</h2>
+    <div class="config">
+      <div id="drop" class="drop">
+        <strong data-i18n="dropMain">Arrastra aquí tus CSV (o haz clic)</strong>
+        <small data-i18n="dropSub">Reconoce Sag / Swell / Power por el contenido (Template Name), no por el nombre. Sube uno, varios o todos juntos; si falta alguno, no importa.</small>
+        <input id="fileInput" type="file" accept=".csv" multiple class="hidden">
+      </div>
+      <div id="files" class="files"></div>
+
+      <div class="row">
+        <div class="field">
+          <label data-i18n="refLbl">Nominal de respaldo (V)</label>
+          <input id="ref" class="mono" type="number" value="120" min="1" step="1" style="width:140px">
+        </div>
+        <div class="field">
+          <label data-i18n="freqLbl">Frecuencia de red</label>
+          <select id="freq" class="mono" style="width:130px">
+            <option value="60" selected>60 Hz</option>
+            <option value="50">50 Hz</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-i18n="unitLbl">Unidad de duración</label>
+          <select id="durunit" class="mono" style="width:170px">
+            <option value="auto" selected>Auto (recomendado)</option>
+            <option value="cycles">Ciclos</option>
+            <option value="us">Microsegundos</option>
+            <option value="ms">Milisegundos</option>
+            <option value="s">Segundos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="run" class="btn primary" data-i18n="runBtn" disabled>Analizar</button>
+        </div>
+      </div>
+      <div class="note" data-i18n="freqNote">El nominal se lee de cada archivo (columna Nominal Voltage); el campo de respaldo solo se usa si falta. La duración se convierte a segundos según la unidad elegida: en Auto se infiere por tipo de evento (ciclos vs µs). Verifica siempre la frecuencia real (60 Hz Ecuador/EE.UU., 50 Hz Chile/Europa).</div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+
+    <div class="resbar">
+      <span class="resmeta" id="resMeta"></span>
+      <button class="btn ghost" id="editBtn" data-i18n="editBtn" onclick="showConfig()">✎ Datos / parámetros</button>
+    </div>
+
+    <div class="tabbar">
+      <button id="tabItic" class="on" data-i18n="tabItic" onclick="showTab('itic')">ITIC / CBEMA</button>
+      <button id="tabCount" data-i18n="tabCount" onclick="showTab('count')">Conteo por hora</button>
+    </div>
+
+    <!-- PANEL ITIC -->
+    <div id="tab-itic">
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <h2 style="margin:0" data-i18n="kpiTitle">2 · Resumen</h2>
+        <div class="actions">
+          <button class="btn ghost" onclick="exportXlsx()" data-i18n="xlsxBtn">Exportar Excel</button>
+          <button class="btn ghost" onclick="exportJson()">Exportar JSON</button>
+          <button class="btn ghost" onclick="window.print()" data-i18n="pdfBtn">Exportar PDF</button>
+        </div>
+      </div>
+      <div class="kpis" id="kpis" style="margin-top:14px"></div>
+      <div id="reconcile" class="note"></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="plotTitle">3 · Sag &amp; Swell vs. curvas ITIC / CBEMA</h2>
+      <div id="plot"></div>
+      <div id="plotMsg" class="note"></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="zonesTitle">4 · Eventos por zona</h2>
+      <div class="tables" id="zoneTables"></div>
+    </div>
+
+    </div><!-- /tab-itic -->
+
+    <!-- PANEL CONTEO -->
+    <div id="tab-count" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <h2 style="margin:0" data-i18n="countTitle">Conteo de eventos por hora del día (intervalos de 5 min)</h2>
+          <div class="actions">
+            <button class="btn ghost" onclick="exportCountXlsx()" data-i18n="countXlsxBtn">Exportar conteo (Excel)</button>
+          </div>
+        </div>
+        <div id="countPlot" style="margin-top:8px"></div>
+        <div id="countMsg" class="note"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="mono">ubicquia. · griddata.cl — ITIC/CBEMA tool · IEEE/ITI (CBEMA) reference envelope</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"
+  onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"
+  onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/plotly.js@2.35.2/dist/plotly.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+  onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';document.head.appendChild(s);"></script>
+<script>
+/* ===================== NÚCLEO v2 (verificado con hopper) ===================== */
+const ITIC={
+  PROH_X:[1e-6,1e-3,1e-3,3e-3,3e-3,20e-3,20e-3,0.5,0.5,10,10,100,1000],
+  PROH_Y:[500,500,200,200,140,140,120,120,110,110,110,110,110],
+  FREE_X:[20e-3,20e-3,0.5,0.5,10,10,100,1000],
+  FREE_Y:[0,70,70,80,80,90,90,90],
+};
+const PHASES=['X1','X2','X3'];
+const AUTO_US_THRESHOLD=50000;
+function cleanNum(v){
+  if(v===null||v===undefined)return NaN;
+  if(typeof v==='number')return v;
+  let s=String(v).trim().replace(',','.').replace(/[^0-9.\-+eE]/g,'');
+  if(s===''||s==='-'||s==='+'||s==='.')return NaN;
+  const n=Number(s);return Number.isFinite(n)?n:NaN;
+}
+function colGet(row,cands){
+  if(!row)return undefined;
+  const low={};for(const k of Object.keys(row))low[k.trim().toLowerCase()]=k;
+  for(const c of cands){const r=low[c.trim().toLowerCase()];if(r!==undefined)return row[r];}
+  return undefined;
+}
+function median(arr){
+  const a=arr.filter(Number.isFinite).slice().sort((x,y)=>x-y);
+  if(!a.length)return NaN;const m=Math.floor(a.length/2);
+  return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function durToSeconds(d,unit,freq){
+  const F=(freq&&freq>0)?freq:60;
+  if(!Number.isFinite(d))return NaN;
+  switch(unit){case 'cycles':return d/F;case 'us':return d/1e6;case 'ms':return d/1e3;case 's':return d;default:return d/F;}
+}
+function inferUnit(durations){const m=median(durations);if(!Number.isFinite(m))return 'cycles';return m>AUTO_US_THRESHOLD?'us':'cycles';}
+function interpCurveY(xSeconds,curveX,curveY){
+  const x=Math.max(Number(xSeconds),1e-12),lq=Math.log10(x);
+  const lx=curveX.map(v=>Math.log10(v));
+  if(lq<=lx[0])return curveY[0];
+  if(lq>=lx[lx.length-1])return curveY[curveY.length-1];
+  for(let i=0;i<lx.length-1;i++){
+    if(lq>=lx[i]&&lq<=lx[i+1]){const t=(lx[i+1]===lx[i])?0:(lq-lx[i])/(lx[i+1]-lx[i]);return curveY[i]+t*(curveY[i+1]-curveY[i]);}
+  }
+  return curveY[curveY.length-1];
+}
+function classifyPoint(durS,magPct){
+  const yF=interpCurveY(durS,ITIC.PROH_X,ITIC.PROH_Y);
+  const yN=interpCurveY(durS,ITIC.FREE_X,ITIC.FREE_Y);
+  if(magPct<=yN)return 'free';if(magPct<=yF)return 'normal';return 'prohibited';
+}
+function rowKind(row){
+  const tn=String(colGet(row,['Template Name','template_name','templateName'])||'').toLowerCase();
+  const et=String(colGet(row,['Event Type','alertType','thresholdType'])||'').toLowerCase();
+  const blob=tn+' '+et;
+  if(/swell/.test(blob))return 'swell';
+  if(/sag/.test(blob))return 'sag';
+  if(/power/.test(blob))return 'power';
+  return null;
+}
+function bucketRows(filesArr){
+  const b={sag:[],swell:[],power:[]};
+  for(const f of filesArr){
+    const fname=(f.name||'').toLowerCase();
+    for(const row of (f.rows||[])){
+      let k=rowKind(row);
+      if(!k){
+        if(/vsag|_sag/.test(fname))k='sag';
+        else if(/vswell|_swell/.test(fname))k='swell';
+        else if(/powerloss|powerrestored|power/.test(fname))k='power';
+      }
+      if(k)b[k].push(row);
+    }
+  }
+  return b;
+}
+function countOutages(powerRows){
+  let n=0;
+  for(const r of powerRows){
+    const val=String(colGet(r,['Value','MsgStr','duration'])||'').toLowerCase();
+    if(/loss/.test(val)){n++;continue;}
+    const sp=colGet(r,['Subpanel Time']);const hasValueCol=colGet(r,['Value'])!==undefined;
+    if(sp!==undefined&&String(sp).trim()!==''&&!hasValueCol)n++;
+  }
+  return n;
+}
+function buildEvents(sagRows,swellRows,opts){
+  opts=opts||{};
+  const refDefault=Number(opts.ref)>0?Number(opts.ref):120;
+  const freq=(opts.freq&&opts.freq>0)?opts.freq:60;
+  const events=[];const detected={SAG:{X1:0,X2:0,X3:0},SWELL:{X1:0,X2:0,X3:0}};let dropped=0;
+  function resolveUnit(rows,mode){
+    if(mode&&mode!=='auto')return mode;
+    const ds=[];for(const row of rows)for(const ph of PHASES){const d=cleanNum(colGet(row,[ph+' Duration']));if(Number.isFinite(d))ds.push(d);}
+    return inferUnit(ds);
+  }
+  const sagUnit=resolveUnit(sagRows||[],opts.durUnit);
+  const swellUnit=resolveUnit(swellRows||[],opts.durUnit);
+  const unitUsed={SAG:sagUnit,SWELL:swellUnit};
+  function harvest(rows,type,valTpl,unit){
+    if(!Array.isArray(rows))return;
+    for(const row of rows){
+      const t=colGet(row,['Date','Time','time','Subpanel Time'])||'';
+      const node=colGet(row,['Node Name','dev_eui','Node ID','node','node_name'])||'';
+      const nomRow=cleanNum(colGet(row,['Nominal Voltage','nominalVoltage','Operating Voltage']));
+      const R=Number.isFinite(nomRow)&&nomRow>0?nomRow:refDefault;
+      for(const ph of PHASES){
+        const val=cleanNum(colGet(row,[ph+' '+valTpl]));
+        const durRaw=cleanNum(colGet(row,[ph+' Duration']));
+        if(Number.isFinite(val))detected[type][ph]++;
+        if(!Number.isFinite(val)||!Number.isFinite(durRaw)){if(Number.isFinite(val))dropped++;continue;}
+        const durS=durToSeconds(durRaw,unit,freq);const magPct=+(val/R*100).toFixed(1);
+        events.push({Time:t,Phase:ph,Type:type,DurationS:+durS.toFixed(6),DurationRaw:+durRaw.toFixed(3),
+          Unit:unit,MagPct:magPct,Value:+val.toFixed(3),Nominal:R,Node:node,Zone:classifyPoint(durS,magPct)});
+      }
+    }
+  }
+  harvest(sagRows,'SAG','Lowest Value',sagUnit);
+  harvest(swellRows,'SWELL','Highest Value',swellUnit);
+  return {events,detected,dropped,unitUsed};
+}
+function summarize(events,powerlossCount,detected,unitUsed){
+  const z={free:0,normal:0,prohibited:0},byPhase={X1:0,X2:0,X3:0};let sag=0,swell=0;
+  for(const e of events){z[e.Zone]++;byPhase[e.Phase]++;e.Type==='SAG'?sag++:swell++;}
+  return {total:events.length,sag,swell,powerloss:powerlossCount||0,zones:z,byPhase,detected,unitUsed};
+}
+/* --- Conteo por hora del día (5 min) --- */
+const COUNT_BINS=288; // 24h * 12 (cada 5 min)
+function countBucketLabel(i){const h=Math.floor(i/12),m=(i%12)*5;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+function parseTimeOfDay(str){
+  if(str===null||str===undefined)return -1;
+  const s=String(str).trim();if(!s)return -1;
+  const m=s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?/);
+  if(!m)return -1;
+  let h=parseInt(m[1],10);const min=parseInt(m[2],10);const ap=m[3]?m[3].toLowerCase():null;
+  if(ap){if(ap==='am'){if(h===12)h=0;}else{if(h!==12)h+=12;}}
+  if(!(h>=0&&h<=23)||!(min>=0&&min<=59))return -1;
+  return h*12+Math.floor(min/5);
+}
+function buildCount(filesArr){
+  const b=bucketRows(filesArr);
+  const z=()=>new Array(COUNT_BINS).fill(0);
+  const sag={X1:z(),X2:z(),X3:z()},swell={X1:z(),X2:z(),X3:z()},power=z();
+  let parsed=0,noTime=0;
+  function harvest(rows,valTpl,target){
+    for(const row of (rows||[])){
+      const bin=parseTimeOfDay(colGet(row,['Date','Time','time','Subpanel Time']));
+      let any=false;
+      for(const ph of PHASES){if(Number.isFinite(cleanNum(colGet(row,[ph+' '+valTpl])))){if(bin>=0)target[ph][bin]++;any=true;}}
+      if(any){if(bin>=0)parsed++;else noTime++;}
+    }
+  }
+  harvest(b.sag,'Lowest Value',sag);
+  harvest(b.swell,'Highest Value',swell);
+  for(const r of (b.power||[])){
+    const val=String(colGet(r,['Value','MsgStr','duration'])||'').toLowerCase();
+    const sp=colGet(r,['Subpanel Time']);const hasValueCol=colGet(r,['Value'])!==undefined;
+    const isLoss=/loss/.test(val)||(sp!==undefined&&String(sp).trim()!==''&&!hasValueCol);
+    if(!isLoss)continue;
+    const bin=parseTimeOfDay(colGet(r,['Date','Time','time','Subpanel Time']));
+    if(bin>=0){power[bin]++;parsed++;}else noTime++;
+  }
+  const totSag=z(),totSwell=z();
+  for(let i=0;i<COUNT_BINS;i++){totSag[i]=sag.X1[i]+sag.X2[i]+sag.X3[i];totSwell[i]=swell.X1[i]+swell.X2[i]+swell.X3[i];}
+  sag.Total=totSag;swell.Total=totSwell;
+  const labels=[];for(let i=0;i<COUNT_BINS;i++)labels.push(countBucketLabel(i));
+  return {labels,sag,swell,power,parsed,noTime};
+}
+/* ===================== FIN NÚCLEO ===================== */
+
+const UNAME={cycles:{es:'ciclos',en:'cycles'},us:{es:'microsegundos',en:'microseconds'},ms:{es:'milisegundos',en:'milliseconds'},s:{es:'segundos',en:'seconds'}};
+const I18N={
+  es:{subtitle:"Análisis de calidad de energía · Curvas ITIC / CBEMA",ready:"Listo",back:"← Volver a DTM Analytics",editBtn:"✎ Datos / parámetros",
+    cfgTitle:"1 · Cargar datos y parámetros",dropMain:"Arrastra aquí tus CSV (o haz clic)",
+    dropSub:"Reconoce Sag / Swell / Power por el contenido (Template Name), no por el nombre. Sube uno, varios o todos juntos; si falta alguno, no importa.",
+    refLbl:"Nominal de respaldo (V)",freqLbl:"Frecuencia de red",unitLbl:"Unidad de duración",runBtn:"Analizar",
+    freqNote:"El nominal se lee de cada archivo (columna Nominal Voltage); el campo de respaldo solo se usa si falta. La duración se convierte a segundos según la unidad elegida: en Auto se infiere por tipo de evento (ciclos vs µs). Verifica siempre la frecuencia real (60 Hz Ecuador/EE.UU., 50 Hz Chile/Europa).",
+    kpiTitle:"2 · Resumen",xlsxBtn:"Exportar Excel",pdfBtn:"Exportar PDF",
+    plotTitle:"3 · Sag & Swell vs. curvas ITIC / CBEMA",zonesTitle:"4 · Eventos por zona",
+    tabItic:"ITIC / CBEMA",tabCount:"Conteo por hora",
+    countTitle:"Conteo de eventos por hora del día (intervalos de 5 min)",countXlsxBtn:"Exportar conteo (Excel)",
+    countX:"Hora del día",countY:"Cantidad de eventos",countSag:"Sag",countSwell:"Swell",countPower:"Corte de energía",countTotal:"Total",
+    countNoTime:"No se pudo leer la hora en algunos eventos; quedaron fuera del conteo: ",
+    countNone:"No hay eventos con hora legible para graficar el conteo.",
+    countAgg:"Eje = hora del reloj: se suman todos los días en un perfil de 24 h. Sirve para ver patrones horarios (p. ej. swells al subir la carga), no la cronología real.",
+    znames:{free:"Libre de daño",normal:"Operación normal",prohibited:"Prohibida (daño)"},
+    k:{total:"Eventos clasificables",sag:"Sag",swell:"Swell",powerloss:"Cortes de energía",free:"Libre de daño",normal:"Operación normal",prohibited:"Zona prohibida"},
+    th:{n:"N°",time:"Hora",phase:"Fase",type:"Tipo",dur:"Duración (s)",mag:"Magnitud (%)"},
+    noplot:"No hay eventos con duración y magnitud para graficar.",empty:"Sin eventos en esta zona.",
+    recon:(s,d,c,drop)=>`Buckets por contenido — Sag: ${d.SAG.X1+d.SAG.X3>0?'sí':'—'} · Swell: ${d.SWELL.X1+d.SWELL.X3>0?'sí':'—'} · Cortes: ${s.powerloss}. Unidad de duración inferida — Sag: ${UNAME[s.unitUsed.SAG].es}; Swell: ${UNAME[s.unitUsed.SWELL].es}. Detectados (magnitud): SAG X1=${d.SAG.X1}/X2=${d.SAG.X2}/X3=${d.SAG.X3}, SWELL X1=${d.SWELL.X1}/X2=${d.SWELL.X2}/X3=${d.SWELL.X3}. Clasificables (con duración): ${c}; descartados sin duración: ${drop}.`},
+  en:{subtitle:"Power quality analysis · ITIC / CBEMA curves",ready:"Ready",back:"← Back to DTM Analytics",editBtn:"✎ Data / parameters",
+    cfgTitle:"1 · Load data & parameters",dropMain:"Drop your CSVs here (or click)",
+    dropSub:"Detects Sag / Swell / Power by content (Template Name), not by file name. Upload one, several or all together; missing one is fine.",
+    refLbl:"Fallback nominal (V)",freqLbl:"Grid frequency",unitLbl:"Duration unit",runBtn:"Analyze",
+    freqNote:"Nominal is read per row (Nominal Voltage); the fallback is used only if missing. Duration is converted to seconds by the chosen unit; Auto infers per event type (cycles vs µs). Always confirm the real frequency (60 Hz Ecuador/US, 50 Hz Chile/Europe).",
+    kpiTitle:"2 · Summary",xlsxBtn:"Export Excel",pdfBtn:"Export PDF",
+    plotTitle:"3 · Sag & Swell vs. ITIC / CBEMA curves",zonesTitle:"4 · Events by zone",
+    tabItic:"ITIC / CBEMA",tabCount:"Count by hour",
+    countTitle:"Event count by time of day (5-min intervals)",countXlsxBtn:"Export count (Excel)",
+    countX:"Time of day",countY:"Event count",countSag:"Sag",countSwell:"Swell",countPower:"Power loss",countTotal:"Total",
+    countNoTime:"Some events had no readable time and were left out of the count: ",
+    countNone:"No events with a readable time to plot the count.",
+    countAgg:"Axis = clock time: all days are summed into a single 24 h profile. Use it for hourly patterns (e.g. swells at load pickup), not the real chronology.",
+    znames:{free:"No damage",normal:"Normal operation",prohibited:"Prohibited (damage)"},
+    k:{total:"Classifiable events",sag:"Sag",swell:"Swell",powerloss:"Power outages",free:"No damage",normal:"Normal operation",prohibited:"Prohibited zone"},
+    th:{n:"#",time:"Time",phase:"Phase",type:"Type",dur:"Duration (s)",mag:"Magnitude (%)"},
+    noplot:"No events with both duration and magnitude to plot.",empty:"No events in this zone.",
+    recon:(s,d,c,drop)=>`Content buckets — Sag: ${d.SAG.X1+d.SAG.X3>0?'yes':'—'} · Swell: ${d.SWELL.X1+d.SWELL.X3>0?'yes':'—'} · Outages: ${s.powerloss}. Inferred duration unit — Sag: ${UNAME[s.unitUsed.SAG].en}; Swell: ${UNAME[s.unitUsed.SWELL].en}. Detected (magnitude): SAG X1=${d.SAG.X1}/X2=${d.SAG.X2}/X3=${d.SAG.X3}, SWELL X1=${d.SWELL.X1}/X2=${d.SWELL.X2}/X3=${d.SWELL.X3}. Classifiable (with duration): ${c}; dropped w/o duration: ${drop}.`}
+};
+let LANG='es';
+function t(){return I18N[LANG];}
+function setLang(l){
+  LANG=l;document.getElementById('es').classList.toggle('on',l==='es');document.getElementById('en').classList.toggle('on',l==='en');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(t()[k])el.textContent=t()[k];});
+  renderFiles();if(LAST)render(LAST);
+  if(LAST&&!document.getElementById('tab-count').classList.contains('hidden')){try{drawCount(LAST);}catch(e){}}
+  if(LAST){try{document.getElementById('resMeta').textContent=buildResMeta(LAST);}catch(e){}}
+}
+
+let FILES=[];let LAST=null;
+const FILTER={hidden:new Set()}; // claves TIPO-FASE ocultas, compartidas entre gráficos
+function showConfig(){
+  const cc=document.getElementById('configCard');
+  cc.classList.remove('hidden');
+  cc.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function buildResMeta(res){
+  const u=UNAME[res.durUnit]?UNAME[res.durUnit][LANG]:res.durUnit;
+  const nf=FILES.length;
+  const fw=LANG==='es'?(nf===1?'archivo':'archivos'):(nf===1?'file':'files');
+  return `${nf} ${fw} · ${res.ref} V · ${res.freq} Hz · ${u}`;
+}
+function wireLegend(divId){
+  const gd=document.getElementById(divId);
+  if(!gd||!gd.on)return;
+  gd.removeAllListeners&&gd.removeAllListeners('plotly_legendclick');
+  gd.on('plotly_legendclick',onLegendClick);
+  gd.on('plotly_legenddoubleclick',()=>false); // evita el aislar/mostrar-todo nativo que rompería la sincronía
+}
+function onLegendClick(ev){
+  const tr=(ev&&ev.data&&ev.data[ev.curveNumber])||null;
+  const key=tr&&tr.meta&&tr.meta.key;
+  if(!key)return true; // curvas límite, Power y Totales: comportamiento normal del gráfico
+  if(FILTER.hidden.has(key))FILTER.hidden.delete(key);else FILTER.hidden.add(key);
+  rerenderCharts();
+  return false; // cancelamos el toggle nativo; re-render aplica el filtro a AMBOS gráficos
+}
+function rerenderCharts(){
+  if(!LAST)return;
+  try{renderPlot(LAST);}catch(e){console.error(e);}
+  try{drawCount(LAST);}catch(e){console.error(e);}
+}
+const PHCOLOR={X1:'#22B0E1',X2:'#AECC53',X3:'#D85A30'};
+function showBanner(m){const b=document.getElementById('banner');b.textContent=m;b.classList.add('show');}
+function clearBanner(){document.getElementById('banner').classList.remove('show');}
+
+function handleFiles(fileList){
+  clearBanner();
+  if(typeof Papa==='undefined'){showBanner(LANG==='es'?'La librería de lectura CSV (PapaParse) no cargó. Revisa tu conexión y recarga.':'CSV reader (PapaParse) failed to load.');return;}
+  const files=Array.from(fileList);let pending=files.length;if(!pending)return;
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{const p=Papa.parse(e.target.result,{header:true,skipEmptyLines:true});FILES.push({name:file.name,rows:p.data});}
+      catch(err){showBanner('Error leyendo '+file.name+': '+err.message);}
+      if(--pending===0)afterLoad();
+    };
+    r.onerror=()=>{showBanner('No se pudo leer '+file.name);if(--pending===0)afterLoad();};
+    r.readAsText(file);
+  });
+}
+function fileKinds(f){
+  const set={};let known=0;
+  for(const row of f.rows){const k=rowKind(row);if(k){set[k]=(set[k]||0)+1;known++;}}
+  if(!known){const n=f.name.toLowerCase();if(/vsag|_sag/.test(n))set.sag=f.rows.length;else if(/vswell|_swell/.test(n))set.swell=f.rows.length;else if(/power/.test(n))set.power=f.rows.length;}
+  return set;
+}
+function afterLoad(){renderFiles();document.getElementById('run').disabled=FILES.length===0;}
+function renderFiles(){
+  const box=document.getElementById('files');box.innerHTML='';
+  const lab={sag:'Sag',swell:'Swell',power:'Power'};
+  FILES.forEach((f,i)=>{
+    const kinds=fileKinds(f);
+    const parts=Object.keys(kinds).map(k=>`${lab[k]}×${kinds[k]}`).join(', ')||(LANG==='es'?'sin clasificar':'unclassified');
+    const empty=f.rows.length===0||!Object.keys(kinds).length;
+    const chip=document.createElement('span');chip.className='fchip '+(empty?'empty':'ok');
+    chip.innerHTML=`<b>${f.name}</b> · ${parts} <span class="x" title="quitar">✕</span>`;
+    chip.querySelector('.x').onclick=()=>{FILES.splice(i,1);renderFiles();afterLoad();};
+    box.appendChild(chip);
+  });
+}
+
+function analyze(){
+  clearBanner();
+  FILTER.hidden.clear();
+  const ref=Number(document.getElementById('ref').value)||120;
+  const freq=Number(document.getElementById('freq').value)||60;
+  const durUnit=document.getElementById('durunit').value||'auto';
+  let res;
+  try{
+    const b=bucketRows(FILES);
+    const be=buildEvents(b.sag,b.swell,{ref,freq,durUnit});
+    const outages=countOutages(b.power);
+    const sum=summarize(be.events,outages,be.detected,be.unitUsed);
+    res={events:be.events,detected:be.detected,dropped:be.dropped,sum,ref,freq,durUnit,buckets:{sag:b.sag.length,swell:b.swell.length,power:b.power.length}};
+    res.count=buildCount(FILES);
+  }catch(err){showBanner('Error en el análisis: '+err.message);return;}
+  LAST=res;
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('configCard').classList.add('hidden');
+  document.getElementById('resMeta').textContent=buildResMeta(res);
+  showTab('itic');render(res);
+}
+function render(res){
+  try{renderKpis(res);}catch(e){console.error(e);}
+  try{renderPlot(res);}catch(e){showBanner('No se pudo dibujar el gráfico: '+e.message);}
+  try{renderZones(res);}catch(e){console.error(e);}
+  document.getElementById('reconcile').textContent=t().recon(res.sum,res.detected,res.sum.total,res.dropped);
+  // aviso si algun evento cae fuera de la escala ITIC (posible unidad mal elegida)
+  const off=res.events.filter(e=>e.DurationS>1000);
+  if(off.length)showBanner((LANG==='es'?`⚠ ${off.length} evento(s) caen fuera de la escala ITIC (>1000 s). Revisa la unidad de duración (¿microsegundos?).`:`⚠ ${off.length} event(s) fall outside the ITIC scale (>1000 s). Check the duration unit (microseconds?).`));
+}
+function renderKpis(res){
+  const k=t().k,s=res.sum;
+  const items=[{n:s.total,l:k.total,cls:''},{n:s.sag,l:k.sag,cls:''},{n:s.swell,l:k.swell,cls:''},
+    {n:s.powerloss,l:k.powerloss,cls:'proh'},{n:s.zones.free,l:k.free,cls:'free'},
+    {n:s.zones.normal,l:k.normal,cls:'normal'},{n:s.zones.prohibited,l:k.prohibited,cls:'proh'}];
+  document.getElementById('kpis').innerHTML=items.map(i=>`<div class="kpi ${i.cls}"><div class="n">${i.n}</div><div class="l">${i.l}</div></div>`).join('');
+}
+function renderPlot(res){
+  const evs=res.events;const traces=[];
+  traces.push({x:ITIC.PROH_X,y:ITIC.PROH_Y,mode:'lines',name:(LANG==='es'?'Límite prohibido':'Prohibited limit'),line:{color:'#EA561B',width:2},hoverinfo:'skip'});
+  traces.push({x:ITIC.FREE_X,y:ITIC.FREE_Y,mode:'lines',name:(LANG==='es'?'Límite libre de daño':'No-damage limit'),line:{color:'#22B0E1',width:2,dash:'dash'},hoverinfo:'skip'});
+  for(const type of ['SAG','SWELL'])for(const ph of PHASES){
+    const d=evs.filter(e=>e.Type===type&&e.Phase===ph);if(!d.length)continue;
+    const key=type+'-'+ph;
+    traces.push({x:d.map(e=>e.DurationS),y:d.map(e=>e.MagPct),mode:'markers',name:`${type==='SAG'?'Sag':'Swell'} ${ph}`,
+      meta:{key},visible:FILTER.hidden.has(key)?'legendonly':true,
+      marker:{color:PHCOLOR[ph],symbol:type==='SAG'?'triangle-down':'triangle-up',size:9,line:{width:.5,color:'#1E2445'}},
+      text:d.map(e=>`${e.Time}<br>${type} ${ph}<br>${(LANG==='es'?'Duración':'Duration')}: ${e.DurationS}s (${e.DurationRaw} ${UNAME[e.Unit][LANG]})<br>${(LANG==='es'?'Magnitud':'Magnitude')}: ${e.MagPct}% (${e.Value} V / nom ${e.Nominal})<br>${(LANG==='es'?'Zona':'Zone')}: ${t().znames[e.Zone]}<br>Nodo: ${e.Node}`),
+      hoverinfo:'text'});
+  }
+  const tickx=[1e-6,1e-5,1e-4,1e-3,3e-3,20e-3,0.1,0.5,1,10,100,1000];
+  const ticktxt=['1µs','10µs','100µs','1ms','3ms','20ms','100ms','0.5s','1s','10s','100s','1000s'];
+  const layout={height:560,margin:{l:60,r:20,t:10,b:55},
+    xaxis:{type:'log',title:(LANG==='es'?'Duración (s)':'Duration (s)'),tickvals:tickx,ticktext:ticktxt,gridcolor:'#EEF0F5'},
+    yaxis:{title:(LANG==='es'?'Magnitud (% del nominal)':'Magnitude (% of nominal)'),range:[0,500],gridcolor:'#EEF0F5'},
+    hovermode:'closest',plot_bgcolor:'#fff',paper_bgcolor:'#fff',font:{family:'Lato'},
+    legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'left',x:0,font:{size:11}}};
+  if(typeof Plotly==='undefined'){document.getElementById('plotMsg').textContent=(LANG==='es'?'Plotly no cargó; los conteos y tablas siguen disponibles.':'Plotly failed to load; counts and tables still available.');return;}
+  Plotly.newPlot('plot',traces,layout,{responsive:true,displaylogo:false});
+  wireLegend('plot');
+  document.getElementById('plotMsg').textContent=(evs.length?'':t().noplot);
+}
+function renderZones(res){
+  const box=document.getElementById('zoneTables');box.innerHTML='';
+  const order=['prohibited','normal','free'];const zcolor={free:'var(--z-free)',normal:'var(--z-normal)',prohibited:'var(--z-proh)'};
+  for(const z of order){
+    const rows=res.events.filter(e=>e.Zone===z).sort((a,b)=>b.MagPct-a.MagPct);
+    const col=document.createElement('div');
+    let html=`<div class="zhead"><span class="zdot" style="background:${zcolor[z]}"></span>${t().znames[z]} <span class="mono" style="color:var(--ubi-muted);font-weight:400">(${rows.length})</span></div>`;
+    if(!rows.length){html+=`<div class="empty-state">${t().empty}</div>`;}
+    else{const th=t().th;
+      html+=`<div class="tbl-wrap"><table><thead><tr><th>${th.n}</th><th>${th.time}</th><th>${th.phase}</th><th>${th.type}</th><th>${th.dur}</th><th>${th.mag}</th></tr></thead><tbody>`;
+      rows.forEach((e,i)=>{html+=`<tr><td class="mono">${i+1}</td><td>${e.Time}</td><td class="mono">${e.Phase}</td><td>${e.Type}</td><td class="mono">${e.DurationS}</td><td class="mono">${e.MagPct}</td></tr>`;});
+      html+='</tbody></table></div>';}
+    col.innerHTML=html;box.appendChild(col);
+  }
+}
+function exportXlsx(){
+  if(!LAST)return;
+  if(typeof XLSX==='undefined'){showBanner('SheetJS no cargó; usa Exportar JSON.');return;}
+  const wb=XLSX.utils.book_new();
+  const ev=LAST.events.map((e,i)=>({'N°':i+1,Time:e.Time,Phase:e.Phase,Type:e.Type,'Duration (s)':e.DurationS,'Duration (raw)':e.DurationRaw,Unit:e.Unit,'Magnitude (%)':e.MagPct,'Value (V)':e.Value,'Nominal (V)':e.Nominal,Zone:e.Zone,Node:e.Node}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ev.length?ev:[{Info:'sin eventos'}]),'Eventos');
+  const s=LAST.sum;
+  const resumen=[{Metric:'Fallback nominal (V)',Value:LAST.ref},{Metric:'Frequency (Hz)',Value:LAST.freq},
+    {Metric:'Duration unit mode',Value:LAST.durUnit},{Metric:'Unit used SAG',Value:s.unitUsed.SAG},{Metric:'Unit used SWELL',Value:s.unitUsed.SWELL},
+    {Metric:'Classifiable events',Value:s.total},{Metric:'SAG',Value:s.sag},{Metric:'SWELL',Value:s.swell},{Metric:'Power outages',Value:s.powerloss},
+    {Metric:'Zone — No damage',Value:s.zones.free},{Metric:'Zone — Normal',Value:s.zones.normal},{Metric:'Zone — Prohibited',Value:s.zones.prohibited},
+    {Metric:'SAG detected X1/X2/X3',Value:`${s.detected.SAG.X1}/${s.detected.SAG.X2}/${s.detected.SAG.X3}`},
+    {Metric:'SWELL detected X1/X2/X3',Value:`${s.detected.SWELL.X1}/${s.detected.SWELL.X2}/${s.detected.SWELL.X3}`},
+    {Metric:'Dropped (no duration)',Value:LAST.dropped}];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(resumen),'Resumen');
+  XLSX.writeFile(wb,'ITIC_CBEMA_analisis.xlsx');
+}
+function exportJson(){
+  if(!LAST)return;
+  const blob=new Blob([JSON.stringify({params:{ref:LAST.ref,freq:LAST.freq,durUnit:LAST.durUnit},summary:LAST.sum,events:LAST.events},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ITIC_CBEMA_analisis.json';a.click();URL.revokeObjectURL(a.href);
+}
+function showTab(name){
+  const itic=name==='itic';
+  document.getElementById('tab-itic').classList.toggle('hidden',!itic);
+  document.getElementById('tab-count').classList.toggle('hidden',itic);
+  document.getElementById('tabItic').classList.toggle('on',itic);
+  document.getElementById('tabCount').classList.toggle('on',!itic);
+  if(!LAST)return;
+  if(itic){try{if(typeof Plotly!=='undefined')Plotly.Plots.resize('plot');}catch(e){}}
+  else{try{drawCount(LAST);}catch(e){showBanner('No se pudo dibujar el conteo: '+e.message);}}
+}
+function drawCount(res){
+  const msg=document.getElementById('countMsg');const c=res.count;const tt=t();
+  if(!c||!c.parsed){document.getElementById('countPlot').innerHTML='';msg.textContent=tt.countNone+(c&&c.noTime?(' '+tt.countNoTime+c.noTime):'');return;}
+  if(typeof Plotly==='undefined'){msg.textContent='Plotly no cargó; usa Exportar conteo (Excel).';return;}
+  const SC={X1:'#2E6B1F',X2:'#6BA539',X3:'#A7CE72',Total:'#4E9A2A'};
+  const WC={X1:'#A8380F',X2:'#EA561B',X3:'#F39B6E',Total:'#C7470F'};
+  const tr=[];
+  ['X1','X2','X3'].forEach(ph=>tr.push({x:c.labels,y:c.sag[ph],type:'bar',name:tt.countSag+' '+ph,meta:{key:'SAG-'+ph},visible:FILTER.hidden.has('SAG-'+ph)?'legendonly':true,marker:{color:SC[ph]},opacity:.9}));
+  ['X1','X2','X3'].forEach(ph=>tr.push({x:c.labels,y:c.swell[ph],type:'bar',name:tt.countSwell+' '+ph,meta:{key:'SWELL-'+ph},visible:FILTER.hidden.has('SWELL-'+ph)?'legendonly':true,marker:{color:WC[ph]},opacity:.9}));
+  tr.push({x:c.labels,y:c.power,type:'bar',name:tt.countPower,marker:{color:'#1E2445'},opacity:.95});
+  tr.push({x:c.labels,y:c.sag.Total,type:'bar',name:tt.countSag+' '+tt.countTotal,marker:{color:SC.Total},visible:'legendonly'});
+  tr.push({x:c.labels,y:c.swell.Total,type:'bar',name:tt.countSwell+' '+tt.countTotal,marker:{color:WC.Total},visible:'legendonly'});
+  const ticks=c.labels.filter((_,i)=>i%12===0);
+  const layout={height:480,barmode:'stack',margin:{l:55,r:20,t:10,b:50},
+    xaxis:{type:'category',title:tt.countX,tickmode:'array',tickvals:ticks,gridcolor:'#EEF0F5'},
+    yaxis:{title:tt.countY,gridcolor:'#EEF0F5'},
+    plot_bgcolor:'#fff',paper_bgcolor:'#fff',font:{family:'Lato'},hovermode:'closest',
+    legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'left',x:0,font:{size:11}}};
+  Plotly.newPlot('countPlot',tr,layout,{responsive:true,displaylogo:false});
+  wireLegend('countPlot');
+  msg.textContent=tt.countAgg+(c.noTime?(' · '+tt.countNoTime+c.noTime):'');
+}
+function exportCountXlsx(){
+  if(!LAST||!LAST.count)return;
+  if(typeof XLSX==='undefined'){showBanner('SheetJS no cargó.');return;}
+  const c=LAST.count;const rows=[];
+  for(let i=0;i<c.labels.length;i++)rows.push({Hora:c.labels[i],
+    Sag_X1:c.sag.X1[i],Sag_X2:c.sag.X2[i],Sag_X3:c.sag.X3[i],Sag_Total:c.sag.Total[i],
+    Swell_X1:c.swell.X1[i],Swell_X2:c.swell.X2[i],Swell_X3:c.swell.X3[i],Swell_Total:c.swell.Total[i],
+    Powerloss:c.power[i]});
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Conteo_5min');
+  XLSX.writeFile(wb,'ITIC_CBEMA_conteo.xlsx');
+}
+const drop=document.getElementById('drop'),fileInput=document.getElementById('fileInput');
+drop.addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{handleFiles(e.target.files);fileInput.value='';});
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hover');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hover');}));
+drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)handleFiles(e.dataTransfer.files);});
+document.getElementById('run').addEventListener('click',analyze);
+setLang('es');
+</script>
+</body>
+</html>

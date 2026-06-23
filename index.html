@@ -892,7 +892,7 @@
     <div class="section-header">
       <span class="section-label" data-i18n="section-dtm">DTM Analytics</span>
       <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">01 <span data-i18n="dtm-count-label">tool</span></span>
+      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="dtm-count-label">tools</span></span>
     </div>
 
     <div class="grid" id="dtm-grid">
@@ -905,6 +905,17 @@
         </div>
         <div class="card-name" data-i18n="card-dtm-download">Download Data</div>
         <div class="card-tag" data-i18n="tag-dtm">Data &amp; Charts</div>
+        <span class="card-arrow" data-i18n="open">open →</span>
+      </a>
+
+      <a class="card" href="./itic-cbema/" target="_blank">
+        <div class="card-icon" style="background:var(--blue);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 20h18"/><path d="M4 16h3l1-9 2 13 2-9 1.5 5H20"/>
+          </svg>
+        </div>
+        <div class="card-name" data-i18n="card-itic">ITIC / CBEMA Analysis</div>
+        <div class="card-tag" data-i18n="tag-itic">Power Quality</div>
         <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
@@ -997,9 +1008,11 @@
         'card-workorder':     'Work Order Guide',
         'tag-workorder':      'Work Orders',
         'section-dtm':        'DTM Analytics',
-        'dtm-count-label':    'tool',
+        'dtm-count-label':    'tools',
         'card-dtm-download':  'Download Data',
         'tag-dtm':            'Data & Charts',
+        'card-itic':          'ITIC / CBEMA Analysis',
+        'tag-itic':           'Power Quality',
         'section-control':    'live control',
         'control-count-label':'tools',
         'section-contacts':   'contacts',
@@ -1085,9 +1098,11 @@
         'card-workorder':     'Guía Work Order',
         'tag-workorder':      'Órdenes de Trabajo',
         'section-dtm':        'DTM Analytics',
-        'dtm-count-label':    'herramienta',
+        'dtm-count-label':    'herramientas',
         'card-dtm-download':  'Descargar Datos',
         'tag-dtm':            'Datos y Gráficos',
+        'card-itic':          'Análisis ITIC / CBEMA',
+        'tag-itic':           'Calidad de Energía',
         'section-control':    'control en vivo',
         'control-count-label':'herramientas',
         'section-contacts':   'contactos',
@@ -1187,7 +1202,9 @@
     const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
     document.getElementById('stat-count').textContent = count;
     document.getElementById('stat-guides').textContent = document.querySelectorAll('#guides-grid .card').length;
-    setTab('team');
+    var _validTabs = ['team','projects','guides','dtm','control'];
+    var _initTab = (location.hash || '').replace('#','');
+    setTab(_validTabs.indexOf(_initTab) >= 0 ? _initTab : 'team');
     applyLang('es');
   </script>
 
