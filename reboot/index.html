@@ -58,7 +58,11 @@
   .nrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;cursor:pointer;background:#fff}
   .nrow:hover{border-color:var(--blue)}
   .nrow.sel{border-color:var(--lime);background:#f6faec}
-  .nser{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--navy)}
+  .nser{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+  .nsub{font-family:var(--mono);font-size:11.5px;color:#9cabb5;margin-top:1px;display:flex;align-items:center;gap:5px}
+  .cp{border:none;background:none;color:#b6c0c8;cursor:pointer;font-size:12px;padding:0 2px;line-height:1;border-radius:4px}
+  .cp:hover{color:var(--blue)}
+  .cp.ok{color:var(--lime)}
   .nid{color:#9cabb5;font-weight:400}
   .nst{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;background:#c4ccd4;vertical-align:middle}
@@ -159,7 +163,7 @@
   const ENDPOINT='/api/control', MAX=5;
   const $=id=>document.getElementById(id);
   let PANELS=[], PANEL=null, SUBPANEL='', ACCESS='', panelsLoaded=false, locked=true, busy=false;
-  let allNodes=[], statusById=new Map(), nodesById=new Map(), nodesBySerial=new Map(), selected=[];
+  let allNodes=[], statusById=new Map(), nodesById=new Map(), nodesBySerial=new Map(), selected=[], BIG=false;
 
   const conn=$('conn'),connTxt=$('connTxt');
   function setConn(s){ conn.className='conn '+s; connTxt.textContent=s==='live'?'En línea':(locked?'Bloqueado':'Sin conexión'); }
@@ -228,13 +232,15 @@
     $('nodelist').innerHTML='<div class="empty">Cargando nodos…</div>';
     try{
       const j=await api({action:'nodes'}); setConn('live');
-      allNodes=j.nodes||[];
+      allNodes=j.nodes||[]; BIG=!!j.big;
       nodesById=new Map(); nodesBySerial=new Map(); statusById=new Map();
       allNodes.forEach(n=>{ nodesById.set(Number(n.id),n); if(n.serial)nodesBySerial.set(String(n.serial).toLowerCase(),n); if(n.dev_eui)nodesBySerial.set(String(n.dev_eui).toLowerCase(),n);
         if(n.live) statusById.set(Number(n.id), Object.assign({id:Number(n.id)}, n.live)); });
       logAdd('ok',`${allNodes.length} nodos en el subpanel ${SUBPANEL}`);
+      const sf=$('stFilter'); if(sf){ sf.disabled=BIG; if(BIG){ sf.value=''; } }
+      if(BIG) logAdd('warn',`Subpanel grande (${allNodes.length}) · estado en vivo desactivado para no saturar la API · filtra por texto o pega IDs`);
       renderList();
-      await loadStates();
+      if(!BIG) await loadStates();
     }catch(e){ setConn('err'); $('nodelist').innerHTML='<div class="empty">No se pudieron cargar los nodos.</div>'; logAdd('err','Nodos → '+e.message); }
   }
 
@@ -281,10 +287,25 @@
     if(!items.length){ L.innerHTML='<div class="empty">Sin nodos'+((q||sf)?' con ese filtro.':'.')+'</div>'; }
     else L.innerHTML=items.map(n=>{
       const isSel=selected.some(x=>x.id===Number(n.id));
-      return `<div class="nrow ${isSel?'sel':''}" data-id="${n.id}"><div class="ninfo"><div class="nser">${n.serial||('id '+n.id)} <span class="nid">· id ${n.id}</span></div>${stHtml(n.id)}</div><button class="nadd" data-id="${n.id}">${isSel?'✓':'＋'}</button></div>`;
+      const eui=n.dev_eui||'', ser=n.serial||'';
+      const head = eui || ser || ('id '+n.id);
+      const headType = eui ? 'eui' : (ser?'serial':'');
+      const cp=(t,lbl)=>`<button class="cp" data-cp="${t}" data-id="${n.id}" title="Copiar ${lbl}">⧉</button>`;
+      const line1=`<div class="nser">${head}${headType?cp(headType, headType==='eui'?'dev_eui':'serial'):''}</div>`;
+      const line2 = (eui && ser)
+        ? `<div class="nsub">${ser}${cp('serial','serial')} <span class="nid">· id ${n.id}</span></div>`
+        : `<div class="nsub"><span class="nid">id ${n.id}</span></div>`;
+      return `<div class="nrow ${isSel?'sel':''}" data-id="${n.id}"><div class="ninfo">${line1}${line2}${stHtml(n.id)}</div><button class="nadd" data-id="${n.id}" title="Seleccionar">${isSel?'✓':'＋'}</button></div>`;
     }).join('');
     L.querySelectorAll('.nrow').forEach(row=>row.onclick=()=>toggleNode(Number(row.dataset.id)));
+    L.querySelectorAll('.cp').forEach(b=>b.onclick=(e)=>{ e.stopPropagation(); const n=nodesById.get(Number(b.dataset.id)); if(!n)return; copyText(b.dataset.cp==='eui'?(n.dev_eui||''):(n.serial||''), b); });
     $('listfoot').textContent=`${items.length} de ${allNodes.length} nodos`;
+  }
+  async function copyText(text, btn){
+    if(!text) return;
+    try{ await navigator.clipboard.writeText(text); }
+    catch(_){ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(__){} ta.remove(); }
+    if(btn){ const o=btn.textContent; btn.textContent='✓'; btn.classList.add('ok'); setTimeout(()=>{ btn.textContent=o; btn.classList.remove('ok'); },900); }
   }
   $('filter').oninput=renderList;
   $('stFilter').onchange=renderList;

@@ -38,6 +38,8 @@ const MAX_PAGES = Number(process.env.UBI_NODES_MAX_PAGES|| 40);
 const NODES_TTL = Number(process.env.UBI_NODES_TTL_MS   || 300000);
 const STATES_MAX= Number(process.env.UBI_STATES_MAX     || 160);
 const CONC      = Number(process.env.UBI_STATES_CONCURRENCY || 4);
+const BULK_MAX  = Number(process.env.UBI_BULK_MAX       || 500);  // sobre esto: subpanel "grande" (lista sin estado)
+const PAGE_DELAY= Number(process.env.UBI_PAGE_DELAY_MS  || 120);  // pausa entre páginas para no saturar (429)
 const APP_ACCESS_CODE = (process.env.APP_ACCESS_CODE || process.env.UBI_APP_CODE || '').trim();
 
 // ÁMBITOS (scopes) — cada código habilita un conjunto de acciones.
@@ -157,28 +159,42 @@ async function loadNodes(panelId, subpanel){
   if (c && (Date.now()-c.t) < NODES_TTL) return c.list;
   const token = await getToken(panelId);
 
-  // intento con type=light (estado en bloque); si falla o viene vacía, listado normal
-  let withLight = true, first;
-  try { first = await listPage(token, subpanel, 1, true); }
-  catch(_){ withLight = false; first = await listPage(token, subpanel, 1, false); }
-  if (withLight && !(first.data && first.data.length)){ withLight = false; first = await listPage(token, subpanel, 1, false); }
+  // página 1 liviana → saber cuántos hay
+  const first = await listPage(token, subpanel, 1, false);
+  const last  = (first.meta && first.meta.last_page) || 1;
+  const total = (first.meta && first.meta.total) || ((first.data || []).length * last);
+  const big   = total > BULK_MAX;
 
   let out = [], capped = false, hasLive = 0;
-  const take = j => (j.data || []).forEach(n => {
-    const live = liveOf(n);
+  const take = (j, light) => (j.data || []).forEach(n => {
+    const live = light ? liveOf(n) : null;
     if (live) hasLive++;
     out.push({ id:n.id, serial:n.serial_number, dev_eui:n.dev_eui, node:n.node, state:n.state, isActive:n.isActive, live });
   });
-  take(first);
-  let last = (first.meta && first.meta.last_page) || 1, page = 2;
-  while (page <= last){
-    if (page > MAX_PAGES){ capped = true; break; }
-    const j = await listPage(token, subpanel, page, withLight);
-    take(j);
-    last = (j.meta && j.meta.last_page) || last;
-    page++;
+
+  if (big){
+    // SUBPANEL GRANDE: listado plano, paginado y troceado, SIN estado en vivo (evita 429).
+    take(first, false);
+    for (let page = 2; page <= last; page++){
+      if (page > MAX_PAGES){ capped = true; break; }
+      await sleep(PAGE_DELAY);
+      take(await listPage(token, subpanel, page, false), false);
+    }
+  } else {
+    // SUBPANEL CHICO: estado en bloque con type=light; si falla/viene vacío, plano.
+    let useLight = true, p1;
+    try { p1 = await listPage(token, subpanel, 1, true); }
+    catch(_){ useLight = false; p1 = first; }
+    if (useLight && !(p1.data && p1.data.length)){ useLight = false; p1 = first; }
+    take(p1, useLight);
+    const lastL = (p1.meta && p1.meta.last_page) || last;
+    for (let page = 2; page <= lastL; page++){
+      if (page > MAX_PAGES){ capped = true; break; }
+      await sleep(PAGE_DELAY);
+      take(await listPage(token, subpanel, page, useLight), useLight);
+    }
   }
-  const list = { nodes: out, total: out.length, capped, hasLive, withLive: hasLive > 0 };
+  const list = { nodes: out, total: out.length, capped, big, withLive: hasLive > 0 };
   _nodes[key] = { t: Date.now(), list };
   return list;
 }
@@ -290,7 +306,7 @@ export default async function handler(req, res){
 
     if (action === 'nodes'){
       const list = await loadNodes(panel.id, subpanel);
-      return res.status(200).json({ ok:true, nodes:list.nodes, total:list.total, capped:list.capped, withLive:list.withLive, panel:panel.id, subpanel });
+      return res.status(200).json({ ok:true, nodes:list.nodes, total:list.total, capped:list.capped, withLive:list.withLive, big:list.big, panel:panel.id, subpanel });
     }
 
     const token = await getToken(panel.id);
