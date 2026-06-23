@@ -118,6 +118,10 @@ details.raw pre{white-space:pre-wrap;word-break:break-word;font-family:'JetBrain
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ubi-line);white-space:nowrap}
 td.cellwrap{white-space:normal;max-width:220px;min-width:120px}
+.editable{display:inline-block;min-width:90px;cursor:text;border-radius:4px;padding:1px 3px}
+.editable:hover{background:#eef6fb}
+.editable:focus{outline:2px solid var(--ubi-blue);background:#fff}
+.editable:empty:before{content:'—';color:var(--ubi-muted)}
 th{background:var(--ubi-navy);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0}
 tr:nth-child(even) td{background:var(--ubi-row)}
 td .num{font-family:'JetBrains Mono',monospace}
@@ -594,7 +598,7 @@ function renderHistory(){
       <td>${esc(r.pais)||'—'}</td>
       ${totalCells}
       <td class="usd"><span class="num">${u!=null?'$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</span></td>
-      <td class="cellwrap">${esc(r.desc)||'—'}</td>
+      <td class="cellwrap"><span class="editable" contenteditable="true" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></td>
       <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
       <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
     </tr>`;
@@ -614,6 +618,7 @@ function renderHistory(){
     : 'Carga las tasas para ver el total en USD';
 }
 function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
+function editDesc(i,val){ if(history[i]){ history[i].desc=(val||'').replace(/\s+/g,' ').trim(); persist(); } }
 function clearAll(){
   if(!history.length) return;
   if(!confirm('¿Borrar TODO el histórico? Esta acción no se puede deshacer.')) return;
@@ -631,27 +636,24 @@ function exportPapelPDF(){
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({unit:'pt',format:'a4'});
     const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
-    const MX=30, MY=40, gap=14, capH=16;
-    const cw=pageW-2*MX, ch=pageH-2*MY-22;
-    const maxH=ch*0.46;
-    let x=MX, y=MY+22, rowH=0;
-    doc.setFontSize(13); doc.setTextColor(30,36,69);
-    doc.text('Boletas en papel · Bill', MX, MY+8);
+    const MX=30, MY=30, gap=14, capH=16;
+    const cw=pageW-2*MX, ch=pageH-2*MY;
+    const maxH=ch*0.46;                              // al menos 2 filas por hoja
+    let x=MX, y=MY, rowH=0;
     papers.forEach(({r,n})=>{
       const iw=r.imgW||1000, ih=r.imgH||1400;
       const scale=Math.min(cw/iw, maxH/ih);
       const dw=iw*scale, dh=ih*scale, blockH=dh+capH;
-      if(x+dw > MX+cw+0.5){ x=MX; y+=rowH+gap; rowH=0; }
-      if(y+blockH > MY+22+ch+0.5){ doc.addPage(); x=MX; y=MY; rowH=0; }
-      try{ doc.addImage(r.img,'JPEG',x,y,dw,dh); }catch(e){}
+      if(x+dw > MX+cw+0.5){ x=MX; y+=rowH+gap; rowH=0; }       // salto de fila
+      if(y+blockH > pageH-MY+0.5){ doc.addPage(); x=MX; y=MY; rowH=0; } // nueva hoja
+      try{ doc.addImage(r.img,'JPEG',x,y,dw,dh); }catch(e){ /* salta imagen corrupta */ }
       const capY=y+dh+11;
       const nLabel='N°'+n;
       doc.setFontSize(9); doc.setTextColor(30,36,69); doc.setFont(undefined,'bold');
       doc.text(nLabel, x, capY);
       const nW=doc.getTextWidth(nLabel);
-      doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(90,90,90);
-      const rest=`  ${r.fecha||''}  ${r.emisor||''}  ${r.total!==''?fmt(r.total)+' '+(r.moneda||''):''}`;
-      doc.text(rest.substring(0,58), x+nW, capY);
+      doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(60,60,60);
+      doc.text('  '+(r.desc||'').substring(0,70), x+nW, capY);
       x+=dw+gap; rowH=Math.max(rowH,blockH);
     });
     doc.save(`bill_boletas_papel_${stamp()}.pdf`);
