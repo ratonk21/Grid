@@ -47,7 +47,7 @@ const APP_ACCESS_CODE = (process.env.APP_ACCESS_CODE || process.env.UBI_APP_CODE
 // Cada app (control/, reboot/) usa SU código y solo puede lo de su ámbito.
 const SCOPE_ACTIONS = {
   control: ['panels','verify','nodes','state','states','command'],
-  reboot:  ['panels','verify','nodes','state','reboot'],
+  reboot:  ['panels','verify','nodes','state','states','reboot'],
 };
 function loadCodes(){
   const c = {};
@@ -213,6 +213,20 @@ export default async function handler(req, res){
   const scope  = scopeOf(b.code);   // 'control' | 'reboot' | null
 
   try {
+    // diag — diagnóstico de configuración (sin secretos). Quitar cuando ya funcione.
+    if (action === 'diag'){
+      let withCreds = 0;
+      for (const p of PANELS){ const c = panelCreds(p.id); if (c.cid && c.sec) withCreds++; }
+      return res.status(200).json({
+        ok: true,
+        scopesConfigured: Object.keys(CODES),          // ['control','reboot'] esperado
+        panelsConfigured: PANELS.length,               // 2 esperado
+        panelsWithCreds: withCreds,                     // 2 esperado
+        panelIds: PANELS.map(p => p.id),                // ['1494','803956']
+        submittedCodeScope: scope,                      // 'control' | 'reboot' | null
+      });
+    }
+
     if (!scope) return res.status(401).json({ ok:false, error:'Código de acceso inválido' });
 
     // verify — valida y devuelve el ámbito
