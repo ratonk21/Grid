@@ -286,7 +286,7 @@ Analiza el documento (imagen o PDF) y devuelve SOLO un objeto JSON válido, sin 
 Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valores):
 {
  "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
- "descripcion": "resumen corto del gasto (ej: combustible, materiales, hospedaje)",
+ "descripcion": "descripción tal como aparece en la boleta (glosa o detalle de los ítems); si hay varios resúmelos en una línea",
  "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos u Otro)",
  "moneda": "código de moneda local (CLP, COP, PEN, ARS, MXN, USD, BOB, BRL...)",
  "emisor": {"nombre": "", "rut": ""},
@@ -313,8 +313,15 @@ function banner(msg,type='err'){ const b=document.getElementById('banner');
 function clearBanner(){ document.getElementById('banner').classList.remove('show'); }
 
 /* ---------- Storage ---------- */
+function byDateAsc(a,b){
+  const da=a.fecha||'', db=b.fecha||'';
+  if(!da&&!db) return (a.ts||0)-(b.ts||0);
+  if(!da) return 1; if(!db) return -1;        // sin fecha, al final
+  if(da<db) return -1; if(da>db) return 1;    // ISO AAAA-MM-DD ordena bien como texto
+  return (a.ts||0)-(b.ts||0);                 // desempate por orden de ingreso
+}
 function loadHistory(){ try{ const r=localStorage.getItem(LS_KEY); history=r?JSON.parse(r):[]; if(!Array.isArray(history)) history=[]; }
-  catch(e){ lsOK=false; history=[]; } }
+  catch(e){ lsOK=false; history=[]; } history.sort(byDateAsc); }
 function persist(){ if(!lsOK) return; try{ localStorage.setItem(LS_KEY,JSON.stringify(history)); }
   catch(e){ lsOK=false; banner('No se pudo guardar en el dispositivo (espacio lleno). El histórico durará solo esta sesión.','info'); } }
 function loadRates(){ try{ const r=localStorage.getItem(LS_RATES); rates=r?JSON.parse(r):{USD:1}; }catch(e){ rates={USD:1}; } if(!rates.USD) rates.USD=1; }
@@ -519,7 +526,7 @@ function saveCurrent(){
   };
   if(!row.desc&&!row.emisor&&row.total===''){ banner('Completa al menos descripción, emisor o total.'); return; }
   if(row.moneda&&rates[row.moneda]==null) rates[row.moneda]=''; // crea fila de tasa pendiente
-  history.unshift(row); persist(); persistRates();
+  history.push(row); history.sort(byDateAsc); persist(); persistRates();
   renderRates(); renderHistory();
   clearImage();
   document.getElementById('resultCard').classList.add('hidden');
@@ -617,7 +624,7 @@ function fmt(n){ return typeof n==='number'?n.toLocaleString('es-CL'):n; }
 
 /* ================= PDF BOLETAS EN PAPEL ================= */
 function exportPapelPDF(){
-  const papers=history.filter(r=>r.origen==='Papel'&&r.img);
+  const papers=history.map((r,i)=>({r,n:i+1})).filter(x=>x.r.origen==='Papel'&&x.r.img);
   if(!papers.length){ banner('No hay boletas en papel con foto.'); return; }
   if(!window.jspdf||!window.jspdf.jsPDF){ banner('No se pudo cargar el generador de PDF (revisa tu conexión).'); return; }
   try{
@@ -625,21 +632,26 @@ function exportPapelPDF(){
     const doc=new jsPDF({unit:'pt',format:'a4'});
     const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
     const MX=30, MY=40, gap=14, capH=16;
-    const cw=pageW-2*MX, ch=pageH-2*MY-22;          // -22 para el título
-    const maxH=ch*0.46;                              // al menos 2 filas por hoja
+    const cw=pageW-2*MX, ch=pageH-2*MY-22;
+    const maxH=ch*0.46;
     let x=MX, y=MY+22, rowH=0;
     doc.setFontSize(13); doc.setTextColor(30,36,69);
     doc.text('Boletas en papel · Bill', MX, MY+8);
-    papers.forEach(r=>{
+    papers.forEach(({r,n})=>{
       const iw=r.imgW||1000, ih=r.imgH||1400;
       const scale=Math.min(cw/iw, maxH/ih);
       const dw=iw*scale, dh=ih*scale, blockH=dh+capH;
-      if(x+dw > MX+cw+0.5){ x=MX; y+=rowH+gap; rowH=0; }        // salto de fila
-      if(y+blockH > MY+22+ch+0.5){ doc.addPage(); x=MX; y=MY; rowH=0; } // nueva hoja
-      try{ doc.addImage(r.img,'JPEG',x,y,dw,dh); }catch(e){ /* salta imagen corrupta */ }
-      doc.setFontSize(8); doc.setTextColor(90,90,90);
-      const cap=`${r.fecha||''}  ${r.emisor||''}  ${r.total!==''?fmt(r.total)+' '+(r.moneda||''):''}`.trim();
-      doc.text(cap.substring(0,58), x, y+dh+11);
+      if(x+dw > MX+cw+0.5){ x=MX; y+=rowH+gap; rowH=0; }
+      if(y+blockH > MY+22+ch+0.5){ doc.addPage(); x=MX; y=MY; rowH=0; }
+      try{ doc.addImage(r.img,'JPEG',x,y,dw,dh); }catch(e){}
+      const capY=y+dh+11;
+      const nLabel='N°'+n;
+      doc.setFontSize(9); doc.setTextColor(30,36,69); doc.setFont(undefined,'bold');
+      doc.text(nLabel, x, capY);
+      const nW=doc.getTextWidth(nLabel);
+      doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(90,90,90);
+      const rest=`  ${r.fecha||''}  ${r.emisor||''}  ${r.total!==''?fmt(r.total)+' '+(r.moneda||''):''}`;
+      doc.text(rest.substring(0,58), x+nW, capY);
       x+=dw+gap; rowH=Math.max(rowH,blockH);
     });
     doc.save(`bill_boletas_papel_${stamp()}.pdf`);
@@ -699,7 +711,7 @@ function init(){
   buildCountrySelect(); wireInputs(); loadHistory(); loadRates();
   if(DEMO){
     appCode='demo'; enterApp();
-    if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); persist(); }
+    if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); history.sort(byDateAsc); persist(); }
     if(Object.keys(rates).length<=1){ rates=Object.assign({USD:1},DEMO_RATES); persistRates(); }
   }
   renderRates(); renderHistory();

@@ -14,7 +14,7 @@ Analiza el documento (imagen o PDF) y devuelve SOLO un objeto JSON válido, sin 
 Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valores):
 {
  "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
- "descripcion": "resumen corto del gasto (ej: combustible, materiales, hospedaje)",
+ "descripcion": "descripción tal como aparece en la boleta (glosa o detalle de los ítems); si hay varios resúmelos en una línea",
  "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos u Otro)",
  "moneda": "código de moneda local (CLP, COP, PEN, ARS, MXN, USD, BOB, BRL...)",
  "emisor": {"nombre": "", "rut": ""},
