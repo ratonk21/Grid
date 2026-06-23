@@ -154,6 +154,10 @@ footer{color:var(--ubi-muted);font-size:11px;text-align:center;padding:14px 0 24
           <label>&nbsp;</label>
           <button id="run" class="btn primary" data-i18n="runBtn" disabled>Analizar</button>
         </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="demoBtn" class="btn ghost" data-i18n="demoBtn" onclick="loadDemo()">▶ Ver ejemplo</button>
+        </div>
       </div>
       <div class="note" data-i18n="freqNote">El nominal se lee de cada archivo (columna Nominal Voltage); el campo de respaldo solo se usa si falta. La duración se convierte a segundos según la unidad elegida: en Auto se infiere por tipo de evento (ciclos vs µs). Verifica siempre la frecuencia real (60 Hz Ecuador/EE.UU., 50 Hz Chile/Europa).</div>
     </div>
@@ -402,7 +406,7 @@ const I18N={
     selShowing:"Mostrando {n} de {m} eventos seleccionados",selClear:"Limpiar selección",
     cfgTitle:"1 · Cargar datos y parámetros",dropMain:"Arrastra aquí tus CSV (o haz clic)",
     dropSub:"Reconoce Sag / Swell / Power por el contenido (Template Name), no por el nombre. Sube uno, varios o todos juntos; si falta alguno, no importa.",
-    refLbl:"Nominal de respaldo (V)",freqLbl:"Frecuencia de red",unitLbl:"Unidad de duración",runBtn:"Analizar",
+    refLbl:"Nominal de respaldo (V)",freqLbl:"Frecuencia de red",unitLbl:"Unidad de duración",runBtn:"Analizar",demoBtn:"▶ Ver ejemplo",
     freqNote:"El nominal se lee de cada archivo (columna Nominal Voltage); el campo de respaldo solo se usa si falta. La duración se convierte a segundos según la unidad elegida: en Auto se infiere por tipo de evento (ciclos vs µs). Verifica siempre la frecuencia real (60 Hz Ecuador/EE.UU., 50 Hz Chile/Europa).",
     kpiTitle:"2 · Resumen",xlsxBtn:"Exportar Excel",pdfBtn:"Exportar PDF",
     plotTitle:"3 · Sag & Swell vs. curvas ITIC / CBEMA",zonesTitle:"4 · Eventos por zona",
@@ -422,7 +426,7 @@ const I18N={
     selShowing:"Showing {n} of {m} selected events",selClear:"Clear selection",
     cfgTitle:"1 · Load data & parameters",dropMain:"Drop your CSVs here (or click)",
     dropSub:"Detects Sag / Swell / Power by content (Template Name), not by file name. Upload one, several or all together; missing one is fine.",
-    refLbl:"Fallback nominal (V)",freqLbl:"Grid frequency",unitLbl:"Duration unit",runBtn:"Analyze",
+    refLbl:"Fallback nominal (V)",freqLbl:"Grid frequency",unitLbl:"Duration unit",runBtn:"Analyze",demoBtn:"▶ Load example",
     freqNote:"Nominal is read per row (Nominal Voltage); the fallback is used only if missing. Duration is converted to seconds by the chosen unit; Auto infers per event type (cycles vs µs). Always confirm the real frequency (60 Hz Ecuador/US, 50 Hz Chile/Europe).",
     kpiTitle:"2 · Summary",xlsxBtn:"Export Excel",pdfBtn:"Export PDF",
     plotTitle:"3 · Sag & Swell vs. ITIC / CBEMA curves",zonesTitle:"4 · Events by zone",
@@ -555,6 +559,13 @@ function handleFiles(fileList){
     r.onerror=()=>{showBanner('No se pudo leer '+file.name);if(--pending===0)afterLoad();};
     r.readAsText(file);
   });
+}
+function loadDemo(){ clearBanner();
+  if(typeof Papa==='undefined'){showBanner(LANG==='es'?'La librería de lectura CSV (PapaParse) no cargó.':'CSV reader (PapaParse) failed to load.');return;}
+  FILES.length=0;
+  [['Vsag_ejemplo.csv',DEMO_SAG],['Vswell_ejemplo.csv',DEMO_SWELL],['PowerStatus_ejemplo.csv',DEMO_POWER]].forEach(([n,txt])=>{
+    const p=Papa.parse(txt,{header:true,skipEmptyLines:true}); FILES.push({name:n,rows:p.data}); });
+  afterLoad(); analyze();
 }
 function fileKinds(f){
   const set={};let known=0;
@@ -732,6 +743,29 @@ fileInput.addEventListener('change',e=>{handleFiles(e.target.files);fileInput.va
 drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)handleFiles(e.dataTransfer.files);});
 document.getElementById('run').addEventListener('click',analyze);
 setLang('es');
+</script>
+<script>
+const DEMO_SAG=`Date,"Node ID","Node Name",TLN,"Pole ID","Threshold 1","Template Name","Threshold 2","X1 Lowest Value","X1 Duration","X3 Lowest Value","X3 Duration",Substation,Feeder,"IEEE Class",Direction,"Event Type",Resolved,Username,"Date Resolved","X1 Avg. Peak Value","X3 Avg. Peak Value","Service Center","Substation ID","Feeder ID",Address,"Operating KVA",Phase,Loop,"Operating Voltage","Secondary Voltage","Transformer ID","Unit Record Global ID","Parent Global ID","Oil Fill Type",Solar,"Critical Infrastructure","Transformer PT Ratio","Transformer CT Ratio",Waveform,"Tx Type","Cable Kit",Alimentador,"Lateral Type","Lateral ID","Switch Number",Latitude,Longitude,"HW Version","Rated HV","Pole Color","Pole Height","Pole Type","Serial Number",HDOP,"Manufacturer Name","Median Latitude","Median Longitude","Circuit Type","Nominal Voltage","X1 % of Nominal","X3 % of Nominal"
+"06/21/2026 05:26:07 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,96.15,33.39,96.61,33.388,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,103.24,103.62,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,80.12,80.51
+"06/21/2026 07:43:55 AM",862754050355709,T5990,T5990,T5990,5,Vsag,7,90.2,35.916,90.56,35.429,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,102.3,102.58,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,75.17,75.47
+"06/20/2026 05:52:15 AM",862754050355709,T5990,T5990,T5990,5,Vsag,7,113.84,389.051,114.17,387.562,"El Volcan",55-2-82,"Temporary Sag",,,False,,,117.54,117.84,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,No,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,94.87,95.14
+"06/14/2026 09:45:26 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,115.5,117.83,116.22,117.831,"El Volcan",55-2-82,"Momentary Sag",,,False,,,116.94,117.6,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,No,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,96.25,96.85
+"06/14/2026 09:26:42 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,91.15,37.888,91.9,37.399,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,102.39,103.05,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,75.96,76.58
+"06/14/2026 09:21:19 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,0,53.441,92.96,52.961,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,105.37,105.71,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,0,77.46
+"06/11/2026 02:27:58 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,76.17,939.144,76.44,938.655,"El Volcan",55-2-82,"Temporary Sag",,,False,,,115.21,115.75,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,No,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,63.48,63.7
+"06/11/2026 02:27:41 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,105.68,32.438,106.23,29.963,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,109.77,110.3,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,88.07,88.53
+"06/11/2026 02:26:25 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,104.89,31.95,105.54,26.962,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,109.83,110.43,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,87.41,87.95
+"06/09/2026 08:48:26 PM",862754050355709,T5990,T5990,T5990,5,Vsag,7,101.38,36.946,102.03,34.959,"El Volcan",55-2-82,"Momentary Sag",Indeterminate,Indeterminate,False,,,107.11,107.72,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,84.48,85.02
+"06/07/2026 11:56:54 AM",862754050355709,T5990,T5990,T5990,5,Vsag,7,107.74,32.929,108.01,12.546,"El Volcan",55-2-82,"Momentary Sag",,,False,,,5.69,5.7,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,No,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,89.78,90.01
+"06/07/2026 06:33:04 AM",862754050355709,T5990,T5990,T5990,5,Vsag,7,113.98,393.667,113.96,393.682,"El Volcan",55-2-82,"Temporary Sag",,,False,,,117.54,117.42,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,No,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120,94.98,94.96
+`;
+const DEMO_SWELL=`Date,"Node ID","Node Name",TLN,"Pole ID","Threshold 1","Template Name","Threshold 2","X1 Highest Value","X1 Duration","X3 Highest Value","X3 Duration",Substation,Feeder,"IEEE Class",Direction,"Event Type",Resolved,Username,"Date Resolved","X1 Avg. Peak Value","X3 Avg. Peak Value","Service Center","Substation ID","Feeder ID",Address,"Operating KVA",Phase,Loop,"Operating Voltage","Secondary Voltage","Transformer ID","Unit Record Global ID","Parent Global ID","Oil Fill Type",Solar,"Critical Infrastructure","Transformer PT Ratio","Transformer CT Ratio",Waveform,"Tx Type","Cable Kit",Alimentador,"Lateral Type","Lateral ID","Switch Number",Latitude,Longitude,"HW Version","Rated HV","Pole Color","Pole Height","Pole Type","Serial Number",HDOP,"Manufacturer Name","Median Latitude","Median Longitude","Circuit Type","Nominal Voltage"
+"06/04/2026 07:00:06 AM",862754050355709,T5990,T5990,T5990,5,Vswell,7,140.59,257692.884,141.05,257692.884,"El Volcan",55-2-82,,,,False,,,35.7,35.77,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,Yes,"1P Pad",3,55-2-82,43,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,1.1,,13.708216,-89.260328,,120
+`;
+const DEMO_POWER=`Date,"Node ID","Node Name",TLN,"Pole ID",Thresholds,"Template Name",Value,Substation,Feeder,Resolved,Username,"Date Resolved","Service Center","Substation ID","Feeder ID",Address,"Operating KVA",Phase,Loop,"Operating Voltage","Secondary Voltage","Transformer ID","Unit Record Global ID","Parent Global ID","Oil Fill Type",Solar,"Critical Infrastructure","Transformer PT Ratio","Transformer CT Ratio","Tx Type","Cable Kit","Lateral Type","Lateral ID","Switch Number",Latitude,Longitude,"HW Version","Rated HV","Pole Color","Pole Height","Pole Type","Serial Number",Alimentador,HDOP,"Manufacturer Name","Median Latitude","Median Longitude","Circuit Type",Waveform
+"06/04/2026 07:02:49 AM",862754050355709,T5990,T5990,T5990,N/A,"Power Status",Restored,"El Volcan",55-2-82,False,,,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,"1P Pad",3,32,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,55-2-82,1.1,,13.708216,-89.260328,,No
+"06/04/2026 07:00:14 AM",862754050355709,T5990,T5990,T5990,N/A,"Power Status",Loss,"El Volcan",55-2-82,False,,,,"El Volcan",55-2-82,,,,,,,T5990,,,,,,,,"1P Pad",3,32,,,13.70827,-89.260284,D2,,gris,26,concreto,2402UTMF00061,55-2-82,1.1,,13.708216,-89.260328,,No
+`;
 </script>
 </body>
 </html>
