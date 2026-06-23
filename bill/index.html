@@ -164,13 +164,13 @@ tfoot td.usd{background:#0f3d51}
 
     <div class="card form" id="captureCard">
       <h2>1 · Captura la boleta</h2>
-      <p class="sub">Cámara → <b>Papel</b> · Adjuntar (imagen o PDF) → <b>Digital</b>.</p>
+      <p class="sub">Fotos e imágenes → <b>Papel</b> (entran al PDF de boletas). PDF → <b>Digital</b>.</p>
       <div id="drop" class="drop">
         <div class="icon">📄</div>
-        <p>Arrastra una imagen aquí o usa los botones</p>
+        <p>Arrastra una imagen o PDF, o usa los botones</p>
         <div class="btn-row">
-          <button class="btn" onclick="document.getElementById('camIn').click()">📷 Tomar foto · Papel</button>
-          <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 Adjuntar · Digital</button>
+          <button class="btn" onclick="document.getElementById('camIn').click()">📷 Tomar foto</button>
+          <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 Adjuntar imagen o PDF</button>
         </div>
       </div>
       <div id="previewWrap" class="preview-wrap hidden">
@@ -362,18 +362,19 @@ async function validateCode(code){
 let camIn,fileIn,drop;
 function wireInputs(){
   camIn=document.getElementById('camIn'); fileIn=document.getElementById('fileIn'); drop=document.getElementById('drop');
-  camIn.addEventListener('change', e=>handleFile(e.target.files[0],'Papel'));
-  fileIn.addEventListener('change', e=>handleFile(e.target.files[0],'Digital'));
+  camIn.addEventListener('change', e=>handleFile(e.target.files[0]));
+  fileIn.addEventListener('change', e=>handleFile(e.target.files[0]));
   ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
-  drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f,'Digital'); });
+  drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
   document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
 }
-function handleFile(file,origen){
+function handleFile(file){
   if(!file) return;
   const isPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
   const isImg = file.type.startsWith('image/');
   if(!isPdf && !isImg){ banner('Sube una imagen o un PDF.'); return; }
+  const origen = isPdf ? 'Digital' : 'Papel';   // imagen/foto = Papel · PDF = Digital
   clearBanner();
   if(isPdf){
     if(file.size > 3.3*1024*1024){ banner('El PDF supera ~3 MB (límite del servidor). Súbelo más liviano o tómale una foto.'); return; }
