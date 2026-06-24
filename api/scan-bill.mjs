@@ -15,7 +15,7 @@ Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valore
 {
  "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
  "descripcion": "descripción tal como aparece en la boleta (glosa o detalle de los ítems); si hay varios resúmelos en una línea",
- "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos u Otro)",
+ "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos, Canadá u Otro)",
  "moneda": "código de moneda local (CLP, COP, PEN, ARS, MXN, USD, BOB, BRL...)",
  "emisor": {"nombre": "", "rut": ""},
  "folio": "",

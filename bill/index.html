@@ -237,6 +237,7 @@ tr.refhit td{background:#E4F5DC!important}
         <div class="field"><label>País</label><select id="f_pais" onchange="onCountry()"></select></div>
         <div class="field"><label>Moneda local</label><input id="f_moneda" class="mono" placeholder="CLP"></div>
       </div>
+      <div class="field" id="f_pais_manual_wrap" style="display:none"><label>País (escríbelo)</label><input id="f_pais_manual" placeholder="Ej: Canadá — escribe la moneda en 'Moneda local' (ej: CAD)"></div>
       <div class="grid2">
         <div class="field"><label>Fecha</label><input id="f_fecha" class="mono" placeholder="AAAA-MM-DD"></div>
         <div class="field"><label>Folio / N°</label><input id="f_folio" class="mono" placeholder="—"></div>
@@ -334,7 +335,7 @@ const COUNTRIES = {
   'Chile':{code:'CLP',sym:'$'},'Colombia':{code:'COP',sym:'$'},'Perú':{code:'PEN',sym:'S/'},
   'Argentina':{code:'ARS',sym:'$'},'México':{code:'MXN',sym:'$'},'Ecuador':{code:'USD',sym:'$'},
   'Bolivia':{code:'BOB',sym:'Bs'},'Brasil':{code:'BRL',sym:'R$'},'Uruguay':{code:'UYU',sym:'$'},
-  'Paraguay':{code:'PYG',sym:'₲'},'Panamá':{code:'USD',sym:'$'},'Estados Unidos':{code:'USD',sym:'$'},'Otro':{code:'',sym:''}
+  'Paraguay':{code:'PYG',sym:'₲'},'Panamá':{code:'USD',sym:'$'},'Estados Unidos':{code:'USD',sym:'$'},'Canadá':{code:'CAD',sym:'$'},'Otro':{code:'',sym:''}
 };
 const CUR_COUNTRY = {};
 Object.entries(COUNTRIES).forEach(([c,m])=>{ if(m.code && !CUR_COUNTRY[m.code]) CUR_COUNTRY[m.code]=c; });
@@ -345,7 +346,7 @@ Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valore
 {
  "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
  "descripcion": "descripción tal como aparece en la boleta (glosa o detalle de los ítems); si hay varios resúmelos en una línea",
- "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos u Otro)",
+ "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos, Canadá u Otro)",
  "moneda": "código de moneda local (CLP, COP, PEN, ARS, MXN, USD, BOB, BRL...)",
  "emisor": {"nombre": "", "rut": ""},
  "folio": "",
@@ -390,14 +391,17 @@ function persistRates(){ if(!lsOK) return; try{ localStorage.setItem(LS_RATES,JS
 function buildCountrySelect(){ const sel=document.getElementById('f_pais');
   sel.innerHTML='<option value="">—</option>'+Object.keys(COUNTRIES).map(c=>`<option value="${c}">${c}</option>`).join(''); }
 function onCountry(){ const c=document.getElementById('f_pais').value;
-  if(c&&COUNTRIES[c]&&COUNTRIES[c].code) document.getElementById('f_moneda').value=COUNTRIES[c].code; }
+  const wrap=document.getElementById('f_pais_manual_wrap'), mon=document.getElementById('f_moneda');
+  if(c==='Otro'){ wrap.style.display=''; mon.placeholder='Ej: CAD'; }
+  else { wrap.style.display='none'; document.getElementById('f_pais_manual').value=''; mon.placeholder='CLP';
+    if(c&&COUNTRIES[c]&&COUNTRIES[c].code) mon.value=COUNTRIES[c].code; } }
 function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
 function matchCountry(name){ const n=norm(name);
   for(const k of Object.keys(COUNTRIES)){ if(norm(k)===n) return k; }
   if(n.includes('chil'))return 'Chile'; if(n.includes('colomb'))return 'Colombia'; if(n.includes('peru'))return 'Perú';
   if(n.includes('argentin'))return 'Argentina'; if(n.includes('mexic'))return 'México'; if(n.includes('ecuad'))return 'Ecuador';
   if(n.includes('boliv'))return 'Bolivia'; if(n.includes('brasil')||n.includes('brazil'))return 'Brasil';
-  if(n.includes('urugu'))return 'Uruguay'; if(n.includes('paragu'))return 'Paraguay'; if(n.includes('panam'))return 'Panamá'; return ''; }
+  if(n.includes('urugu'))return 'Uruguay'; if(n.includes('paragu'))return 'Paraguay'; if(n.includes('panam'))return 'Panamá'; if(n.includes('canad'))return 'Canadá'; return ''; }
 
 /* ================= LOCK ================= */
 async function doUnlock(){
@@ -579,6 +583,8 @@ function fillResult(d){
   const pais=matchCountry(d.pais);
   document.getElementById('f_pais').value=pais||(d.pais?'Otro':'');
   document.getElementById('f_moneda').value=(pais&&COUNTRIES[pais].code)?COUNTRIES[pais].code:(d.moneda||'');
+  document.getElementById('f_pais_manual').value=(!pais&&d.pais)?d.pais:'';
+  onCountry();
   document.getElementById('f_neto').value=num(d.neto);
   document.getElementById('f_iva').value=num(d.iva);
   document.getElementById('f_total').value=num(d.total);
@@ -593,7 +599,7 @@ function saveCurrent(){
   const row={
     origen, clase:document.getElementById('f_clase').value.trim(),
     desc:document.getElementById('f_desc').value.trim(),
-    pais:document.getElementById('f_pais').value.trim(),
+    pais:(function(){ let p=document.getElementById('f_pais').value.trim(); if(p==='Otro'){ const m=document.getElementById('f_pais_manual').value.trim(); if(m) p=m; } return p; })(),
     moneda:document.getElementById('f_moneda').value.trim().toUpperCase(),
     fecha:document.getElementById('f_fecha').value.trim(),
     folio:document.getElementById('f_folio').value.trim(),
@@ -835,7 +841,7 @@ async function buildRefListAI(aoa){
     const sample=aoa.slice(1,300);
     const prompt=`Tengo una planilla de gastos exportada de Excel. La primera fila son ENCABEZADOS (pueden venir con mayúsculas/minúsculas mezcladas, tildes o variaciones). Normalmente hay UNA COLUMNA POR MONEDA (p.ej. "CLP$", "COP$", "PEN$", "Moneda Origen") donde el monto va en la columna de su moneda; una columna "Dólar"/"USD" con el equivalente en dólares; la "Descripción" es el COMERCIO; el "Comentario" (o una segunda descripción) es la NOTA; y "Doc"/"Documento" es el tipo (Papel/Digital).
 Convierte CADA fila de datos en un objeto JSON con EXACTAMENTE estos campos:
-{"fecha":"AAAA-MM-DD","emisor":"comercio","pais":"Chile|Colombia|Perú|Argentina|México|Ecuador|Bolivia|Brasil|Uruguay|Paraguay|Panamá|Estados Unidos|"(vacío si no se sabe),"moneda":"CLP|COP|PEN|ARS|MXN|USD|...","total":<monto en moneda local como número>,"usd":<monto en USD como número o null>,"desc":"nota","tipo":"Papel|Digital|"}
+{"fecha":"AAAA-MM-DD","emisor":"comercio","pais":"Chile|Colombia|Perú|Argentina|México|Ecuador|Bolivia|Brasil|Uruguay|Paraguay|Panamá|Estados Unidos|Canadá|"(vacío si no se sabe),"moneda":"CLP|COP|PEN|ARS|MXN|USD|...","total":<monto en moneda local como número>,"usd":<monto en USD como número o null>,"desc":"nota","tipo":"Papel|Digital|"}
 Reglas: deduce el país por la moneda de la columna que tenga valor. Si SOLO hay valor en Dólar, usa moneda="USD", total=ese valor y pais="" (salvo que el texto lo indique). Los montos como número sin separador de miles ni símbolo. Ignora filas vacías o de totales/subtotales. Mantén el MISMO orden de las filas.
 ENCABEZADOS: ${JSON.stringify(header)}
 FILAS: ${JSON.stringify(sample)}
