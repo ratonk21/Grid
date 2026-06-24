@@ -280,9 +280,11 @@ tr.refhit td{background:#E4F5DC!important}
         <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled>📄 PDF boletas en papel</button>
         <button class="btn" id="zipBtn" onclick="exportPdfZip()" disabled>🗜 ZIP de PDFs</button>
         <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled>⬇ Excel</button>
-        <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled>{ } JSON</button>
+        <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled>⬇ Exportar JSON</button>
+        <button class="btn ghost" onclick="document.getElementById('jsonIn').click()">⬆ Importar JSON</button>
         <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled>🗑 Limpiar todo</button>
       </div>
+      <input id="jsonIn" type="file" accept=".json,application/json" class="hidden">
     </div>
 
     <div class="card" id="refCard">
@@ -294,9 +296,12 @@ tr.refhit td{background:#E4F5DC!important}
       <div class="btn-row">
         <button class="btn ghost" onclick="document.getElementById('refIn').click()">📋 Subir Excel/CSV</button>
         <button class="btn lime" id="refAiBtn" onclick="reconcileAI()" disabled>🤖 Cuadrar con IA</button>
+        <button class="btn ghost" id="refExpBtn" onclick="exportRefJson()" disabled>⬇ Exportar JSON</button>
+        <button class="btn ghost" onclick="document.getElementById('refJsonIn').click()">⬆ Importar JSON</button>
         <button class="btn danger" id="refClrBtn" onclick="clearRefList()" disabled>🗑 Quitar lista</button>
       </div>
       <input id="refIn" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      <input id="refJsonIn" type="file" accept=".json,application/json" class="hidden">
       <div id="refTableWrap" class="tbl-wrap hidden" style="margin-top:14px">
         <table><thead id="refHead"></thead><tbody id="refBody"></tbody></table>
       </div>
@@ -438,6 +443,8 @@ function wireInputs(){
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
   drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
   document.getElementById('refIn').addEventListener('change', e=>{ if(e.target.files[0]) handleRefFile(e.target.files[0]); e.target.value=''; });
+  document.getElementById('jsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=''; });
+  document.getElementById('refJsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importRefJson(e.target.files[0]); e.target.value=''; });
   document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
 }
 function handleFile(file){
@@ -900,9 +907,11 @@ function renderRefList(){
   const info=document.getElementById('refInfo');
   const clr=document.getElementById('refClrBtn');
   const ai=document.getElementById('refAiBtn');
+  const exp=document.getElementById('refExpBtn');
   if(!wrap) return;
-  if(!refRows.length){ wrap.classList.add('hidden'); info.textContent=''; if(clr) clr.disabled=true; if(ai) ai.disabled=true; return; }
+  if(!refRows.length){ wrap.classList.add('hidden'); info.textContent=''; if(clr) clr.disabled=true; if(ai) ai.disabled=true; if(exp) exp.disabled=true; return; }
   if(clr) clr.disabled=false;
+  if(exp) exp.disabled=false;
   if(ai) ai.disabled = !history.length;
   wrap.classList.remove('hidden');
   const paises=allPaises();
@@ -1069,11 +1078,59 @@ function exportXlsx(){
 function exportJson(){
   if(!history.length) return;
   try{
-    const payload=history.map(r=>{ const c=Object.assign({},r); delete c.img; delete c.pdf; return c; });
-    const blob=new Blob([JSON.stringify({rates,boletas:payload},null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_boletas_${stamp()}.json`;
+    // Respaldo COMPLETO (incluye fotos y PDFs) para mover entre dispositivos
+    const blob=new Blob([JSON.stringify({version:1,rates,boletas:history},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_respaldo_${stamp()}.json`;
     a.click(); URL.revokeObjectURL(a.href);
   }catch(e){ banner('No se pudo exportar JSON: '+e.message); }
+}
+function importJson(file){
+  if(!file) return; clearBanner();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      const boletas=Array.isArray(obj)?obj:(obj.boletas||[]);
+      const inRates=(!Array.isArray(obj)&&obj.rates)?obj.rates:null;
+      if(!Array.isArray(boletas)) throw new Error('Formato no reconocido.');
+      const seen=new Set(history.map(r=>r.ts));
+      let added=0, dup=0;
+      boletas.forEach(b=>{ if(!b||typeof b!=='object') return;
+        if(b.ts&&seen.has(b.ts)){ dup++; return; }
+        if(b.ts==null) b.ts=Date.now()+Math.floor(Math.random()*1000);
+        history.push(b); seen.add(b.ts); added++; });
+      history.sort(byDateAsc);
+      if(inRates){ Object.keys(inRates).forEach(k=>{ if(rates[k]==null||rates[k]==='') rates[k]=inRates[k]; }); persistRates(); }
+      persist(); renderRates(); renderHistory();
+      banner(`Importadas ${added} boleta(s)${dup?`, ${dup} ya existían`:''}.`,'ok');
+    }catch(e){ banner('No se pudo importar: '+e.message); }
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsText(file);
+}
+function exportRefJson(){
+  if(!refRows.length){ banner('No hay lista de referencia que exportar.'); return; }
+  try{
+    const blob=new Blob([JSON.stringify({version:1,header:refHeader,rows:refRows},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_referencia_${stamp()}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){ banner('No se pudo exportar: '+e.message); }
+}
+function importRefJson(file){
+  if(!file) return; clearBanner();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      if(!obj||!Array.isArray(obj.rows)) throw new Error('Formato no reconocido.');
+      refHeader=obj.header||[]; refRows=obj.rows;
+      refRows.forEach(r=>{ if(!Array.isArray(r.nums)) r.nums=refNums(r.cells||[]); if(typeof r.text!=='string') r.text=refText(r.cells||[]); });
+      persistRef(); renderHistory();
+      banner(`Referencia importada: ${refRows.length} filas.`,'ok');
+    }catch(e){ banner('No se pudo importar: '+e.message); }
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsText(file);
 }
 function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
