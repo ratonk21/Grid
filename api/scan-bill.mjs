@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: MODEL, max_tokens: 2000, messages: [{ role: 'user', content: String(prompt) }] })
+        body: JSON.stringify({ model: MODEL, max_tokens: Math.min(Math.max(parseInt(body.max_tokens, 10) || 2000, 256), 4096), messages: [{ role: 'user', content: String(prompt) }] })
       });
       const data = await r.json();
       if (!r.ok) { res.status(r.status).json({ error: 'Error de la API', detail: data && data.error }); return; }

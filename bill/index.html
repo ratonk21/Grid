@@ -531,17 +531,18 @@ async function scanDirect(b64,mediaType){
   if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
   return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
 }
-async function callClaudeText(prompt){
+async function callClaudeText(prompt, maxTokens){
+  maxTokens = maxTokens||2000;
   // proxy (producción) primero
   try{
     const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({prompt,code:appCode})});
+      body:JSON.stringify({prompt,code:appCode,max_tokens:maxTokens})});
     if(r.ok){ const j=await r.json(); return j.raw||''; }
     if(r.status===401) throw new Error('Código rechazado por el servidor.');
   }catch(e){ if(/servidor|rechazado/.test(e.message||'')) throw e; }
   // directo (artifact / Claude.ai)
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({model:MODEL,max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+    body:JSON.stringify({model:MODEL,max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})});
   const data=await r.json();
   if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
   return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
@@ -828,16 +829,56 @@ function buildRefList(aoa,quiet){
   persistRef(); renderHistory();   // re-render histórico: la unión de países puede cambiar; cascada a la referencia
   if(!quiet) banner(`Lista cargada: ${refRows.length} filas de referencia.`,'ok');
 }
+async function buildRefListAI(aoa){
+  try{
+    const header=aoa[0]||[];
+    const sample=aoa.slice(1,300);
+    const prompt=`Tengo una planilla de gastos exportada de Excel. La primera fila son ENCABEZADOS (pueden venir con mayúsculas/minúsculas mezcladas, tildes o variaciones). Normalmente hay UNA COLUMNA POR MONEDA (p.ej. "CLP$", "COP$", "PEN$", "Moneda Origen") donde el monto va en la columna de su moneda; una columna "Dólar"/"USD" con el equivalente en dólares; la "Descripción" es el COMERCIO; el "Comentario" (o una segunda descripción) es la NOTA; y "Doc"/"Documento" es el tipo (Papel/Digital).
+Convierte CADA fila de datos en un objeto JSON con EXACTAMENTE estos campos:
+{"fecha":"AAAA-MM-DD","emisor":"comercio","pais":"Chile|Colombia|Perú|Argentina|México|Ecuador|Bolivia|Brasil|Uruguay|Paraguay|Panamá|Estados Unidos|"(vacío si no se sabe),"moneda":"CLP|COP|PEN|ARS|MXN|USD|...","total":<monto en moneda local como número>,"usd":<monto en USD como número o null>,"desc":"nota","tipo":"Papel|Digital|"}
+Reglas: deduce el país por la moneda de la columna que tenga valor. Si SOLO hay valor en Dólar, usa moneda="USD", total=ese valor y pais="" (salvo que el texto lo indique). Los montos como número sin separador de miles ni símbolo. Ignora filas vacías o de totales/subtotales. Mantén el MISMO orden de las filas.
+ENCABEZADOS: ${JSON.stringify(header)}
+FILAS: ${JSON.stringify(sample)}
+Devuelve SOLO un arreglo JSON compacto, sin texto ni markdown.`;
+    const raw=await callClaudeText(prompt, 4096);
+    const arr=extractJSONArray(raw);
+    if(!arr||!arr.length) return false;
+    refHeader=header;
+    refRows=arr.map((o,idx)=>{
+      const cells=sample[idx]||[];
+      let total=(o.total==null||o.total==='')?'':Number(o.total); if(isNaN(total)) total='';
+      let usd=(o.usd==null||o.usd==='')?'':Number(o.usd); if(isNaN(usd)) usd='';
+      const pais=o.pais?(matchCountry(o.pais)||String(o.pais)):'';
+      const nums=refNums(cells); if(typeof total==='number') nums.push(total);
+      return {
+        fecha: fmtDate(o.fecha)||'',
+        emisor: String(o.emisor||'').trim(),
+        desc: String(o.desc||'').trim(),
+        tipo: String(o.tipo||'').trim(),
+        pais,
+        moneda: String(o.moneda||'').toUpperCase().replace(/[^A-Z]/g,''),
+        total, usd,
+        cells, nums, text:refText(cells)
+      };
+    });
+    refRows.sort(byDateAsc);
+    persistRef(); renderHistory();
+    banner(`Lista interpretada por IA: ${refRows.length} filas.`,'ok');
+    return true;
+  }catch(e){ return false; }
+}
 function handleRefFile(file){
   if(!file) return; clearBanner();
   const reader=new FileReader();
-  reader.onload=()=>{
+  reader.onload=async ()=>{
     try{
       const wb=XLSX.read(new Uint8Array(reader.result),{type:'array',cellDates:true});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false});
       if(!aoa.length){ banner('El archivo no tiene filas.'); return; }
-      buildRefList(aoa);
+      banner('Interpretando la lista con IA…');
+      const ok=await buildRefListAI(aoa);
+      if(!ok){ buildRefList(aoa, true); banner(`Lista cargada (modo local): ${refRows.length} filas.`,'ok'); }
     }catch(e){ banner('No se pudo leer el archivo: '+e.message); }
   };
   reader.onerror=()=>banner('No se pudo leer el archivo.');
