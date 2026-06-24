@@ -661,7 +661,7 @@ function renderHistory(){
   document.getElementById('jsonBtn').disabled=!has;
   document.getElementById('clrBtn').disabled=!has;
   const paises=allPaises();   // unión histórico + referencia
-  const totalCols=paises.map(p=>`Total ${na(p)}`);
+  const totalCols=paises.map(p=>na(p));
   head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
@@ -859,7 +859,7 @@ function renderRefList(){
   if(ai) ai.disabled = !history.length;
   wrap.classList.remove('hidden');
   const paises=allPaises();
-  const totalCols=paises.map(p=>`Total ${na(p)}`);
+  const totalCols=paises.map(p=>na(p));
   document.getElementById('refHead').innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th>Boleta</th></tr>';
@@ -989,7 +989,7 @@ function exportXlsx(){
   if(!history.length) return;
   try{
     const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];        // Excel = países contabilizados (sin fantasmas de la referencia)
-    const totalKey=p=>`Total ${na(p)}`;
+    const totalKey=p=>na(p);
     // Orden: N° · Fecha · Emisor · País · Total(por país) · USD · Descripción · Tipo
     const rows=history.map((r,i)=>{
       const o={'N°':i+1,'Fecha':r.fecha,'Emisor':r.emisor,'País':na(r.pais)};
