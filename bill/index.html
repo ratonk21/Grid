@@ -7,6 +7,12 @@
 <meta name="description" content="Escáner de facturas y boletas: saca una foto o adjunta una imagen y extrae los datos automáticamente.">
 <meta property="og:title" content="Bill · Escáner de facturas">
 <meta property="og:description" content="Saca una foto de tu factura o boleta y extrae los datos al instante.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E2445">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -135,8 +141,34 @@ tfoot td.usd{background:#0f3d51}
 .pill-mini.paper{background:var(--ubi-orange)}
 .pill-mini.digital{background:var(--ubi-blue)}
 .empty{text-align:center;color:var(--ubi-muted);padding:24px;font-size:14px}
+tr.refhit td{background:#E4F5DC!important}
 .usd-sum{text-align:right;font-weight:900;color:var(--ubi-navy);font-size:16px;margin-top:12px}
 .usd-sum span{font-family:'JetBrains Mono',monospace;color:#0f3d51}
+/* ---- vista de tarjetas (móvil) ---- */
+.hist-cards{display:none;margin-top:10px}
+.bcard{border:1px solid var(--ubi-line);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--ubi-surface)}
+.bcard .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.bcard .n{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ubi-navy);background:var(--ubi-gray);padding:3px 11px;border-radius:20px;font-size:13px}
+.bcard .emisor{font-weight:700;color:var(--ubi-navy);font-size:15px}
+.bcard .meta{font-size:13px;color:var(--ubi-muted);margin-bottom:10px}
+.bcard .rowline{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:5px 0;border-top:1px solid var(--ubi-line)}
+.bcard .rowline .lab{color:var(--ubi-muted)}
+.bcard .rowline .val{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ubi-navy)}
+.bcard .rowline .val.usd{color:#0f3d51}
+.bcard .desc{margin-top:10px}
+.bcard .desc .lab{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ubi-muted);font-weight:700;display:block;margin-bottom:4px}
+.bcard .desc .editable{display:block;border:1px solid var(--ubi-line);border-radius:8px;padding:9px;min-height:20px}
+.btot{background:var(--ubi-navy);color:#fff;border-radius:12px;padding:16px}
+.btot h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#A9B4C6}
+.btot .rowline{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
+.btot .rowline .val{font-family:'JetBrains Mono',monospace}
+.btot .rowline.usd{border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:8px}
+.btot .rowline.usd .val{color:var(--ubi-lime);font-weight:700}
+@media (max-width:760px){
+  .tbl-wrap{display:none}
+  .hist-cards{display:block}
+  .usd-sum{display:none}
+}
 .hidden{display:none!important}
 .foot{text-align:center;color:var(--ubi-muted);font-size:12px;padding:8px 0 28px}
 .foot .logo{font-size:14px;color:var(--ubi-navy)}
@@ -241,6 +273,7 @@ tfoot td.usd{background:#0f3d51}
           <tfoot id="histFoot"></tfoot>
         </table>
       </div>
+      <div id="histCards" class="hist-cards"></div>
       <div class="usd-sum" id="usdSum"></div>
       <div class="btn-row" style="margin-top:14px">
         <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled>📄 PDF boletas en papel</button>
@@ -248,6 +281,22 @@ tfoot td.usd{background:#0f3d51}
         <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled>⬇ Excel</button>
         <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled>{ } JSON</button>
         <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled>🗑 Limpiar todo</button>
+      </div>
+    </div>
+
+    <div class="card" id="refCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">Lista de referencia</h2>
+        <span class="tag mono" id="refInfo" style="background:var(--ubi-lime);color:var(--ubi-navy)"></span>
+      </div>
+      <p class="sub">Sube tu Excel/CSV de gastos hecho a mano. <b>No se contabiliza</b>: solo se pinta en <span style="background:#E4F5DC;padding:1px 6px;border-radius:4px">verde</span> lo que ya cargaste como boleta (coincide monto + emisor/descripción).</p>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="document.getElementById('refIn').click()">📋 Subir Excel/CSV</button>
+        <button class="btn danger" id="refClrBtn" onclick="clearRefList()" disabled>🗑 Quitar lista</button>
+      </div>
+      <input id="refIn" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      <div id="refTableWrap" class="tbl-wrap hidden" style="margin-top:14px">
+        <table><thead id="refHead"></thead><tbody id="refBody"></tbody></table>
       </div>
     </div>
 
@@ -271,12 +320,14 @@ tfoot td.usd{background:#0f3d51}
 const DEMO = false;
 const DEMO_SEED = [];
 const DEMO_RATES = {};
+const DEMO_REF = [];
 
 const DEMO_CODE = 'BILL-2026';   // solo para pruebas sin servidor
 const MODEL     = 'claude-sonnet-4-6';
 const MAX_EDGE  = 1568;
 const LS_KEY    = 'bill_history_v3';
 const LS_RATES  = 'bill_rates_v3';
+const LS_REF    = 'bill_reflist_v3';
 
 const COUNTRIES = {
   'Chile':{code:'CLP',sym:'$'},'Colombia':{code:'COP',sym:'$'},'Perú':{code:'PEN',sym:'S/'},
@@ -311,6 +362,7 @@ let appCode = '';
 let curImg  = null;
 let history = [];
 let rates   = {USD:1};
+let refHeader = [], refRows = [];
 let lsOK    = true;
 
 /* ---------- Banner ---------- */
@@ -380,6 +432,7 @@ function wireInputs(){
   ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
   drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  document.getElementById('refIn').addEventListener('change', e=>{ if(e.target.files[0]) handleRefFile(e.target.files[0]); e.target.value=''; });
   document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
 }
 function handleFile(file){
@@ -542,7 +595,9 @@ function saveCurrent(){
 }
 
 /* ================= TASAS / USD ================= */
-function currenciesInUse(){ const s=new Set(); history.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); return [...s]; }
+function na(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function allPaises(){ const out=[]; const add=p=>{ if(p&&!out.includes(p)) out.push(p); }; history.forEach(r=>add(r.pais)); refRows.forEach(r=>add(r.pais)); return out; }
+function currenciesInUse(){ const s=new Set(); history.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); refRows.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); return [...s]; }
 function toUSD(r){
   if(r.total===''||r.total==null) return null;
   if(r.moneda==='USD') return r.total;
@@ -573,6 +628,7 @@ function renderHistory(){
   const head=document.getElementById('histHead');
   const body=document.getElementById('histBody');
   const foot=document.getElementById('histFoot');
+  const cards=document.getElementById('histCards');
   document.getElementById('histCount').textContent=history.length;
   const has=history.length>0;
   const papers=history.filter(r=>r.origen==='Papel'&&r.img).length;
@@ -582,16 +638,19 @@ function renderHistory(){
   document.getElementById('xlsxBtn').disabled=!has;
   document.getElementById('jsonBtn').disabled=!has;
   document.getElementById('clrBtn').disabled=!has;
-  const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];   // una columna de Total por país
-  const totalCols=paises.map(p=>`Total ${p}${curOf(p)?' ('+curOf(p)+')':''}`);
+  const paises=allPaises();   // unión histórico + referencia
+  const totalCols=paises.map(p=>`Total ${na(p)}`);
   head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
   if(!has){
     body.innerHTML='<tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr>';
-    foot.innerHTML=''; document.getElementById('usdSum').textContent=''; return;
+    foot.innerHTML=''; cards.innerHTML='<p class="empty">Aún no hay boletas guardadas.</p>';
+    document.getElementById('usdSum').textContent=''; return;
   }
+  const ED='contenteditable="true" spellcheck="false" onkeydown="if(event.key===&apos;Enter&apos;){event.preventDefault();this.blur();}"';
   let sum=0, anyUSD=false;
+  // --- Tabla (escritorio) ---
   body.innerHTML=history.map((r,i)=>{
     const u=toUSD(r); if(u!=null){ sum+=u; anyUSD=true; }
     const pcls=r.origen==='Papel'?'paper':'digital';
@@ -600,27 +659,43 @@ function renderHistory(){
       <td class="num">${i+1}</td>
       <td class="num">${esc(r.fecha)||'—'}</td>
       <td class="cellwrap">${esc(r.emisor)||'—'}</td>
-      <td>${esc(r.pais)||'—'}</td>
+      <td>${esc(na(r.pais))||'—'}</td>
       ${totalCells}
-      <td class="usd"><span class="num">${u!=null?'$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</span></td>
-      <td class="cellwrap"><span class="editable" contenteditable="true" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></td>
+      <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
+      <td class="cellwrap"><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></td>
       <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
       <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
     </tr>`;
   }).join('');
-  const totFootCells=paises.map(p=>{
-    const s=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0);
-    return `<td class="num">${fmt(s)}</td>`;
-  }).join('');
-  foot.innerHTML=`<tr>
-    <td></td><td></td><td></td><td>TOTAL</td>
-    ${totFootCells}
-    <td class="usd"><span class="num">${anyUSD?'$ '+sum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—'}</span></td>
-    <td></td><td></td><td></td>
-  </tr>`;
+  // sumas por país
+  const sums={}; paises.forEach(p=>{ sums[p]=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
+  const totFootCells=paises.map(p=>`<td class="num">${fmt(sums[p])}</td>`).join('');
+  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td>${totFootCells}
+    <td class="usd"><span class="num">${anyUSD?usdFmt(sum):'—'}</span></td><td></td><td></td><td></td></tr>`;
+  // --- Tarjetas (móvil) ---
+  cards.innerHTML=history.map((r,i)=>{
+    const u=toUSD(r);
+    const pcls=r.origen==='Papel'?'paper':'digital';
+    return `<div class="bcard">
+      <div class="top"><span class="n">N°${i+1}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span>
+          <button class="btn ghost" style="padding:5px 9px;font-size:12px" onclick="delRow(${i})">✕</button>
+        </span></div>
+      <div class="emisor">${esc(r.emisor)||'—'}</div>
+      <div class="meta">${esc(r.fecha)||'—'} · ${esc(na(r.pais))||'—'}</div>
+      <div class="rowline"><span class="lab">Total</span><span class="val">${r.total!==''?fmt(r.total):'—'} ${esc(r.moneda)||''}</span></div>
+      <div class="rowline"><span class="lab">USD</span><span class="val usd">${u!=null?usdFmt(u):'—'}</span></div>
+      <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></div>
+    </div>`;
+  }).join('') + `<div class="btot"><h4>Totales por país</h4>
+      ${paises.map(p=>`<div class="rowline"><span>${esc(na(p))}</span><span class="val">${fmt(sums[p])} ${esc(curOf(p))}</span></div>`).join('')}
+      <div class="rowline usd"><span>Total USD</span><span class="val">${anyUSD?usdFmt(sum):'—'}</span></div>
+    </div>`;
   document.getElementById('usdSum').innerHTML = anyUSD
-    ? `Total en USD ≈ <span>$ ${sum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`
+    ? `Total en USD ≈ <span>${usdFmt(sum)}</span>`
     : 'Carga las tasas para ver el total en USD';
+  renderRefList();
 }
 function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
 function editDesc(i,val){ if(history[i]){ history[i].desc=(val||'').replace(/\s+/g,' ').trim(); persist(); } }
@@ -631,6 +706,124 @@ function clearAll(){
 }
 function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmt(n){ return typeof n==='number'?n.toLocaleString('es-CL'):n; }
+function usdFmt(u){ return '$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+/* ================= LISTA DE REFERENCIA (no se contabiliza) ================= */
+const REF_STOP=new Set(['spa','ltda','limitada','sas','eirl','sociedad','anonima','de','del','la','el','los','las','y','sa','con','por']);
+function loadRefList(){ try{ const r=localStorage.getItem(LS_REF); const o=r?JSON.parse(r):null; if(o&&Array.isArray(o.rows)){ refHeader=o.header||[]; refRows=o.rows; } }catch(e){} }
+function persistRef(){ if(!lsOK) return; try{ localStorage.setItem(LS_REF, JSON.stringify({header:refHeader,rows:refRows})); }catch(e){} }
+function refNums(cells){
+  const out=[];
+  cells.forEach(c=>{
+    if(typeof c==='number'){ out.push(c); return; }
+    (String(c).match(/\d[\d.,]*/g)||[]).forEach(t=>{
+      let x=t;
+      if(x.includes('.')&&x.includes(',')) x = x.lastIndexOf(',')>x.lastIndexOf('.') ? x.replace(/\./g,'').replace(',','.') : x.replace(/,/g,'');
+      else if(x.includes(',')){ const d=x.split(',').pop(); x = (d.length<=2) ? x.replace(',','.') : x.replace(/,/g,''); }
+      else if((x.match(/\./g)||[]).length===1 && x.split('.').pop().length===3) x=x.replace('.','');
+      const n=Number(x); if(!isNaN(n)&&x!=='') out.push(n);
+    });
+  });
+  return out;
+}
+function refText(cells){ return cells.filter(c=>typeof c==='string').map(c=>norm(c)).join(' '); }
+function bWords(b){ const w=[]; [b.emisor,b.desc].forEach(s=>norm(s).split(/[^a-z0-9]+/).forEach(x=>{ if(x.length>=4&&!REF_STOP.has(x)) w.push(x); })); return w; }
+function refMatch(row){
+  for(const b of history){
+    if(typeof b.total!=='number') continue;
+    if(!row.nums.some(n=>Math.abs(n-b.total)<=Math.max(1,Math.abs(b.total)*0.002))) continue;
+    const w=bWords(b);
+    if(!w.length || w.some(x=>row.text.includes(x))) return b;
+  }
+  return null;
+}
+function toNum(v){ if(typeof v==='number') return v; const a=refNums([v]); return a.length?a[0]:''; }
+function detectCols(h){
+  const m={fecha:-1,emisor:-1,desc:-1,total:-1,moneda:-1,pais:-1};
+  h.forEach((x,i)=>{
+    if(m.fecha<0 && /fecha|date/.test(x)) m.fecha=i;
+    else if(m.pais<0 && /pais|country/.test(x)) m.pais=i;
+    else if(m.moneda<0 && /moneda|currency|divisa/.test(x)) m.moneda=i;
+    else if(m.emisor<0 && /proveedor|emisor|vendor|empresa|comercio|tienda/.test(x)) m.emisor=i;
+    else if(m.desc<0 && /descrip|detalle|glosa|concepto|item|gasto/.test(x)) m.desc=i;
+    else if(m.total<0 && /monto|total|importe|valor|amount|precio|pago/.test(x)) m.total=i;
+  });
+  return m;
+}
+function buildRefList(aoa,quiet){
+  if(!aoa||!aoa.length){ return; }
+  const header=(aoa[0]||[]).map(x=>x);
+  const map=detectCols(header.map(norm));
+  refHeader=header;
+  const data=aoa.slice(1).filter(r=>Array.isArray(r)&&r.some(c=>c!==''&&c!=null));
+  refRows=data.map(cells=>{
+    const g=i=> i>=0 ? cells[i] : '';
+    const fecha=String(g(map.fecha)||'').trim();
+    const emisor=String(g(map.emisor)||'').trim();
+    const desc=String(g(map.desc)||'').trim();
+    let moneda=String(g(map.moneda)||'').toUpperCase().replace(/[^A-Z]/g,'').trim();
+    let total=map.total>=0?toNum(cells[map.total]):'';
+    let pais=map.pais>=0?matchCountry(cells[map.pais]):'';
+    if(!pais&&moneda) pais=CUR_COUNTRY[moneda]||'';
+    if(!moneda&&pais&&COUNTRIES[pais]) moneda=COUNTRIES[pais].code;
+    return {fecha,emisor,desc,pais,moneda,total,cells,nums:refNums(cells),text:refText(cells)};
+  });
+  refRows.sort(byDateAsc);
+  persistRef(); renderHistory();   // re-render histórico: la unión de países puede cambiar; cascada a la referencia
+  if(!quiet) banner(`Lista cargada: ${refRows.length} filas de referencia.`,'ok');
+}
+function handleRefFile(file){
+  if(!file) return; clearBanner();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(reader.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false});
+      if(!aoa.length){ banner('El archivo no tiene filas.'); return; }
+      buildRefList(aoa);
+    }catch(e){ banner('No se pudo leer el archivo: '+e.message); }
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsArrayBuffer(file);
+}
+function clearRefList(){
+  if(!refRows.length) return;
+  if(!confirm('¿Quitar la lista de referencia?')) return;
+  refHeader=[]; refRows=[]; persistRef(); renderHistory(); banner('Lista de referencia quitada.','ok');
+}
+function renderRefList(){
+  const wrap=document.getElementById('refTableWrap');
+  const info=document.getElementById('refInfo');
+  const clr=document.getElementById('refClrBtn');
+  if(!wrap) return;
+  if(!refRows.length){ wrap.classList.add('hidden'); info.textContent=''; if(clr) clr.disabled=true; return; }
+  if(clr) clr.disabled=false;
+  wrap.classList.remove('hidden');
+  const paises=allPaises();
+  const totalCols=paises.map(p=>`Total ${na(p)}`);
+  document.getElementById('refHead').innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
+    + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
+    + '<th class="usd">USD</th><th>Descripción</th><th>Boleta</th></tr>';
+  let matched=0;
+  document.getElementById('refBody').innerHTML=refRows.map((r,i)=>{
+    const mb=refMatch(r); if(mb) matched++;
+    const u=toUSD(r);
+    const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
+    const nLabel=mb?('✓ N°'+(history.indexOf(mb)+1)):'';
+    return `<tr class="${mb?'refhit':''}">
+      <td class="num">${i+1}</td>
+      <td class="num">${esc(r.fecha)||'—'}</td>
+      <td class="cellwrap">${esc(r.emisor)||'—'}</td>
+      <td>${esc(na(r.pais))||'—'}</td>
+      ${totalCells}
+      <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
+      <td class="cellwrap">${esc(r.desc)||'—'}</td>
+      <td class="num">${nLabel}</td>
+    </tr>`;
+  }).join('');
+  info.textContent=`${matched} / ${refRows.length} marcadas`;
+}
 
 /* ================= PDF BOLETAS EN PAPEL ================= */
 function exportPapelPDF(){
@@ -693,11 +886,11 @@ function curOf(p){ const rec=history.find(r=>r.pais===p&&r.moneda); return rec?r
 function exportXlsx(){
   if(!history.length) return;
   try{
-    const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];        // una columna de Total por país
-    const totalKey=p=>`Total ${p}${curOf(p)?' ('+curOf(p)+')':''}`;
+    const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];        // Excel = países contabilizados (sin fantasmas de la referencia)
+    const totalKey=p=>`Total ${na(p)}`;
     // Orden: N° · Fecha · Emisor · País · Total(por país) · USD · Descripción · Tipo
     const rows=history.map((r,i)=>{
-      const o={'N°':i+1,'Fecha':r.fecha,'Emisor':r.emisor,'País':r.pais};
+      const o={'N°':i+1,'Fecha':r.fecha,'Emisor':r.emisor,'País':na(r.pais)};
       paises.forEach(p=>{ o[totalKey(p)] = (r.pais===p && r.total!=='') ? r.total : ''; });
       const u=toUSD(r);
       o['USD']      = u!=null?Number(u.toFixed(2)):'';
@@ -716,7 +909,7 @@ function exportXlsx(){
     // Tabla de conversiones a USD, a la derecha (una columna de separación)
     const startCol=(7+paises.length)+1;
     XLSX.utils.sheet_add_aoa(ws,[['Conversión a USD']],{origin:{r:0,c:startCol}});
-    const ratesRows=paises.map(p=>({'País':p,'Moneda':curOf(p),
+    const ratesRows=paises.map(p=>({'País':na(p),'Moneda':curOf(p),
       '1 USD =':(rates[curOf(p)]===''||rates[curOf(p)]==null)?'':Number(rates[curOf(p)])}));
     XLSX.utils.sheet_add_json(ws,ratesRows,{origin:{r:1,c:startCol}});
     ws['!cols']=[{wch:5},{wch:11},{wch:24},{wch:12},...paises.map(()=>({wch:18})),{wch:11},{wch:24},{wch:9},{wch:3},{wch:14},{wch:9},{wch:12}];
@@ -738,15 +931,21 @@ function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
 
 /* ================= INIT ================= */
 function init(){
-  buildCountrySelect(); wireInputs(); loadHistory(); loadRates();
+  buildCountrySelect(); wireInputs(); loadHistory(); loadRates(); loadRefList();
   if(DEMO){
     appCode='demo'; enterApp();
     if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); history.sort(byDateAsc); persist(); }
     if(Object.keys(rates).length<=1){ rates=Object.assign({USD:1},DEMO_RATES); persistRates(); }
+    if(!refRows.length && DEMO_REF.length){ buildRefList(DEMO_REF, true); }
   }
   renderRates(); renderHistory();
 }
 init();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
 </script>
 </body>
 </html>
