@@ -738,35 +738,67 @@ function refMatch(row){
   return null;
 }
 function toNum(v){ if(typeof v==='number') return v; const a=refNums([v]); return a.length?a[0]:''; }
-function detectCols(h){
-  const m={fecha:-1,emisor:-1,desc:-1,total:-1,moneda:-1,pais:-1};
-  h.forEach((x,i)=>{
-    if(m.fecha<0 && /fecha|date/.test(x)) m.fecha=i;
-    else if(m.pais<0 && /pais|country/.test(x)) m.pais=i;
-    else if(m.moneda<0 && /moneda|currency|divisa/.test(x)) m.moneda=i;
-    else if(m.emisor<0 && /proveedor|emisor|vendor|empresa|comercio|tienda/.test(x)) m.emisor=i;
-    else if(m.desc<0 && /descrip|detalle|glosa|concepto|item|gasto/.test(x)) m.desc=i;
-    else if(m.total<0 && /monto|total|importe|valor|amount|precio|pago/.test(x)) m.total=i;
-  });
-  return m;
+const CUR_CODES=['CLP','COP','PEN','USD','ARS','MXN','BOB','BRL','UYU','PYG','EUR'];
+function colCurrency(header){
+  const n=norm(header); if(!n) return null;
+  if(/^1\b/.test(n) || /1\s*(usd|dolar|dollar)/.test(n)) return null;   // columna de tasa "1 USD"
+  if(/^(dolar|dollar|usd)$/.test(n)) return 'USD';
+  const st=n.replace(/[^a-z]/g,'');
+  for(const c of CUR_CODES){ if(st===c.toLowerCase()) return c; }
+  return null;
+}
+function fmtDate(v){
+  if(v==null||v==='') return '';
+  if(v instanceof Date && !isNaN(v)){ const p=n=>String(n).padStart(2,'0'); return `${v.getFullYear()}-${p(v.getMonth()+1)}-${p(v.getDate())}`; }
+  if(typeof v==='number' && v>20000 && v<80000){ const d=new Date(Math.round((v-25569)*86400000)); if(!isNaN(d)){ const p=n=>String(n).padStart(2,'0'); return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}`; } }
+  const s=String(v).trim();
+  let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){ let y=m[3]; if(y.length===2) y='20'+y; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; }
+  m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  if(m){ return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; }
+  return s;
 }
 function buildRefList(aoa,quiet){
   if(!aoa||!aoa.length){ return; }
   const header=(aoa[0]||[]).map(x=>x);
-  const map=detectCols(header.map(norm));
+  const H=header.map(norm);
+  // columnas de moneda (una por país) + columna Dólar
+  const curCols=[]; let usdCol=-1;
+  header.forEach((h,i)=>{ const c=colCurrency(h); if(c==='USD'){ if(usdCol<0) usdCol=i; } else if(c){ curCols.push({i,code:c}); } });
+  // columnas de texto
+  let fecha=-1, doc=-1, monto=-1, moneda=-1, pais=-1, coment=-1; const descCols=[];
+  H.forEach((n,i)=>{
+    if(fecha<0 && /fecha|date/.test(n)) fecha=i;
+    else if(coment<0 && /comentario/.test(n)) coment=i;
+    else if(/descrip/.test(n)) descCols.push(i);
+    else if(doc<0 && (/^doc/.test(n)||/documento/.test(n))) doc=i;
+    else if(pais<0 && /pais|country/.test(n)) pais=i;
+    else if(!curCols.length && monto<0 && /monto|total|importe|valor|amount|precio|pago/.test(n)) monto=i;
+    else if(!curCols.length && moneda<0 && /moneda|currency|divisa/.test(n)) moneda=i;
+  });
+  const emisorCol = descCols.length?descCols[0]:-1;
+  const noteCol = coment>=0?coment : (descCols.length>1?descCols[1]:-1);
   refHeader=header;
   const data=aoa.slice(1).filter(r=>Array.isArray(r)&&r.some(c=>c!==''&&c!=null));
   refRows=data.map(cells=>{
-    const g=i=> i>=0 ? cells[i] : '';
-    const fecha=String(g(map.fecha)||'').trim();
-    const emisor=String(g(map.emisor)||'').trim();
-    const desc=String(g(map.desc)||'').trim();
-    let moneda=String(g(map.moneda)||'').toUpperCase().replace(/[^A-Z]/g,'').trim();
-    let total=map.total>=0?toNum(cells[map.total]):'';
-    let pais=map.pais>=0?matchCountry(cells[map.pais]):'';
-    if(!pais&&moneda) pais=CUR_COUNTRY[moneda]||'';
-    if(!moneda&&pais&&COUNTRIES[pais]) moneda=COUNTRIES[pais].code;
-    return {fecha,emisor,desc,pais,moneda,total,cells,nums:refNums(cells),text:refText(cells)};
+    const g=i=> (i>=0&&i<cells.length) ? cells[i] : '';
+    const fechaV=fmtDate(g(fecha));
+    const emisor=String(g(emisorCol)||'').trim();
+    const desc=String(g(noteCol)||'').trim();
+    const tipo=String(g(doc)||'').trim();
+    let total='', mon='', pa='', usd='';
+    if(usdCol>=0){ const uv=toNum(cells[usdCol]); if(uv!=='') usd=uv; }
+    if(curCols.length){
+      for(const {i,code} of curCols){ const v=toNum(cells[i]); if(v!==''&&v!=null&&v!==0){ total=v; mon=code; pa=CUR_COUNTRY[code]||''; break; } }
+      if(total===''&&usd!==''){ total=usd; mon='USD'; }
+    } else {
+      total = monto>=0?toNum(cells[monto]):'';
+      mon = String(g(moneda)||'').toUpperCase().replace(/[^A-Z]/g,'');
+      pa = pais>=0?matchCountry(cells[pais]):'';
+      if(!pa&&mon) pa=CUR_COUNTRY[mon]||'';
+      if(!mon&&pa&&COUNTRIES[pa]) mon=COUNTRIES[pa].code;
+    }
+    return {fecha:fechaV, emisor, desc, tipo, pais:pa, moneda:mon, total, usd, cells, nums:refNums(cells), text:refText(cells)};
   });
   refRows.sort(byDateAsc);
   persistRef(); renderHistory();   // re-render histórico: la unión de países puede cambiar; cascada a la referencia
@@ -777,7 +809,7 @@ function handleRefFile(file){
   const reader=new FileReader();
   reader.onload=()=>{
     try{
-      const wb=XLSX.read(new Uint8Array(reader.result),{type:'array'});
+      const wb=XLSX.read(new Uint8Array(reader.result),{type:'array',cellDates:true});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false});
       if(!aoa.length){ banner('El archivo no tiene filas.'); return; }
@@ -804,13 +836,14 @@ function renderRefList(){
   const totalCols=paises.map(p=>`Total ${na(p)}`);
   document.getElementById('refHead').innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
-    + '<th class="usd">USD</th><th>Descripción</th><th>Boleta</th></tr>';
+    + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th>Boleta</th></tr>';
   let matched=0;
   document.getElementById('refBody').innerHTML=refRows.map((r,i)=>{
     const mb=refMatch(r); if(mb) matched++;
-    const u=toUSD(r);
+    const u=(r.usd!==''&&r.usd!=null)?r.usd:toUSD(r);
     const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
     const nLabel=mb?('✓ N°'+(history.indexOf(mb)+1)):'';
+    const tipoCell=r.tipo?`<span class="pill-mini ${/dig/i.test(r.tipo)?'digital':'paper'}">${esc(r.tipo)}</span>`:'—';
     return `<tr class="${mb?'refhit':''}">
       <td class="num">${i+1}</td>
       <td class="num">${esc(r.fecha)||'—'}</td>
@@ -819,6 +852,7 @@ function renderRefList(){
       ${totalCells}
       <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
       <td class="cellwrap">${esc(r.desc)||'—'}</td>
+      <td>${tipoCell}</td>
       <td class="num">${nLabel}</td>
     </tr>`;
   }).join('');
