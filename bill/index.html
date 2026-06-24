@@ -292,6 +292,7 @@ tr.refhit td{background:#E4F5DC!important}
       <p class="sub">Sube tu Excel/CSV de gastos hecho a mano. <b>No se contabiliza</b>: solo se pinta en <span style="background:#E4F5DC;padding:1px 6px;border-radius:4px">verde</span> lo que ya cargaste como boleta (coincide monto + emisor/descripción).</p>
       <div class="btn-row">
         <button class="btn ghost" onclick="document.getElementById('refIn').click()">📋 Subir Excel/CSV</button>
+        <button class="btn lime" id="refAiBtn" onclick="reconcileAI()" disabled>🤖 Cuadrar con IA</button>
         <button class="btn danger" id="refClrBtn" onclick="clearRefList()" disabled>🗑 Quitar lista</button>
       </div>
       <input id="refIn" type="file" accept=".xlsx,.xls,.csv" class="hidden">
@@ -530,6 +531,27 @@ async function scanDirect(b64,mediaType){
   if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
   return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
 }
+async function callClaudeText(prompt){
+  // proxy (producción) primero
+  try{
+    const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({prompt,code:appCode})});
+    if(r.ok){ const j=await r.json(); return j.raw||''; }
+    if(r.status===401) throw new Error('Código rechazado por el servidor.');
+  }catch(e){ if(/servidor|rechazado/.test(e.message||'')) throw e; }
+  // directo (artifact / Claude.ai)
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({model:MODEL,max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+  const data=await r.json();
+  if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+function extractJSONArray(text){
+  if(!text) return null;
+  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const a=t.indexOf('['), b=t.lastIndexOf(']'); if(a>=0&&b>a) t=t.slice(a,b+1);
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
 function extractJSON(text){
   if(!text) return null;
   let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
@@ -728,12 +750,14 @@ function refNums(cells){
 }
 function refText(cells){ return cells.filter(c=>typeof c==='string').map(c=>norm(c)).join(' '); }
 function bWords(b){ const w=[]; [b.emisor,b.desc].forEach(s=>norm(s).split(/[^a-z0-9]+/).forEach(x=>{ if(x.length>=4&&!REF_STOP.has(x)) w.push(x); })); return w; }
+function daysBetween(a,b){ const da=Date.parse(a), db=Date.parse(b); if(isNaN(da)||isNaN(db)) return null; return Math.abs(da-db)/86400000; }
 function refMatch(row){
   for(const b of history){
     if(typeof b.total!=='number') continue;
-    if(!row.nums.some(n=>Math.abs(n-b.total)<=Math.max(1,Math.abs(b.total)*0.002))) continue;
-    const w=bWords(b);
-    if(!w.length || w.some(x=>row.text.includes(x))) return b;
+    if(!row.nums.some(n=>Math.abs(n-b.total)<=Math.max(1,Math.abs(b.total)*0.002))) continue;  // valor (local) coincide
+    const d=daysBetween(row.fecha,b.fecha); const dateOk = d!=null && d<=3;                      // fecha cercana
+    const w=bWords(b); const textOk = !w.length || w.some(x=>row.text.includes(x));
+    if(dateOk || textOk) return b;
   }
   return null;
 }
@@ -828,21 +852,31 @@ function renderRefList(){
   const wrap=document.getElementById('refTableWrap');
   const info=document.getElementById('refInfo');
   const clr=document.getElementById('refClrBtn');
+  const ai=document.getElementById('refAiBtn');
   if(!wrap) return;
-  if(!refRows.length){ wrap.classList.add('hidden'); info.textContent=''; if(clr) clr.disabled=true; return; }
+  if(!refRows.length){ wrap.classList.add('hidden'); info.textContent=''; if(clr) clr.disabled=true; if(ai) ai.disabled=true; return; }
   if(clr) clr.disabled=false;
+  if(ai) ai.disabled = !history.length;
   wrap.classList.remove('hidden');
   const paises=allPaises();
   const totalCols=paises.map(p=>`Total ${na(p)}`);
   document.getElementById('refHead').innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th>Boleta</th></tr>';
+  const confColor={alta:'#2E8B57',media:'#B0762F',baja:'#8a8f98'};
   let matched=0;
   document.getElementById('refBody').innerHTML=refRows.map((r,i)=>{
-    const mb=refMatch(r); if(mb) matched++;
+    // si la IA ya corrió para esta fila, usar su veredicto; si no, regla determinista (valor+fecha)
+    const mb = r.aiDone ? (r.aiBoletaTs!=null ? (history.find(b=>b.ts===r.aiBoletaTs)||null) : null) : refMatch(r);
+    if(mb) matched++;
     const u=(r.usd!==''&&r.usd!=null)?r.usd:toUSD(r);
     const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
-    const nLabel=mb?('✓ N°'+(history.indexOf(mb)+1)):'';
+    let nLabel='';
+    if(mb){
+      const n=history.indexOf(mb)+1;
+      const conf=(r.aiDone&&r.aiConf)?` <small style="color:${confColor[r.aiConf]||'#8a8f98'}">${r.aiConf}</small>`:'';
+      nLabel=`✓ N°${n}${conf}`;
+    }
     const tipoCell=r.tipo?`<span class="pill-mini ${/dig/i.test(r.tipo)?'digital':'paper'}">${esc(r.tipo)}</span>`:'—';
     return `<tr class="${mb?'refhit':''}">
       <td class="num">${i+1}</td>
@@ -856,7 +890,41 @@ function renderRefList(){
       <td class="num">${nLabel}</td>
     </tr>`;
   }).join('');
-  info.textContent=`${matched} / ${refRows.length} marcadas`;
+  const aiNote = refRows.some(r=>r.aiDone)?' (IA)':'';
+  info.textContent=`${matched} / ${refRows.length} marcadas${aiNote}`;
+}
+async function reconcileAI(){
+  if(!history.length){ banner('Primero carga boletas en el histórico.'); return; }
+  if(!refRows.length){ banner('Primero sube una lista de referencia.'); return; }
+  const btn=document.getElementById('refAiBtn'); const old=btn.textContent;
+  btn.disabled=true; btn.textContent='🤖 Cuadrando…'; clearBanner();
+  try{
+    const boletas=history.map((r,i)=>({n:i+1,fecha:r.fecha,emisor:r.emisor,total:r.total,moneda:r.moneda,desc:r.desc}));
+    const referencia=refRows.map((r,i)=>({ref:i,fecha:r.fecha,emisor:r.emisor,total:r.total,moneda:r.moneda,desc:r.desc}));
+    const prompt=`Eres un conciliador de gastos. Tengo dos listas del mismo viaje/periodo.
+BOLETAS (ya cargadas, fuente de verdad):
+${JSON.stringify(boletas)}
+REFERENCIA (lista manual a cuadrar):
+${JSON.stringify(referencia)}
+Empareja cada fila de REFERENCIA con la BOLETA del MISMO gasto, priorizando: (1) fecha cercana, (2) monto/valor local igual o casi, (3) nombre del comercio (los nombres pueden venir truncados o sucios, p.ej. "UBER *TRIP HELP.UBE COMPRAS INT.VI" = Uber). Cada boleta se usa máximo una vez. Si no hay correspondencia clara, usa boleta=null.
+Devuelve SOLO un arreglo JSON, sin texto ni markdown:
+[{"ref": <id de referencia>, "boleta": <n de boleta o null>, "conf": "alta" | "media" | "baja"}]`;
+    const raw=await callClaudeText(prompt);
+    const arr=extractJSONArray(raw);
+    if(!arr||!Array.isArray(arr)) throw new Error('La IA no devolvió un resultado legible.');
+    refRows.forEach(r=>{ r.aiDone=true; r.aiBoletaTs=null; r.aiConf=''; });
+    let n=0; const usados={};
+    arr.forEach(m=>{ const r=refRows[m&&m.ref]; if(!r) return;
+      let bol=(m.boleta==null||m.boleta==='')?null:Number(m.boleta);
+      if(bol && (bol<1||bol>history.length||usados[bol])) bol=null;   // descarta fuera de rango o repetida
+      const bo=bol?history[bol-1]:null;
+      r.aiBoletaTs=bo?bo.ts:null; r.aiConf=(m.conf||'').toLowerCase();
+      if(bol){ usados[bol]=1; n++; }
+    });
+    persistRef(); renderRefList();
+    banner(`IA cuadró ${n} de ${refRows.length} filas.`,'ok');
+  }catch(e){ banner('No se pudo cuadrar con IA: '+(e.message||e)); }
+  finally{ btn.disabled=false; btn.textContent=old; }
 }
 
 /* ================= PDF BOLETAS EN PAPEL ================= */

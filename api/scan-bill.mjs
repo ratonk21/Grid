@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
   const ACCESS = (process.env.BILL_ACCESS_CODE || '').trim();
   const code = (typeof body.code === 'string' ? body.code : '').trim();
-  const { image, media_type, check } = body;
+  const { image, media_type, check, prompt } = body;
 
   // 1) Validación de código (gate real del lado servidor)
   if (ACCESS) {
@@ -51,7 +51,25 @@ export default async function handler(req, res) {
   // Ping de validación del lock (no escanea)
   if (check) { res.status(200).json({ ok: true }); return; }
 
-  // 2) Escaneo
+  // 2a) Conciliación / consulta de texto libre (sin imagen)
+  if (prompt && !image) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) { res.status(500).json({ error: 'Falta ANTHROPIC_API_KEY en el servidor' }); return; }
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: MODEL, max_tokens: 2000, messages: [{ role: 'user', content: String(prompt) }] })
+      });
+      const data = await r.json();
+      if (!r.ok) { res.status(r.status).json({ error: 'Error de la API', detail: data && data.error }); return; }
+      const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+      res.status(200).json({ raw });
+      return;
+    } catch (e) { res.status(500).json({ error: String(e && e.message || e) }); return; }
+  }
+
+  // 2b) Escaneo
   if (!image) { res.status(400).json({ error: 'Falta la imagen' }); return; }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
