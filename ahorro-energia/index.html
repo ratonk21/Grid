@@ -434,8 +434,8 @@
       <div class="tabs flat" id="tabs">
         <div class="tab active" data-tab="config" data-i18n="t_config">Ubicación y tarifa</div>
         <div class="tab" data-tab="inventario" data-i18n="t_inv">Inventario</div>
-        <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
         <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
+        <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
         <div class="tab" data-tab="perfil" data-i18n="t_perfil">Perfil diario</div>
         <div class="tab" data-tab="tabla" data-i18n="t_tabla">Tabla anual</div>
         <div class="tab" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
@@ -2069,8 +2069,8 @@ function toast(msg,kind){
 const FLOW=[
   {tab:"config",key:"t_config"},
   {tab:"inventario",key:"t_inv"},
-  {tab:"escenarios",key:"t_escenarios"},
   {tab:"dim",key:"t_dim"},
+  {tab:"escenarios",key:"t_escenarios"},
   {tab:"perfil",key:"t_perfil"},
   {tab:"tabla",key:"t_tabla"},
   {tab:"resumen",key:"t_resumen"},
@@ -2866,7 +2866,7 @@ Object.assign(DICT.en,{
   inv_base_sub:"Conventional Public Lighting · your fleet at full power (100%) over the year window. This is the reference the comparator will use.",
   inv_base_energy:"Conventional energy / yr", inv_base_cost:"Conventional cost / yr"
 });
-const SEC_HELP_STEP={config:1,inv:2,scn:3,dim:4,perfil:5,tabla:6,resumen:7,exec:8,cmp:9};
+const SEC_HELP_STEP={config:1,inv:2,dim:3,scn:4,perfil:5,tabla:6,resumen:7,exec:8,cmp:9};
 Object.assign(DICT.es,{
   help_inv:"<b>Empieza por tu parque.</b> Agrega un grupo por cada tipo de luminaria con su cantidad y potencia (W). Marca <b>Dimerizable</b> en las que admiten regulación; las demás operan a potencia plena toda la noche.<span class='tip'>La suma define la potencia instalada de la flota.</span>",
   help_scn:"<b>Define qué comparar.</b> Activa los escenarios: astronómico con dimerización (sigue el sol y aplica tu perfil), astronómico sin dimerización y horario fijo (la operación tradicional a superar).<span class='tip'>Elige la base del % contra la que se mide el ahorro.</span>",
