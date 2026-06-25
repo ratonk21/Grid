@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "cl.griddata.twa",
-        "sha256_cert_fingerprints": ["07:34:D1:DE:CA:10:7B:3E:71:DE:E4:A5:40:63:05:99:E9:A6:3D:01:48:C7:30:A4:A8:C8:C3:A5:0F:BC:68:D9"]
+        "package_name": "cl.griddata.www.twa",
+        "sha256_cert_fingerprints": ["37:23:FB:A5:D9:3D:89:EF:0A:FD:D5:96:1D:30:2E:EC:EB:E1:96:E9:66:88:52:92:43:03:0B:33:80:F3:6B:D3"]
       }
     }]
