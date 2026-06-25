@@ -123,7 +123,7 @@
   aside{counter-reset:cfg}
   aside .panel h2{counter-increment:cfg}
   aside .panel h2::before{content:counter(cfg) " · "; color:var(--indigo); font-weight:700; font-family:var(--mono)}
-  .card .tag{position:absolute; top:12px; right:12px; font-size:10px; font-family:var(--mono); padding:2px 7px; border-radius:20px}
+  .card .tag{display:inline-block; margin-bottom:9px; font-size:10px; font-family:var(--mono); padding:3px 9px; border-radius:8px; line-height:1.25; max-width:100%; font-weight:700; letter-spacing:.01em}
   .card.astro{border-top:3px solid var(--indigo)} .card.astro .v{color:var(--indigo)}
   .card.fixed{border-top:3px solid var(--rose)} .card.fixed .v{color:var(--rose)}
   .card.save{border-top:3px solid var(--teal)} .card.save .v{color:var(--teal)}
@@ -377,6 +377,7 @@
   .iox-box textarea{width:100%; margin-top:10px; background:var(--surface2); border:1px solid var(--line);
     border-radius:10px; padding:10px; font-family:var(--mono); font-size:12px; color:var(--ink); resize:vertical}
   .iox-box textarea:focus{outline:2px solid var(--indigo); outline-offset:1px; border-color:var(--indigo)}
+  .seg{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -622,8 +623,8 @@
       <!-- RESUMEN -->
       <section class="view" id="view-resumen">
         <div class="cards">
-          <div class="card astro"><span class="tag astro" data-i18n="tag_astro">Astronómico</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rA">—</div><div class="vm" id="rAm">—</div><div class="s" id="rAs">—</div></div>
-          <div class="card" id="cardC" style="border-top:3px solid var(--teal)"><span class="tag" style="background:var(--teal-soft);color:var(--teal)" data-i18n="tag_nodim">Astro s/dim</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rC" style="color:var(--teal)">—</div><div class="vm" id="rCm">—</div><div class="s" id="rCs">—</div></div>
+          <div class="card astro"><span class="tag astro" data-i18n="c_astro_dim">Sistema de Telegestión Ubicquia</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rA">—</div><div class="vm" id="rAm">—</div><div class="s" id="rAs">—</div></div>
+          <div class="card" id="cardC" style="border-top:3px solid var(--teal)"><span class="tag" style="background:var(--teal-soft);color:var(--teal)" data-i18n="c_astro_nodim">Alumbrado Público Convencional</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rC" style="color:var(--teal)">—</div><div class="vm" id="rCm">—</div><div class="s" id="rCs">—</div></div>
           <div class="card fixed" id="cardB"><span class="tag fixed" data-i18n="tag_fixed">Horario fijo</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rB">—</div><div class="vm" id="rBm">—</div><div class="s" id="rBs">—</div></div>
           <div class="card save" id="cardSch"><div class="k" data-i18n="save_sched">Ahorro astronómico vs fijo</div><div class="v" id="rSch">—</div><div class="vm" id="rSchm">—</div><div class="s" id="rSchs">—</div></div>
           <div class="card save"><div class="k" data-i18n="save_dim">Ahorro por dimerización</div><div class="v" id="rDim">—</div><div class="vm" id="rDimm">—</div><div class="s" id="rDims">—</div></div>
@@ -640,7 +641,7 @@
             </div>
             <canvas id="monthChart" width="1040" height="320"></canvas>
             <div class="layers" style="margin-top:6px"><span class="note" data-i18n="base_pref">Base del %:</span>
-              <div class="seg baseSeg"><button data-base="B" data-i18n="c_fijo">Horario fijo</button><button data-base="C" data-i18n="c_astro_nodim">Astro s/dim</button></div>
+              <div class="seg baseSeg"><button data-base="B" data-i18n="c_fijo">Horario fijo</button><button data-base="C" data-i18n="tag_nodim">Convencional</button></div>
             </div>
             <div class="mtblwrap" id="monthTableWrap"></div>
           </div>
@@ -679,7 +680,7 @@
         <div class="section">
           <div class="head"><h2 data-i18n="cmp_title">Comparación anual</h2><p data-i18n="cmp_sub">Por luminaria de referencia y para la flota completa.</p></div>
           <div class="layers"><span class="note" data-i18n="base_pref">Base del %:</span>
-            <div class="seg baseSeg"><button data-base="B" data-i18n="c_fijo">Horario fijo</button><button data-base="C" data-i18n="c_astro_nodim">Astro s/dim</button></div>
+            <div class="seg baseSeg"><button data-base="B" data-i18n="c_fijo">Horario fijo</button><button data-base="C" data-i18n="tag_nodim">Convencional</button></div>
           </div>
           <div class="surface"><table class="ctable" id="cmpTable"></table></div>
         </div>
@@ -835,6 +836,7 @@
 const DICT={
  es:{ docTitle:"Alumbrado público — calculadora",
   io_title:"Guardar y cargar", io_hint:"Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.", io_export:"Exportar (.json)", io_import:"Importar archivo", io_copy:"Copiar código", io_paste:"Pegar código", io_paste_t:"Pegar configuración", io_paste_h:"Pega el código o el JSON que guardaste para restaurar esa configuración.", cancel:"Cancelar", exp_ok:"Configuración exportada.", exp_err:"No se pudo exportar.", code_ok:"Código copiado al portapapeles.", code_manual:"Copia este código manualmente:", imp_ok:"Configuración aplicada.", imp_err:"Archivo o código no válido.", flow_prev:"Anterior", flow_next:"Siguiente",
+  cfg_full_title:"Configuración detallada del análisis", exp_full_cfg:"Todos los parámetros particulares ingresados para este análisis.", cfg_loc:"Ubicación y tiempo", cfg_tar:"Tarifa y referencia", cfg_inv_t:"Inversión", cfg_scn:"Escenarios configurados", cfg_inv_list:"Inventario de luminarias", cfg_dim_t:"Perfil de dimerización (% por media hora)", cfg_state:"Estado", cfg_window:"Ventana de operación", cfg_on:"Activo", cfg_off:"Inactivo", cfg_power_sum:"Potencia instalada", cfg_dimkw:"Dimerizable", cfg_fixkw:"No dimerizable", yes:"Sí", no:"No", custom_loc:"Personalizada", col_hora:"Hora",
   eyebrow:"Alumbrado público · energía y costo", title:"Calculadora de consumo anual",
   city:"Ciudad", year:"Año", loc_time:"Ubicación y tiempo",
   loc_hint:"El amanecer/atardecer se recalcula (NOAA) con estas coordenadas.",
@@ -845,13 +847,13 @@ const DICT={
   ref_hint:"Referencia para el perfil y la tabla diaria. El consumo de la flota usa el Inventario.",
   dimming:"Dimerización", dim_side:"Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.",
   t_guia:"Guía", t_resumen:"Resumen", t_escenarios:"Escenarios", t_perfil:"Perfil diario", t_dim:"Dimerización", t_inv:"Inventario", t_tabla:"Tabla anual", t_exec:"Resumen ejecutivo",
-  tag_astro:"Astronómico", tag_fixed:"Horario fijo", tag_nodim:"Astro s/dim", energy_year:"Energía / año",
-  sc_nodim:"Astronómico sin dimerización", sc_nodim_d:"Sigue el sol a plena potencia (sin bajar intensidad), como una fotocelda común: imita un sistema sin telegestión. Útil para aislar el efecto de la dimerización.", ena_C:"Incluir en comparaciones", lyr_nodim:"Astro sin dim", c_astro_dim:"Astronómico c/dim", c_astro_nodim:"Astronómico s/dim", desc_only:"Mostrando solo", desc_addmore:"Activa otro perfil para comparar.", v_dimv:"La dimerización ahorra:", hrs_title:"Horas de encendido acumuladas", hrs_sub:"Horas que las luminarias están encendidas, por día y acumulado en el año.", th_dia:"Día", th_hday:"Horas (día)", th_acc:"Acumulado (año)", pct_base:"% vs base", base:"base", pct_month:"% ahorro mensual", grid_title:"Detalle horario por día", xls_btn:"Descargar Excel", xls_hrs_note:"Descarga las horas por día y acumuladas en Excel.", ast_offhint:"Los minutos son un ajuste sobre el sol: 0 = enciende justo al atardecer y apaga al amanecer. Un valor positivo retrasa el encendido/apagado; uno negativo lo adelanta.", ex_astro_note:"Los horarios del reloj astronómico (atardecer → amanecer) son los del día seleccionado en el análisis y cambian cada día con el sol. El horario fijo se incluye solo como escenario de comparación cuando está activado.",
+  tag_astro:"Telegestión Ubicquia", tag_fixed:"Horario fijo", tag_nodim:"Convencional", energy_year:"Energía / año",
+  sc_nodim:"Alumbrado Público Convencional", sc_nodim_d:"Sigue el sol a plena potencia (sin bajar intensidad), como una fotocelda común: imita un sistema sin telegestión. Útil para aislar el efecto de la dimerización.", ena_C:"Incluir en comparaciones", lyr_nodim:"Convencional", c_astro_dim:"Sistema de Telegestión Ubicquia", c_astro_nodim:"Alumbrado Público Convencional", desc_only:"Mostrando solo", desc_addmore:"Activa otro perfil para comparar.", v_dimv:"La dimerización ahorra:", hrs_title:"Horas de encendido acumuladas", hrs_sub:"Horas que las luminarias están encendidas, por día y acumulado en el año.", th_dia:"Día", th_hday:"Horas (día)", th_acc:"Acumulado (año)", pct_base:"% vs base", base:"base", pct_month:"% ahorro mensual", grid_title:"Detalle horario por día", xls_btn:"Descargar Excel", xls_hrs_note:"Descarga las horas por día y acumuladas en Excel.", ast_offhint:"Los minutos son un ajuste sobre el sol: 0 = enciende justo al atardecer y apaga al amanecer. Un valor positivo retrasa el encendido/apagado; uno negativo lo adelanta.", ex_astro_note:"Los horarios del reloj astronómico (atardecer → amanecer) son los del día seleccionado en el análisis y cambian cada día con el sol. El horario fijo se incluye solo como escenario de comparación cuando está activado.",
   exp_config:"Parámetros usados para todos los cálculos del informe.", exp_dim_title:"Estrategia de dimerización", exp_dim:"Porcentaje de potencia aplicado en cada franja; se combina con la ventana de encendido astronómica.", nodim_txt:"Sin dimerización: potencia plena durante toda la ventana de encendido.", dim_off:"apagada", exp_key:"Resultado principal: el reloj astronómico con tu perfil de dimerización (escenario recomendado).", exp_save:"Cuánto se ahorra: por dimerización (bajar potencia) y por seguir el sol en vez de un horario fijo.", exp_detail:"Mismos indicadores lado a lado para cada escenario activo.", exp_month:"Energía de la flota mes a mes por escenario; la última fila es el % de ahorro mensual frente a la base.", exp_oper:"Cuántas horas al año permanecen encendidas las luminarias y cuántos minutos se ahorran cada día al encender/apagar con el sol en lugar de un horario fijo: el reloj astronómico evita encender con luz de día o apagar cuando aún es de noche.", exp_hours:"Horas de operación y minutos ahorrados, desglosados por mes.", pdf_p2_title:"Consumos mensuales y ahorros", pdf_energy_m:"Energía mensual de la flota", pdf_cost_m:"Costo mensual de la flota", ex_hours_title:"Horas de operación y minutos por mes", avg_hpn:"Prom. h/noche", min_vs_fix:"Min vs fijo/día", acc_min:"Acum. min", avg_min:"Promedio", ex_oper_title:"Operación y minutos ahorrados", ex_oper_hours:"Horas de operación / año", min_saved_day:"Minutos ahorrados / día", hrs_saved_year:"Horas ahorradas / año", min_day:"min/día",
-  save_sched:"Ahorro astronómico vs fijo", save_dim:"Ahorro por dimerización",
+  save_sched:"Ahorro Telegestión vs fijo", save_dim:"Ahorro por dimerización",
   month_title:"Consumo de energía mes a mes", month_sub:"Energía de la flota por mes (kWh, cambia a MWh/GWh si es grande). Activa US$ para ver el costo.",
-  lyr_astro:"Reloj astronómico", lyr_fixed:"Horario fijo", lyr_money:"Mostrar importe",
-  sc_astro:"Reloj astronómico", sc_astro_d:"Enciende al atardecer y apaga al amanecer, siguiendo el sol cada día.",
+  lyr_astro:"Telegestión Ubicquia", lyr_fixed:"Horario fijo", lyr_money:"Mostrar importe",
+  sc_astro:"Sistema de Telegestión Ubicquia", sc_astro_d:"Enciende al atardecer y apaga al amanecer, siguiendo el sol cada día.",
   off_on:"Encendido vs atardecer", off_off:"Apagado vs amanecer", apply_dim:"Aplicar dimerización",
   sc_fixed:"Horario fijo (escenario a comparar)", sc_fixed_d:"Reloj fijo igual todo el año, sin seguir el sol.",
   fix_on:"Hora de encendido fija", fix_off:"Hora de apagado fija",
@@ -874,7 +876,7 @@ const DICT={
   ch_dst:"Horario de verano", ch_yes:"Sí (+1 h)", ch_no:"No", ch_henc:"Hora de encendido", ch_hapg:"Hora de apagado",
   ch_total:"Total del día", calc_how:"Cómo se calcula este día",
   edge_note:"La hora de encendido/apagado consume solo los minutos realmente encendidos × el % de dim de esa hora. Sin correcciones negativas.",
-  c_ind:"Indicador", c_astro:"Astronómico", c_fijo:"Horario fijo", c_delta:"Δ (fijo−astro)",
+  c_ind:"Indicador", c_astro:"Telegestión Ubicquia", c_fijo:"Horario fijo", c_delta:"Δ (fijo−astro)",
   r_ophours:"Horas de operación / año", r_eqhours:"Horas equivalentes (con dim) / año",
   r_kwh_ref:"kWh/año · luminaria referencia", r_cost_ref:"Costo/año · luminaria referencia",
   r_kwh_fleet:"kWh/año · flota", r_cost_fleet:"Costo/año · flota",
@@ -888,7 +890,7 @@ const DICT={
   ex_title:"Resumen ejecutivo — Alumbrado público", ex_loc:"Ubicación", ex_year:"Año", ex_date:"Generado",
   ex_config:"Configuración del análisis", ex_key:"Resultados clave (flota, escenario astronómico con dimerización)",
   ex_energy:"Energía anual", ex_cost:"Costo anual", ex_power:"Potencia instalada",
-  ex_save_title:"Ahorros estimados", ex_save_sched:"Por reloj astronómico vs horario fijo", ex_save_dim:"Por dimerización",
+  ex_save_title:"Ahorros estimados", ex_save_sched:"Telegestión Ubicquia vs horario fijo", ex_save_dim:"Por dimerización",
   ex_detail:"Comparación de escenarios", ex_month:"Consumo mensual de energía", ex_yearch:"Operación a lo largo del año",
   ex_lum:"Luminarias", ex_tariff:"Tarifa", ex_op:"Horas de operación", ex_eq:"Horas equivalentes",
   ex_note:"Cálculo astronómico NOAA según latitud/longitud y zona horaria, considerando el cambio de horario del país. El consumo en las horas de encendido y apagado se calcula con la fracción real de minutos. Cifras referenciales para evaluación.",
@@ -896,6 +898,7 @@ const DICT={
  },
  en:{ docTitle:"Street lighting — calculator",
   io_title:"Save & load", io_hint:"Export the changes you made and re-apply them anytime, here or on another device.", io_export:"Export (.json)", io_import:"Import file", io_copy:"Copy code", io_paste:"Paste code", io_paste_t:"Paste configuration", io_paste_h:"Paste the code or JSON you saved to restore that configuration.", cancel:"Cancel", exp_ok:"Configuration exported.", exp_err:"Export failed.", code_ok:"Code copied to clipboard.", code_manual:"Copy this code manually:", imp_ok:"Configuration applied.", imp_err:"Invalid file or code.", flow_prev:"Back", flow_next:"Next",
+  cfg_full_title:"Detailed analysis configuration", exp_full_cfg:"All the particular parameters entered for this analysis.", cfg_loc:"Location & time", cfg_tar:"Tariff & reference", cfg_inv_t:"Investment", cfg_scn:"Configured scenarios", cfg_inv_list:"Luminaire inventory", cfg_dim_t:"Dimming profile (% per half hour)", cfg_state:"Status", cfg_window:"Operating window", cfg_on:"Active", cfg_off:"Inactive", cfg_power_sum:"Installed power", cfg_dimkw:"Dimmable", cfg_fixkw:"Non-dimmable", yes:"Yes", no:"No", custom_loc:"Custom", col_hora:"Hour",
   eyebrow:"Street lighting · energy & cost", title:"Annual consumption calculator",
   city:"City", year:"Year", loc_time:"Location & time",
   loc_hint:"Sunrise/sunset is recomputed (NOAA) from these coordinates.",
@@ -906,13 +909,13 @@ const DICT={
   ref_hint:"Reference for the profile and daily table. Fleet consumption uses the Inventory.",
   dimming:"Dimming", dim_side:"Edit it per half hour in the Dimming tab. Here is a preview.",
   t_guia:"Guide", t_resumen:"Summary", t_escenarios:"Scenarios", t_perfil:"Daily profile", t_dim:"Dimming", t_inv:"Inventory", t_tabla:"Annual table", t_exec:"Executive summary",
-  tag_astro:"Astronomical", tag_fixed:"Fixed schedule", tag_nodim:"Astro no-dim", energy_year:"Energy / year",
-  sc_nodim:"Astronomical, no dimming", sc_nodim_d:"Tracks the sun at full power (no dimming), like a standard photocell: it mimics a system without remote management. Useful to isolate the dimming effect.", ena_C:"Include in comparisons", lyr_nodim:"Astro no-dim", c_astro_dim:"Astronomical w/dim", c_astro_nodim:"Astronomical no-dim", desc_only:"Showing only", desc_addmore:"Enable another profile to compare.", v_dimv:"Dimming saves:", hrs_title:"Accumulated operating hours", hrs_sub:"Hours luminaires are on, per day and cumulative over the year.", th_dia:"Day", th_hday:"Hours (day)", th_acc:"Cumulative (yr)", pct_base:"% vs base", base:"base", pct_month:"% monthly savings", grid_title:"Hourly detail per day", xls_btn:"Download Excel", xls_hrs_note:"Download daily and cumulative hours to Excel.", ast_offhint:"The minutes are an offset from the sun: 0 = turns on right at sunset and off at sunrise. A positive value delays on/off; a negative one brings it earlier.", ex_astro_note:"The astronomical clock times (sunset → sunrise) are those of the day selected in the analysis and change every day with the sun. The fixed schedule is included only as a comparison scenario when enabled.",
+  tag_astro:"Ubicquia smart", tag_fixed:"Fixed schedule", tag_nodim:"Conventional", energy_year:"Energy / year",
+  sc_nodim:"Conventional Public Lighting", sc_nodim_d:"Tracks the sun at full power (no dimming), like a standard photocell: it mimics a system without remote management. Useful to isolate the dimming effect.", ena_C:"Include in comparisons", lyr_nodim:"Conventional", c_astro_dim:"Ubicquia Smart Management System", c_astro_nodim:"Conventional Public Lighting", desc_only:"Showing only", desc_addmore:"Enable another profile to compare.", v_dimv:"Dimming saves:", hrs_title:"Accumulated operating hours", hrs_sub:"Hours luminaires are on, per day and cumulative over the year.", th_dia:"Day", th_hday:"Hours (day)", th_acc:"Cumulative (yr)", pct_base:"% vs base", base:"base", pct_month:"% monthly savings", grid_title:"Hourly detail per day", xls_btn:"Download Excel", xls_hrs_note:"Download daily and cumulative hours to Excel.", ast_offhint:"The minutes are an offset from the sun: 0 = turns on right at sunset and off at sunrise. A positive value delays on/off; a negative one brings it earlier.", ex_astro_note:"The astronomical clock times (sunset → sunrise) are those of the day selected in the analysis and change every day with the sun. The fixed schedule is included only as a comparison scenario when enabled.",
   exp_config:"Parameters used for every calculation in the report.", exp_dim_title:"Dimming strategy", exp_dim:"Power percentage applied in each slot; it is combined with the astronomical on-window.", nodim_txt:"No dimming: full power during the whole on-window.", dim_off:"off", exp_key:"Headline result: the astronomical clock with your dimming profile (recommended scenario).", exp_save:"How much is saved: by dimming (lowering power) and by tracking the sun instead of a fixed schedule.", exp_detail:"Same indicators side by side for each active scenario.", exp_month:"Fleet energy month by month per scenario; the last row is the monthly % savings vs the base.", exp_oper:"How many hours per year the luminaires stay on, and how many minutes are saved each day by switching with the sun instead of a fixed schedule: the astronomical clock avoids turning on in daylight or off while it is still dark.", exp_hours:"Operating hours and minutes saved, broken down by month.", pdf_p2_title:"Monthly consumption & savings", pdf_energy_m:"Monthly fleet energy", pdf_cost_m:"Monthly fleet cost", ex_hours_title:"Operating hours & minutes per month", avg_hpn:"Avg h/night", min_vs_fix:"Min vs fixed/day", acc_min:"Cum. min", avg_min:"Average", ex_oper_title:"Operation & minutes saved", ex_oper_hours:"Operating hours / year", min_saved_day:"Minutes saved / day", hrs_saved_year:"Hours saved / year", min_day:"min/day",
-  save_sched:"Astronomical vs fixed savings", save_dim:"Dimming savings",
+  save_sched:"Smart vs fixed savings", save_dim:"Dimming savings",
   month_title:"Monthly energy consumption", month_sub:"Fleet energy per month (kWh, switches to MWh/GWh when large). Toggle US$ for cost.",
-  lyr_astro:"Astronomical clock", lyr_fixed:"Fixed schedule", lyr_money:"Show amount",
-  sc_astro:"Astronomical clock", sc_astro_d:"Turns on at sunset and off at sunrise, tracking the sun each day.",
+  lyr_astro:"Ubicquia smart", lyr_fixed:"Fixed schedule", lyr_money:"Show amount",
+  sc_astro:"Ubicquia Smart Management System", sc_astro_d:"Turns on at sunset and off at sunrise, tracking the sun each day.",
   off_on:"Turn-on vs sunset", off_off:"Turn-off vs sunrise", apply_dim:"Apply dimming",
   sc_fixed:"Fixed schedule (scenario to compare)", sc_fixed_d:"Same fixed clock all year, not tracking the sun.",
   fix_on:"Fixed turn-on time", fix_off:"Fixed turn-off time",
@@ -935,7 +938,7 @@ const DICT={
   ch_dst:"Daylight saving", ch_yes:"Yes (+1 h)", ch_no:"No", ch_henc:"Turn-on hour", ch_hapg:"Turn-off hour",
   ch_total:"Day total", calc_how:"How this day is computed",
   edge_note:"The turn-on/off hour consumes only the minutes actually lit × that hour's dim %. No negative corrections.",
-  c_ind:"Indicator", c_astro:"Astronomical", c_fijo:"Fixed schedule", c_delta:"Δ (fixed−astro)",
+  c_ind:"Indicator", c_astro:"Ubicquia smart", c_fijo:"Fixed schedule", c_delta:"Δ (fixed−astro)",
   r_ophours:"Operating hours / year", r_eqhours:"Equivalent hours (with dim) / year",
   r_kwh_ref:"kWh/yr · reference luminaire", r_cost_ref:"Cost/yr · reference luminaire",
   r_kwh_fleet:"kWh/yr · fleet", r_cost_fleet:"Cost/yr · fleet",
@@ -948,7 +951,7 @@ const DICT={
   ex_title:"Executive summary — Street lighting", ex_loc:"Location", ex_year:"Year", ex_date:"Generated",
   ex_config:"Analysis configuration", ex_key:"Key results (fleet, astronomical scenario with dimming)",
   ex_energy:"Annual energy", ex_cost:"Annual cost", ex_power:"Installed power",
-  ex_save_title:"Estimated savings", ex_save_sched:"Astronomical clock vs fixed schedule", ex_save_dim:"From dimming",
+  ex_save_title:"Estimated savings", ex_save_sched:"Ubicquia smart vs fixed schedule", ex_save_dim:"From dimming",
   ex_detail:"Scenario comparison", ex_month:"Monthly energy consumption", ex_yearch:"Operation across the year",
   ex_lum:"Luminaires", ex_tariff:"Tariff", ex_op:"Operating hours", ex_eq:"Equivalent hours",
   ex_note:"NOAA astronomical calculation from latitude/longitude and time zone, accounting for the country's daylight saving. Consumption at turn-on and turn-off hours uses the real fraction of minutes. Figures are indicative for evaluation.",
@@ -1478,6 +1481,99 @@ function renderHoursTable(){
 }
 
 /* ============ executive summary ============ */
+/* ============ Configuración detallada (pantalla + PDF) ============ */
+function configSections(){
+  const cc=COUNTRIES.find(c=>c.c===S.country);
+  const place=(cc&&S.country!=="CUSTOM")?cc.n:t("custom_loc");
+  const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
+  let dstTxt;
+  if(S.dstRule==="none")dstTxt=t("dst_none");
+  else{const nm=S.dstRule==="us"?t("dst_us"):S.dstRule==="eu"?t("dst_eu"):S.dstRule==="chile"?t("dst_chile"):t("dst_py");
+    dstTxt=nm+(DSTDAYS.length?(" ("+DSTDAYS.map(z=>fdate(sunCache[z.i].date)+" "+z.s).join(", ")+")"):"");}
+  const secs=[];
+  secs.push({title:t("cfg_loc"),type:"kv",rows:[
+    [t("country"),place],
+    [t("lat"),nf(S.lat,4)+" °"],
+    [t("lon"),nf(S.lon,4)+" °"],
+    [t("tz"),"UTC "+(S.tz>=0?"+":"")+S.tz],
+    [t("dst"),dstTxt],
+    [t("year"),String(S.year)],
+  ]});
+  const tarRows=[
+    [t("tariff"),"US$ "+nf(S.tariff,3)+" /kWh"],
+    [t("ref_lum"),nf(S.pref,0)+" W"],
+    [t("eu_unit"),S.energyUnit==="auto"?t("eu_auto"):S.energyUnit],
+  ];
+  if(S.currency.enabled){tarRows.push([t("use_local"),t("yes")]);tarRows.push([t("cur_sym"),S.currency.symbol]);tarRows.push([t("cur_rate"),nf(S.currency.rate,2)+" / US$"]);}
+  secs.push({title:t("cfg_tar"),type:"kv",rows:tarRows});
+  const pb=payback();
+  const invRows=[[t("node_cost"),S.nodeCost?money(S.nodeCost):"—"]];
+  if(pb.invest)invRows.push([t("pay_invest"),money(pb.invest)]);
+  if(pb.years!=null&&isFinite(pb.years)&&pb.years>0)invRows.push([t("pay_k"),nf(pb.years,1)+" "+t("years")]);
+  secs.push({title:t("cfg_inv_t"),type:"kv",rows:invRows});
+  const mk=(obj,labKey,solar)=>{
+    const state=obj.enabled?t("cfg_on"):t("cfg_off");
+    let win;
+    if(solar){const e=obj.offEnc,a=obj.offApag;
+      win=t("ch_atardecer")+(e?(" "+(e>0?"+":"")+e+"m"):"")+" → "+t("ch_amanecer")+(a?(" "+(a>0?"+":"")+a+"m"):"");}
+    else win=hhmm(obj.on)+" → "+hhmm(obj.off);
+    return [t(labKey),state,win,obj.useDim?t("yes"):t("no")];
+  };
+  secs.push({title:t("cfg_scn"),type:"table",
+    head:[[t("ch_escenario"),t("cfg_state"),t("cfg_window"),t("apply_dim")]],
+    body:[mk(S.A,"c_astro_dim",true),mk(S.C,"c_astro_nodim",true),mk(S.B,"c_fijo",false)],
+    note:t("base_pref")+" "+(S.baseScn==="B"?t("c_fijo"):t("c_astro_nodim"))});
+  const invBody=S.inventory.map(g=>[g.name||"—",nf(+g.qty||0,0),nf(+g.power||0,0)+" W",(g.dim!==false)?t("yes"):t("no")]);
+  invBody.push([t("inv_total"),nf(units,0),nf(IKW,1)+" kW",""]);
+  secs.push({title:t("cfg_inv_list"),type:"table",
+    head:[[t("inv_grupo"),t("inv_cant"),t("inv_pot"),t("inv_dim")]],
+    body:invBody,
+    note:t("cfg_power_sum")+": "+nf(IKW,1)+" kW · "+t("cfg_dimkw")+": "+nf(dimKW(),1)+" kW · "+t("cfg_fixkw")+": "+nf(fixedKW(),1)+" kW"});
+  const dimHead=[[t("col_hora"),":00",":30",t("col_hora"),":00",":30"]];
+  const dimBody=[];
+  for(let r=0;r<12;r++){const h1=r,h2=r+12;
+    dimBody.push([String(h1).padStart(2,"0"),S.dim[h1*2]+"%",S.dim[h1*2+1]+"%",String(h2).padStart(2,"0"),S.dim[h2*2]+"%",S.dim[h2*2+1]+"%"]);}
+  secs.push({title:t("cfg_dim_t"),type:"table",head:dimHead,body:dimBody,
+    note:S.A.useDim?dimStrategyText():t("nodim_txt")});
+  return secs;
+}
+function escHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function configToHTML(secs){
+  return secs.map(s=>{
+    if(s.type==="kv"){
+      return `<h3>${s.title}</h3><table class="rep"><tbody>`+
+        s.rows.map(r=>`<tr><td>${escHtml(r[0])}</td><td class="num">${escHtml(r[1])}</td></tr>`).join("")+`</tbody></table>`;
+    }
+    const head=`<thead><tr>`+s.head[0].map(h=>`<th>${escHtml(h)}</th>`).join("")+`</tr></thead>`;
+    const body=`<tbody>`+s.body.map(r=>`<tr>`+r.map((c,i)=>`<td class="${i===0?"":"num"}">${escHtml(c)}</td>`).join("")+`</tr>`).join("")+`</tbody>`;
+    return `<h3>${s.title}</h3><div class="mtblwrap"><table class="rep">${head}${body}</table></div>`+(s.note?`<p class="exp" style="margin-top:6px">${escHtml(s.note)}</p>`:"");
+  }).join("");
+}
+function configToPDF(doc,secs,M,W,Hp,startY){
+  let y=startY;
+  secs.forEach(s=>{
+    if(y>Hp-90){doc.addPage();y=46;}
+    doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.setTextColor(58,76,192);doc.text(s.title,M,y);y+=6;
+    if(s.type==="kv"){
+      doc.autoTable({startY:y,margin:{left:M,right:M},theme:"plain",
+        bodyStyles:{fontSize:9,textColor:[22,33,63]},
+        columnStyles:{0:{cellWidth:190,textColor:[90,103,136]},1:{halign:"left"}},
+        body:s.rows});
+      y=doc.lastAutoTable.finalY+14;
+    } else {
+      doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",
+        headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},
+        bodyStyles:{fontSize:8.5,textColor:[22,33,63]},
+        styles:{halign:"right",cellPadding:3},columnStyles:{0:{halign:"left"}},
+        head:s.head,body:s.body});
+      y=doc.lastAutoTable.finalY+(s.note?4:14);
+      if(s.note){doc.setFont("helvetica","italic");doc.setFontSize(7.6);doc.setTextColor(120,130,150);
+        const sl=doc.splitTextToSize(s.note,W-M*2);doc.text(sl,M,y+6);y+=6+sl.length*9+12;}
+    }
+  });
+  return y;
+}
+
 function renderExec(){
   const x=savings();const cc=COUNTRIES.find(c=>c.c===S.country);
   const place=(cc&&S.country!=="CUSTOM")?cc.n:(nf(S.lat,3)+", "+nf(S.lon,3));
@@ -1544,6 +1640,10 @@ function renderExec(){
      ${scnRows}
    </tbody></table>
    <p class="exp">${t("ex_astro_note")}</p>
+
+   <h3>${t("cfg_full_title")}</h3>
+   <p class="exp">${t("exp_full_cfg")}</p>
+   ${configToHTML(configSections())}
 
    ${S.A.enabled?`<h3>${t("exp_dim_title")}</h3><p class="exp">${t("exp_dim")}</p><div class="strat">${dimStrategyText()}</div>`:""}
 
@@ -1639,6 +1739,16 @@ function exportPDF(){
   y+=chh+18;
   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
   doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,y);
+
+  // ===== Página: configuración detallada del análisis =====
+  doc.addPage("a4","portrait");
+  let yc=46;
+  doc.setFont("helvetica","bold");doc.setFontSize(14);doc.setTextColor(22,33,63);
+  doc.text(t("cfg_full_title"),M,yc);yc+=8;
+  doc.setDrawColor(22,33,63);doc.setLineWidth(1);doc.line(M,yc,W-M,yc);yc+=10;
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
+  {const il=doc.splitTextToSize(t("exp_full_cfg"),W-M*2);doc.text(il,M,yc+8);yc+=8+il.length*10+6;}
+  configToPDF(doc,configSections(),M,W,Hp,yc);
 
   // ===== Página 2: consumos mensuales y ahorros =====
   doc.addPage("a4","landscape");
