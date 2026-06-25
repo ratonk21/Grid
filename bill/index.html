@@ -1241,6 +1241,500 @@ input,select,textarea{
   }
 }
 
+
+/* ===== X100 DEFINITIVO: iconos propios SVG + navegación app móvil gigante ===== */
+@media (max-width:820px){
+  :root{
+    --xpad:18px;
+    --ico-stroke:#F5EFE2;
+    --ico-active:#143B2B;
+  }
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    background:#F3EEE4!important;
+    font-size:42px!important;
+    line-height:1.16!important;
+    touch-action:pan-y!important;
+    -webkit-text-size-adjust:100%!important;
+    text-size-adjust:100%!important;
+  }
+
+  #app{
+    width:100%!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    padding:calc(18px + env(safe-area-inset-top)) var(--xpad) 18px!important;
+    gap:18px!important;
+    box-shadow:0 14px 36px rgba(20,59,43,.25)!important;
+  }
+
+  .app-header > div:first-child{
+    min-width:0!important;
+    padding-right:150px!important;
+  }
+
+  .logo{
+    font-size:46px!important;
+    line-height:1!important;
+    gap:16px!important;
+  }
+
+  .logo svg{
+    width:62px!important;
+    height:62px!important;
+  }
+
+  .app-title{
+    font-size:25px!important;
+    line-height:1.16!important;
+    letter-spacing:.7px!important;
+    margin-top:9px!important;
+  }
+
+  .status-pill{
+    position:absolute!important;
+    right:18px!important;
+    top:calc(20px + env(safe-area-inset-top))!important;
+    font-size:20px!important;
+    padding:10px 12px!important;
+    border-radius:999px!important;
+    max-width:132px!important;
+  }
+
+  .status-pill .d{
+    width:13px!important;
+    height:13px!important;
+  }
+
+  .app-tabs{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:16px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  .tab-btn{
+    width:100%!important;
+    min-height:168px!important;
+    border-radius:34px!important;
+    padding:24px 26px!important;
+    display:grid!important;
+    grid-template-columns:120px 1fr!important;
+    align-items:center!important;
+    justify-items:start!important;
+    gap:26px!important;
+    background:rgba(245,239,226,.11)!important;
+    border:2px solid rgba(245,239,226,.20)!important;
+    color:#F5EFE2!important;
+    box-shadow:none!important;
+  }
+
+  .tab-btn.active{
+    background:#F5EFE2!important;
+    color:#143B2B!important;
+    border-color:#F5EFE2!important;
+    box-shadow:0 16px 32px rgba(0,0,0,.18)!important;
+  }
+
+  .tab-btn b{
+    font-size:40px!important;
+    line-height:1.04!important;
+    font-weight:950!important;
+    letter-spacing:-.4px!important;
+  }
+
+  .tab-btn span{
+    display:none!important;
+  }
+
+  .app-ico{
+    width:112px!important;
+    height:112px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.7!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn-ico{
+    width:76px!important;
+    height:76px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.4!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .btn > span{
+    display:inline-block!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:18px var(--xpad) calc(34px + env(safe-area-inset-bottom))!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 18px!important;
+    padding:28px 24px!important;
+    font-size:34px!important;
+    line-height:1.25!important;
+    border-radius:34px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 22px!important;
+    padding:38px 28px!important;
+    border-radius:42px!important;
+    box-shadow:0 18px 42px rgba(20,59,43,.14)!important;
+  }
+
+  .card h2{
+    font-size:54px!important;
+    line-height:1.02!important;
+    margin:0 0 22px!important;
+    letter-spacing:-.9px!important;
+  }
+
+  .card .sub{
+    font-size:36px!important;
+    line-height:1.26!important;
+    margin:0 0 34px!important;
+  }
+
+  .drop{
+    padding:50px 26px!important;
+    border-radius:40px!important;
+    border-width:4px!important;
+  }
+
+  .drop .icon{
+    display:none!important;
+  }
+
+  .drop:before{
+    content:"";
+    display:block;
+    width:136px;
+    height:136px;
+    margin:0 auto 24px;
+    border-radius:36px;
+    background:rgba(45,106,79,.12);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .drop p{
+    font-size:36px!important;
+    line-height:1.22!important;
+    margin:0 0 34px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:152px!important;
+    padding:34px 30px!important;
+    font-size:42px!important;
+    line-height:1.04!important;
+    border-radius:36px!important;
+    font-weight:950!important;
+    gap:22px!important;
+  }
+
+  .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:24px!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:34px!important;
+    gap:16px!important;
+  }
+
+  .field label{
+    font-size:30px!important;
+    line-height:1.05!important;
+    letter-spacing:.8px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:44px!important;
+    min-height:132px!important;
+    padding:32px 26px!important;
+    border-radius:34px!important;
+    border-width:3px!important;
+  }
+
+  .preview{
+    max-height:56dvh!important;
+    border-radius:38px!important;
+  }
+
+  .preview-x{
+    width:104px!important;
+    height:104px!important;
+    font-size:64px!important;
+    top:18px!important;
+    right:18px!important;
+  }
+
+  .pdfbox{
+    padding:42px 32px!important;
+    font-size:42px!important;
+    border-radius:36px!important;
+    gap:24px!important;
+  }
+
+  .pdfbox .pdficon{
+    display:none!important;
+  }
+
+  #scanBtn{
+    margin-top:28px!important;
+  }
+
+  .totals{
+    padding:38px!important;
+    border-radius:38px!important;
+  }
+
+  .totals .row{
+    font-size:42px!important;
+    padding:22px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:56px!important;
+    padding-top:30px!important;
+  }
+
+  .totals input{
+    width:58vw!important;
+    max-width:58vw!important;
+    font-size:48px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:28px!important;
+    padding:14px 20px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw{
+    margin-top:32px!important;
+  }
+
+  details.raw summary{
+    font-size:40px!important;
+  }
+
+  details.raw pre{
+    font-size:32px!important;
+    line-height:1.24!important;
+    padding:30px!important;
+    max-height:38dvh!important;
+    border-radius:36px!important;
+  }
+
+  .hist-cards{
+    margin-top:12px!important;
+  }
+
+  .bcard{
+    padding:38px!important;
+    border-radius:40px!important;
+    margin-bottom:26px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:26px!important;
+  }
+
+  .bcard .n{
+    font-size:32px!important;
+    padding:14px 24px!important;
+  }
+
+  .bcard .emisor{
+    font-size:46px!important;
+    line-height:1.04!important;
+  }
+
+  .bcard .meta{
+    font-size:36px!important;
+    margin-bottom:30px!important;
+  }
+
+  .bcard .rowline{
+    font-size:42px!important;
+    padding:22px 0!important;
+  }
+
+  .bcard .desc{
+    margin-top:30px!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:30px!important;
+    margin-bottom:16px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:40px!important;
+    line-height:1.12!important;
+    padding:30px!important;
+    border-radius:34px!important;
+  }
+
+  .btot{
+    padding:38px!important;
+    border-radius:40px!important;
+  }
+
+  .btot h4{
+    font-size:32px!important;
+    margin-bottom:22px!important;
+  }
+
+  .btot .rowline{
+    font-size:40px!important;
+    padding:20px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:28px!important;
+    padding:40px!important;
+    border-radius:40px!important;
+    margin-bottom:28px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:52px!important;
+    line-height:1!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:34px!important;
+    margin-top:10px!important;
+  }
+
+  .rate-row .eq{
+    font-size:36px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:44px!important;
+    min-height:132px!important;
+  }
+
+  .empty{
+    font-size:40px!important;
+    line-height:1.2!important;
+    padding:42px 8px!important;
+  }
+
+  table{
+    font-size:36px!important;
+  }
+
+  th,td{
+    padding:24px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+    padding:calc(90px + env(safe-area-inset-top)) 24px 34px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+  }
+
+  #lock .logo{
+    margin-bottom:28px!important;
+  }
+
+  #lock .logo svg{
+    width:156px!important;
+    height:156px!important;
+  }
+
+  #lock h1{
+    font-size:56px!important;
+    line-height:1.02!important;
+    margin:24px 0 18px!important;
+  }
+
+  #lock p{
+    font-size:40px!important;
+    line-height:1.18!important;
+    margin-bottom:42px!important;
+  }
+
+  #lockErr{
+    font-size:34px!important;
+    min-height:54px!important;
+  }
+
+  #lock .btn{
+    min-height:152px!important;
+  }
+}
+
 </style>
 <script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
@@ -1265,11 +1759,11 @@ input,select,textarea{
     </div>
     <div class="status-pill"><span class="d"></span><span id="modeLabel">en línea</span></div>
     <nav class="app-tabs" aria-label="Secciones principales">
-      <button class="tab-btn active" type="button" data-tab="scan" onclick="switchTab('scan')"><span>📷</span><b>Escanear</b></button>
-      <button class="tab-btn" type="button" data-tab="review" onclick="switchTab('review')"><span>✍️</span><b>Revisar</b></button>
-      <button class="tab-btn" type="button" data-tab="history" onclick="switchTab('history')"><span>🧾</span><b>Histórico</b></button>
-      <button class="tab-btn" type="button" data-tab="rates" onclick="switchTab('rates')"><span>💱</span><b>Tasas</b></button>
-      <button class="tab-btn" type="button" data-tab="ref" onclick="switchTab('ref')"><span>📋</span><b>Ref.</b></button>
+      <button class="tab-btn active" type="button" data-tab="scan" onclick="switchTab('scan')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="18" width="44" height="32" rx="10"/><path d="M22 18l4-7h12l4 7"/><circle cx="32" cy="35" r="10"/><circle cx="32" cy="35" r="4"/><path d="M47 25h1"/></svg><b>Escanear</b></button>
+      <button class="tab-btn" type="button" data-tab="review" onclick="switchTab('review')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M15 49l4-15 26-26 11 11-26 26-15 4z"/><path d="M39 14l11 11"/><path d="M18 46l7-2-5-5z"/><path d="M12 56h40"/></svg><b>Revisar</b></button>
+      <button class="tab-btn" type="button" data-tab="history" onclick="switchTab('history')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 7h28l6 7v43l-5-3-5 3-5-3-5 3-5-3-5 3-5-3-5 3V12a5 5 0 0 1 5-5z"/><path d="M20 23h24"/><path d="M20 33h24"/><path d="M20 43h15"/></svg><b>Histórico</b></button>
+      <button class="tab-btn" type="button" data-tab="rates" onclick="switchTab('rates')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="24" cy="24" r="13"/><circle cx="42" cy="42" r="13"/><path d="M24 16v16"/><path d="M19 20h8a4 4 0 0 1 0 8h-8"/><path d="M42 34v16"/><path d="M37 38h8a4 4 0 0 1 0 8h-8"/><path d="M14 47l36-36"/></svg><b>Tasas</b></button>
+      <button class="tab-btn" type="button" data-tab="ref" onclick="switchTab('ref')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="14" y="10" width="36" height="46" rx="6"/><path d="M24 10h16l-2 8H26z"/><path d="M23 28h20"/><path d="M23 38h20"/><path d="M23 48h12"/></svg><b>Referencia</b></button>
     </nav>
   </header>
 
@@ -1283,8 +1777,8 @@ input,select,textarea{
         <div class="icon">📄</div>
         <p>Arrastra una imagen o PDF, o usa los botones</p>
         <div class="btn-row">
-          <button class="btn salto" onclick="document.getElementById('camIn').click()">📷 Tomar foto</button>
-          <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 Adjuntar imagen o PDF</button>
+          <button class="btn salto" onclick="document.getElementById('camIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="34" rx="10"/><path d="M22 18l5-8h10l5 8"/><circle cx="32" cy="35" r="11"/><circle cx="32" cy="35" r="4"/></svg><span>Tomar foto</span></button>
+          <button class="btn ghost" onclick="document.getElementById('fileIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M24 34l17-17a10 10 0 0 1 14 14L29 57A15 15 0 0 1 8 36l27-27a8 8 0 0 1 11 11L20 46a5 5 0 0 1-7-7l23-23"/></svg><span>Adjuntar imagen o PDF</span></button>
         </div>
       </div>
       <div id="previewWrap" class="preview-wrap hidden">
@@ -1295,7 +1789,7 @@ input,select,textarea{
       <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
       <input id="fileIn" type="file" accept="image/*,application/pdf" class="hidden">
       <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
-        <span id="scanLabel">⚡ Escanear contenido</span>
+        <span id="scanLabel"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span></span>
       </button>
     </div>
 
@@ -1329,7 +1823,7 @@ input,select,textarea{
       </div>
 
       <details class="raw"><summary>Texto completo / detalle</summary><pre id="rawText"></pre></details>
-      <button class="btn full" style="margin-top:16px" onclick="saveCurrent()">💾 Guardar en histórico</button>
+      <button class="btn full" style="margin-top:16px" onclick="saveCurrent()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 10h34l6 6v38H12z"/><path d="M20 10v16h24V10"/><path d="M21 42h22"/><path d="M21 50h22"/></svg><span>Guardar en histórico</span></button>
     </div>
 
     <div class="card form tab-section" id="ratesCard" data-tab-section="rates">
@@ -1354,12 +1848,12 @@ input,select,textarea{
       <div id="histCards" class="hist-cards"></div>
       <div class="usd-sum" id="usdSum"></div>
       <div class="btn-row" style="margin-top:14px">
-        <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled>📄 PDF boletas en papel</button>
-        <button class="btn" id="zipBtn" onclick="exportPdfZip()" disabled>🗜 ZIP de PDFs</button>
-        <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled>⬇ Excel</button>
-        <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled>⬇ Exportar JSON</button>
-        <button class="btn ghost" onclick="document.getElementById('jsonIn').click()">⬆ Importar JSON</button>
-        <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled>🗑 Limpiar todo</button>
+        <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M16 6h24l10 10v42H16z"/><path d="M40 6v12h10"/><path d="M22 44V31h7a4 4 0 0 1 0 8h-7"/><path d="M36 44V31h5a6.5 6.5 0 0 1 0 13z"/></svg><span>PDF boletas en papel</span></button>
+        <button class="btn" id="zipBtn" onclick="exportPdfZip()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h22l8 8v40H18z"/><path d="M40 8v10h8"/><path d="M28 10h8M28 16h8M28 22h8M28 28h8"/><rect x="25" y="36" width="14" height="12" rx="3"/></svg><span>ZIP de PDFs</span></button>
+        <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 10h36v44H14z"/><path d="M14 22h36M14 34h36M14 46h36M26 10v44M38 10v44"/><path d="M22 42l8-12M30 42l-8-12"/></svg><span>Excel</span></button>
+        <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v34"/><path d="M20 30l12 12 12-12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Exportar JSON</span></button>
+        <button class="btn ghost" onclick="document.getElementById('jsonIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 46V12"/><path d="M20 24l12-12 12 12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Importar JSON</span></button>
+        <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 18h40"/><path d="M24 18v-6h16v6"/><path d="M18 18l3 38h22l3-38"/><path d="M28 28v18M36 28v18"/></svg><span>Limpiar todo</span></button>
       </div>
       <input id="jsonIn" type="file" accept=".json,application/json" class="hidden">
     </div>
@@ -1371,11 +1865,11 @@ input,select,textarea{
       </div>
       <p class="sub">Sube tu Excel/CSV de gastos hecho a mano. <b>No se contabiliza</b>: solo se pinta en <span style="background:#E4F5DC;padding:1px 6px;border-radius:4px">verde</span> lo que ya cargaste como boleta (coincide monto + emisor/descripción).</p>
       <div class="btn-row">
-        <button class="btn ghost" onclick="document.getElementById('refIn').click()">📋 Subir Excel/CSV</button>
-        <button class="btn lime" id="refAiBtn" onclick="reconcileAI()" disabled>🤖 Cuadrar con IA</button>
-        <button class="btn ghost" id="refExpBtn" onclick="exportRefJson()" disabled>⬇ Exportar JSON</button>
-        <button class="btn ghost" onclick="document.getElementById('refJsonIn').click()">⬆ Importar JSON</button>
-        <button class="btn danger" id="refClrBtn" onclick="clearRefList()" disabled>🗑 Quitar lista</button>
+        <button class="btn ghost" onclick="document.getElementById('refIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="12" y="10" width="40" height="44" rx="6"/><path d="M12 24h40M12 38h40M26 10v44M40 10v44"/></svg><span>Subir Excel/CSV</span></button>
+        <button class="btn lime" id="refAiBtn" onclick="reconcileAI()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="14" y="14" width="36" height="36" rx="10"/><path d="M24 8v8M40 8v8M24 48v8M40 48v8M8 24h8M8 40h8M48 24h8M48 40h8"/><circle cx="26" cy="30" r="3"/><circle cx="38" cy="30" r="3"/><path d="M25 40h14"/></svg><span>Cuadrar con IA</span></button>
+        <button class="btn ghost" id="refExpBtn" onclick="exportRefJson()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v34"/><path d="M20 30l12 12 12-12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Exportar JSON</span></button>
+        <button class="btn ghost" onclick="document.getElementById('refJsonIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 46V12"/><path d="M20 24l12-12 12 12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Importar JSON</span></button>
+        <button class="btn danger" id="refClrBtn" onclick="clearRefList()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 18h40"/><path d="M24 18v-6h16v6"/><path d="M18 18l3 38h22l3-38"/><path d="M28 28v18M36 28v18"/></svg><span>Quitar lista</span></button>
       </div>
       <input id="refIn" type="file" accept=".xlsx,.xls,.csv" class="hidden">
       <input id="refJsonIn" type="file" accept=".json,application/json" class="hidden">
@@ -1610,7 +2104,7 @@ async function runScan(){
     if(!currentMobile()) document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
     banner('Datos extraídos. Revísalos antes de guardar.','ok');
   }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
-  finally{ btn.disabled=false; lbl.textContent='⚡ Escanear contenido'; }
+  finally{ btn.disabled=false; lbl.textContent='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
 }
 async function scan(b64,mediaType){
   try{
