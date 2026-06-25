@@ -10,14 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-K73HD7MSR4');
-</script>
 <style>
   :root{
     --bg:#EEF0F5; --surface:#FFFFFF; --surface2:#F5F7FB; --raise:#E6EAF2;
@@ -305,78 +297,6 @@
   #view-guia .gl-gloss dd{margin:2px 0 8px; color:var(--muted); font-size:13.5px}
   #view-guia .gl-foot{margin:14px 0 6px; padding-top:11px; border-top:1px solid var(--line); font-size:12px; color:var(--faint)}
   #view-guia .gl-cta{margin-top:8px; font-size:13px; padding:10px 18px}
-
-  /* ===== Mejoras de navegación y experiencia ===== */
-  html{scroll-behavior:smooth}
-  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
-
-  /* Barra de navegación fija (pseudo-pestañas + pestañas) */
-  .navdock{position:sticky; top:0; z-index:40; margin:0 -6px 16px; padding:10px 6px 0;
-    background:linear-gradient(180deg, var(--bg) 72%, rgba(238,240,245,0)); }
-  @supports ((backdrop-filter:blur(8px)) or (-webkit-backdrop-filter:blur(8px))){
-    .navdock{background:linear-gradient(180deg, rgba(238,240,245,.92) 72%, rgba(238,240,245,0));
-      -webkit-backdrop-filter:saturate(1.4) blur(9px); backdrop-filter:saturate(1.4) blur(9px); }
-  }
-  .navdock .ptabs{margin-bottom:10px}
-  .navdock .tabs{margin-bottom:0}
-  .navdock.stuck{box-shadow:0 8px 22px rgba(30,36,69,.10)}
-
-  /* La sección activa deja aire para que la barra fija no la tape */
-  .view{scroll-margin-top:96px}
-
-  /* Sidebar fija en escritorio (los parámetros siguen visibles al desplazarse) */
-  @media (min-width:981px){
-    aside{position:sticky; top:14px; align-self:start; max-height:calc(100vh - 28px); overflow:auto;
-      padding-right:4px; scrollbar-width:thin}
-    aside::-webkit-scrollbar{width:8px}
-    aside::-webkit-scrollbar-thumb{background:var(--line); border-radius:8px}
-  }
-
-  /* Hover sutil en tarjetas de resultado */
-  .card{transition:transform .12s ease, box-shadow .12s ease}
-  .card:hover{transform:translateY(-2px); box-shadow:0 2px 4px rgba(30,36,69,.06),0 12px 28px rgba(30,36,69,.10)}
-
-  /* Navegación guiada inferior (Anterior / Siguiente) */
-  .flownav{display:flex; align-items:stretch; justify-content:space-between; gap:12px; margin-top:26px}
-  .flowbtn{flex:1; display:flex; align-items:center; gap:12px; max-width:340px; text-align:left;
-    background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:11px 15px;
-    box-shadow:var(--shadow); cursor:pointer; font-family:var(--body); color:var(--ink);
-    transition:border-color .14s, box-shadow .14s, transform .1s}
-  .flowbtn:hover{border-color:var(--indigo); transform:translateY(-1px); box-shadow:0 4px 16px rgba(34,176,225,.18)}
-  .flowbtn.next{justify-content:flex-end; text-align:right; margin-left:auto}
-  .flowbtn .arw{font-family:var(--mono); font-size:20px; color:var(--indigo); line-height:1; flex:none}
-  .flowbtn .meta{display:flex; flex-direction:column; gap:1px; min-width:0}
-  .flowbtn .meta .lab{font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--faint); font-family:var(--mono)}
-  .flowbtn .meta .dest{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .flowbtn[hidden]{display:none}
-  .flownav .flow-spacer{flex:1; max-width:340px}
-
-  /* Panel Guardar/Cargar (sidebar) */
-  .iox-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px}
-  .iox-actions .btn{width:100%; text-align:center; padding:9px 8px; font-size:12px}
-  .iox-actions .btn.primary{grid-column:1 / -1}
-
-  /* Toasts */
-  #toastHost{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:120;
-    display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none}
-  .toast{pointer-events:auto; min-width:200px; max-width:88vw; font-size:13px; font-weight:600;
-    color:#fff; background:var(--ink); border-radius:12px; padding:11px 16px;
-    box-shadow:0 10px 30px rgba(30,36,69,.28); opacity:0; transform:translateY(10px);
-    transition:opacity .25s ease, transform .25s ease}
-  .toast.show{opacity:1; transform:translateY(0)}
-  .toast.ok{background:#1E6B45}
-  .toast.err{background:var(--rose)}
-
-  /* Modal pegar código */
-  .iox-modal{position:fixed; inset:0; z-index:130; display:flex; align-items:center; justify-content:center;
-    background:rgba(30,36,69,.42); padding:20px}
-  .iox-modal[hidden]{display:none}
-  .iox-box{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px;
-    width:min(520px,100%); box-shadow:0 24px 60px rgba(30,36,69,.34)}
-  .iox-box h3{font-size:17px; margin-bottom:6px}
-  .iox-box textarea{width:100%; margin-top:10px; background:var(--surface2); border:1px solid var(--line);
-    border-radius:10px; padding:10px; font-family:var(--mono); font-size:12px; color:var(--ink); resize:vertical}
-  .iox-box textarea:focus{outline:2px solid var(--indigo); outline-offset:1px; border-color:var(--indigo)}
 </style>
 </head>
 <body>
@@ -448,21 +368,9 @@
         <div class="hint" style="margin:0" data-i18n="dim_side">Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.</div>
         <div class="dimmini" id="dimMini"></div>
       </div>
-      <div class="panel">
-        <h2 data-i18n="io_title">Guardar y cargar</h2>
-        <div class="hint" data-i18n="io_hint">Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.</div>
-        <div class="iox-actions">
-          <button class="btn primary" id="ioExport" data-i18n="io_export">Exportar (.json)</button>
-          <button class="btn" id="ioImportBtn" data-i18n="io_import">Importar archivo</button>
-          <button class="btn" id="ioCopy" data-i18n="io_copy">Copiar código</button>
-          <button class="btn" id="ioPaste" data-i18n="io_paste">Pegar código</button>
-        </div>
-        <input type="file" id="ioFile" accept=".json,application/json,text/plain" style="display:none">
-      </div>
     </aside>
 
     <main>
-      <div class="navdock" id="navdock">
       <div class="ptabs" id="ptabs">
         <div class="ptab active" data-group="guia" data-i18n="t_guia">Guía</div>
         <div class="ptab" data-group="cfg" data-i18n="cfg_group">Configurar</div>
@@ -477,7 +385,6 @@
         <div class="tab" data-tab="exec" data-group="res" data-i18n="t_exec">Resumen ejecutivo</div>
         <div class="tab" data-tab="perfil" data-group="ana" data-i18n="t_perfil">Perfil diario</div>
         <div class="tab" data-tab="tabla" data-group="ana" data-i18n="t_tabla">Tabla anual</div>
-      </div>
       </div>
 
       <!-- GUIA -->
@@ -802,30 +709,7 @@
         </div>
         <div class="exec" id="execBody"></div>
       </section>
-
-      <nav class="flownav" id="flownav" aria-label="Navegación guiada">
-        <button class="flowbtn prev" id="flowPrev" type="button">
-          <span class="arw">←</span>
-          <span class="meta"><span class="lab" data-i18n="flow_prev">Anterior</span><span class="dest" id="flowPrevLab">—</span></span>
-        </button>
-        <button class="flowbtn next" id="flowNext" type="button">
-          <span class="meta"><span class="lab" data-i18n="flow_next">Siguiente</span><span class="dest" id="flowNextLab">—</span></span>
-          <span class="arw">→</span>
-        </button>
-      </nav>
     </main>
-  </div>
-</div>
-
-<div class="iox-modal" id="ioxModal" hidden>
-  <div class="iox-box">
-    <h3 data-i18n="io_paste_t">Pegar configuración</h3>
-    <p class="hint" style="margin:0" data-i18n="io_paste_h">Pega el código o el JSON que guardaste para restaurar esa configuración.</p>
-    <textarea id="ioxText" rows="5" spellcheck="false" placeholder="{ … }"></textarea>
-    <div class="btnrow" style="justify-content:flex-end; margin-top:12px">
-      <button class="btn" id="ioxCancel" type="button" data-i18n="cancel">Cancelar</button>
-      <button class="btn primary" id="ioxApply" type="button" data-i18n="apply">Aplicar</button>
-    </div>
   </div>
 </div>
 
@@ -834,7 +718,6 @@
 /* ============ i18n ============ */
 const DICT={
  es:{ docTitle:"Alumbrado público — calculadora",
-  io_title:"Guardar y cargar", io_hint:"Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.", io_export:"Exportar (.json)", io_import:"Importar archivo", io_copy:"Copiar código", io_paste:"Pegar código", io_paste_t:"Pegar configuración", io_paste_h:"Pega el código o el JSON que guardaste para restaurar esa configuración.", cancel:"Cancelar", exp_ok:"Configuración exportada.", exp_err:"No se pudo exportar.", code_ok:"Código copiado al portapapeles.", code_manual:"Copia este código manualmente:", imp_ok:"Configuración aplicada.", imp_err:"Archivo o código no válido.", flow_prev:"Anterior", flow_next:"Siguiente",
   eyebrow:"Alumbrado público · energía y costo", title:"Calculadora de consumo anual",
   city:"Ciudad", year:"Año", loc_time:"Ubicación y tiempo",
   loc_hint:"El amanecer/atardecer se recalcula (NOAA) con estas coordenadas.",
@@ -895,7 +778,6 @@ const DICT={
   ex_save_energy:"Ahorro de energía", ex_save_money:"Ahorro económico", ex_units:"luminarias"
  },
  en:{ docTitle:"Street lighting — calculator",
-  io_title:"Save & load", io_hint:"Export the changes you made and re-apply them anytime, here or on another device.", io_export:"Export (.json)", io_import:"Import file", io_copy:"Copy code", io_paste:"Paste code", io_paste_t:"Paste configuration", io_paste_h:"Paste the code or JSON you saved to restore that configuration.", cancel:"Cancel", exp_ok:"Configuration exported.", exp_err:"Export failed.", code_ok:"Code copied to clipboard.", code_manual:"Copy this code manually:", imp_ok:"Configuration applied.", imp_err:"Invalid file or code.", flow_prev:"Back", flow_next:"Next",
   eyebrow:"Street lighting · energy & cost", title:"Annual consumption calculator",
   city:"City", year:"Year", loc_time:"Location & time",
   loc_hint:"Sunrise/sunset is recomputed (NOAA) from these coordinates.",
@@ -1713,7 +1595,6 @@ function renderActive(){
   else if(S.tab==="inventario"){renderInv();}
   else if(S.tab==="tabla"){renderTable();renderHoursTable();}
   else if(S.tab==="exec"){renderExec();}
-  if(typeof renderFlowNav==="function")renderFlowNav();
 }
 function refreshLive(){recalc();renderTop();renderCards();renderActive();}
 function refreshAll(){recalc();renderTop();const sl=document.getElementById("daySlider");sl.max=N;if(S.selDay>N){S.selDay=N;sl.value=N;}renderCards();renderActive();}
@@ -1749,7 +1630,6 @@ function setGroup(g,tab){
   const activeGroup=document.querySelector(".ptab.active");
   const activeTab=document.querySelector("#tabs .tab.active");
   updateBreadcrumb(activeGroup,activeTab);
-  window.scrollTo({top:0,behavior:"smooth"});
 }
 document.getElementById("ptabs").addEventListener("click",e=>{const p=e.target.closest(".ptab");if(!p)return;setGroup(p.dataset.group);});
 document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.closest(".tab");if(!tb)return;
@@ -1758,7 +1638,6 @@ document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.c
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));renderActive();
   const activeGroup=document.querySelector(".ptab.active");
   updateBreadcrumb(activeGroup,tb);
-  window.scrollTo({top:0,behavior:"smooth"});
 });
 document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{
   setGroup("cfg","inventario");window.scrollTo({top:0,behavior:"smooth"});}));
@@ -1883,172 +1762,20 @@ document.getElementById("langBtn").addEventListener("click",()=>{LANG=LANG==="es
   setTimeout(()=>{const ag=document.querySelector(".ptab.active");const at=document.querySelector("#tabs .tab.active");updateBreadcrumb(ag,at);},50);
 });
 
-/* ============ Navegación guiada · Exportar/Importar · UX ============ */
-/* (No toca el motor de cálculo: solo lee/escribe el estado S y la interfaz.) */
-
-/* ---- Toasts ---- */
-function toast(msg,kind){
-  let host=document.getElementById("toastHost");
-  if(!host){host=document.createElement("div");host.id="toastHost";document.body.appendChild(host);}
-  const el=document.createElement("div");el.className="toast"+(kind?" "+kind:"");el.textContent=msg;
-  host.appendChild(el);requestAnimationFrame(()=>el.classList.add("show"));
-  setTimeout(()=>{el.classList.remove("show");setTimeout(()=>el.remove(),320);},2800);
-}
-
-/* ---- Navegación guiada (Anterior / Siguiente) ---- */
-const FLOW=[
-  {g:"guia",tab:null,key:"t_guia"},
-  {g:"cfg",tab:"inventario",key:"t_inv"},
-  {g:"cfg",tab:"escenarios",key:"t_escenarios"},
-  {g:"cfg",tab:"dim",key:"t_dim"},
-  {g:"res",tab:"resumen",key:"t_resumen"},
-  {g:"res",tab:"exec",key:"t_exec"},
-  {g:"ana",tab:"perfil",key:"t_perfil"},
-  {g:"ana",tab:"tabla",key:"t_tabla"},
-];
-function flowIndex(){ if(S.tab==="guia")return 0; const i=FLOW.findIndex(f=>f.tab===S.tab); return i<0?0:i; }
-function renderFlowNav(){
-  const i=flowIndex(),prev=FLOW[i-1],next=FLOW[i+1];
-  const pBtn=document.getElementById("flowPrev"),nBtn=document.getElementById("flowNext");
-  if(!pBtn||!nBtn)return;
-  if(prev){pBtn.hidden=false;const l=document.getElementById("flowPrevLab");if(l)l.textContent=t(prev.key);}else pBtn.hidden=true;
-  if(next){nBtn.hidden=false;const l=document.getElementById("flowNextLab");if(l)l.textContent=t(next.key);}else nBtn.hidden=true;
-}
-function gotoFlow(delta){const i=flowIndex()+delta;if(i<0||i>=FLOW.length)return;const f=FLOW[i];setGroup(f.g,f.tab);}
-(function(){const p=document.getElementById("flowPrev"),n=document.getElementById("flowNext");
-  if(p)p.addEventListener("click",()=>gotoFlow(-1));
-  if(n)n.addEventListener("click",()=>gotoFlow(1));})();
-
-/* ---- Sombra de la barra fija al desplazarse ---- */
-(function(){const nd=document.getElementById("navdock");if(!nd)return;
-  const onScroll=()=>nd.classList.toggle("stuck",window.scrollY>8);
-  window.addEventListener("scroll",onScroll,{passive:true});onScroll();})();
-
-/* ---- Sincronizar TODOS los controles desde el estado S ---- */
-function ioSetVal(id,v){const el=document.getElementById(id);if(el)el.value=v;}
-function ioSetChk(id,v){const el=document.getElementById(id);if(el)el.checked=!!v;}
-function pushStateToInputs(){
-  ioSetVal("country",S.country);
-  ioSetVal("lat",S.lat);ioSetVal("lon",S.lon);ioSetVal("tz",S.tz);
-  ioSetVal("dstRule",S.dstRule);ioSetVal("year",S.year);
-  ioSetVal("tariff",S.tariff);ioSetVal("pref",S.pref);
-  ioSetVal("nodeCost",S.nodeCost||"");
-  ioSetChk("curEna",S.currency.enabled);
-  const cr=document.getElementById("curRows");if(cr)cr.style.display=S.currency.enabled?"":"none";
-  ioSetVal("curSym",S.currency.symbol);ioSetVal("curRate",S.currency.rate);
-  document.querySelectorAll("#euSeg button").forEach(b=>b.classList.toggle("on",b.dataset.eu===S.energyUnit));
-  ioSetVal("offEnc",S.A.offEnc);ioSetVal("offApag",S.A.offApag);ioSetChk("enaA",S.A.enabled);ioSetChk("dimA",S.A.useDim);
-  ioSetVal("fixOn",hhmm(S.B.on));ioSetVal("fixOff",hhmm(S.B.off));ioSetChk("enaB",S.B.enabled);ioSetChk("dimB",S.B.useDim);
-  ioSetVal("offEncC",S.C.offEnc);ioSetVal("offApagC",S.C.offApag);ioSetChk("enaC",S.C.enabled);
-  ioSetVal("daySlider",S.selDay);
-  [["scnSeg","perfilScn"],["invSeg","invScn"],["tblSeg","tblScn"]].forEach(([id,key])=>{
-    const seg=document.getElementById(id);if(seg)seg.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.s===S[key]));});
-  document.querySelectorAll("#monthLayers input[data-ml]").forEach(c=>c.checked=!!S.monthLayers[c.dataset.ml]);
-  document.querySelectorAll("#yearLayers input[data-ly]").forEach(c=>c.checked=!!S.yearLayers[c.dataset.ly]);
-}
-
-/* ---- Validar/sanear estado importado (defensivo) ---- */
-function ioNum(v,d){const n=parseFloat(v);return isFinite(n)?n:d;}
-function sanitizeState(raw){
-  const src=(raw&&typeof raw==="object"&&raw.state&&typeof raw.state==="object")?raw.state:raw;
-  if(!src||typeof src!=="object")throw new Error("formato");
-  const out={};
-  if("country" in src)out.country=String(src.country||"CUSTOM");
-  if("dstRule" in src)out.dstRule=["none","eu","us","chile","paraguay"].includes(src.dstRule)?src.dstRule:S.dstRule;
-  ["lat","lon","tz","year","tariff","pref","nodeCost","selDay"].forEach(k=>{if(k in src)out[k]=ioNum(src[k],S[k]);});
-  if("energyUnit" in src)out.energyUnit=["auto","kWh","MWh","GWh"].includes(src.energyUnit)?src.energyUnit:S.energyUnit;
-  if("baseScn" in src)out.baseScn=["B","C"].includes(src.baseScn)?src.baseScn:S.baseScn;
-  ["perfilScn","invScn","tblScn"].forEach(k=>{if(k in src)out[k]=["A","B","C"].includes(src[k])?src[k]:S[k];});
-  if(Array.isArray(src.dim)){const d=src.dim.slice(0,48).map(x=>Math.max(0,Math.min(100,ioNum(x,0))));while(d.length<48)d.push(0);out.dim=d;}
-  const scn=(o,base,solar)=>{if(!o||typeof o!=="object")return null;const r=Object.assign({},base);
-    if("enabled" in o)r.enabled=!!o.enabled;if("useDim" in o)r.useDim=!!o.useDim;
-    if(solar){if("offEnc" in o)r.offEnc=ioNum(o.offEnc,0);if("offApag" in o)r.offApag=ioNum(o.offApag,0);}
-    else{if("on" in o)r.on=ioNum(o.on,20);if("off" in o)r.off=ioNum(o.off,6);}return r;};
-  if(src.A){const v=scn(src.A,S.A,true);if(v)out.A=v;}
-  if(src.B){const v=scn(src.B,S.B,false);if(v)out.B=v;}
-  if(src.C){const v=scn(src.C,S.C,true);if(v)out.C=v;}
-  if(Array.isArray(src.inventory)){
-    const inv=src.inventory.filter(g=>g&&typeof g==="object").map(g=>({name:String(g.name==null?"—":g.name),qty:Math.max(0,ioNum(g.qty,0)),power:Math.max(0,ioNum(g.power,0)),dim:g.dim!==false}));
-    if(inv.length)out.inventory=inv;}
-  if(src.yearLayers&&typeof src.yearLayers==="object"){out.yearLayers=Object.assign({},S.yearLayers);["night","fixed","cprofile","excess","dst"].forEach(k=>{if(k in src.yearLayers)out.yearLayers[k]=!!src.yearLayers[k];});}
-  if(src.monthLayers&&typeof src.monthLayers==="object"){out.monthLayers=Object.assign({},S.monthLayers);["a","c","b","money"].forEach(k=>{if(k in src.monthLayers)out.monthLayers[k]=!!src.monthLayers[k];});}
-  if(src.currency&&typeof src.currency==="object"){out.currency=Object.assign({},S.currency);
-    if("enabled" in src.currency)out.currency.enabled=!!src.currency.enabled;
-    if("symbol" in src.currency)out.currency.symbol=String(src.currency.symbol||"$").slice(0,4);
-    if("rate" in src.currency)out.currency.rate=ioNum(src.currency.rate,1)||1;}
-  return out;
-}
-
-/* ---- Aplicar estado importado (muta S en sitio; S es const) ---- */
-function applyImportedState(raw){
-  const clean=sanitizeState(raw);
-  const nested=["A","B","C","currency","yearLayers","monthLayers"];
-  Object.keys(clean).forEach(k=>{
-    if(nested.indexOf(k)>=0)Object.assign(S[k],clean[k]);
-    else S[k]=clean[k];
-  });
-  fillCountries();          // reconstruye el selector y fija S.country
-  pushStateToInputs();      // vuelca todo el estado a los controles
-  buildDimTable();wireDim();// reconstruye la tabla de dimerización
-  syncScnState();syncBaseSegs();
-  refreshAll();             // recalcula y re-renderiza
-}
-
-/* ---- Carga útil + utilidades de archivo/código ---- */
-const IO_APP="griddata-alumbrado-calc",IO_VER=1;
-function configPayload(){return{app:IO_APP,version:IO_VER,savedAt:new Date().toISOString(),
-  meta:{country:S.country,lat:S.lat,lon:S.lon,year:S.year,lang:LANG},
-  state:JSON.parse(JSON.stringify(S))};}
-function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
-function b64dec(b){return decodeURIComponent(escape(atob(b)));}
-function parseConfigText(txt){txt=(txt||"").trim();if(!txt)throw new Error("vacío");
-  try{return JSON.parse(txt);}catch(_){}
-  try{return JSON.parse(b64dec(txt));}catch(_){}
-  throw new Error("parse");}
-function ioStamp(){const d=new Date(),p=n=>String(n).padStart(2,"0");return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());}
-function downloadBlob(name,content,type){const b=new Blob([content],{type:type});const u=URL.createObjectURL(b);
-  const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(u),1500);}
-
-function exportConfigJSON(){try{const json=JSON.stringify(configPayload(),null,2);
-  downloadBlob("alumbrado-config-"+(S.country||"CFG")+"-"+ioStamp()+".json",json,"application/json");
-  toast(t("exp_ok"),"ok");}catch(e){toast(t("exp_err"),"err");}}
-function copyConfigCode(){let code;try{code=b64enc(JSON.stringify(configPayload()));}catch(e){toast(t("exp_err"),"err");return;}
-  const done=()=>toast(t("code_ok"),"ok");
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done).catch(()=>fallbackCopy(code));}
-  else fallbackCopy(code);}
-function fallbackCopy(code){try{const ta=document.createElement("textarea");ta.value=code;ta.style.position="fixed";ta.style.opacity="0";
-  document.body.appendChild(ta);ta.select();const ok=document.execCommand("copy");ta.remove();
-  ok?toast(t("code_ok"),"ok"):window.prompt(t("code_manual"),code);}catch(e){window.prompt(t("code_manual"),code);}}
-function importFromText(txt){try{applyImportedState(parseConfigText(txt));toast(t("imp_ok"),"ok");return true;}
-  catch(e){toast(t("imp_err"),"err");return false;}}
-function importConfigFile(file){if(!file)return;const r=new FileReader();
-  r.onload=()=>importFromText(String(r.result||""));
-  r.onerror=()=>toast(t("imp_err"),"err");r.readAsText(file);}
-
-/* ---- Wiring del panel Guardar/Cargar ---- */
-(function(){
-  const ex=document.getElementById("ioExport");if(ex)ex.addEventListener("click",exportConfigJSON);
-  const cp=document.getElementById("ioCopy");if(cp)cp.addEventListener("click",copyConfigCode);
-  const fi=document.getElementById("ioFile");
-  const ib=document.getElementById("ioImportBtn");
-  if(ib&&fi)ib.addEventListener("click",()=>fi.click());
-  if(fi)fi.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];importConfigFile(f);fi.value="";});
-  // modal pegar código
-  const modal=document.getElementById("ioxModal"),ta=document.getElementById("ioxText");
-  const open=()=>{if(!modal)return;modal.hidden=false;if(ta){ta.value="";ta.focus();}};
-  const close=()=>{if(modal)modal.hidden=true;};
-  const pb=document.getElementById("ioPaste");if(pb)pb.addEventListener("click",open);
-  const cancel=document.getElementById("ioxCancel");if(cancel)cancel.addEventListener("click",close);
-  const apply=document.getElementById("ioxApply");if(apply)apply.addEventListener("click",()=>{if(importFromText(ta?ta.value:""))close();});
-  if(modal)modal.addEventListener("click",e=>{if(e.target===modal)close();});
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal&&!modal.hidden)close();});
-})();
-
-
 /* init */
 applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); wireDim(); refreshAll(); syncScnState();
-pushStateToInputs(); renderFlowNav();
 </script>
 </body>
 </html>
+
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-K73HD7MSR4');
+  </script>
+  <!-- Resto de tu head... -->
+</head>
