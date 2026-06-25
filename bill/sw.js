@@ -2,7 +2,7 @@
    Estrategia network-first: usa la red y, si no hay, intenta caché.
    La app necesita conexión para escanear, así que esto es solo para
    que cuente como PWA instalable y cargue rápido el shell. */
-const CACHE = 'bill-s26-ultra-v4-big4';
+const CACHE = 'bill-s26-ultra-v5-x10';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
