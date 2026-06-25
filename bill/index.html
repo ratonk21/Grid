@@ -173,7 +173,8 @@ tr.refhit td{background:#E4F5DC!important}
 .btot .rowline .val{font-family:'JetBrains Mono',monospace}
 .btot .rowline.usd{border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:8px}
 .btot .rowline.usd .val{color:var(--ubi-lime);font-weight:700}
-@media (max-width:760px){
+@media (max-width:820px){
+  .wrap{padding:12px}
   .tbl-wrap{display:none}
   .hist-cards{display:block}
   .usd-sum{display:none}
@@ -207,27 +208,54 @@ th.usd,td.usd,tr:nth-child(even) td.usd,tfoot td.usd{background:var(--trebol)}
 /* Fila coincidente: verde brote */
 tr.refhit td{background:#E4F3DC!important}
 /* ===== Móvil grande (S26 Ultra): texto y toques más amplios ===== */
-@media (max-width:760px){
-  body{font-size:17px}
+/* Se aplica por media query (max-width:820) Y por .m (forzado por JS según el ancho real del equipo, por si el viewport no se respeta) */
+@media (max-width:820px){
+  body{font-size:18px}
   .card{padding:18px 16px}
-  .card h2{font-size:22px}
-  .card .sub{font-size:14.5px}
-  .btn{font-size:17px;padding:16px 20px;border-radius:13px}
-  .field label{font-size:12px}
-  .field input,.field select{font-size:17px;padding:14px 13px}
-  #lock h1{font-size:23px}
-  #lock p{font-size:14.5px}
-  #lock input{font-size:22px;padding:16px}
-  .totals .row{font-size:16px}
-  .totals .row.big{font-size:24px}
-  .bcard .emisor{font-size:17px}
-  .bcard .meta{font-size:14px}
-  .bcard .rowline{font-size:16px}
-  .bcard .desc .editable{font-size:16px}
+  .card h2{font-size:23px}
+  .card .sub{font-size:15px}
+  .btn{font-size:18px;padding:17px 20px;border-radius:13px}
+  .field label{font-size:12.5px}
+  .field input,.field select{font-size:18px;padding:15px 13px}
+  #lock .box{max-width:none;padding:32px 22px}
+  #lock h1{font-size:24px}
+  #lock p{font-size:15px}
+  #lock input{font-size:24px;padding:17px}
+  .totals .row{font-size:17px}
+  .totals .row.big{font-size:25px}
+  .bcard .emisor{font-size:18px}
+  .bcard .meta{font-size:14.5px}
+  .bcard .rowline{font-size:17px}
+  .bcard .desc .editable{font-size:17px}
   .app-title{font-size:13px}
   .logo{font-size:24px}
 }
+html.m .wrap{padding:12px}
+html.m .tbl-wrap{display:none}
+html.m .hist-cards{display:block}
+html.m .usd-sum{display:none}
+html.m body,body.m{font-size:18px}
+html.m .card{padding:18px 16px}
+html.m .card h2{font-size:23px}
+html.m .card .sub{font-size:15px}
+html.m .btn{font-size:18px;padding:17px 20px;border-radius:13px}
+html.m .field label{font-size:12.5px}
+html.m .field input,html.m .field select{font-size:18px;padding:15px 13px}
+html.m #lock .box{max-width:none;padding:32px 22px}
+html.m #lock h1{font-size:24px}
+html.m #lock p{font-size:15px}
+html.m #lock input{font-size:24px;padding:17px}
+html.m .totals .row{font-size:17px}
+html.m .totals .row.big{font-size:25px}
+html.m .bcard .emisor{font-size:18px}
+html.m .bcard .meta{font-size:14.5px}
+html.m .bcard .rowline{font-size:17px}
+html.m .bcard .desc .editable{font-size:17px}
+html.m .app-title{font-size:13px}
+html.m .logo{font-size:24px}
+
 </style>
+<script>try{var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add("m");}catch(e){}</script>
 </head>
 <body>
 
