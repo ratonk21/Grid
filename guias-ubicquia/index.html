@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-K73HD7MSR4');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Centro de guías Ubicquia en español: manuales de usuario de UbiVu, órdenes de trabajo, operación de nodos, reportes y sistema de alertas, implementación y buenas prácticas para alumbrado público inteligente.">
+<meta property="og:title" content="Guías Ubicquia · griddata.cl">
+<meta property="og:description" content="Material de apoyo en español: manuales de usuario, operación, reportes y alertas, implementación y buenas prácticas de telegestión Ubicquia.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://griddata.cl/guias-ubicquia/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E">
+<title>Guías Ubicquia · griddata.cl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;
+  --ubi-deep:#464D63;--ubi-gray2:#99A0B4;
+  --ubi-lime:#AECC53;--ubi-darkgreen:#005B59;--ubi-green:#4EB270;
+  --ubi-surface:#fff;--ubi-line:rgba(30,36,69,.10);
+  --radius:14px;--radius-sm:10px;
+  --ubi-maxw:1180px;--ubi-pad:clamp(16px,5vw,48px);
+  --shadow:0 8px 30px rgba(30,36,69,.08);
+  --shadow-sm:0 1px 3px rgba(30,36,69,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Lato',-apple-system,system-ui,Arial,sans-serif;color:var(--ubi-deep);
+  background:var(--ubi-gray);line-height:1.62;font-size:16px;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Lato',sans-serif;color:var(--ubi-navy);line-height:1.18;font-weight:900}
+a{color:var(--ubi-blue);text-decoration:none}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* bandas + contenedor */
+.band{width:100%}
+.band--navy{background:var(--ubi-navy);color:#fff}
+.band--gray{background:var(--ubi-gray)}
+.container{width:100%;max-width:var(--ubi-maxw);margin-inline:auto;padding-inline:var(--ubi-pad)}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  height:64px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{display:flex;align-items:center;gap:.6rem;font-size:21px;font-weight:900;letter-spacing:-.5px}
+.logo svg{width:30px;height:36px;flex-shrink:0}
+.logo .b{color:var(--ubi-blue)}.logo .n{color:#fff}
+.logo sup{font-size:.45em;color:rgba(255,255,255,.55);font-weight:700}
+.back{font-size:13px;color:#cfd6ea;font-weight:700;display:inline-flex;align-items:center;gap:6px;
+  border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:7px 14px;transition:.15s}
+.back:hover{background:rgba(34,176,225,.16);border-color:var(--ubi-blue);text-decoration:none}
+
+/* cover */
+.cover{padding-block:clamp(28px,5vh,52px)}
+.cover .kicker{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--ubi-blue);margin-bottom:14px}
+.cover h1{color:#fff;font-size:clamp(30px,5.4vw,48px);letter-spacing:-1px;margin-bottom:14px}
+.cover h1 em{color:var(--ubi-blue);font-style:normal}
+.cover .sub{color:#c3cbe2;font-size:clamp(16px,2.2vw,19px);max-width:62ch}
+.cover .tags{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+.cover .tg{font-family:'JetBrains Mono',monospace;font-size:11px;color:#cfd6ea;
+  border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 12px}
+
+/* body */
+.body{padding-block:clamp(28px,5vh,56px) clamp(40px,8vh,80px)}
+
+/* category */
+.cat{margin-top:40px}
+.cat:first-child{margin-top:0}
+.cat-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.cat-label{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1.5px;color:var(--ubi-gray2);white-space:nowrap}
+.cat-line{flex:1;height:1px;background:var(--ubi-line)}
+.cat-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ubi-gray2);
+  background:#fff;border:1px solid var(--ubi-line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+
+/* grid + cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+.card{display:flex;flex-direction:column;background:var(--ubi-surface);border:1px solid var(--ubi-line);
+  border-radius:var(--radius);padding:22px 22px 18px;text-decoration:none;color:inherit;
+  box-shadow:var(--shadow-sm);transition:transform .16s,box-shadow .16s,border-color .16s;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ubi-blue);
+  transform:scaleY(0);transform-origin:top;transition:transform .16s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:#c9d4e6;text-decoration:none}
+.card:hover::before{transform:scaleY(1)}
+.card-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;flex-shrink:0}
+.card-icon svg{width:24px;height:24px}
+.card-name{font-family:'Lato',sans-serif;font-weight:900;font-size:18px;color:var(--ubi-navy);
+  line-height:1.25;margin-bottom:7px}
+.card-desc{font-size:14px;color:var(--ubi-deep);line-height:1.5;flex:1}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px}
+.card-tag{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--ubi-deep);background:var(--ubi-gray);border-radius:999px;padding:4px 10px}
+.card-arrow{font-size:13px;font-weight:700;color:var(--ubi-blue)}
+
+/* placeholder card */
+.card-soon{border-style:dashed;border-color:#c4cde0;background:transparent;box-shadow:none;cursor:default}
+.card-soon:hover{transform:none;box-shadow:none;border-color:#c4cde0}
+.card-soon::before{display:none}
+.card-soon .card-icon{background:var(--ubi-gray);color:var(--ubi-gray2)}
+.card-soon .card-name{color:var(--ubi-deep)}
+.card-soon .card-tag{background:#fff;border:1px solid var(--ubi-line);color:var(--ubi-gray2)}
+
+/* footer */
+.footer{padding-block:26px;font-size:13px;color:var(--ubi-gray2)}
+.footer .container{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.footer a{color:#cfd6ea}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:560px){.topbar{height:auto;padding-block:12px;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="band band--navy">
+  <div class="container">
+    <div class="topbar">
+      <a href="../" class="logo" style="text-decoration:none">
+        <svg viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#22B0E1"/>
+          <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#ffffff"/>
+        </svg>
+        <span><span class="b">ubi</span><span class="n">cquia</span><sup>®</sup></span>
+      </a>
+      <a href="../" class="back">← Volver a griddata.cl</a>
+    </div>
+  </div>
+</header>
+
+<!-- COVER -->
+<section class="band band--navy">
+  <div class="container cover">
+    <div class="kicker">Material de apoyo · LATAM</div>
+    <h1>Guías <em>Ubicquia</em></h1>
+    <p class="sub">Manuales de usuario, operación de nodos, reportes y alertas, implementación y buenas prácticas para la telegestión de alumbrado público inteligente. Todo en español, listo para consultar.</p>
+    <div class="tags">
+      <span class="tg">Manuales de usuario</span>
+      <span class="tg">Operación &amp; telegestión</span>
+      <span class="tg">Reportes &amp; alertas</span>
+      <span class="tg">Implementación</span>
+      <span class="tg">Buenas prácticas</span>
+    </div>
+  </div>
+</section>
+
+<!-- BODY -->
+<main class="band band--gray">
+  <div class="container body">
+
+    <!-- CATEGORÍA 1 · MANUALES DE USUARIO -->
+    <section class="cat">
+      <div class="cat-head">
+        <span class="cat-label">Manuales de usuario</span>
+        <div class="cat-line"></div>
+        <span class="cat-count">02 guías</span>
+      </div>
+      <div class="grid">
+
+        <a class="card" href="./guia-ubivu/">
+          <div class="card-icon" style="background:var(--ubi-blue)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>
+            </svg>
+          </div>
+          <div class="card-name">Manual de UbiVu®</div>
+          <div class="card-desc">Guía completa de la plataforma UbiVu: navegación, mapa, inventario de nodos, control y administración. Bilingüe ES&nbsp;/&nbsp;EN.</div>
+          <div class="card-foot"><span class="card-tag">Plataforma</span><span class="card-arrow">abrir →</span></div>
+        </a>
+
+        <a class="card" href="./guia-work-order/">
+          <div class="card-icon" style="background:var(--ubi-blue)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1.5"/><path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="card-name">Órdenes de Trabajo</div>
+          <div class="card-desc">Cómo crear, asignar, ejecutar y cerrar órdenes de trabajo en UbiVu para la operación de campo del alumbrado.</div>
+          <div class="card-foot"><span class="card-tag">Work Orders</span><span class="card-arrow">abrir →</span></div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- CATEGORÍA 2 · OPERACIÓN, REPORTES Y ALERTAS -->
+    <section class="cat">
+      <div class="cat-head">
+        <span class="cat-label">Operación · reportes &amp; alertas</span>
+        <div class="cat-line"></div>
+        <span class="cat-count">01 guía</span>
+      </div>
+      <div class="grid">
+
+        <a class="card" href="./modos-y-alertas/">
+          <div class="card-icon" style="background:var(--ubi-darkgreen)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="3.4"/>
+            </svg>
+          </div>
+          <div class="card-name">Modos y Alertas</div>
+          <div class="card-desc">Cómo funcionan los nodos Ubicell: modos de control de iluminación, reportes históricos, Plugable Analytics y el sistema completo de alertas por umbrales e insights.</div>
+          <div class="card-foot"><span class="card-tag">Nodos · Alertas</span><span class="card-arrow">abrir →</span></div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- CATEGORÍA 3 · IMPLEMENTACIÓN Y BUENAS PRÁCTICAS -->
+    <section class="cat">
+      <div class="cat-head">
+        <span class="cat-label">Implementación &amp; buenas prácticas</span>
+        <div class="cat-line"></div>
+        <span class="cat-count">próximamente</span>
+      </div>
+      <div class="grid">
+
+        <div class="card card-soon">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 8v8M8 12h8" stroke-dasharray="2 2.4"/>
+            </svg>
+          </div>
+          <div class="card-name">Nuevas guías</div>
+          <div class="card-desc">Guías de implementación, instalación en terreno y buenas prácticas operativas. Espacio reservado para próximo material.</div>
+          <div class="card-foot"><span class="card-tag">En preparación</span></div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="band band--navy footer">
+  <div class="container">
+    <span>griddata.cl · Guías Ubicquia · soporte de telegestión LATAM</span>
+    <span><a href="../">griddata.cl ↗</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -635,7 +635,7 @@
     </div>
     <div class="stat-item">
       <div class="stat-label" data-i18n="stat-guides">User guides</div>
-      <div class="stat-value" id="stat-guides">2</div>
+      <div class="stat-value" id="stat-guides">3</div>
       <div class="stat-sub" data-i18n="stat-guides-sub">↑ available now</div>
     </div>
 
@@ -835,12 +835,12 @@
     <div class="section-header">
       <span class="section-label" data-i18n="section-guides">user guides</span>
       <div class="section-line"></div>
-      <span class="section-count" id="guides-count" style="background:var(--green-lt); border-color:#a8c8a0; color:var(--green);">02 <span data-i18n="guides-label">guides</span></span>
+      <span class="section-count" id="guides-count" style="background:var(--green-lt); border-color:#a8c8a0; color:var(--green);">03 <span data-i18n="guides-label">guides</span></span>
     </div>
 
     <div class="grid" id="guides-grid">
 
-      <a class="card card-guide" href="./guia-ubivu/" target="_blank">
+      <a class="card card-guide" href="./guias-ubicquia/" target="_blank">
         <div class="card-icon" style="background:var(--green);">
           <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -848,21 +848,8 @@
             <path d="M9 7h6M9 11h6M9 15h4"/>
           </svg>
         </div>
-        <div class="card-name">UbiVu® Guide</div>
-        <div class="card-tag" data-i18n="tag-platform-manual">Platform Manual</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card card-guide" href="./guia-work-order/" target="_blank">
-        <div class="card-icon" style="background:var(--green);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1.5"/>
-            <path d="M9 12l2 2 4-4"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-workorder">Work Order Guide</div>
-        <div class="card-tag" data-i18n="tag-workorder">Work Orders</div>
+        <div class="card-name" data-i18n="card-guides-hub">Guías Ubicquia</div>
+        <div class="card-tag" data-i18n="tag-guides-hub">Manuales · Operación · Alertas</div>
         <span class="card-arrow" data-i18n="open">open →</span>
       </a>
 
@@ -1004,6 +991,8 @@
         'next-report':        '// next report',
         'section-guides':     'user guides',
         'guides-label':       'guides',
+        'card-guides-hub':    'Ubicquia Guides',
+        'tag-guides-hub':     'Manuals · Ops · Alerts',
         'tag-platform-manual':'Platform Manual',
         'card-workorder':     'Work Order Guide',
         'tag-workorder':      'Work Orders',
@@ -1094,6 +1083,8 @@
         'next-report':        '// próximo reporte',
         'section-guides':     'guías de usuario',
         'guides-label':       'guías',
+        'card-guides-hub':    'Guías Ubicquia',
+        'tag-guides-hub':     'Manuales · Operación · Alertas',
         'tag-platform-manual':'Manual de Plataforma',
         'card-workorder':     'Guía Work Order',
         'tag-workorder':      'Órdenes de Trabajo',
@@ -1201,7 +1192,7 @@
     // init
     const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
     document.getElementById('stat-count').textContent = count;
-    document.getElementById('stat-guides').textContent = document.querySelectorAll('#guides-grid .card').length;
+    document.getElementById('stat-guides').textContent = '3';
     document.getElementById('dtm-count').textContent = String(document.querySelectorAll('#dtm-grid .card:not(.card-add)').length).padStart(2,'0');
     var _validTabs = ['team','projects','guides','dtm','control'];
     var _initTab = (location.hash || '').replace('#','');
