@@ -33,7 +33,7 @@
   body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums}
   h1,h2,h3{font-family:var(--disp); margin:0; letter-spacing:-.01em}
   .mono{font-family:var(--mono)}
-  .wrap{max-width:1320px; margin:0 auto; padding:22px 20px 56px}
+  .wrap{max-width:var(--maxw,1480px); margin:0 auto; padding:22px var(--pad,32px) 56px}
   .top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px}
   .brand{display:flex; align-items:center; gap:14px}
   .logo{width:42px; height:42px; border-radius:12px; flex:none; background:radial-gradient(circle at 32% 32%, #5BC7EE, var(--indigo) 62%, #1E2445); box-shadow:0 6px 16px rgba(34,176,225,.30); position:relative}
@@ -381,13 +381,12 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-
+<header class="topband band--navy"><div class="bandinner">
   <div class="top">
     <div class="brand">
       <div class="logo"></div>
       <div class="t">
-        <div class="eyebrow" data-i18n="eyebrow">Alumbrado público · energía y costo</div>
+        <div class="wordmark"><span class="w-ubi">ubi</span><span class="w-cq">cquia</span><sup class="w-r">®</sup></div>
         <h1 data-i18n="title">Calculadora de consumo anual</h1>
       </div>
     </div>
@@ -402,7 +401,9 @@
       </div>
     </div>
   </div>
+  </div></header>
 
+  <div class="wrap">
   <div class="shell">
     <aside>
       <div class="panel">
@@ -839,6 +840,10 @@
     </main>
   </div>
 </div>
+<footer class="footband band--navy"><div class="bandinner">
+  <span class="wordmark"><span class="w-ubi">ubi</span><span class="w-cq">cquia</span><sup class="w-r">®</sup></span>
+  <span class="ftag">griddata.cl · <span data-i18n="footer_tag">Telegestión de alumbrado público</span></span>
+</div></footer>
 
 <div class="iox-modal" id="ioxModal" hidden>
   <div class="iox-box">
@@ -2320,6 +2325,7 @@ Object.assign(DICT.es,{
   cmp_base_conv:"Alumbrado Público Convencional", cmp_base_auto:"Auto · caso de mayor consumo",
   cases_imported:"{n} caso(s) importado(s) al comparador",
   perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
+  footer_tag:"Telegestión de alumbrado público",
   imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
   cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
   cmp_vs_ref:"frente a la referencia",
@@ -2353,6 +2359,7 @@ Object.assign(DICT.en,{
   cmp_base_conv:"Conventional Public Lighting", cmp_base_auto:"Auto · highest-use case",
   cases_imported:"{n} case(s) imported into the comparator",
   perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
+  footer_tag:"Smart street-lighting management",
   imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
   cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
   cmp_vs_ref:"vs the reference",
@@ -2363,6 +2370,21 @@ Object.assign(DICT.en,{
   cmp_mi_base_own:"Each case is compared against its own conventional lighting: its same fleet and inventory at full power (100%) over the same NOAA window. The base does not depend on the other cases."
 });
 document.head.insertAdjacentHTML("beforeend",`<style>
+  :root{--maxw:1480px; --pad:clamp(16px,4vw,40px)}
+  .band--navy{background:var(--ink); color:#fff}
+  .topband,.footband{width:100%}
+  .bandinner{max-width:var(--maxw); margin:0 auto; padding-inline:var(--pad)}
+  .topband .bandinner{padding-block:14px}
+  .topband .top{margin-bottom:0}
+  .topband .brand .t h1{color:#C6CCDA; font-size:13px; font-weight:600; margin-top:3px}
+  .topband .logo{box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .wordmark{font-family:var(--disp); font-weight:800; font-size:21px; letter-spacing:-.01em; line-height:1}
+  .wordmark .w-ubi{color:var(--indigo)} .wordmark .w-cq{color:#fff} .wordmark .w-r{font-size:9px; vertical-align:super; color:var(--indigo); margin-left:1px}
+  .footband .bandinner{padding-block:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .footband .ftag{color:#9fb6e8; font-size:12px; font-family:var(--mono)}
+  .footband .wordmark{font-size:17px}
+  @media print{ .topband,.footband{display:none!important} }
+
   .perfil-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:16px; align-items:start; margin-bottom:18px}
   .perfil-col{min-width:0}
   .perfil-col canvas{width:100%; height:auto; display:block}
