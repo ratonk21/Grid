@@ -337,6 +337,73 @@ html.m .drop{padding:22px 14px;border-radius:20px;background:#F9F5EC}
 html.m .preview{max-height:42dvh;border-radius:18px}
 html.m .foot{display:none}
 
+
+/* ===== Full-space mobile layout override (S26 Ultra and similar) ===== */
+@media (max-width:820px){
+  :root{--phone-pad:12px;}
+  body{background:#F3EEE4;}
+  .app-header{padding:calc(10px + env(safe-area-inset-top)) var(--phone-pad) 10px;gap:8px 10px}
+  .app-header > div:first-child{min-width:0}
+  .logo{font-size:20px;gap:8px}
+  .app-title{font-size:11px;letter-spacing:.6px;white-space:normal}
+  .status-pill{padding:6px 9px;font-size:11px;justify-self:end}
+  .app-tabs{gap:5px;padding:5px;border-radius:16px}
+  .tab-btn{min-height:48px;padding:4px 2px}
+  .tab-btn span{font-size:16px}
+  .tab-btn b{font-size:10px}
+  .wrap{width:100%;max-width:none;padding:10px var(--phone-pad) calc(18px + env(safe-area-inset-bottom));margin:0}
+  .card,.card.form{width:100%;max-width:none;margin:0 0 12px 0;border-radius:18px;padding:16px 14px}
+  .card h2{font-size:18px}
+  .card .sub{font-size:12.5px;line-height:1.4}
+  .banner{width:100%;margin:0 0 10px 0;padding:12px 13px}
+  .drop{padding:18px 12px;border-radius:16px}
+  .drop p{font-size:13px;margin:8px 0 12px}
+  .btn{min-height:52px;padding:14px 16px;font-size:16px;border-radius:12px}
+  #captureCard .btn-row{grid-template-columns:1fr}
+  #histCard .btn-row,#refCard .btn-row{grid-template-columns:1fr 1fr}
+  #histCard .btn-row .btn,#refCard .btn-row .btn{min-width:0}
+  #histCard .btn-row .btn:nth-child(1),#refCard .btn-row .btn:nth-child(1){grid-column:1/-1}
+  .preview{max-height:44dvh}
+  .pdfbox{padding:18px 14px;border-radius:14px}
+  .grid2{grid-template-columns:1fr 1fr;gap:10px}
+  .field{margin-bottom:10px}
+  .field label{font-size:10.5px}
+  .field input,.field select{font-size:15px;padding:12px 11px}
+  .totals{padding:12px;border-radius:14px}
+  .totals .row{font-size:14px}
+  .totals .row.big{font-size:20px}
+  .totals input{width:120px;max-width:42vw}
+  .tag{font-size:10px;padding:4px 8px}
+  details.raw pre{max-height:26dvh;font-size:11.5px;padding:10px}
+  .bcard{padding:14px;border-radius:14px;margin-bottom:10px}
+  .bcard .emisor{font-size:16px}
+  .bcard .meta,.bcard .rowline{font-size:13px}
+  .btot{padding:14px;border-radius:14px}
+  #lock{background:#F7F7F7;align-items:stretch;justify-content:flex-start;padding:0}
+  #lock .box{width:100%;max-width:none;min-height:100dvh;border-radius:0;padding:clamp(26px,10vh,90px) 12px 24px;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;background:#F7F7F7}
+  #lock .logo{justify-content:center;margin:0 auto 8px;font-size:26px}
+  #lock .logo svg{width:56px;height:56px}
+  #lock h1{font-size:20px;margin:4px 0}
+  #lock p{font-size:14px;margin:0 0 16px}
+  #lock input{margin:0 0 12px;padding:16px 12px;font-size:24px;border-radius:12px}
+  #lock .btn{width:100%}
+}
+@media (max-width:430px){
+  #histCard .btn-row,#refCard .btn-row{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+html.m .wrap{width:100%;max-width:none;padding:10px 12px calc(18px + env(safe-area-inset-bottom));margin:0}
+html.m .card,html.m .card.form{width:100%;max-width:none;margin:0 0 12px 0;border-radius:18px;padding:16px 14px}
+html.m #histCard .btn-row,html.m #refCard .btn-row{grid-template-columns:1fr 1fr}
+html.m #histCard .btn-row .btn:nth-child(1),html.m #refCard .btn-row .btn:nth-child(1){grid-column:1/-1}
+html.m .grid2{grid-template-columns:1fr 1fr;gap:10px}
+html.m #lock{background:#F7F7F7;align-items:stretch;justify-content:flex-start;padding:0}
+html.m #lock .box{width:100%;max-width:none;min-height:100dvh;border-radius:0;padding:clamp(26px,10vh,90px) 12px 24px;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;background:#F7F7F7}
+@media (max-width:430px){
+  html.m #histCard .btn-row,html.m #refCard .btn-row{grid-template-columns:1fr}
+  html.m .grid2{grid-template-columns:1fr}
+}
+
 </style>
 <script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
