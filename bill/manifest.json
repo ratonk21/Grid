@@ -8,8 +8,8 @@
   "scope": "/bill/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1E2445",
-  "theme_color": "#1E2445",
+  "background_color": "#143B2B",
+  "theme_color": "#143B2B",
   "categories": ["business", "productivity", "finance"],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

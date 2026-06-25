@@ -3,31 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bill · Escáner de facturas — ubicquia.</title>
+<title>Bill · Escáner de facturas — RatonK</title>
 <meta name="description" content="Escáner de facturas y boletas: saca una foto o adjunta una imagen y extrae los datos automáticamente.">
 <meta property="og:title" content="Bill · Escáner de facturas">
 <meta property="og:description" content="Saca una foto de tu factura o boleta y extrae los datos al instante.">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1E2445">
+<meta name="theme-color" content="#143B2B">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,900;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
-  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-lime:#AECC53;--ubi-orange:#EA561B;
-  --ubi-gray:#EEF0F5;--ubi-ink:#14242F;--ubi-muted:#6A7D89;--ubi-surface:#fff;
-  --ubi-line:rgba(30,36,69,.10);--ubi-row:#F5F8F9;
+  --ubi-navy:#143B2B;          /* Verde Tara — fondos oscuros, titulares */
+  --ubi-blue:#2D6A4F;          /* Verde Trébol — acciones, datos, foco */
+  --ubi-lime:#7FC79E;          /* Verde Brote — bien/resalte */
+  --ubi-orange:#B0602F;        /* Cobre — EL SALTO (uso mínimo) */
+  --ubi-gray:#F1EBDD;          /* Arena claro — fondo página / ghost */
+  --ubi-ink:#211E19;           /* Carbón — texto */
+  --ubi-muted:#6E7E72;         /* verde-gris — secundario */
+  --ubi-surface:#fff;
+  --ubi-line:rgba(20,59,43,.12);
+  --ubi-row:#F4F1E7;           /* crema cálida — filas alternas / totales */
+  --cobre:#B0602F; --crema:#F5EFE2; --arena:#E6CDA3; --brote:#7FC79E;
+  --trebol:#2D6A4F; --tara:#143B2B; --niebla:#C7D2C8;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
-body{font-family:'Lato',system-ui,sans-serif;color:var(--ubi-ink);background:var(--ubi-gray);
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ubi-ink);background:var(--ubi-gray);
   line-height:1.5;padding-bottom:env(safe-area-inset-bottom)}
 .mono{font-family:'JetBrains Mono',monospace}
 button{font-family:inherit;cursor:pointer;border:none}
@@ -172,25 +181,71 @@ tr.refhit td{background:#E4F5DC!important}
 .hidden{display:none!important}
 .foot{text-align:center;color:var(--ubi-muted);font-size:12px;padding:8px 0 28px}
 .foot .logo{font-size:14px;color:var(--ubi-navy)}
+/* ===================== Piel RatonK ===================== */
+h1,h2,h3,.card h2,#lock h1,.app-title{font-family:'Fraunces',Georgia,serif}
+.card h2{font-size:19px;font-weight:900;color:var(--tara)}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Fraunces',serif;font-weight:900;font-size:22px;color:#fff;letter-spacing:.2px}
+.logo svg{flex:none}
+#lock .logo{justify-content:center;margin-bottom:10px}
+.foot .logo{color:var(--tara);justify-content:center}
+.app-title{font-weight:600;font-style:italic}
+/* El salto: cobre, un único punto por pantalla */
+.btn.salto{background:var(--cobre);color:#fff}
+/* Destructivo discreto (sin rojo de alarma) */
+.btn.danger{background:#fff;color:var(--cobre);border:1px solid var(--niebla)}
+/* Estado/tipo SIEMPRE en verde (anti-Bati) */
+.pill-mini.paper,.tag.paper{background:var(--trebol)}
+.pill-mini.digital,.tag.digital{background:var(--tara)}
+.status-pill .d{background:var(--brote)}
+/* USD en verde, no azul */
+th.usd,td.usd,tr:nth-child(even) td.usd,tfoot td.usd{background:var(--trebol)}
+.usd-sum span,.bcard .rowline .val.usd{color:var(--trebol)}
+/* Foco y arrastre en verde */
+.drop.over{border-color:var(--trebol);background:#ECF4EE}
+.banner.info{background:#ECF4EE;color:#1f5138;border:1px solid #c9e2d3}
+.field input:focus,.field select:focus,#lock input:focus,.editable:focus{border-color:var(--trebol);outline-color:var(--trebol)}
+/* Fila coincidente: verde brote */
+tr.refhit td{background:#E4F3DC!important}
+/* ===== Móvil grande (S26 Ultra): texto y toques más amplios ===== */
+@media (max-width:760px){
+  body{font-size:17px}
+  .card{padding:18px 16px}
+  .card h2{font-size:22px}
+  .card .sub{font-size:14.5px}
+  .btn{font-size:17px;padding:16px 20px;border-radius:13px}
+  .field label{font-size:12px}
+  .field input,.field select{font-size:17px;padding:14px 13px}
+  #lock h1{font-size:23px}
+  #lock p{font-size:14.5px}
+  #lock input{font-size:22px;padding:16px}
+  .totals .row{font-size:16px}
+  .totals .row.big{font-size:24px}
+  .bcard .emisor{font-size:17px}
+  .bcard .meta{font-size:14px}
+  .bcard .rowline{font-size:16px}
+  .bcard .desc .editable{font-size:16px}
+  .app-title{font-size:13px}
+  .logo{font-size:24px}
+}
 </style>
 </head>
 <body>
 
 <div id="lock">
   <div class="box">
-    <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+    <div class="logo"><svg viewBox="0 0 100 100" width="52" height="52" aria-label="RatonK"><path d="M30 78 V22 h16 c11 0 17 6 17 15 0 7-4 12-11 14 l13 27" fill="none" stroke="#143B2B" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 22 L48 50 L70 78" fill="none" stroke="#B0602F" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1>Bill · Escáner de facturas</h1>
     <p>Ingresa el código de acceso para continuar.</p>
     <input id="codeInput" type="password" inputmode="text" placeholder="• • • • • •" autocomplete="off">
     <div id="lockErr"></div>
-    <button class="btn full" id="unlockBtn" onclick="doUnlock()">Entrar</button>
+    <button class="btn full salto" id="unlockBtn" onclick="doUnlock()">Entrar</button>
   </div>
 </div>
 
 <div id="app" class="hidden">
   <header class="app-header">
     <div>
-      <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+      <div class="logo"><svg viewBox="0 0 100 100" width="30" height="30" aria-label="RatonK"><path d="M30 78 V22 h16 c11 0 17 6 17 15 0 7-4 12-11 14 l13 27" fill="none" stroke="#F5EFE2" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 22 L48 50 L70 78" fill="none" stroke="#7FC79E" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Bill</span></div>
       <div class="app-title">Bill · Escáner de facturas</div>
     </div>
     <div class="status-pill"><span class="d"></span><span id="modeLabel">en línea</span></div>
@@ -206,7 +261,7 @@ tr.refhit td{background:#E4F5DC!important}
         <div class="icon">📄</div>
         <p>Arrastra una imagen o PDF, o usa los botones</p>
         <div class="btn-row">
-          <button class="btn" onclick="document.getElementById('camIn').click()">📷 Tomar foto</button>
+          <button class="btn salto" onclick="document.getElementById('camIn').click()">📷 Tomar foto</button>
           <button class="btn ghost" onclick="document.getElementById('fileIn').click()">📎 Adjuntar imagen o PDF</button>
         </div>
       </div>
@@ -308,7 +363,7 @@ tr.refhit td{background:#E4F5DC!important}
     </div>
 
     <div class="foot">
-      <div class="logo">ubi<b>cquia</b><span class="dot">.</span></div>
+      <div class="logo"><svg viewBox="0 0 100 100" width="26" height="26" aria-label="RatonK"><path d="M30 78 V22 h16 c11 0 17 6 17 15 0 7-4 12-11 14 l13 27" fill="none" stroke="#143B2B" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 22 L48 50 L70 78" fill="none" stroke="#B0602F" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>RatonK</span></div>
       Procesamiento de imagen vía IA · histórico guardado en tu dispositivo
     </div>
   </div>
