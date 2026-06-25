@@ -406,6 +406,49 @@
   <div class="shell">
     <aside>
       <div class="panel">
+        <h2 data-i18n="invest_title">Inversión y payback</h2>
+        <div class="field"><label><span data-i18n="node_cost">Costo por nodo</span> <span class="u">US$</span></label><input type="number" id="nodeCost" step="1" value="" placeholder="—"></div>
+        <div class="hint" data-i18n="invest_hint">Costo del nodo inteligente por luminaria. El payback compara la inversión total con el ahorro anual frente a la base.</div>
+      </div>
+      <div class="panel">
+        <h2 data-i18n="dimming">Dimerización</h2>
+        <div class="hint" style="margin:0" data-i18n="dim_side">Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.</div>
+        <div class="dimmini" id="dimMini"></div>
+      </div>
+      <div class="panel">
+        <h2 data-i18n="io_title">Guardar y cargar</h2>
+        <div class="hint" data-i18n="io_hint">Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.</div>
+        <div class="iox-actions">
+          <button class="btn primary" id="ioExport" data-i18n="io_export">Exportar (.json)</button>
+          <button class="btn" id="ioImportBtn" data-i18n="io_import">Importar archivo</button>
+          <button class="btn" id="ioCopy" data-i18n="io_copy">Copiar código</button>
+          <button class="btn" id="ioPaste" data-i18n="io_paste">Pegar código</button>
+        </div>
+        <input type="file" id="ioFile" accept=".json,application/json,text/plain" style="display:none">
+      </div>
+    </aside>
+
+    <main>
+      <div class="navdock" id="navdock">
+      <div class="tabs flat" id="tabs">
+        <div class="tab active" data-tab="config" data-i18n="t_config">Ubicación y tarifa</div>
+        <div class="tab" data-tab="inventario" data-i18n="t_inv">Inventario</div>
+        <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
+        <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
+        <div class="tab" data-tab="perfil" data-i18n="t_perfil">Perfil diario</div>
+        <div class="tab" data-tab="tabla" data-i18n="t_tabla">Tabla anual</div>
+        <div class="tab" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
+        <div class="tab" data-tab="exec" data-i18n="t_exec">Resumen ejecutivo</div>
+        <div class="tab" data-tab="comparador" data-i18n="cmp_group">Comparar</div>
+      </div>
+      </div>
+
+      <!-- GUIA -->
+      <!-- PASO 1 · Ubicación y tarifa -->
+      <section class="view active" id="view-config">
+        <div class="sec-help" data-help="config"></div>
+        <div class="cfg-grid">
+      <div class="panel">
         <h2 data-i18n="loc_time">Ubicación y tiempo</h2>
         <div class="hint" data-i18n="loc_hint">El amanecer/atardecer se recalcula (NOAA) con estas coordenadas.</div>
         <div class="field"><label data-i18n="country">País / ciudad</label><select id="country"></select></div>
@@ -439,50 +482,10 @@
         </div>
         <div class="hint" style="margin-top:8px" data-i18n="ref_hint">Referencia para el perfil y la tabla diaria. El consumo de la flota usa el Inventario.</div>
       </div>
-      <div class="panel">
-        <h2 data-i18n="invest_title">Inversión y payback</h2>
-        <div class="field"><label><span data-i18n="node_cost">Costo por nodo</span> <span class="u">US$</span></label><input type="number" id="nodeCost" step="1" value="" placeholder="—"></div>
-        <div class="hint" data-i18n="invest_hint">Costo del nodo inteligente por luminaria. El payback compara la inversión total con el ahorro anual frente a la base.</div>
-      </div>
-      <div class="panel">
-        <h2 data-i18n="dimming">Dimerización</h2>
-        <div class="hint" style="margin:0" data-i18n="dim_side">Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.</div>
-        <div class="dimmini" id="dimMini"></div>
-      </div>
-      <div class="panel">
-        <h2 data-i18n="io_title">Guardar y cargar</h2>
-        <div class="hint" data-i18n="io_hint">Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.</div>
-        <div class="iox-actions">
-          <button class="btn primary" id="ioExport" data-i18n="io_export">Exportar (.json)</button>
-          <button class="btn" id="ioImportBtn" data-i18n="io_import">Importar archivo</button>
-          <button class="btn" id="ioCopy" data-i18n="io_copy">Copiar código</button>
-          <button class="btn" id="ioPaste" data-i18n="io_paste">Pegar código</button>
         </div>
-        <input type="file" id="ioFile" accept=".json,application/json,text/plain" style="display:none">
-      </div>
-    </aside>
+      </section>
 
-    <main>
-      <div class="navdock" id="navdock">
-      <div class="ptabs" id="ptabs">
-        <div class="ptab active" data-group="guia" data-i18n="t_guia">Guía</div>
-        <div class="ptab" data-group="cfg" data-i18n="cfg_group">Configurar</div>
-        <div class="ptab" data-group="res" data-i18n="res_group">Resultados</div>
-        <div class="ptab" data-group="ana" data-i18n="ana_group">Análisis</div>
-      </div>
-      <div class="tabs" id="tabs" style="display:none">
-        <div class="tab" data-tab="inventario" data-group="cfg" data-i18n="t_inv">Inventario</div>
-        <div class="tab" data-tab="escenarios" data-group="cfg" data-i18n="t_escenarios">Escenarios</div>
-        <div class="tab" data-tab="dim" data-group="cfg" data-i18n="t_dim">Dimerización</div>
-        <div class="tab" data-tab="resumen" data-group="res" data-i18n="t_resumen">Resumen</div>
-        <div class="tab" data-tab="exec" data-group="res" data-i18n="t_exec">Resumen ejecutivo</div>
-        <div class="tab" data-tab="perfil" data-group="ana" data-i18n="t_perfil">Perfil diario</div>
-        <div class="tab" data-tab="tabla" data-group="ana" data-i18n="t_tabla">Tabla anual</div>
-      </div>
-      </div>
-
-      <!-- GUIA -->
-      <section class="view active" id="view-guia">
+      <section class="view" id="view-guia" hidden>
        <div class="gl gl-es">
         <div class="gl-eyebrow">Guía de uso</div>
         <p class="gl-lede">Esta herramienta estima el consumo de energía y el ahorro de tu red de alumbrado público a partir del amanecer y atardecer reales de cada día, tu perfil de dimerización y la comparación con un horario fijo.</p>
@@ -622,6 +625,7 @@
 
       <!-- RESUMEN -->
       <section class="view" id="view-resumen">
+        <div class="sec-help" data-help="resumen"></div>
         <div class="cards">
           <div class="card astro"><span class="tag astro" data-i18n="c_astro_dim">Sistema de Telegestión Ubicquia</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rA">—</div><div class="vm" id="rAm">—</div><div class="s" id="rAs">—</div></div>
           <div class="card" id="cardC" style="border-top:3px solid var(--teal)"><span class="tag" style="background:var(--teal-soft);color:var(--teal)" data-i18n="c_astro_nodim">Alumbrado Público Convencional</span><div class="k" data-i18n="energy_year">Energía / año</div><div class="v" id="rC" style="color:var(--teal)">—</div><div class="vm" id="rCm">—</div><div class="s" id="rCs">—</div></div>
@@ -651,6 +655,7 @@
 
       <!-- ESCENARIOS -->
       <section class="view" id="view-escenarios">
+        <div class="sec-help" data-help="scn"></div>
         <div class="scn2">
           <div class="scn astro scn-on" id="scnCardA">
             <h3><span class="dot astro"></span><span data-i18n="sc_astro">Reloj astronómico</span></h3>
@@ -702,20 +707,18 @@
 
       <!-- PERFIL DIARIO -->
       <section class="view" id="view-perfil">
+        <div class="sec-help" data-help="perfil"></div>
         <div class="daysel">
-          <div class="seg" id="scnSeg"><button data-s="A" class="on" data-i18n="tag_astro">Astronómico</button><button data-s="C" data-i18n="tag_nodim">Astro s/dim</button><button data-s="B" data-i18n="tag_fixed">Horario fijo</button></div>
+          <div class="seg" id="scnSeg" style="display:none"><button data-s="A" class="on" data-i18n="tag_astro">Astronómico</button><button data-s="C" data-i18n="tag_nodim">Astro s/dim</button><button data-s="B" data-i18n="tag_fixed">Horario fijo</button></div>
           <input type="range" id="daySlider" min="1" max="365" value="172">
           <span class="date" id="dayDate">—</span>
         </div>
-        <div class="insp">
-          <div class="surface"><canvas id="dayChart" width="900" height="320"></canvas></div>
-          <div class="breakdown" id="bd"></div>
-        </div>
+        <p class="exp" data-i18n="perfil_parallel_note">Cada escenario activo se muestra en paralelo. Mueve el día para ver cómo cambia la noche en todos a la vez.</p>
+        <div id="perfilGrid" class="perfil-grid"></div>
         <div class="section">
           <div class="head"><h2 data-i18n="heat_title">El año encendido</h2><p data-i18n="heat_sub">Cada fila es un día; cada columna, una hora. Color = energía de esa hora.</p></div>
-          <div class="surface">
-            <div style="font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr);margin:0 0 4px" id="hourlbl"></div>
-            <canvas id="heat" width="960" height="900"></canvas>
+          <div id="heatGrid" class="heat-grid"></div>
+          <div class="surface" style="margin-top:10px">
             <div class="legend">
               <span><span class="sw" style="background:var(--line-soft);border:1px solid var(--line)"></span><span data-i18n="lg_off">Apagada</span></span>
               <span><span class="sw" style="background:var(--amber-soft)"></span><span data-i18n="lg_dim">Dimerizada</span></span>
@@ -728,6 +731,7 @@
 
       <!-- DIMERIZACIÓN -->
       <section class="view" id="view-dim">
+        <div class="sec-help" data-help="dim"></div>
         <div class="section" style="margin-top:0">
           <div class="head"><h2 data-i18n="dim_title">Dimerización por media hora</h2><p data-i18n="dim_sub">Escribe el % de potencia en cada tramo de 30 minutos. El color resalta cuánto se baja.</p></div>
           <div class="surface">
@@ -759,6 +763,7 @@
 
       <!-- INVENTARIO -->
       <section class="view" id="view-inventario">
+        <div class="sec-help" data-help="inv"></div>
         <div class="section" style="margin-top:0">
           <div class="head"><h2 data-i18n="inv_title">Inventario de luminarias</h2><p data-i18n="inv_sub">Agrega grupos con su cantidad y potencia. Soporta miles de unidades y varias potencias.</p></div>
           <div class="surface">
@@ -766,6 +771,7 @@
             <div class="btnrow"><button class="btn primary" id="addRow" data-i18n="add_group">+ Agregar grupo</button></div>
             <div class="hint" style="margin-top:8px" data-i18n="inv_dim_note">Marca "Dimerizable" en los grupos cuya potencia admite regulación. Los grupos sin marcar funcionan a potencia plena durante toda la noche y no reciben el ahorro por dimerización.</div>
           </div>
+          <div class="basecard" id="invBase"></div>
           <div class="daysel" style="margin-top:10px">
             <div class="seg" id="invSeg"><button data-s="A" class="on" data-i18n="tag_astro">Astronómico</button><button data-s="B" data-i18n="tag_fixed">Horario fijo</button></div>
           </div>
@@ -774,6 +780,7 @@
 
       <!-- TABLA ANUAL -->
       <section class="view" id="view-tabla">
+        <div class="sec-help" data-help="tabla"></div>
         <div class="section">
           <div class="head"><h2 data-i18n="hrs_title">Horas de encendido acumuladas</h2><p data-i18n="hrs_sub">Horas que las luminarias están encendidas, por día y acumulado en el año.</p></div>
           <div class="surface">
@@ -803,11 +810,20 @@
 
       <!-- RESUMEN EJECUTIVO -->
       <section class="view" id="view-exec">
+        <div class="sec-help" data-help="exec"></div>
         <div class="btnrow printbtn" style="margin-bottom:14px;justify-content:flex-end">
+          <button class="btn" id="saveCaseBtn" data-i18n="save_case_btn">＋ Guardar caso para comparar</button>
           <button class="btn" id="printBtn" data-i18n="print_btn">Imprimir / Guardar PDF</button>
           <button class="btn primary" id="pdfBtn" data-i18n="pdf_btn">Descargar PDF</button>
         </div>
         <div class="exec" id="execBody"></div>
+      </section>
+
+      <!-- COMPARADOR -->
+      <section class="view" id="view-comparador">
+        <div class="sec-help" data-help="cmp"></div>
+        <div class="cmp-toolbar" id="cmpToolbar"></div>
+        <div id="comparadorBody"></div>
       </section>
 
       <nav class="flownav" id="flownav" aria-label="Navegación guiada">
@@ -973,6 +989,7 @@ function applyI18n(){
   document.querySelectorAll(".lang span").forEach(s=>s.classList.toggle("on",s.dataset.lang===LANG));
   document.querySelectorAll(".gl-es").forEach(e=>e.style.display=LANG==="es"?"":"none");
   document.querySelectorAll(".gl-en").forEach(e=>e.style.display=LANG==="en"?"":"none");
+  try{ if(typeof renderSecHelp==="function") renderSecHelp(); }catch(e){}
 }
 
 /* ============ motor NOAA ============ */
@@ -1047,7 +1064,7 @@ const S={
   B:{type:"fixed", on:20, off:6, useDim:false, enabled:true},
   C:{type:"solar", offEnc:0, offApag:0, useDim:false, enabled:true},
   inventory:[{name:"Luminaria 100 W",qty:1,power:100,dim:true}],
-  selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"guia",
+  selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"config",
   yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true,telegest:true}, monthLayers:{a:true,c:true,b:true,money:false},
   energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B", nodeCost:0,
 };
@@ -1089,6 +1106,17 @@ function computeScn(scn){
   return {days,equivH,onH,mEq,mOn};
 }
 function installedKW(){return S.inventory.reduce((s,g)=>s+(g.qty||0)*(g.power||0),0)/1000;}
+function renderInvBase(){
+  const el=document.getElementById("invBase"); if(!el)return;
+  const ikw=installedKW(); const onH=(typeof RA!=="undefined"&&RA)?RA.onH:0;
+  const convKwh=ikw*onH, convUSD=convKwh*S.tariff;
+  el.innerHTML=`<div class="bc-l">${t("inv_base_t")}</div><div class="bc-sub">${t("inv_base_sub")}</div>`+
+    `<div class="bc-metrics">`+
+    `<div class="bc-m"><div class="bc-k">${t("cmp_ctx_power")}</div><div class="bc-v">${nf(ikw,1)} kW</div></div>`+
+    `<div class="bc-m"><div class="bc-k">${t("inv_base_energy")}</div><div class="bc-v">${efmt(convKwh)}</div></div>`+
+    `<div class="bc-m"><div class="bc-k">${t("inv_base_cost")}</div><div class="bc-v">${money(convUSD)}${t("per_year")}</div></div>`+
+    `</div>`;
+}
 function dimKW(){return S.inventory.reduce((s,g)=>s+((g.dim!==false)?(g.qty||0)*(g.power||0):0),0)/1000;}
 function fixedKW(){return S.inventory.reduce((s,g)=>s+((g.dim===false)?(g.qty||0)*(g.power||0):0),0)/1000;}
 function fleetKWh(res,useDim){return useDim?(dimKW()*res.equivH+fixedKW()*res.onH):(IKW*res.equivH);}
@@ -1350,10 +1378,27 @@ function renderYear(id,layers){
 }
 
 /* ============ day chart ============ */
+function scnColor(k){return k==="A"?"#22B0E1":k==="C"?"#4EB270":"#EA561B";}
+function activeScnKeys(){ const ks=["A","C","B"].filter(k=>S[k]&&S[k].enabled); return ks.length?ks:["A"]; }
+function ensurePerfilGrid(keys){
+  const grid=document.getElementById("perfilGrid"); if(!grid)return;
+  const sig=keys.join(","); if(grid.dataset.keys===sig)return;
+  grid.dataset.keys=sig; grid.innerHTML="";
+  keys.forEach(k=>{ const col=document.createElement("div"); col.className="perfil-col";
+    col.innerHTML=`<div class="perfil-h"><span class="cmp-dot" style="background:${scnColor(k)}"></span>${scnLabel(k)}</div>`+
+      `<div class="surface" style="padding:8px"><canvas id="dayChart_${k}" width="620" height="280"></canvas></div>`+
+      `<div class="breakdown" id="bd_${k}"></div>`;
+    grid.appendChild(col); });
+}
 function renderDay(){
-  const scn=scnObj(S.perfilScn); const i=Math.min(S.selDay,N)-1,d=dayProfile(i,scn);
-  document.getElementById("dayDate").textContent=fdate(d.date);
-  const cv=document.getElementById("dayChart"),ctx=cv.getContext("2d");
+  const keys=activeScnKeys(); ensurePerfilGrid(keys);
+  const i=Math.min(S.selDay,N)-1;
+  const dd=document.getElementById("dayDate"); if(dd){const d0=dayProfile(i,scnObj(keys[0]));dd.textContent=fdate(d0.date);}
+  keys.forEach(k=>renderDayInto(k,i));
+}
+function renderDayInto(scnKey,i){
+  const scn=scnObj(scnKey); const d=dayProfile(i,scn);
+  const cv=document.getElementById("dayChart_"+scnKey); if(!cv)return; const ctx=cv.getContext("2d");
   const W=cv.width,H=cv.height,padL=46,padR=10,padT=14,padB=28,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);const maxK=d.Pt*1.05||1;
   ctx.strokeStyle="#E2E6EF";ctx.fillStyle="#99A0B4";ctx.font="11px 'Lato'";ctx.textAlign="right";
@@ -1368,9 +1413,9 @@ function renderDay(){
     ctx.fillStyle=color;ctx.font="10px 'Lato'";ctx.textAlign="center";ctx.fillText(label,x,padT+9);}
   mark(d.on,"#22B0E1",t("ch_enc").toLowerCase()+" "+hhmm(d.on)); mark(d.off,"#22B0E1",t("ch_apg").toLowerCase()+" "+hhmm(d.off));
   const onH=d.hours[Math.floor((d.on%24)+24)%24],offH=d.hours[Math.floor((d.off%24)+24)%24];
-  document.getElementById("bd").innerHTML=`
+  const bd=document.getElementById("bd_"+scnKey); if(bd) bd.innerHTML=`
     <h3>${t("calc_how")}</h3>
-    <div class="brow"><span class="lab">${t("ch_escenario")}</span><span class="val">${scnLabel(S.perfilScn)}</span></div>
+    <div class="brow"><span class="lab">${t("ch_escenario")}</span><span class="val">${scnLabel(scnKey)}</span></div>
     <div class="brow"><span class="lab">${t("ch_amanecer")}</span><span class="val">${hhmm(d.sunrise)}</span></div>
     <div class="brow"><span class="lab">${t("ch_atardecer")}</span><span class="val">${hhmm(d.sunset)}</span></div>
     ${S.dstRule!=="none"?`<div class="brow"><span class="lab">${t("ch_dst")}</span><span class="val">${sunCache[i].dst?t("ch_yes"):t("ch_no")}</span></div>`:""}
@@ -1387,11 +1432,25 @@ const C_OFF=[238,240,245],C_LO=[254,238,200],C_DUSK=[250,181,18],C_HI=[234,86,27
 const mix=(a,b,tt)=>a.map((v,k)=>Math.round(v+(b[k]-v)*tt));
 function cellColor(frac,dim,edge){if(frac<=0)return `rgb(${C_OFF.join(",")})`;if(edge)return `rgb(${C_EDGE.join(",")})`;
   const c=dim<0.7?mix(C_LO,C_DUSK,dim/0.7):mix(C_DUSK,C_HI,(dim-0.7)/0.3);return `rgb(${c.join(",")})`;}
+function ensureHeatGrid(keys){
+  const grid=document.getElementById("heatGrid"); if(!grid)return;
+  const sig=keys.join(","); if(grid.dataset.keys===sig)return;
+  grid.dataset.keys=sig; grid.innerHTML="";
+  keys.forEach(k=>{ const blk=document.createElement("div"); blk.className="heat-block";
+    blk.innerHTML=`<div class="perfil-h"><span class="cmp-dot" style="background:${scnColor(k)}"></span>${scnLabel(k)}</div>`+
+      `<div class="surface"><div class="hourlbl" id="hourlbl_${k}" style="font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr);margin:0 0 4px"></div>`+
+      `<canvas id="heat_${k}" width="960" height="760"></canvas></div>`;
+    grid.appendChild(blk); });
+}
 function renderHeat(){
-  const days=scnRes(S.perfilScn).days; const cv=document.getElementById("heat"),ctx=cv.getContext("2d");
+  const keys=activeScnKeys(); ensureHeatGrid(keys);
+  keys.forEach(k=>renderHeatInto(k));
+}
+function renderHeatInto(scnKey){
+  const days=scnRes(scnKey).days; const cv=document.getElementById("heat_"+scnKey); if(!cv)return; const ctx=cv.getContext("2d");
   const W=cv.width,H=cv.height,cw=W/24,ch=H/N;ctx.clearRect(0,0,W,H);
   for(let i=0;i<N;i++){const d=days[i];for(let h=0;h<24;h++){const hr=d.hours[h];ctx.fillStyle=cellColor(hr.frac,hr.dim,hr.state==="edge");ctx.fillRect(h*cw,i*ch,Math.ceil(cw),Math.ceil(ch)+0.5);}}
-  const hl=document.getElementById("hourlbl");hl.innerHTML="";for(let h=0;h<24;h++){const s=document.createElement("span");s.style.textAlign="center";s.textContent=(h%3===0)?String(h).padStart(2,"0"):"";hl.appendChild(s);}
+  const hl=document.getElementById("hourlbl_"+scnKey); if(hl){hl.innerHTML="";for(let h=0;h<24;h++){const s=document.createElement("span");s.style.textAlign="center";s.textContent=(h%3===0)?String(h).padStart(2,"0"):"";hl.appendChild(s);}}
 }
 
 /* ============ dim editor ============ */
@@ -1441,9 +1500,10 @@ function renderInv(){
     const tr=tb.querySelectorAll("tbody tr");let q=0,kw=0,kk=0,cc=0;
     S.inventory.forEach((g,idx)=>{const k=(g.qty||0)*(g.power||0)/1000,kh=k*hOf(g),co=kh*S.tariff;q+=(+g.qty||0);kw+=k;kk+=kh;cc+=co;
       const c=tr[idx].children;c[4].textContent=nf(k,2);c[5].textContent=nf(kh,0);c[6].textContent=money(co);});
-    const tt=tr[tr.length-1].children;tt[1].textContent=nf(q);tt[4].textContent=nf(kw,2);tt[5].textContent=nf(kk,0);tt[6].textContent=money(cc);}));
+    const tt=tr[tr.length-1].children;tt[1].textContent=nf(q);tt[4].textContent=nf(kw,2);tt[5].textContent=nf(kk,0);tt[6].textContent=money(cc);renderInvBase();}));
   tb.querySelectorAll(".dimchk").forEach(chk=>chk.addEventListener("change",()=>{S.inventory[+chk.dataset.i].dim=chk.checked;recalc();renderTop();renderCards();renderInv();}));
   tb.querySelectorAll(".del").forEach(b=>b.addEventListener("click",()=>{S.inventory.splice(+b.dataset.del,1);recalc();renderTop();renderCards();renderInv();}));
+  renderInvBase();
 }
 
 /* ============ annual table ============ */function renderTable(){
@@ -1848,55 +1908,25 @@ function renderActive(){
   else if(S.tab==="inventario"){renderInv();}
   else if(S.tab==="tabla"){renderTable();renderHoursTable();}
   else if(S.tab==="exec"){renderExec();}
+  else if(S.tab==="comparador"){renderComparador();}
   if(typeof renderFlowNav==="function")renderFlowNav();
 }
 function refreshLive(){recalc();renderTop();renderCards();renderActive();}
 function refreshAll(){recalc();renderTop();const sl=document.getElementById("daySlider");sl.max=N;if(S.selDay>N){S.selDay=N;sl.value=N;}renderCards();renderActive();}
 
-const GROUP_TABS={cfg:["inventario","escenarios","dim"],res:["resumen","exec"],ana:["perfil","tabla"]};
-const lastTab={cfg:"inventario",res:"resumen",ana:"perfil"};
-
-/* ── breadcrumb helper ── */
-function updateBreadcrumb(groupEl,tabEl){
-  document.querySelectorAll(".section-breadcrumb").forEach(el=>el.remove());
-  const activeView=document.querySelector(".view.active");
-  if(!activeView||!groupEl)return;
-  const groupLabel=groupEl?groupEl.textContent.trim():"";
-  const tabLabel=tabEl?tabEl.textContent.trim():"";
-  const bc=document.createElement("div");
-  bc.className="section-breadcrumb";
-  bc.innerHTML=`<span class="bc-dot"></span>${groupLabel}${tabLabel?` <span class="bc-sep">›</span> ${tabLabel}`:""}`;
-  activeView.insertBefore(bc,activeView.firstChild);
-}
-
-function setGroup(g,tab){
-  document.querySelectorAll(".ptab").forEach(p=>p.classList.toggle("active",p.dataset.group===g));
-  const bar=document.getElementById("tabs");
-  if(g==="guia"){bar.style.display="none";S.tab="guia";}
-  else{
-    bar.style.display="flex";
-    bar.querySelectorAll(".tab").forEach(t=>t.style.display=t.dataset.group===g?"":"none");
-    const target=tab||lastTab[g]||GROUP_TABS[g][0]; S.tab=target; lastTab[g]=target;
-    bar.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===target));
-  }
-  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));
+/* ── navegación de un solo nivel (flujo lineal) ── */
+function setTab(tabId){
+  if(!tabId)return;
+  S.tab=tabId;
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===tabId));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+tabId));
   renderActive();
-  const activeGroup=document.querySelector(".ptab.active");
-  const activeTab=document.querySelector("#tabs .tab.active");
-  updateBreadcrumb(activeGroup,activeTab);
+  renderFlowNav();
   window.scrollTo({top:0,behavior:"smooth"});
 }
-document.getElementById("ptabs").addEventListener("click",e=>{const p=e.target.closest(".ptab");if(!p)return;setGroup(p.dataset.group);});
-document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.closest(".tab");if(!tb)return;
-  S.tab=tb.dataset.tab; if(tb.dataset.group)lastTab[tb.dataset.group]=S.tab;
-  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("active",x===tb));
-  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+S.tab));renderActive();
-  const activeGroup=document.querySelector(".ptab.active");
-  updateBreadcrumb(activeGroup,tb);
-  window.scrollTo({top:0,behavior:"smooth"});
-});
-document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{
-  setGroup("cfg","inventario");window.scrollTo({top:0,behavior:"smooth"});}));
+function setGroup(_g,tab){ setTab(tab|| _g); }
+document.getElementById("tabs").addEventListener("click",e=>{const tb=e.target.closest(".tab");if(!tb)return;setTab(tb.dataset.tab);});
+document.querySelectorAll(".gl-cta").forEach(b=>b.addEventListener("click",()=>{ setTab("inventario"); }));
 
 function wireSeg(id,key,after){document.getElementById(id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   S[key]=b.dataset.s;b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));after();});}
@@ -2016,9 +2046,7 @@ document.querySelectorAll(".baseSeg").forEach(seg=>seg.addEventListener("click",
 syncBaseSegs();
 
 /* language */
-document.getElementById("langBtn").addEventListener("click",()=>{LANG=LANG==="es"?"en":"es";applyI18n();fillCountries();buildDimTable();refreshAll();
-  setTimeout(()=>{const ag=document.querySelector(".ptab.active");const at=document.querySelector("#tabs .tab.active");updateBreadcrumb(ag,at);},50);
-});
+document.getElementById("langBtn").addEventListener("click",()=>{LANG=LANG==="es"?"en":"es";applyI18n();fillCountries();buildDimTable();refreshAll();});
 
 /* ============ Navegación guiada · Exportar/Importar · UX ============ */
 /* (No toca el motor de cálculo: solo lee/escribe el estado S y la interfaz.) */
@@ -2034,16 +2062,17 @@ function toast(msg,kind){
 
 /* ---- Navegación guiada (Anterior / Siguiente) ---- */
 const FLOW=[
-  {g:"guia",tab:null,key:"t_guia"},
-  {g:"cfg",tab:"inventario",key:"t_inv"},
-  {g:"cfg",tab:"escenarios",key:"t_escenarios"},
-  {g:"cfg",tab:"dim",key:"t_dim"},
-  {g:"res",tab:"resumen",key:"t_resumen"},
-  {g:"res",tab:"exec",key:"t_exec"},
-  {g:"ana",tab:"perfil",key:"t_perfil"},
-  {g:"ana",tab:"tabla",key:"t_tabla"},
+  {tab:"config",key:"t_config"},
+  {tab:"inventario",key:"t_inv"},
+  {tab:"escenarios",key:"t_escenarios"},
+  {tab:"dim",key:"t_dim"},
+  {tab:"perfil",key:"t_perfil"},
+  {tab:"tabla",key:"t_tabla"},
+  {tab:"resumen",key:"t_resumen"},
+  {tab:"exec",key:"t_exec"},
+  {tab:"comparador",key:"t_comparador"},
 ];
-function flowIndex(){ if(S.tab==="guia")return 0; const i=FLOW.findIndex(f=>f.tab===S.tab); return i<0?0:i; }
+function flowIndex(){ const i=FLOW.findIndex(f=>f.tab===S.tab); return i<0?0:i; }
 function renderFlowNav(){
   const i=flowIndex(),prev=FLOW[i-1],next=FLOW[i+1];
   const pBtn=document.getElementById("flowPrev"),nBtn=document.getElementById("flowNext");
@@ -2051,7 +2080,7 @@ function renderFlowNav(){
   if(prev){pBtn.hidden=false;const l=document.getElementById("flowPrevLab");if(l)l.textContent=t(prev.key);}else pBtn.hidden=true;
   if(next){nBtn.hidden=false;const l=document.getElementById("flowNextLab");if(l)l.textContent=t(next.key);}else nBtn.hidden=true;
 }
-function gotoFlow(delta){const i=flowIndex()+delta;if(i<0||i>=FLOW.length)return;const f=FLOW[i];setGroup(f.g,f.tab);}
+function gotoFlow(delta){const i=flowIndex()+delta;if(i<0||i>=FLOW.length)return;setTab(FLOW[i].tab);}
 (function(){const p=document.getElementById("flowPrev"),n=document.getElementById("flowNext");
   if(p)p.addEventListener("click",()=>gotoFlow(-1));
   if(n)n.addEventListener("click",()=>gotoFlow(1));})();
@@ -2157,8 +2186,31 @@ function copyConfigCode(){let code;try{code=b64enc(JSON.stringify(configPayload(
 function fallbackCopy(code){try{const ta=document.createElement("textarea");ta.value=code;ta.style.position="fixed";ta.style.opacity="0";
   document.body.appendChild(ta);ta.select();const ok=document.execCommand("copy");ta.remove();
   ok?toast(t("code_ok"),"ok"):window.prompt(t("code_manual"),code);}catch(e){window.prompt(t("code_manual"),code);}}
-function importFromText(txt){try{applyImportedState(parseConfigText(txt));toast(t("imp_ok"),"ok");return true;}
-  catch(e){toast(t("imp_err"),"err");return false;}}
+function importCasesPayload(obj){
+  const arr=Array.isArray(obj.cases)?obj.cases:[];
+  if(!arr.length){ toast(t("imp_err"),"err"); return false; }
+  const have=new Set(CASES.map(c=>c.id));
+  let added=0;
+  arr.forEach(c=>{ if(c&&c.id&&!have.has(c.id)){ CASES.push(c); have.add(c.id); added++; } });
+  persistCases();
+  if(typeof setTab==="function") setTab("comparador");
+  try{ renderComparador(); }catch(e){}
+  toast(String(t("cases_imported")).replace("{n}",added), "ok");
+  return true;
+}
+function importFromText(txt){
+  try{
+    const obj=parseConfigText(txt);
+    if(obj && (obj.app==="griddata-alumbrado-cases" || Array.isArray(obj.cases))){
+      return importCasesPayload(obj);
+    }
+    applyImportedState(obj);
+    try{ CASES.push(snapshotCase(t("imported_case"))); persistCases(); }catch(e){}
+    if(typeof setTab==="function") setTab("comparador");
+    try{ renderComparador(); }catch(e){}
+    toast(t("imp_ok_case"),"ok"); return true;
+  }catch(e){ toast(t("imp_err"),"err"); return false; }
+}
 function importConfigFile(file){if(!file)return;const r=new FileReader();
   r.onload=()=>importFromText(String(r.result||""));
   r.onerror=()=>toast(t("imp_err"),"err");r.readAsText(file);}
@@ -2182,6 +2234,651 @@ function importConfigFile(file){if(!file)return;const r=new FileReader();
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal&&!modal.hidden)close();});
 })();
 
+
+/* ============================================================
+   COMPARADOR DE CASOS — guardar X resúmenes ejecutivos,
+   compararlos en línea y obtener un resumen final.
+   ============================================================ */
+/* --- i18n del módulo --- */
+Object.assign(DICT.es,{
+  cmp_group:"Comparar", t_comparador:"Comparador",
+  save_case_btn:"＋ Guardar caso para comparar",
+  save_case_prompt:"Nombre para este caso:",
+  case_saved:"Caso guardado. Ya puedes compararlo.",
+  case_deleted:"Caso eliminado.", cases_cleared:"Se borraron todos los casos.",
+  case_loaded:"Caso cargado en la calculadora.",
+  cmp_export_pdf:"Descargar PDF (todos)", cmp_export_xlsx:"Exportar Excel",
+  cmp_export_json:"Exportar JSON", cmp_clear:"Borrar todos",
+  cmp_empty_t:"Aún no hay casos guardados",
+  cmp_empty_p:"Configura un escenario, ábrelo en <b>Resumen ejecutivo</b> y pulsa <b>＋ Guardar caso para comparar</b>. Repite las veces que quieras: aquí se acumulan y se comparan en línea.",
+  cmp_final_t:"Resumen final", cmp_final_p:"Síntesis de todos los casos guardados. El caso de mayor consumo se toma como referencia (la cuenta a vencer).",
+  cmp_cases:"Casos comparados", cmp_baseline:"Caso de referencia",
+  cmp_band:"Banda de ahorro", cmp_band_pay:"Recuperación",
+  cmp_table_t:"Todos los casos, de menor a mayor ahorro",
+  cmp_pick_base:"Referencia:",
+  th_case:"Caso", th_kwh_y:"kWh/año", th_cost_y:"Costo/año",
+  th_sav_kwh:"Ahorro kWh", th_sav_usd:"Ahorro US$", th_sav_pct:"Ahorro %",
+  th_pay:"Payback", th_act:"Acciones",
+  cmp_monthly_t:"Consumo mensual por caso",
+  cmp_savings_t:"Ahorro económico anual",
+  cmp_pay_t:"Recuperación de la inversión",
+  act_load:"Cargar", act_del:"Borrar", act_rename:"Renombrar",
+  cmp_confirm_clear:"¿Borrar todos los casos guardados?",
+  cmp_base_tag:"referencia", cmp_one_case:"Guarda al menos dos casos para ver la comparación de ahorro.",
+  cmp_persist_note:"Los casos se guardan en este navegador y se mantienen entre sesiones."
+});
+Object.assign(DICT.en,{
+  cmp_group:"Compare", t_comparador:"Comparator",
+  save_case_btn:"＋ Save case to compare",
+  save_case_prompt:"Name for this case:",
+  case_saved:"Case saved. You can compare it now.",
+  case_deleted:"Case deleted.", cases_cleared:"All cases cleared.",
+  case_loaded:"Case loaded into the calculator.",
+  cmp_export_pdf:"Download PDF (all)", cmp_export_xlsx:"Export Excel",
+  cmp_export_json:"Export JSON", cmp_clear:"Clear all",
+  cmp_empty_t:"No saved cases yet",
+  cmp_empty_p:"Configure a scenario, open it in <b>Executive summary</b> and press <b>＋ Save case to compare</b>. Repeat as many times as you like: they accumulate and compare here, online.",
+  cmp_final_t:"Final summary", cmp_final_p:"Synthesis of all saved cases. The highest-consumption case is taken as the reference (the bill to beat).",
+  cmp_cases:"Cases compared", cmp_baseline:"Reference case",
+  cmp_band:"Savings band", cmp_band_pay:"Payback",
+  cmp_table_t:"All cases, lowest to highest savings",
+  cmp_pick_base:"Reference:",
+  th_case:"Case", th_kwh_y:"kWh/yr", th_cost_y:"Cost/yr",
+  th_sav_kwh:"Savings kWh", th_sav_usd:"Savings US$", th_sav_pct:"Savings %",
+  th_pay:"Payback", th_act:"Actions",
+  cmp_monthly_t:"Monthly consumption by case",
+  cmp_savings_t:"Annual economic savings",
+  cmp_pay_t:"Investment payback",
+  act_load:"Load", act_del:"Delete", act_rename:"Rename",
+  cmp_confirm_clear:"Delete all saved cases?",
+  cmp_base_tag:"reference", cmp_one_case:"Save at least two cases to see the savings comparison.",
+  cmp_persist_note:"Cases are stored in this browser and persist between sessions."
+});
+
+/* --- estilos del módulo --- */
+Object.assign(DICT.es,{
+  cmp_ctx_fleet:"Flota", cmp_ctx_power:"Potencia instalada", cmp_ctx_tariff:"Tarifa",
+  cmp_ctx_invest:"Inversión", cmp_ctx_units:"luminarias", cmp_ctx_loc:"Ubicación", cmp_ctx_year:"Año",
+  cmp_ctx_mixed:"⚠ Los casos no comparten todos los parámetros; el contexto mostrado es el del caso de referencia.",
+  cmp_narr_multi:"Sin dimerizar, la cuenta de la flota de {units} es de {convcost} al año ({convkwh} kWh). Con las {n} estrategias guardadas, cae a una banda de {bandUSD} al año, un ahorro de {pct}.",
+  cmp_narr_single:"Sin dimerizar, la cuenta de la flota de {units} es de {convcost} al año ({convkwh} kWh). Con la estrategia guardada, cae a {casecost} al año, un ahorro de {pct}.",
+  cmp_narr_invest:" La inversión de {invest} se recupera en {pay}.",
+  cmp_narr_none:"Guarda al menos un caso con dimerización para ver el ahorro frente a la referencia.",
+  cmp_idea_t:"La idea en una frase",
+  cmp_idea_p:"Dimerizar es bajarle la intensidad a la luminaria cuando la calle está vacía: cada punto de potencia que se baja es energía que no se paga. La telegestión Ubicquia lo hace nodo por nodo, hora por hora, sin enviar una cuadrilla.",
+  cmp_profiles_t:"Perfiles de dimerización por caso",
+  cmp_profiles_p:"% de potencia a lo largo de la noche (48 tramos de 30 min), tal como se guardó cada caso.",
+  cmp_prof_night:"Perfil de la noche", cmp_prof_strat:"Estrategia",
+  cmp_method_t:"Cómo se comparó", cmp_method_p:"Parámetros del caso de referencia y supuestos del cálculo.",
+  cmp_mi_window_t:"Ventana de operación",
+  cmp_mi_window:"Cálculo astronómico NOAA por latitud/longitud y zona horaria, con el cambio de horario del país. El consumo en el encendido y apagado usa la fracción real de minutos.",
+  cmp_mi_base_t:"Base de comparación", cmp_mi_inv_t:"Inventario", cmp_mi_invest_t:"Inversión y payback",
+  cmp_mi_invest:"Payback = inversión ÷ ahorro anual de cada caso frente a la referencia.",
+  cmp_disc:"Cifras referenciales para evaluación comercial. El ahorro real depende del perfil de dimerización efectivamente aplicado, la tarifa vigente y las condiciones de operación de cada cuadrante. El nivel de atenuación debe respetar los mínimos de luminancia y uniformidad de la normativa aplicable.",
+  cmp_per_node:"por nodo",
+  conv_name:"Alumbrado Público Convencional", conv_strat:"Potencia plena durante toda la ventana de encendido.",
+  cmp_base_conv:"Alumbrado Público Convencional", cmp_base_auto:"Auto · caso de mayor consumo",
+  cases_imported:"{n} caso(s) importado(s) al comparador",
+  perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
+  imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
+  cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
+  cmp_vs_ref:"frente a la referencia",
+  cmp_narr_mixed:"Cada caso se compara con su propio alumbrado convencional (su flota a potencia plena). El ahorro va de {minpct} a {maxpct} ({bandUSD} al año).",
+  th_conv_y:"Convencional/año", cmp_table_note:"Cada caso muestra su ahorro frente a su propio alumbrado convencional (su misma flota a potencia plena).",
+  cmp_vs_own:"frente al convencional de cada caso", cmp_mixed_short:"flotas distintas", cmp_same_fleet:"misma flota",
+  cmp_pcard_conv:"Convencional (su flota)",
+  cmp_mi_base_own:"Cada caso se compara con su propio alumbrado convencional: su misma flota e inventario a potencia plena (100%) sobre la misma ventana NOAA. La base no depende de los otros casos."
+});
+Object.assign(DICT.en,{
+  cmp_ctx_fleet:"Fleet", cmp_ctx_power:"Installed power", cmp_ctx_tariff:"Tariff",
+  cmp_ctx_invest:"Investment", cmp_ctx_units:"luminaires", cmp_ctx_loc:"Location", cmp_ctx_year:"Year",
+  cmp_ctx_mixed:"⚠ Cases don't share all parameters; the context shown is the reference case's.",
+  cmp_narr_multi:"Without dimming, the bill for the fleet of {units} is {convcost} per year ({convkwh} kWh). With the {n} saved strategies, it drops to a band of {bandUSD} per year, a saving of {pct}.",
+  cmp_narr_single:"Without dimming, the bill for the fleet of {units} is {convcost} per year ({convkwh} kWh). With the saved strategy, it drops to {casecost} per year, a saving of {pct}.",
+  cmp_narr_invest:" The {invest} investment is recovered in {pay}.",
+  cmp_narr_none:"Save at least one dimming case to see savings against the reference.",
+  cmp_idea_t:"The idea in one sentence",
+  cmp_idea_p:"Dimming means lowering the luminaire's intensity when the street is empty: every point of power you lower is energy you don't pay for. Ubicquia telemanagement does it node by node, hour by hour, with no crew dispatched.",
+  cmp_profiles_t:"Dimming profiles by case",
+  cmp_profiles_p:"% of power across the night (48 half-hour slots), exactly as each case was saved.",
+  cmp_prof_night:"Night profile", cmp_prof_strat:"Strategy",
+  cmp_method_t:"How it was compared", cmp_method_p:"Reference-case parameters and calculation assumptions.",
+  cmp_mi_window_t:"Operating window",
+  cmp_mi_window:"NOAA astronomical calculation by latitude/longitude and time zone, accounting for the country's daylight saving. On/off hours use the real fraction of minutes.",
+  cmp_mi_base_t:"Comparison base", cmp_mi_inv_t:"Inventory", cmp_mi_invest_t:"Investment & payback",
+  cmp_mi_invest:"Payback = investment ÷ each case's annual savings against the reference.",
+  cmp_disc:"Indicative figures for commercial evaluation. Actual savings depend on the dimming profile effectively applied, the prevailing tariff and each quadrant's operating conditions. The dimming level must respect the luminance and uniformity minimums of the applicable standard.",
+  cmp_per_node:"per node",
+  conv_name:"Conventional Public Lighting", conv_strat:"Full power throughout the on-window.",
+  cmp_base_conv:"Conventional Public Lighting", cmp_base_auto:"Auto · highest-use case",
+  cases_imported:"{n} case(s) imported into the comparator",
+  perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
+  imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
+  cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
+  cmp_vs_ref:"vs the reference",
+  cmp_narr_mixed:"Each case is compared against its own conventional lighting (its fleet at full power). Savings range from {minpct} to {maxpct} ({bandUSD} per year).",
+  th_conv_y:"Conventional/yr", cmp_table_note:"Each case shows its savings against its own conventional lighting (its own fleet at full power).",
+  cmp_vs_own:"vs each case's own conventional", cmp_mixed_short:"different fleets", cmp_same_fleet:"same fleet",
+  cmp_pcard_conv:"Conventional (its fleet)",
+  cmp_mi_base_own:"Each case is compared against its own conventional lighting: its same fleet and inventory at full power (100%) over the same NOAA window. The base does not depend on the other cases."
+});
+document.head.insertAdjacentHTML("beforeend",`<style>
+  .perfil-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:16px; align-items:start; margin-bottom:18px}
+  .perfil-col{min-width:0}
+  .perfil-col canvas{width:100%; height:auto; display:block}
+  .perfil-h{display:flex; align-items:center; gap:8px; font-family:var(--disp); font-weight:700; font-size:14px; margin:0 0 8px; color:var(--ink)}
+  .heat-grid{display:flex; flex-direction:column; gap:18px}
+  .heat-block canvas{width:100%; height:auto; display:block; image-rendering:pixelated}
+
+  .cfg-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; align-items:start}
+  .cfg-grid .panel{margin:0}
+  .basecard{margin-top:14px; background:linear-gradient(180deg,var(--ink),#2a3157); color:#fff; border-radius:14px; padding:16px 18px; box-shadow:var(--shadow)}
+  .basecard .bc-l{font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#9fb6e8}
+  .basecard .bc-sub{font-size:12.5px; color:#C6CCDA; margin-top:3px; line-height:1.5}
+  .basecard .bc-metrics{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:12px}
+  .basecard .bc-m{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 12px}
+  .basecard .bc-k{font-size:11px; color:#aeb6d0; text-transform:uppercase; letter-spacing:.04em}
+  .basecard .bc-v{font-family:var(--mono); font-size:18px; font-weight:700; color:#fff; margin-top:3px}
+
+  .tabs.flat{counter-reset:step; flex-wrap:wrap; gap:6px}
+  .tabs.flat .tab{flex:0 1 auto; font-weight:600}
+  .tabs.flat .tab::before{counter-increment:step; content:counter(step); display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; margin-right:7px; border-radius:50%; background:var(--raise); color:var(--faint); font-size:11px; font-weight:800; vertical-align:middle}
+  .tabs.flat .tab.active::before{background:var(--indigo); color:#fff}
+  .tabs.flat .tab.active::after{display:none}
+  .sec-help{display:flex; gap:12px; align-items:flex-start; background:linear-gradient(180deg,var(--indigo-soft),#fff); border:1px solid #CDEBF8; border-radius:14px; padding:14px 16px; margin-bottom:18px}
+  .sec-help .ic{flex:none; width:30px; height:30px; border-radius:9px; background:var(--indigo); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px}
+  .sec-help .tx{font-size:13.5px; color:var(--muted); line-height:1.55}
+  .sec-help .tx b{color:var(--ink)}
+  .sec-help .tx .tip{display:block; margin-top:5px; font-size:12.5px; color:var(--indigo); font-weight:600}
+  .sec-help.hide{display:none}
+  .sec-help .x{margin-left:auto; flex:none; background:none; border:0; color:var(--faint); font-size:16px; cursor:pointer; line-height:1; padding:2px 4px}
+  .sec-help .x:hover{color:var(--ink)}
+  @media print{ .sec-help{display:none!important} }
+
+  .cmp-toolbar{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-bottom:14px}
+  .cmp-empty{background:var(--surface); border:1px dashed var(--line); border-radius:16px; padding:40px 28px; text-align:center; color:var(--muted); box-shadow:var(--shadow)}
+  .cmp-empty h3{font-size:18px; color:var(--ink); margin-bottom:8px}
+  .cmp-empty p{max-width:60ch; margin:0 auto; line-height:1.6}
+  .cmp-legend{display:flex; gap:14px 20px; flex-wrap:wrap; margin:2px 0 12px; font-size:12.5px; color:var(--muted)}
+  .cmp-legend .it{display:inline-flex; align-items:center; gap:7px}
+  .cmp-dot{width:11px; height:11px; border-radius:3px; flex:none}
+  .cmp-base-pill{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); background:var(--surface2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; margin-left:6px}
+  .cmp-bars .row{margin:0 0 12px}
+  .cmp-bars .rl{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; margin-bottom:4px}
+  .cmp-bars .rl b{color:var(--ink); font-family:var(--mono)}
+  .cmp-bars .track{height:22px; background:var(--surface2); border-radius:7px; overflow:hidden}
+  .cmp-bars .fill{height:100%; border-radius:7px; display:flex; align-items:center; padding-left:10px; color:#fff; font-family:var(--mono); font-size:11.5px; font-weight:700; min-width:2px; transition:width .4s ease}
+  .exec table.rep td.actc{white-space:nowrap}
+  .exec .miniact{border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:7px; padding:3px 8px; font-size:11.5px; cursor:pointer; margin-left:4px; font-family:var(--body)}
+  .exec .miniact:hover{border-color:var(--indigo); color:var(--indigo)}
+  .exec .miniact.danger:hover{border-color:var(--rose); color:var(--rose)}
+  .exec table.rep tr.baserow td{color:var(--faint)}
+  .cmp-picksel{display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); margin:4px 0 14px}
+  .cmp-picksel select{max-width:280px}
+  .cmp-context{display:flex; flex-wrap:wrap; gap:10px 26px; margin:2px 0 14px}
+  .cmp-context .it{font-size:12px; color:var(--faint)}
+  .cmp-context .it b{display:block; color:var(--ink); font-size:15px; font-family:var(--mono); margin-top:1px}
+  .cmp-context .mixed{flex-basis:100%; font-size:11.5px; color:var(--rose)}
+  .cmp-lead{font-size:15.5px; color:var(--ink); line-height:1.65; max-width:84ch; margin:4px 0 14px}
+  .cmp-lead b{font-family:var(--mono)}
+  .cmp-callout{background:var(--teal-soft); border:1px solid #BCE3CB; border-left:4px solid var(--teal); border-radius:12px; padding:14px 18px; margin:6px 0 4px}
+  .cmp-callout h4{font-size:15px; color:var(--ink); margin:0 0 4px}
+  .cmp-callout p{margin:0; font-size:14px; color:var(--muted); line-height:1.6}
+  .cmp-cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; margin-top:8px}
+  .cmp-pcard{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--surface)}
+  .cmp-pcard .ph{display:flex; align-items:center; gap:8px; font-weight:700; color:var(--ink); font-size:14px}
+  .cmp-pcard .plab{font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.05em; margin:10px 0 2px}
+  .cmp-pcard .pstrat{font-family:var(--mono); font-size:10.5px; color:var(--muted); background:var(--surface2); border-radius:8px; padding:8px 10px; margin-top:4px; line-height:1.65}
+  .cmp-method{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-top:10px}
+  .cmp-method .mi{font-size:13.5px; color:var(--muted); line-height:1.55}
+  .cmp-method .mi b{display:block; color:var(--ink); font-size:14px; margin-bottom:3px}
+  .cmp-disc{font-size:11.5px; color:var(--faint); margin-top:18px; border-top:1px solid var(--line); padding-top:12px; line-height:1.55}
+  @media print{ .cmp-toolbar,.exec .miniact,.cmp-picksel{display:none!important} #view-comparador{display:block!important} }
+</style>`);
+
+/* --- estado + persistencia --- */
+let CASES=[];
+let cmpBaseId="__conv__";
+const CASES_KEY="griddata-cases-v1";
+function loadCases(){ try{ const raw=window.localStorage.getItem(CASES_KEY); if(raw){const a=JSON.parse(raw); if(Array.isArray(a))CASES=a;} }catch(e){ /* sandbox / sin storage: solo memoria */ } }
+function persistCases(){ try{ window.localStorage.setItem(CASES_KEY, JSON.stringify(CASES)); }catch(e){ /* sin storage: persiste en memoria de la sesión */ } }
+
+/* --- formato local (comparación en USD para consistencia) --- */
+function cusd(v){return "US$"+nf(Math.round(v),0);}
+function cpct(v){return nf(v,1)+"%";}
+function cyrs(v){return (v==null||!isFinite(v))?"—":nf(v,1)+" "+t("years");}
+
+/* --- snapshot del caso actual --- */
+function snapshotCase(name){
+  const act=activeScenarios();
+  const primary=act[0]||{key:"A",lab:t("c_astro_dim")};
+  const annualKwh=eKWh(primary.key);
+  const tariff=+S.tariff||0;
+  const nodes=S.inventory.reduce((a,g)=>a+(+g.qty||0),0);
+  const cc=COUNTRIES.find(c=>c.c===S.country);
+  const place=(cc&&S.country!=="CUSTOM")?cc.n:(nf(S.lat,3)+", "+nf(S.lon,3));
+  const useDim=(primary.key==="A"&&!!S.A.useDim);
+  let convKwh=0, convMonthKwh=null;
+  try{ const sv=savings(); convKwh=sv.kAstro100; convMonthKwh=RA.mOn.map(h=>(+IKW||0)*h); }catch(e){}
+  return {
+    id:"c"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+    name:name, ts:new Date().toISOString(),
+    place:place, year:S.year, units:nodes, IKW:+IKW||0, tariff:tariff,
+    annualKwh:annualKwh, annualUSD:annualKwh*tariff,
+    monthKwh:eKWhMonth(primary.key).slice(),
+    convKwh:convKwh, convMonthKwh:convMonthKwh,
+    dim:S.dim.slice(), useDim:useDim,
+    strategy:useDim?dimStrategyText():t("nodim_txt"),
+    primLabel:primary.lab||t("c_astro_dim"),
+    nodes:nodes, nodeCost:+S.nodeCost||0, invest:(+S.nodeCost||0)*nodes,
+    config:JSON.parse(JSON.stringify(S))
+  };
+}
+function saveCurrentCase(){
+  const def=( (activeScenarios()[0]||{}).lab || t("c_astro_dim") )+" "+(CASES.length+1);
+  let nm=def;
+  try{ const r=window.prompt(t("save_case_prompt"),def); if(r===null)return; nm=(String(r).trim()||def); }catch(e){ nm=def; }
+  CASES.push(snapshotCase(nm)); persistCases();
+  toast(t("case_saved"),"ok");
+  setTab("comparador");
+}
+function delCase(id){ CASES=CASES.filter(c=>c.id!==id); if(cmpBaseId===id)cmpBaseId=null; persistCases(); toast(t("case_deleted"),"ok"); renderComparador(); }
+function clearCases(){ if(!CASES.length)return; if(!window.confirm(t("cmp_confirm_clear")))return; CASES=[]; cmpBaseId=null; persistCases(); toast(t("cases_cleared"),"ok"); renderComparador(); }
+function renameCase(id){ const c=CASES.find(x=>x.id===id); if(!c)return; let r; try{r=window.prompt(t("act_rename"),c.name);}catch(e){return;} if(r===null)return; c.name=String(r).trim()||c.name; persistCases(); renderComparador(); }
+function setBaseCase(id){ cmpBaseId=id||"__conv__"; renderComparador(); }
+function loadCaseIntoCalc(id){ const c=CASES.find(x=>x.id===id); if(!c)return; try{ applyImportedState({state:c.config}); toast(t("case_loaded"),"ok"); setTab("exec"); }catch(e){ toast(t("imp_err"),"err"); } }
+
+/* --- baseline + deltas --- */
+/* consumo convencional (potencia plena) por caso: exacto si se guardó, si no estimado */
+function caseConvKwh(c){
+  if(+c.convKwh>0)return +c.convKwh;
+  if(Array.isArray(c.dim)&&c.annualKwh>0){let on=0,ds=0;c.dim.forEach(v=>{if(v>0){on++;ds+=v/100;}});if(ds>0)return c.annualKwh*on/ds;}
+  return c.annualKwh||0;
+}
+function caseConvMonth(c){
+  if(Array.isArray(c.convMonthKwh)&&c.convMonthKwh.length===12)return c.convMonthKwh;
+  const ck=caseConvKwh(c);
+  if(Array.isArray(c.monthKwh)&&c.annualKwh>0){const f=ck/c.annualKwh;return c.monthKwh.map(v=>v*f);}
+  return Array(12).fill(ck/12);
+}
+/* referencia "Alumbrado Público Convencional" sintética desde la flota de mayor consumo pleno */
+function convencionalRef(){
+  if(!CASES.length)return null;
+  const ref=CASES.reduce((m,c)=>caseConvKwh(c)>caseConvKwh(m)?c:m,CASES[0]);
+  const ck=caseConvKwh(ref); if(!(ck>0))return null;
+  return {id:"__conv__", name:t("conv_name"), synthetic:true,
+    annualKwh:ck, annualUSD:ck*(ref.tariff||0),
+    units:ref.units, IKW:ref.IKW, tariff:ref.tariff, invest:0, nodeCost:0,
+    place:ref.place, year:ref.year, monthKwh:caseConvMonth(ref),
+    dim:Array(48).fill(100), strategy:t("conv_strat")};
+}
+function baselineCase(){
+  if(!CASES.length)return null;
+  const conv=convencionalRef();
+  const maxKwh=()=>CASES.reduce((m,c)=>c.annualKwh>m.annualKwh?c:m,CASES[0]);
+  if(cmpBaseId==="__auto__")return maxKwh();
+  if(cmpBaseId==="__conv__")return conv||maxKwh();
+  if(cmpBaseId){const f=CASES.find(c=>c.id===cmpBaseId); if(f)return f;}
+  return conv||maxKwh();
+}
+/* gráfico único de perfiles superpuestos (canvas propio, sin dependencias) */
+function drawProfilesChart(id,cases,base){
+  const cv=document.getElementById(id); if(!cv)return; const ctx=cv.getContext("2d");
+  const W=cv.width,H=cv.height,padL=44,padR=12,padT=12,padB=24,pw=W-padL-padR,ph=H-padT-padB;
+  ctx.clearRect(0,0,W,H);
+  ctx.font="11px 'Lato'";
+  for(let g=0;g<=4;g++){const val=g*25;const y=padT+ph*(1-val/100);
+    ctx.strokeStyle="#E2E6EF";ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    ctx.fillStyle="#99A0B4";ctx.textAlign="right";ctx.fillText(val+"%",padL-6,y+3);}
+  ctx.textAlign="center";
+  for(let hh=0;hh<=24;hh+=3){const x=padL+pw*(hh/24);
+    ctx.strokeStyle="#F0F2F7";ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+ph);ctx.stroke();
+    ctx.fillStyle="#99A0B4";ctx.fillText((hh<10?"0":"")+hh+"h",x,H-7);}
+  cases.forEach(c=>{ if(!Array.isArray(c.dim)||!c.dim.length)return;
+    ctx.strokeStyle=caseColor(c,base); ctx.lineWidth=2.4; ctx.lineJoin="round"; ctx.beginPath();
+    c.dim.forEach((v,i)=>{const x=padL+pw*(i/(c.dim.length-1));const y=padT+ph*(1-Math.max(0,Math.min(100,v))/100);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke();
+  });
+}
+function caseDeltas(c,base){
+  if(!base||c.id===base.id)return {savKwh:0,savUSD:0,savPct:0,payback:null,isBase:true};
+  const savKwh=base.annualKwh-c.annualKwh, savUSD=base.annualUSD-c.annualUSD;
+  const savPct=base.annualKwh?savKwh/base.annualKwh*100:0;
+  const payback=(c.invest>0&&savUSD>0)?c.invest/savUSD:null;
+  return {savKwh,savUSD,savPct,payback,isBase:false};
+}
+const CMP_COLORS=["#22B0E1","#3466AF","#4EB270","#59509D","#FAB512","#EA561B","#005B59","#1E2445"];
+function caseColor(c,base){ if(base&&c.id===base.id)return "#99A0B4"; const others=CASES.filter(x=>!base||x.id!==base.id); const i=others.findIndex(x=>x.id===c.id); return CMP_COLORS[(i<0?0:i)%CMP_COLORS.length]; }
+function casesSortedBySavings(base){ return CASES.slice().sort((a,b)=>caseDeltas(a,base).savPct-caseDeltas(b,base).savPct); }
+/* sparkline del perfil de noche (48 tramos) — 100% data-driven desde c.dim */
+function cmpSpark(dim){
+  if(!Array.isArray(dim)||!dim.length)return "";
+  const w=240,h=34,n=dim.length,step=w/(n-1);
+  const pts=dim.map((v,i)=>(i*step).toFixed(1)+","+(h-2-(Math.max(0,Math.min(100,v))/100)*(h-6)).toFixed(1)).join(" ");
+  const area="0,"+h+" "+pts+" "+w+","+h;
+  return "<svg viewBox='0 0 "+w+" "+h+"' width='100%' height='"+h+"' preserveAspectRatio='none' aria-hidden='true'>"+
+    "<polygon points='"+area+"' fill='rgba(34,176,225,.12)'/>"+
+    "<polyline points='"+pts+"' fill='none' stroke='#22B0E1' stroke-width='2' stroke-linejoin='round'/></svg>";
+}
+/* contexto compartido: usa el caso de referencia; marca si los casos difieren */
+function cmpSharedContext(){
+  const b=baselineCase()||CASES[0];
+  const mixed=CASES.some(c=>c.units!==b.units||Math.abs((+c.IKW)-(+b.IKW))>0.05||Math.abs(c.tariff-b.tariff)>1e-9);
+  return {units:b.units,IKW:+b.IKW||0,tariff:b.tariff,invest:b.invest||0,nodeCost:b.nodeCost||0,place:b.place,year:b.year,mixed:mixed,ref:b};
+}
+/* ahorro de cada caso frente a SU PROPIO alumbrado convencional (su flota a plena potencia) */
+function caseOwnSavings(c){
+  const conv=caseConvKwh(c), convUSD=conv*(c.tariff||0);
+  const savKwh=conv-c.annualKwh, savUSD=convUSD-c.annualUSD;
+  const savPct=conv>0?savKwh/conv*100:0;
+  const payback=(c.invest>0&&savUSD>0)?c.invest/savUSD:null;
+  return {conv,convUSD,savKwh,savUSD,savPct,payback};
+}
+function casesSortedByOwn(){ return CASES.slice().sort((a,b)=>caseOwnSavings(a).savPct-caseOwnSavings(b).savPct); }
+
+/* --- toolbar --- */
+function renderCmpToolbar(){
+  const tb=document.getElementById("cmpToolbar"); if(!tb)return;
+  if(!CASES.length){ tb.innerHTML=""; return; }
+  tb.innerHTML=
+    `<button class="btn primary" onclick="exportCasesPDF()">${t("cmp_export_pdf")}</button>`+
+    `<button class="btn" onclick="exportCasesXLSX()">${t("cmp_export_xlsx")}</button>`+
+    `<button class="btn" onclick="exportCasesJSON()">${t("cmp_export_json")}</button>`+
+    `<button class="btn" onclick="clearCases()">${t("cmp_clear")}</button>`;
+}
+
+/* --- render principal (base única seleccionable, ref por defecto = convencional) --- */
+function renderComparador(){
+  renderCmpToolbar();
+  const host=document.getElementById("comparadorBody"); if(!host)return;
+  if(!CASES.length){
+    host.innerHTML=`<div class="cmp-empty"><h3>${t("cmp_empty_t")}</h3><p>${t("cmp_empty_p")}</p></div>`;
+    return;
+  }
+  const base=baselineCase();
+  const ordered=casesSortedBySavings(base);
+  const others=CASES.filter(c=>c.id!==base.id);
+  const ctx=cmpSharedContext();
+  const conv=convencionalRef();
+
+  /* banda de ahorro frente a la referencia */
+  const pcts=others.map(c=>caseDeltas(c,base).savPct);
+  const usds=others.map(c=>caseDeltas(c,base).savUSD);
+  const pbs=others.map(c=>caseDeltas(c,base).payback).filter(v=>v!=null&&isFinite(v));
+  const bandPct = pcts.length?(pcts.length>1?cpct(Math.min(...pcts))+" – "+cpct(Math.max(...pcts)):cpct(pcts[0])):"—";
+  const bandUSD = usds.length?(usds.length>1?cusd(Math.min(...usds))+" – "+cusd(Math.max(...usds)):cusd(usds[0])):"—";
+  const bandPay = pbs.length?(pbs.length>1?nf(Math.min(...pbs),1)+" – "+cyrs(Math.max(...pbs)):cyrs(pbs[0])):"—";
+
+  let html=`<div class="exec">`;
+  html+=`<div class="ehead"><div><h2>${t("cmp_final_t")}</h2></div><div class="meta">${t("cmp_cases")}: ${CASES.length}<br>${ctx.place} · ${ctx.year}</div></div>`;
+
+  /* contexto compartido */
+  html+=`<div class="cmp-context">`+
+    `<div class="it">${t("cmp_ctx_fleet")}<b>${nf(ctx.units,0)} ${t("cmp_ctx_units")}</b></div>`+
+    `<div class="it">${t("cmp_ctx_power")}<b>${nf(ctx.IKW,1)} kW</b></div>`+
+    `<div class="it">${t("cmp_ctx_tariff")}<b>US$${nf(ctx.tariff,3)}/kWh</b></div>`+
+    (ctx.invest>0?`<div class="it">${t("cmp_ctx_invest")}<b>${cusd(ctx.invest)}</b></div>`:"")+
+    `<div class="it">${t("cmp_ctx_loc")}<b>${escapeHtml(ctx.place)}</b></div>`+
+    `<div class="it">${t("cmp_ctx_year")}<b>${ctx.year}</b></div>`+
+    (ctx.mixed?`<div class="mixed">${t("cmp_ctx_mixed")}</div>`:"")+
+  `</div>`;
+
+  /* narrativa automática frente a la referencia elegida */
+  if(others.length){
+    const repl={ "{base}":escapeHtml(base.name), "{basecost}":cusd(base.annualUSD), "{basekwh}":nf(base.annualKwh,0),
+      "{n}":others.length, "{bandUSD}":bandUSD, "{pct}":bandPct, "{invest}":cusd(ctx.invest||0), "{pay}":bandPay };
+    let narr=t("cmp_narr_ref");
+    if(ctx.invest>0 && bandPay!=="—") narr+=t("cmp_narr_invest");
+    narr=narr.replace(/\{base\}|\{basecost\}|\{basekwh\}|\{n\}|\{bandUSD\}|\{pct\}|\{invest\}|\{pay\}/g,m=>repl[m]);
+    html+=`<p class="cmp-lead">${narr}</p>`;
+  }
+
+  /* KPIs de banda */
+  html+=`<div class="kgrid">`;
+  html+=`<div class="kbox"><div class="k">${t("cmp_cases")}</div><div class="v">${CASES.length}</div><div class="s">${escapeHtml(base.name)}</div></div>`;
+  html+=`<div class="kbox hl"><div class="k">${t("cmp_band")}</div><div class="v" style="font-size:18px">${bandPct}</div><div class="s">${bandUSD}${t("per_year")}</div></div>`;
+  html+=`<div class="kbox"><div class="k">${t("cmp_band_pay")}</div><div class="v" style="font-size:18px">${bandPay}</div><div class="s">${t("cmp_vs_ref")}</div></div>`;
+  html+=`</div>`;
+
+  /* idea en una frase */
+  html+=`<div class="cmp-callout"><h4>${t("cmp_idea_t")}</h4><p>${t("cmp_idea_p")}</p></div>`;
+
+  /* selector de referencia */
+  html+=`<div class="cmp-picksel"><label>${t("cmp_pick_base")}</label><select onchange="setBaseCase(this.value)">`;
+  if(conv)html+=`<option value="__conv__" ${base.id==="__conv__"?"selected":""}>${t("cmp_base_conv")}</option>`;
+  html+=`<option value="__auto__" ${cmpBaseId==="__auto__"?"selected":""}>${t("cmp_base_auto")}</option>`;
+  CASES.forEach(c=>{ html+=`<option value="${c.id}" ${(c.id===base.id&&!base.synthetic&&cmpBaseId!=="__auto__")?"selected":""}>${escapeHtml(c.name)}</option>`; });
+  html+=`</select></div>`;
+
+  /* tabla */
+  html+=`<h3>${t("cmp_table_t")}</h3>`;
+  html+=`<table class="rep"><thead><tr><th>${t("th_case")}</th><th>${t("th_kwh_y")}</th><th>${t("th_cost_y")}</th><th>${t("th_sav_kwh")}</th><th>${t("th_sav_usd")}</th><th>${t("th_sav_pct")}</th><th>${t("th_pay")}</th><th>${t("th_act")}</th></tr></thead><tbody>`;
+  if(base.synthetic){
+    html+=`<tr class="baserow"><td><span class="cmp-dot" style="display:inline-block;background:#99A0B4;margin-right:7px"></span>${escapeHtml(base.name)} <span class="cmp-base-pill">${t("cmp_base_tag")}</span></td>`+
+      `<td class="num">${nf(base.annualKwh,0)}</td><td class="num">${cusd(base.annualUSD)}</td>`+
+      `<td class="num">—</td><td class="num">—</td><td class="num">${t("base")}</td><td class="num">—</td><td class="actc">—</td></tr>`;
+  }
+  ordered.forEach(c=>{
+    const d=caseDeltas(c,base);
+    html+=`<tr class="${d.isBase?"baserow":""}">`+
+      `<td><span class="cmp-dot" style="display:inline-block;background:${caseColor(c,base)};margin-right:7px"></span>${escapeHtml(c.name)}${d.isBase?` <span class="cmp-base-pill">${t("cmp_base_tag")}</span>`:""}</td>`+
+      `<td class="num">${nf(c.annualKwh,0)}</td>`+
+      `<td class="num">${cusd(c.annualUSD)}</td>`+
+      `<td class="num">${d.isBase?"—":nf(d.savKwh,0)}</td>`+
+      `<td class="num">${d.isBase?"—":cusd(d.savUSD)}</td>`+
+      `<td class="num">${d.isBase?t("base"):"−"+cpct(d.savPct)}</td>`+
+      `<td class="num">${cyrs(d.payback)}</td>`+
+      `<td class="actc"><button class="miniact" onclick="loadCaseIntoCalc('${c.id}')">${t("act_load")}</button>`+
+      `<button class="miniact" onclick="renameCase('${c.id}')">✎</button>`+
+      `<button class="miniact danger" onclick="delCase('${c.id}')">✕</button></td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  html+=`<p class="exp" style="margin-top:8px">${t("cmp_table_note")}</p>`;
+
+  if(others.length){
+    /* barras de ahorro económico */
+    html+=`<h3>${t("cmp_savings_t")}</h3><div class="cmp-bars">`;
+    const maxSav=Math.max(...others.map(c=>caseDeltas(c,base).savUSD),1);
+    casesSortedBySavings(base).filter(c=>c.id!==base.id).forEach(c=>{
+      const d=caseDeltas(c,base); const w=Math.max(2,d.savUSD/maxSav*100);
+      html+=`<div class="row"><div class="rl"><span>${escapeHtml(c.name)}</span><b>${cusd(d.savUSD)}${t("per_year")} · −${cpct(d.savPct)}</b></div><div class="track"><div class="fill" style="width:${w}%;background:${caseColor(c,base)}">${cusd(d.savUSD)}</div></div></div>`;
+    });
+    html+=`</div>`;
+
+    /* barras de payback */
+    const pbCases=casesSortedBySavings(base).filter(c=>c.id!==base.id&&caseDeltas(c,base).payback!=null);
+    if(pbCases.length){
+      html+=`<h3>${t("cmp_pay_t")}</h3><div class="cmp-bars">`;
+      const maxPb=Math.max(...pbCases.map(c=>caseDeltas(c,base).payback),0.1);
+      pbCases.forEach(c=>{ const d=caseDeltas(c,base); const w=Math.max(2,d.payback/maxPb*100);
+        html+=`<div class="row"><div class="rl"><span>${escapeHtml(c.name)}</span><b>${cyrs(d.payback)}</b></div><div class="track"><div class="fill" style="width:${w}%;background:${caseColor(c,base)}">${cyrs(d.payback)}</div></div></div>`; });
+      html+=`</div>`;
+    }
+  } else {
+    html+=`<p class="exp" style="margin-top:14px">${t("cmp_one_case")}</p>`;
+  }
+
+  /* perfiles: un solo gráfico con todas las curvas + estrategia por caso */
+  html+=`<h3>${t("cmp_profiles_t")}</h3><p class="exp">${t("cmp_profiles_p")}</p>`;
+  html+=`<div class="cmp-legend">`+ordered.map(c=>`<span class="it"><span class="cmp-dot" style="background:${caseColor(c,base)}"></span>${escapeHtml(c.name)}</span>`).join("")+`</div>`;
+  html+=`<canvas id="cmpProfile" width="1040" height="280"></canvas>`;
+  html+=`<div class="cmp-cards" style="margin-top:14px">`;
+  ordered.forEach(c=>{
+    html+=`<div class="cmp-pcard">`+
+      `<div class="ph"><span class="cmp-dot" style="background:${caseColor(c,base)}"></span>${escapeHtml(c.name)}</div>`+
+      `<div class="plab">${t("cmp_prof_strat")}</div><div class="pstrat">${escapeHtml(c.strategy||"—")}</div>`+
+    `</div>`;
+  });
+  html+=`</div>`;
+
+  /* consumo mensual */
+  html+=`<h3>${t("cmp_monthly_t")}</h3><canvas id="cmpMonth" width="1040" height="300"></canvas>`;
+
+  /* metodología */
+  html+=`<h3>${t("cmp_method_t")}</h3><p class="exp">${t("cmp_method_p")}</p><div class="cmp-method">`+
+    `<div class="mi"><b>${t("cmp_mi_window_t")}</b>${t("cmp_mi_window")}</div>`+
+    `<div class="mi"><b>${t("cmp_mi_base_t")}</b>${escapeHtml(base.name)}: ${nf(base.annualKwh,0)} kWh = ${cusd(base.annualUSD)}${t("per_year")}.</div>`+
+    `<div class="mi"><b>${t("cmp_mi_inv_t")}</b>${nf(ctx.units,0)} ${t("cmp_ctx_units")}, ${nf(ctx.IKW,1)} kW. ${t("cmp_ctx_tariff")}: US$${nf(ctx.tariff,3)}/kWh.</div>`+
+    `<div class="mi"><b>${t("cmp_mi_invest_t")}</b>${t("cmp_mi_invest")}</div>`+
+  `</div>`;
+  html+=`<div class="cmp-disc">${t("cmp_disc")}<br>${t("cmp_persist_note")} · ${t("ex_note")}</div>`;
+  html+=`</div>`;
+  host.innerHTML=html;
+
+  /* gráfico mensual: convencional en gris cuando es la referencia */
+  try{
+    const series=[];
+    if(base.synthetic && Array.isArray(base.monthKwh)) series.push({vals:base.monthKwh,color:"#99A0B4",show:true});
+    CASES.forEach(c=>series.push({vals:c.monthKwh,color:caseColor(c,base),show:true}));
+    const f=makeFmts(series.map(s=>s.vals),"energy");
+    barsChart("cmpMonth",series,{axisFmt:f.axisFmt,unit:f.unit});
+  }catch(e){console.error("cmpMonth",e);}
+
+  /* gráfico único de perfiles */
+  try{ drawProfilesChart("cmpProfile",ordered,base); }catch(e){console.error("cmpProfile",e);}
+}
+function escapeHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+
+/* --- exports del comparador --- */
+function exportCasesJSON(){
+  try{
+    const payload={app:"griddata-alumbrado-cases",version:2,model:"per-own-conventional",savedAt:new Date().toISOString(),cases:CASES};
+    downloadBlob("comparador-casos-"+ioStamp()+".json",JSON.stringify(payload,null,2),"application/json");
+    toast(t("exp_ok"),"ok");
+  }catch(e){toast(t("exp_err"),"err");}
+}
+function exportCasesXLSX(){
+  const base=baselineCase();
+  const head=[t("th_case"),t("th_kwh_y"),t("th_cost_y")+" (US$)",t("th_sav_kwh"),t("th_sav_usd")+" (US$)",t("th_sav_pct"),t("th_pay")+" ("+t("years")+")",t("ex_lum"),"kW","US$/kWh",t("cfg_inv_t")+" (US$)","Estrategia"];
+  const rows=[head];
+  if(base.synthetic){ rows.push([base.name,Math.round(base.annualKwh),Math.round(base.annualUSD),0,0,0,"",base.units,+(+base.IKW).toFixed(1),base.tariff,0,base.strategy]); }
+  casesSortedBySavings(base).forEach(c=>{const d=caseDeltas(c,base);
+    rows.push([c.name,Math.round(c.annualKwh),Math.round(c.annualUSD),d.isBase?0:Math.round(d.savKwh),d.isBase?0:Math.round(d.savUSD),d.isBase?0:+d.savPct.toFixed(1),(d.payback==null?"":+d.payback.toFixed(2)),c.units,+(+c.IKW).toFixed(1),c.tariff,Math.round(c.invest||0),c.strategy]);});
+  /* hoja mensual */
+  const mhead=[t("th_case"),...mes(),t("th_total")];
+  const mrows=[mhead];
+  if(base.synthetic&&Array.isArray(base.monthKwh))mrows.push([base.name,...base.monthKwh.map(v=>Math.round(v)),Math.round(base.annualKwh)]);
+  CASES.forEach(c=>mrows.push([c.name,...c.monthKwh.map(v=>Math.round(v)),Math.round(c.annualKwh)]));
+  if(window.XLSX){
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),"Casos");
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(mrows),"Mensual_kWh");
+    XLSX.writeFile(wb,"comparador-casos-"+ioStamp()+".xlsx");
+  }else{ sheetDownload(rows,"Casos","comparador-casos-"+ioStamp()); }
+}
+function exportCasesPDF(){
+  if(!CASES.length)return;
+  if(!window.jspdf||!window.jspdf.jsPDF){window.print();return;}
+  const base=baselineCase(); const ordered=casesSortedBySavings(base);
+  const others=CASES.filter(c=>c.id!==base.id); const ctx=cmpSharedContext();
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:"pt",format:"a4",orientation:"landscape",compress:true});
+  const W=doc.internal.pageSize.getWidth(),Hp=doc.internal.pageSize.getHeight(),M=40; let y=46;
+  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
+  doc.text(t("cmp_final_t"),M,y);y+=10;
+  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
+  doc.text(`${t("cmp_cases")}: ${CASES.length}     ${ctx.place} · ${ctx.year}     ${new Date().toLocaleDateString(loc())}`,M,y);y+=14;
+  /* banda frente a la referencia */
+  const pcts=others.map(c=>caseDeltas(c,base).savPct);
+  const usds=others.map(c=>caseDeltas(c,base).savUSD);
+  const pbs=others.map(c=>caseDeltas(c,base).payback).filter(v=>v!=null&&isFinite(v));
+  const bandPct=pcts.length?(pcts.length>1?cpct(Math.min(...pcts))+" – "+cpct(Math.max(...pcts)):cpct(pcts[0])):"—";
+  const bandUSD=usds.length?(usds.length>1?cusd(Math.min(...usds))+" – "+cusd(Math.max(...usds)):cusd(usds[0])):"—";
+  const bandPay=pbs.length?(pbs.length>1?nf(Math.min(...pbs),1)+" – "+cyrs(Math.max(...pbs)):cyrs(pbs[0])):"—";
+  doc.setFontSize(9.5);doc.setTextColor(22,33,63);
+  doc.text(`${t("cmp_baseline")}: ${base.name} (${cusd(base.annualUSD)}${t("per_year")})    ·    ${t("cmp_band")}: ${bandPct} (${bandUSD}${t("per_year")})    ·    ${t("cmp_band_pay")}: ${bandPay}`,M,y+4);y+=18;
+  /* narrativa */
+  if(others.length){
+    const repl={ "{base}":base.name, "{basecost}":cusd(base.annualUSD), "{basekwh}":nf(base.annualKwh,0),
+      "{n}":others.length, "{bandUSD}":bandUSD, "{pct}":bandPct, "{invest}":cusd(ctx.invest||0), "{pay}":bandPay };
+    let narr=t("cmp_narr_ref");
+    if(ctx.invest>0&&bandPay!=="—")narr+=t("cmp_narr_invest");
+    narr=narr.replace(/\{base\}|\{basecost\}|\{basekwh\}|\{n\}|\{bandUSD\}|\{pct\}|\{invest\}|\{pay\}/g,m=>repl[m]).replace(/<\/?b>/g,"");
+    doc.setFontSize(9);doc.setTextColor(70,77,99);
+    const nl=doc.splitTextToSize(narr,W-M*2);doc.text(nl,M,y);y+=nl.length*11+8;
+    doc.setTextColor(22,33,63);
+  }
+  /* tabla */
+  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",
+    headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[22,33,63]},
+    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:150}},
+    head:[[t("th_case"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_kwh"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
+    body:(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—","—",t("base"),"—"]]:[]).concat(ordered.map(c=>{const d=caseDeltas(c,base);return [c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":nf(d.savKwh,0),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):"−"+cpct(d.savPct),cyrs(d.payback)];}))});
+  y=doc.lastAutoTable.finalY+18;
+  /* gráfico mensual embebido */
+  const cv=document.getElementById("cmpMonth");
+  if(cv){ try{ const cw=W-M*2, chh=Math.min(220,Hp-y-50);
+    if(y+chh>Hp-40){doc.addPage();y=46;}
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(t("cmp_monthly_t"),M,y);y+=8;
+    doc.addImage(cv.toDataURL("image/png"),"PNG",M,y,cw,chh); y+=chh+12;
+  }catch(e){} }
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,Math.min(y,Hp-30));
+  doc.save("comparador-casos-"+(ctx.year||"")+".pdf");
+}
+
+/* exponer para onclick inline */
+window.saveCurrentCase=saveCurrentCase; window.loadCaseIntoCalc=loadCaseIntoCalc;
+window.delCase=delCase; window.renameCase=renameCase; window.clearCases=clearCases; window.setBaseCase=setBaseCase;
+window.exportCasesPDF=exportCasesPDF; window.exportCasesXLSX=exportCasesXLSX; window.exportCasesJSON=exportCasesJSON;
+
+/* botón Guardar caso en el resumen ejecutivo */
+(function(){ const b=document.getElementById("saveCaseBtn"); if(b)b.addEventListener("click",saveCurrentCase); })();
+
+/* cargar casos persistidos */
+loadCases();
+
+/* ============ Guía repartida por sección ============ */
+Object.assign(DICT.es,{
+  t_config:"Ubicación y tarifa",
+  help_config:"<b>Empieza aquí.</b> Elige el país (carga lat/long, zona horaria y cambio de hora) e ingresa la tarifa US$/kWh. De esto dependen el amanecer/atardecer reales y el costo.<span class='tip'>Si tu sitio no está en la lista, ingresa las coordenadas a mano.</span>",
+  inv_base_t:"Condición base de la comparación",
+  inv_base_sub:"Alumbrado Público Convencional · tu flota a potencia plena (100%) sobre la ventana del año. Es la referencia que usará el comparador.",
+  inv_base_energy:"Energía convencional / año", inv_base_cost:"Costo convencional / año"
+});
+Object.assign(DICT.en,{
+  t_config:"Location & tariff",
+  help_config:"<b>Start here.</b> Pick the country (loads lat/long, time zone and DST) and enter the US$/kWh tariff. Real sunrise/sunset and cost depend on this.<span class='tip'>If your site isn't listed, type the coordinates by hand.</span>",
+  inv_base_t:"Comparison base condition",
+  inv_base_sub:"Conventional Public Lighting · your fleet at full power (100%) over the year window. This is the reference the comparator will use.",
+  inv_base_energy:"Conventional energy / yr", inv_base_cost:"Conventional cost / yr"
+});
+const SEC_HELP_STEP={config:1,inv:2,scn:3,dim:4,perfil:5,tabla:6,resumen:7,exec:8,cmp:9};
+Object.assign(DICT.es,{
+  help_inv:"<b>Empieza por tu parque.</b> Agrega un grupo por cada tipo de luminaria con su cantidad y potencia (W). Marca <b>Dimerizable</b> en las que admiten regulación; las demás operan a potencia plena toda la noche.<span class='tip'>La suma define la potencia instalada de la flota.</span>",
+  help_scn:"<b>Define qué comparar.</b> Activa los escenarios: astronómico con dimerización (sigue el sol y aplica tu perfil), astronómico sin dimerización y horario fijo (la operación tradicional a superar).<span class='tip'>Elige la base del % contra la que se mide el ahorro.</span>",
+  help_dim:"<b>Aquí está el ahorro.</b> Escribe el % de potencia en cada tramo de 30 min. Bajar la intensidad cuando la calle está vacía es energía que no se paga.<span class='tip'>Usa Aplicar a un rango para escribir el mismo % entre dos horas de golpe.</span>",
+  help_perfil:"<b>Cómo se ve una noche.</b> Un día hora por hora con tu perfil aplicado, más el mapa de calor del año para ver cómo cambia con las estaciones.",
+  help_tabla:"<b>El detalle fino.</b> Horas de encendido acumuladas día a día y minutos ahorrados por seguir el sol.<span class='tip'>Puedes exportar el detalle de los 365 días a Excel/CSV.</span>",
+  help_resumen:"<b>La foto del resultado.</b> Tarjetas de energía y ahorro, y el consumo mes a mes con el % de ahorro de cada mes frente a la base.",
+  help_exec:"<b>El documento para presentar.</b> Configuración, resultados, ahorros, estrategia y gráficos en una vista lista para cliente.<span class='tip'>Descárgalo en PDF o pulsa Guardar caso para compararlo después.</span>",
+  help_cmp:"<b>Compara tus corridas.</b> Cada caso que guardes se acumula aquí y se mide frente a <b>su propio</b> alumbrado convencional, con ahorro y payback. Exporta todo en PDF, Excel o JSON."
+});
+Object.assign(DICT.en,{
+  help_inv:"<b>Start with your fleet.</b> Add one group per luminaire type with its quantity and power (W). Tick <b>Dimmable</b> for the ones that support dimming; the rest run at full power all night.<span class='tip'>The sum defines the fleet's installed power.</span>",
+  help_scn:"<b>Set what to compare.</b> Enable the scenarios: astronomical with dimming (tracks the sun and applies your profile), astronomical no-dim, and fixed schedule (the traditional operation to beat).<span class='tip'>Choose the % base the savings are measured against.</span>",
+  help_dim:"<b>This is where savings come from.</b> Type the power % for each 30-min slot. Lowering intensity when the street is empty is energy you don't pay for.<span class='tip'>Use Apply to a range to set the same % between two hours at once.</span>",
+  help_perfil:"<b>What a night looks like.</b> One day hour by hour with your profile applied, plus a full-year heatmap to see how it shifts with the seasons.",
+  help_tabla:"<b>The fine detail.</b> Cumulative operating hours day by day and minutes saved by tracking the sun.<span class='tip'>You can export the 365-day detail to Excel/CSV.</span>",
+  help_resumen:"<b>The result at a glance.</b> Energy and savings cards, plus month-by-month consumption with each month's % savings vs the base.",
+  help_exec:"<b>The document to present.</b> Configuration, results, savings, strategy and charts in a client-ready view.<span class='tip'>Download it as PDF or hit Save case to compare it later.</span>",
+  help_cmp:"<b>Compare your runs.</b> Every case you save accumulates here and is measured against <b>its own</b> conventional lighting, with savings and payback. Export everything as PDF, Excel or JSON."
+});
+const HELP_KEY="griddata-help-dismissed-v1";
+let HELP_DISMISSED={};
+try{const r=window.localStorage.getItem(HELP_KEY);if(r)HELP_DISMISSED=JSON.parse(r)||{};}catch(e){}
+function persistHelp(){try{window.localStorage.setItem(HELP_KEY,JSON.stringify(HELP_DISMISSED));}catch(e){}}
+function renderSecHelp(){
+  document.querySelectorAll(".sec-help[data-help]").forEach(el=>{
+    const k=el.dataset.help;
+    if(HELP_DISMISSED[k]){el.classList.add("hide");el.innerHTML="";return;}
+    el.classList.remove("hide");
+    const step=SEC_HELP_STEP[k]||"i";
+    el.innerHTML=`<div class="ic">${step}</div><div class="tx">${t("help_"+k)}</div><button class="x" data-help-close title="${t("cancel")}">×</button>`;
+  });
+}
+document.addEventListener("click",e=>{const x=e.target.closest("[data-help-close]");if(!x)return;const box=x.closest(".sec-help");if(!box)return;const k=box.dataset.help;if(k){HELP_DISMISSED[k]=1;persistHelp();}box.classList.add("hide");box.innerHTML="";});
 
 /* init */
 applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); wireDim(); refreshAll(); syncScnState();
