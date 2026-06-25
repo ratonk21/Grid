@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Bill · Escáner de facturas — RatonK</title>
 <meta name="description" content="Escáner de facturas y boletas: saca una foto o adjunta una imagen y extrae los datos automáticamente.">
 <meta property="og:title" content="Bill · Escáner de facturas">
@@ -404,8 +404,34 @@ html.m #lock .box{width:100%;max-width:none;min-height:100dvh;border-radius:0;pa
   html.m .grid2{grid-template-columns:1fr}
 }
 
+
+/* ===== Modo app móvil: bloquear zoom/pinch accidental y ocupar ancho real ===== */
+html, body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+  touch-action:pan-y;
+}
+#app{
+  width:100%;
+  max-width:100%;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+button,.btn,.tab-btn{
+  touch-action:manipulation;
+}
+input,select,textarea{
+  font-size:16px;
+}
+@media (max-width:820px){
+  input,select,textarea{
+    font-size:16px!important;
+  }
+}
+
 </style>
-<script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
+<script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
 <body>
 

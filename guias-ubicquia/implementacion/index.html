@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-K73HD7MSR4');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Buenas prácticas de implementación de alumbrado público inteligente Ubicquia: planificación, site survey, instalación de nodos Ubicell, puesta en servicio, georreferenciación en UbiVu, configuración inicial, verificación y errores frecuentes.">
+<meta property="og:title" content="Buenas prácticas de implementación — Ubicquia">
+<meta property="og:description" content="Guía de campo: del site survey a la aceptación. Instalación, commissioning, georreferenciación, configuración y verificación de nodos Ubicell en UbiVu.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://griddata.cl/guias-ubicquia/implementacion/">
+<title>Buenas prácticas de implementación — Ubicquia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;--ubi-black:#000;
+  --ubi-deep:#464D63;--ubi-gray2:#99A0B4;
+  --ubi-lime:#AECC53;--ubi-darkgreen:#005B59;
+  --ubi-orange:#EA561B;--ubi-gold:#FAB512;--ubi-royal:#3466AF;--ubi-violet:#59509D;--ubi-green:#4EB270;
+  --ubi-surface:#fff;--ubi-line:rgba(30,36,69,.10);
+  --ubi-maxw:1200px;--ubi-maxw-read:880px;--ubi-pad:clamp(16px,5vw,48px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'Lato',-apple-system,system-ui,sans-serif;color:var(--ubi-deep);
+  background:var(--ubi-gray);line-height:1.62;font-size:16px;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Lato',sans-serif;color:var(--ubi-navy);line-height:1.2;font-weight:900}
+p{margin:0 0 1em}
+a{color:var(--ubi-blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:'JetBrains Mono',monospace}
+.band{width:100%}
+.band--navy{background:var(--ubi-navy);color:#fff}
+.band--gray{background:var(--ubi-gray)}
+.band--white{background:#fff}
+.container,.container--read{width:100%;margin-inline:auto;padding-inline:var(--ubi-pad)}
+.container{max-width:var(--ubi-maxw)}
+.container--read{max-width:var(--ubi-maxw-read)}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding-block:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.logo .b{color:var(--ubi-blue)}.logo .n{color:#fff}
+.topbar .right{display:flex;align-items:center;gap:14px}
+.topbar .back{font-size:12px;color:#cfd6ea;font-weight:700}
+.btn-print{font-family:'Lato',sans-serif;font-size:12px;font-weight:700;color:#cfd6ea;cursor:pointer;
+  background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:7px 14px;transition:.15s}
+.btn-print:hover{background:rgba(34,176,225,.16);border-color:var(--ubi-blue);color:#fff}
+
+/* cover */
+.cover{padding-block:clamp(26px,4.4vh,48px)}
+.cover .kicker{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--ubi-blue);margin-bottom:14px}
+.cover h1{color:#fff;font-size:clamp(28px,5vw,46px);margin:0 0 14px;letter-spacing:-1px}
+.cover h1 em{color:var(--ubi-blue);font-style:normal}
+.cover .sub{color:#c3cbe2;font-size:clamp(16px,2.2vw,19px);max-width:60ch;margin:0}
+.cover .tags{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+.cover .tg{font-family:'JetBrains Mono',monospace;font-size:11px;color:#cfd6ea;
+  border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 12px}
+
+/* TOC */
+.toc{background:#fff;border:1px solid var(--ubi-line);border-radius:14px;
+  padding:24px 28px;margin:-34px auto 0;position:relative;box-shadow:0 8px 30px rgba(30,36,69,.08)}
+.toc h2{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ubi-gray2);
+  margin:0 0 14px;font-weight:700}
+.toc ol{margin:0;padding:0;list-style:none;counter-reset:t;columns:2;column-gap:40px}
+.toc li{counter-increment:t;break-inside:avoid;margin-bottom:9px;padding-left:34px;position:relative;font-size:15px}
+.toc li::before{content:counter(t,decimal-leading-zero);position:absolute;left:0;top:0;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ubi-blue)}
+.toc a{color:var(--ubi-navy)}
+
+/* sections */
+main{padding-block:8px 56px}
+section{padding-top:46px;scroll-margin-top:20px}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.sechead .num{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;
+  color:#fff;background:var(--ubi-blue);border-radius:8px;padding:4px 10px;flex:none}
+.sechead h2{font-size:clamp(22px,3.2vw,30px);margin:0;letter-spacing:-.6px}
+.lead{font-size:17px;color:var(--ubi-deep)}
+h3{font-size:19px;margin:30px 0 8px}
+h4{font-size:16px;margin:20px 0 6px;color:var(--ubi-navy)}
+ul,ol.list{margin:0 0 1em;padding-left:1.25em}
+li{margin-bottom:.4em}
+strong{color:var(--ubi-navy)}
+
+/* callouts */
+.callout{border-radius:12px;padding:16px 18px;margin:18px 0;font-size:15px;
+  border:1px solid var(--ubi-line);background:#fff;border-left:4px solid var(--ubi-blue)}
+.callout .ch{font-weight:900;color:var(--ubi-navy);display:block;margin-bottom:3px;font-size:14px}
+.callout.info{border-left-color:var(--ubi-blue);background:#f3fbfe}
+.callout.ok{border-left-color:var(--ubi-lime);background:#f8fbef}
+.callout.warn{border-left-color:var(--ubi-orange);background:#fef5f1}
+.callout p:last-child{margin-bottom:0}
+
+/* cards grid */
+.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin:20px 0}
+.card{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:18px 20px}
+.card h4{margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.card .ic{width:30px;height:30px;border-radius:8px;background:var(--ubi-gray);
+  display:grid;place-items:center;color:var(--ubi-blue);flex:none}
+.card p{font-size:14.5px;margin:0;color:var(--ubi-deep)}
+.card .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ubi-gray2);margin-top:8px}
+
+/* KPI */
+.kpis{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:20px 0}
+.kpi{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:16px 18px}
+.kpi .n{font-size:34px;font-weight:900;color:var(--ubi-navy);line-height:1;font-family:'JetBrains Mono',monospace}
+.kpi .l{font-size:13px;color:var(--ubi-gray2);margin-top:6px}
+.kpi.ok .n{color:var(--ubi-darkgreen)}
+
+/* tables */
+.tablewrap{overflow-x:auto;margin:20px 0;border:1px solid var(--ubi-line);border-radius:12px}
+table.data{border-collapse:collapse;width:100%;font-size:14px;background:#fff}
+table.data th{background:var(--ubi-navy);color:#fff;text-align:left;padding:11px 14px;font-weight:700;font-size:13px}
+table.data td{padding:10px 14px;border-top:1px solid var(--ubi-line);vertical-align:top}
+table.data tr:nth-child(even) td{background:#f5f8f9}
+table.data td:first-child{font-weight:700;color:var(--ubi-navy)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;font-family:'JetBrains Mono',monospace}
+.pill.must{background:#fde9e3;color:#b23c12}
+.pill.rec{background:#e7f0fc;color:var(--ubi-royal)}
+.pill.ok{background:#eef7e6;color:#4e6e1f}
+
+/* steps */
+.steps{counter-reset:s;margin:18px 0;padding:0;list-style:none}
+.steps li{counter-increment:s;position:relative;padding:0 0 14px 50px;margin:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:-2px;width:32px;height:32px;
+  border-radius:50%;background:var(--ubi-blue);color:#fff;font-weight:900;display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:14px}
+.steps li:not(:last-child)::after{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--ubi-line)}
+.steps b{color:var(--ubi-navy)}
+
+/* checklist */
+.check{list-style:none;margin:18px 0;padding:0}
+.check li{position:relative;padding:8px 0 8px 34px;border-bottom:1px solid var(--ubi-line);font-size:15px}
+.check li:last-child{border-bottom:0}
+.check li::before{content:'';position:absolute;left:2px;top:11px;width:18px;height:18px;border-radius:5px;
+  border:2px solid var(--ubi-blue)}
+.check li::after{content:'';position:absolute;left:7px;top:13px;width:5px;height:9px;
+  border-right:2px solid var(--ubi-blue);border-bottom:2px solid var(--ubi-blue);transform:rotate(40deg)}
+
+/* footer */
+footer{padding-block:30px;font-size:13px;color:#aeb6cf}
+footer .logo{font-size:18px;margin-bottom:8px}
+footer a{color:#9fd0e4}
+
+hr.div{border:0;border-top:1px solid var(--ubi-line);margin:34px 0}
+.note{font-size:13.5px;color:var(--ubi-gray2);font-style:italic}
+
+@media (max-width:680px){.toc ol{columns:1}body{font-size:15px}.topbar{flex-wrap:wrap}}
+@media print{
+  :root{--ubi-pad:7mm}
+  body{background:#fff;font-size:11px;line-height:1.5}
+  .band--navy{background:var(--ubi-navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .band--gray{background:#fff!important}
+  table.data th,.sechead .num,.kpi,.callout,.card,.cover,.toc,.pill,.steps li::before,.check li::before,.check li::after{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  section{page-break-inside:auto;padding-top:22px}
+  .callout,.card,.kpi,table.data tr,.steps li{page-break-inside:avoid}
+  .toc{box-shadow:none;margin-top:18px}
+  .cover{page-break-after:always}
+  h2,h3{page-break-after:avoid}
+  a{color:var(--ubi-navy)}
+  .no-print{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="band band--navy">
+  <div class="container">
+    <div class="topbar">
+      <div class="logo"><span class="b">ubi</span><span class="n">cquia.</span></div>
+      <div class="right no-print">
+        <a href="../" class="back">← Guías Ubicquia</a>
+        <button class="btn-print" onclick="window.print()">Exportar PDF</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- COVER -->
+<section class="band band--navy" id="top">
+  <div class="container--read cover">
+    <div class="kicker">Telegestión de alumbrado público · LATAM</div>
+    <h1>Buenas prácticas de <em>implementación</em></h1>
+    <p class="sub">Del site survey a la aceptación: cómo planificar, instalar, poner en servicio y verificar nodos Ubicell para que el despliegue quede sólido desde el día uno.</p>
+    <div class="tags">
+      <span class="tg">Planificación</span>
+      <span class="tg">Instalación</span>
+      <span class="tg">Commissioning</span>
+      <span class="tg">Georreferenciación</span>
+      <span class="tg">Verificación</span>
+    </div>
+  </div>
+</section>
+
+<!-- BODY -->
+<div class="band band--gray">
+<div class="container--read">
+
+  <!-- TOC -->
+  <nav class="toc no-print" aria-label="Contenido">
+    <h2>Contenido</h2>
+    <ol>
+      <li><a href="#obj">Objetivo y alcance</a></li>
+      <li><a href="#plan">Planificación y site survey</a></li>
+      <li><a href="#logistica">Recepción y verificación de nodos</a></li>
+      <li><a href="#instalacion">Instalación física del nodo</a></li>
+      <li><a href="#commissioning">Puesta en servicio y conectividad</a></li>
+      <li><a href="#gis">Georreferenciación e inventario</a></li>
+      <li><a href="#config">Configuración inicial</a></li>
+      <li><a href="#aceptacion">Verificación y aceptación</a></li>
+      <li><a href="#errores">Errores frecuentes</a></li>
+      <li><a href="#operacion">Operación post-implementación</a></li>
+    </ol>
+  </nav>
+
+<main>
+
+  <!-- 01 -->
+  <section id="obj">
+    <div class="sechead"><span class="num">01</span><h2>Objetivo y alcance</h2></div>
+    <p class="lead">Esta guía reúne las buenas prácticas para implementar un proyecto de telegestión de alumbrado público con nodos Ubicell y la plataforma UbiVu, de modo que la instalación quede estable, georreferenciada y verificable, y que la operación posterior arranque sin retrabajos.</p>
+    <p>Está pensada como material de apoyo para equipos de terreno e ingeniería de proyecto. Cubre el ciclo completo: planificación, instalación, puesta en servicio, configuración y aceptación. No reemplaza la ficha técnica del fabricante ni las normas eléctricas locales; donde aparezca un valor específico (torque, alturas, voltajes, umbrales), úsese siempre el de la <strong>plantilla del proyecto</strong> o la <strong>ficha del equipo</strong>.</p>
+    <div class="callout info">
+      <span class="ch">Principio rector</span>
+      <p>Un nodo bien instalado y bien georreferenciado se paga solo: evita visitas repetidas a terreno, falsas alarmas y datos que no se pueden interpretar. La mayor parte del costo de un despliegue está en volver, no en instalar.</p>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section id="plan">
+    <div class="sechead"><span class="num">02</span><h2>Planificación y site survey</h2></div>
+    <p class="lead">Antes de tocar un poste, conviene tener claro el inventario, la cobertura y los puntos críticos. El levantamiento previo define el éxito del despliegue.</p>
+    <h3>2.1 · Levantamiento del parque</h3>
+    <ul>
+      <li><strong>Inventario base:</strong> ubicación, tipo de luminaria, potencia nominal, tipo de fotocelda/receptáculo (NEMA / Zhaga) y estado del poste.</li>
+      <li><strong>Compatibilidad del receptáculo:</strong> confirmar que el nodo Ubicell calza con el socket existente; identificar puntos que requieren adaptador.</li>
+      <li><strong>Energía:</strong> verificar que la luminaria recibe alimentación estable; un punto con falla eléctrica previa generará alertas que no son del nodo.</li>
+    </ul>
+    <h3>2.2 · Cobertura de red</h3>
+    <p>El nodo necesita señal para reportar. Antes de masificar, evaluar cobertura del enlace (celular u otro) en los sectores del proyecto, sobre todo en zonas bajas, túneles, follaje denso o bordes de cobertura.</p>
+    <div class="callout warn">
+      <span class="ch">Riesgo de cobertura</span>
+      <p>Instalar en una zona sin señal confirmada produce nodos "fantasma": instalados pero sin reportar. Marcar estos puntos en el survey y resolver la cobertura antes, no después.</p>
+    </div>
+    <h3>2.3 · Plan de etiquetado</h3>
+    <p>Definir desde el inicio la convención de etiquetas (tags) por comuna, circuito, calle o tipo de luminaria. Las etiquetas son la base para aplicar horarios y umbrales en masa, y para filtrar reportes y alertas después.</p>
+  </section>
+
+  <!-- 03 -->
+  <section id="logistica">
+    <div class="sechead"><span class="num">03</span><h2>Recepción y verificación de nodos</h2></div>
+    <p class="lead">Verificar el lote antes de salir a terreno evita devoluciones a mitad de jornada.</p>
+    <ul>
+      <li>Revisar que el <strong>serial / IMEI</strong> de cada nodo sea legible y registrable.</li>
+      <li>Inspección visual: sin golpes, lente íntegro, pines del receptáculo sin doblar.</li>
+      <li>Confirmar que los nodos del lote están <strong>provisionados</strong> en la cuenta de UbiVu antes de instalar; un nodo no aprovisionado no aparecerá en la plataforma.</li>
+      <li>Mantener trazabilidad: qué serial va a qué punto, idealmente capturado en el mismo formulario que la georreferencia.</li>
+    </ul>
+    <div class="callout info">
+      <span class="ch">Trazabilidad serial ↔ punto</span>
+      <p>El vínculo entre el serial físico y la ubicación real es el dato más valioso del despliegue. Si se pierde, toda la telemetría queda "huérfana". Captúrese en terreno, no de memoria.</p>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section id="instalacion">
+    <div class="sechead"><span class="num">04</span><h2>Instalación física del nodo</h2></div>
+    <p class="lead">La instalación mecánica es simple, pero unos pocos detalles definen si el nodo durará y reportará bien.</p>
+    <ol class="steps">
+      <li><b>Seguridad primero.</b> Trabajar el punto desenergizado cuando el procedimiento lo exija; usar EPP y respetar el plan de trabajo en altura.</li>
+      <li><b>Montaje en el receptáculo.</b> Insertar el nodo y girarlo hasta el tope según el tipo de socket (NEMA: giro horario hasta calce firme). Verificar que quede asentado y sin juego.</li>
+      <li><b>Orientación de la antena/GPS.</b> Orientar el nodo según la ficha del fabricante para mejor recepción; evitar dejarlo bajo estructuras metálicas que bloqueen señal.</li>
+      <li><b>Verificación de encendido.</b> Confirmar que la luminaria responde (enciende/apaga) tras la instalación, según el modo de prueba definido.</li>
+      <li><b>Registro inmediato.</b> Capturar serial + foto + coordenada en el punto, antes de moverse al siguiente.</li>
+    </ol>
+    <div class="callout warn">
+      <span class="ch">No forzar el calce</span>
+      <p>Un nodo mal asentado o con pines doblados puede dar lecturas intermitentes que luego se confunden con fallas de la luminaria. Si no calza con firmeza, revisar el receptáculo antes de insistir.</p>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section id="commissioning">
+    <div class="sechead"><span class="num">05</span><h2>Puesta en servicio y conectividad</h2></div>
+    <p class="lead">Un nodo instalado no es un nodo en servicio. La puesta en servicio confirma que reporta y que responde a comandos.</p>
+    <h3>5.1 · Confirmación de conexión</h3>
+    <p>Tras instalar, el nodo debe aparecer <strong>en línea</strong> en UbiVu dentro del tiempo esperado. Si no conecta, revisar cobertura, asentamiento físico y aprovisionamiento antes de dar el punto por cerrado.</p>
+    <h3>5.2 · Prueba de comando (encender / apagar / dimerizar)</h3>
+    <p>Validar el lazo completo enviando un comando desde UbiVu y confirmando la respuesta física en terreno (o el cambio de estado reportado). Es la prueba de que el control bidireccional funciona, no solo la lectura.</p>
+    <div class="kpis">
+      <div class="kpi ok"><div class="n">3</div><div class="l">señales mínimas a verificar: en línea · estado de lámpara · respuesta a comando</div></div>
+      <div class="kpi"><div class="n">1×</div><div class="l">prueba encender/apagar por punto antes de cerrar</div></div>
+    </div>
+    <div class="callout ok">
+      <span class="ch">Definición de "punto cerrado"</span>
+      <p>Un punto se considera implementado cuando: está instalado, aparece en línea en UbiVu, responde a un comando y quedó georreferenciado con su serial. Tres de cuatro no basta.</p>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section id="gis">
+    <div class="sechead"><span class="num">06</span><h2>Georreferenciación e inventario</h2></div>
+    <p class="lead">La coordenada correcta es lo que convierte un nodo en un activo gestionable en el mapa.</p>
+    <ul>
+      <li><strong>Capturar la coordenada en el punto físico</strong>, no en la oficina ni desde la vereda opuesta. El umbral de "GPS movido" en UbiVu se dispara con desviaciones de la última posición guardada.</li>
+      <li>Completar los <strong>campos de inventario</strong> del nodo (calle, comuna, tipo de luminaria, potencia) para que reportes y filtros tengan sentido.</li>
+      <li>Aplicar las <strong>etiquetas</strong> definidas en el plan (§2.3): son la palanca para configurar horarios y umbrales por grupo.</li>
+    </ul>
+    <div class="callout warn">
+      <span class="ch">Coordenada imprecisa = mapa inútil</span>
+      <p>Si las coordenadas no son fieles, el mapa pierde valor operativo y se disparan falsas alertas de movimiento de GPS. Es más barato medir bien una vez que corregir un parque entero después.</p>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section id="config">
+    <div class="sechead"><span class="num">07</span><h2>Configuración inicial</h2></div>
+    <p class="lead">Con los nodos en línea y etiquetados, se configuran modos, horarios y umbrales por grupo. Para el detalle de cómo funcionan, ver la guía <a href="../modos-y-alertas/">Modos y Alertas</a>.</p>
+    <h3>7.1 · Modos y horarios</h3>
+    <p>Definir el esquema de operación (por ejemplo, horarios astronómicos anclados a amanecer/atardecer) y aplicarlo por etiqueta, no nodo por nodo. Validar en una muestra antes de masificar.</p>
+    <h3>7.2 · Umbrales de alerta</h3>
+    <p>Ajustar los umbrales (sobre/sub-iluminación, voltaje, arranques diarios, inclinación, etc.) según el diseño de cada instalación, para evitar falsas alarmas. Un umbral demasiado estrecho satura de alertas; uno demasiado amplio esconde problemas reales.</p>
+    <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>Acción</th><th>Buena práctica</th><th>Prioridad</th></tr></thead>
+        <tbody>
+          <tr><td>Horarios</td><td>Aplicar por etiqueta de grupo; validar en muestra antes de masificar</td><td><span class="pill must">Imprescindible</span></td></tr>
+          <tr><td>Umbrales</td><td>Calibrar con datos de las primeras semanas, no con valores genéricos</td><td><span class="pill rec">Recomendado</span></td></tr>
+          <tr><td>Dimming</td><td>Caracterizar la respuesta del driver antes de fijar niveles</td><td><span class="pill rec">Recomendado</span></td></tr>
+          <tr><td>Etiquetas</td><td>Cerrar la convención antes de cargar el parque completo</td><td><span class="pill must">Imprescindible</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 08 -->
+  <section id="aceptacion">
+    <div class="sechead"><span class="num">08</span><h2>Verificación y aceptación</h2></div>
+    <p class="lead">El cierre del proyecto se sostiene en evidencia, no en percepción. Esta lista resume qué debe cumplir cada punto antes de aceptarlo.</p>
+    <ul class="check">
+      <li>Nodo instalado y asentado con firmeza en el receptáculo</li>
+      <li>Serial / IMEI registrado y vinculado al punto físico</li>
+      <li>Nodo en línea en UbiVu dentro del tiempo esperado</li>
+      <li>Prueba de comando encender/apagar respondida correctamente</li>
+      <li>Coordenada capturada en el punto, dentro de tolerancia</li>
+      <li>Campos de inventario y etiquetas completados</li>
+      <li>Horario y umbrales del grupo aplicados</li>
+      <li>Sin alertas activas atribuibles a instalación (GPS movido, lámpara apagada con carga, etc.)</li>
+    </ul>
+    <div class="callout ok">
+      <span class="ch">Aceptación por muestreo</span>
+      <p>Para parques grandes, acordar con el cliente un muestreo de verificación en terreno además de la verificación remota en UbiVu. La evidencia combinada (foto + estado en plataforma) es la base de un acta limpia.</p>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section id="errores">
+    <div class="sechead"><span class="num">09</span><h2>Errores frecuentes y cómo evitarlos</h2></div>
+    <p class="lead">La mayoría de los retrabajos vienen de un puñado de causas repetidas.</p>
+    <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>Error</th><th>Consecuencia</th><th>Cómo evitarlo</th></tr></thead>
+        <tbody>
+          <tr><td>Instalar sin cobertura confirmada</td><td>Nodo instalado que nunca reporta</td><td>Validar señal en el site survey (§2.2)</td></tr>
+          <tr><td>Nodo no aprovisionado</td><td>No aparece en UbiVu</td><td>Confirmar provisión del lote antes de salir (§3)</td></tr>
+          <tr><td>Coordenada imprecisa</td><td>Falsas alertas de GPS y mapa inútil</td><td>Medir en el punto físico (§6)</td></tr>
+          <tr><td>Serial registrado de memoria</td><td>Telemetría huérfana, punto irrastreable</td><td>Capturar serial + foto en terreno (§3)</td></tr>
+          <tr><td>Cerrar punto sin probar comando</td><td>Control no validado, falla aparece después</td><td>Prueba encender/apagar por punto (§5.2)</td></tr>
+          <tr><td>Umbrales genéricos</td><td>Saturación de falsas alarmas</td><td>Calibrar con datos reales (§7.2)</td></tr>
+          <tr><td>Pines doblados / mal calce</td><td>Lecturas intermitentes confundidas con falla</td><td>No forzar; revisar receptáculo (§4)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section id="operacion">
+    <div class="sechead"><span class="num">10</span><h2>Operación post-implementación</h2></div>
+    <p class="lead">El despliegue termina, la operación empieza. Unas pocas prácticas mantienen el parque sano.</p>
+    <div class="cards">
+      <div class="card">
+        <h4><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span>Línea base</h4>
+        <p>Dejar correr los datos las primeras semanas para fijar la línea base por grupo antes de afinar umbrales.</p>
+        <span class="tag">primeras 2–4 semanas</span>
+      </div>
+      <div class="card">
+        <h4><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>Triage de alertas</h4>
+        <p>Revisar alertas e insights periódicamente y priorizar por impacto; cerrar el lazo con órdenes de trabajo.</p>
+        <span class="tag">rutina semanal</span>
+      </div>
+      <div class="card">
+        <h4><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="13" y="6" width="3" height="12"/></svg></span>Reportes</h4>
+        <p>Usar los reportes históricos y analíticas para evidenciar ahorro y desempeño ante el cliente.</p>
+        <span class="tag">mensual</span>
+      </div>
+    </div>
+    <hr class="div">
+    <p class="note">Documento base de buenas prácticas. Ajustar los valores específicos (torques, alturas, tolerancias, umbrales) a la plantilla del proyecto y a la ficha del fabricante antes de usarlo como procedimiento formal.</p>
+  </section>
+
+</main>
+</div>
+</div>
+
+<!-- FOOTER -->
+<footer class="band band--navy">
+  <div class="container">
+    <div class="logo"><span class="b">ubi</span><span class="n">cquia.</span></div>
+    <p style="margin:0">griddata.cl · Guías Ubicquia · soporte de telegestión LATAM · <a href="../">volver al índice</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
