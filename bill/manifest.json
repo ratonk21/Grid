@@ -1,19 +1,25 @@
 {
-  "name": "Bill · Escáner de facturas",
+  "name": "Bill S26 Ultra",
   "short_name": "Bill",
-  "description": "Escanea boletas y facturas con IA: foto o PDF, extracción automática, conversión a USD y exportación.",
-  "lang": "es-CL",
-  "dir": "ltr",
-  "start_url": "/bill/",
-  "scope": "/bill/",
+  "description": "Escáner móvil de facturas y boletas optimizado para Samsung Galaxy S26 Ultra.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#143B2B",
+  "background_color": "#F1EBDD",
   "theme_color": "#143B2B",
-  "categories": ["business", "productivity", "finance"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

@@ -271,6 +271,72 @@ html.m #lock p{font-size:16px}
 html.m #lock input{font-size:26px;padding:19px}
 html.m #lock .btn{font-size:19px;padding:19px}
 
+
+
+/* ===== Adaptación S26 Ultra / móvil-first con pestañas ===== */
+.app-tabs{display:none}
+.tab-section{scroll-margin-top:118px}
+.phone-hint{display:none}
+@media (max-width:820px){
+  html,body{min-height:100%;overscroll-behavior-y:none;background:#F7F3EA}
+  body{padding-bottom:calc(18px + env(safe-area-inset-bottom));}
+  .app-header{display:grid;grid-template-columns:1fr auto;gap:10px 12px;padding:12px 12px 10px;box-shadow:0 8px 24px rgba(20,59,43,.14)}
+  .app-header .logo svg{width:34px;height:34px}
+  .status-pill{align-self:center;background:rgba(245,239,226,.12);border:1px solid rgba(245,239,226,.18);border-radius:999px;padding:7px 10px;color:#F5EFE2}
+  .app-title{font-size:12px;letter-spacing:.9px;color:#D8DDDA;margin-top:0;text-transform:none;line-height:1.15}
+  .app-tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:rgba(245,239,226,.10);border:1px solid rgba(245,239,226,.16);padding:6px;border-radius:18px}
+  .tab-btn{min-height:50px;border-radius:14px;background:transparent;color:#F5EFE2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:800;line-height:1;border:1px solid transparent}
+  .tab-btn span{font-size:17px;line-height:1}
+  .tab-btn b{font-weight:800;font-size:10.5px;letter-spacing:.05px}
+  .tab-btn.active{background:#F5EFE2;color:var(--tara);border-color:rgba(255,255,255,.45);box-shadow:0 8px 18px rgba(0,0,0,.12)}
+  .wrap{max-width:520px;margin:0 auto;padding:12px 12px calc(28px + env(safe-area-inset-bottom))}
+  .banner{font-size:15px;border-radius:14px;margin-bottom:12px}
+  .card{border-radius:22px;box-shadow:0 10px 26px rgba(20,59,43,.08);margin-bottom:14px;border-color:rgba(20,59,43,.10)}
+  .card.form{max-width:520px}
+  .tab-section{display:none!important}
+  .tab-section.active-tab{display:block!important;animation:tabIn .18s ease-out}
+  .tab-section.hidden{display:none!important}
+  @keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .drop{padding:22px 14px;border-radius:20px;background:#F9F5EC}
+  .drop .icon{font-size:44px}
+  .btn-row{display:grid;grid-template-columns:1fr;gap:10px}
+  .btn-row .btn{min-width:0;width:100%}
+  .grid2{grid-template-columns:1fr;gap:0}
+  .preview{max-height:42dvh;border-radius:18px}
+  .preview-x{width:42px;height:42px;font-size:22px;top:10px;right:10px}
+  .totals{border-radius:18px;padding:16px}
+  .totals input{width:160px;max-width:55vw}
+  details.raw pre{max-height:32dvh;font-size:12.5px;border-radius:14px}
+  .hist-cards{margin-top:2px}
+  .bcard{border-radius:18px;padding:16px;box-shadow:0 8px 22px rgba(20,59,43,.06)}
+  .btot{border-radius:18px;background:var(--tara)}
+  #ratesBody .rate-row{background:#fff;border:1px solid var(--ubi-line);border-radius:16px;margin-bottom:10px;padding:12px}
+  .rate-row input{width:130px;font-size:16px;padding:12px}
+  #refTableWrap{display:none!important}
+  .foot{display:none}
+}
+@media (max-width:390px){
+  .tab-btn b{font-size:9.5px}
+  .tab-btn span{font-size:16px}
+  .app-tabs{gap:4px;padding:5px}
+}
+html.m .app-header{display:grid;grid-template-columns:1fr auto;gap:10px 12px;padding:12px 12px 10px;box-shadow:0 8px 24px rgba(20,59,43,.14)}
+html.m .app-tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:rgba(245,239,226,.10);border:1px solid rgba(245,239,226,.16);padding:6px;border-radius:18px}
+html.m .tab-btn{min-height:50px;border-radius:14px;background:transparent;color:#F5EFE2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:800;line-height:1;border:1px solid transparent}
+html.m .tab-btn span{font-size:17px;line-height:1}
+html.m .tab-btn b{font-weight:800;font-size:10.5px;letter-spacing:.05px}
+html.m .tab-btn.active{background:#F5EFE2;color:var(--tara);border-color:rgba(255,255,255,.45);box-shadow:0 8px 18px rgba(0,0,0,.12)}
+html.m .wrap{max-width:520px;margin:0 auto;padding:12px 12px calc(28px + env(safe-area-inset-bottom))}
+html.m .tab-section{display:none!important}
+html.m .tab-section.active-tab{display:block!important;animation:tabIn .18s ease-out}
+html.m .tab-section.hidden{display:none!important}
+html.m .grid2{grid-template-columns:1fr;gap:0}
+html.m .btn-row{display:grid;grid-template-columns:1fr;gap:10px}
+html.m .btn-row .btn{min-width:0;width:100%}
+html.m .drop{padding:22px 14px;border-radius:20px;background:#F9F5EC}
+html.m .preview{max-height:42dvh;border-radius:18px}
+html.m .foot{display:none}
+
 </style>
 <script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
@@ -294,12 +360,19 @@ html.m #lock .btn{font-size:19px;padding:19px}
       <div class="app-title">Bill · Escáner de facturas</div>
     </div>
     <div class="status-pill"><span class="d"></span><span id="modeLabel">en línea</span></div>
+    <nav class="app-tabs" aria-label="Secciones principales">
+      <button class="tab-btn active" type="button" data-tab="scan" onclick="switchTab('scan')"><span>📷</span><b>Escanear</b></button>
+      <button class="tab-btn" type="button" data-tab="review" onclick="switchTab('review')"><span>✍️</span><b>Revisar</b></button>
+      <button class="tab-btn" type="button" data-tab="history" onclick="switchTab('history')"><span>🧾</span><b>Histórico</b></button>
+      <button class="tab-btn" type="button" data-tab="rates" onclick="switchTab('rates')"><span>💱</span><b>Tasas</b></button>
+      <button class="tab-btn" type="button" data-tab="ref" onclick="switchTab('ref')"><span>📋</span><b>Ref.</b></button>
+    </nav>
   </header>
 
   <div class="wrap">
     <div id="banner" class="banner"></div>
 
-    <div class="card form" id="captureCard">
+    <div class="card form tab-section active-tab" id="captureCard" data-tab-section="scan">
       <h2>1 · Captura la boleta</h2>
       <p class="sub">Fotos e imágenes → <b>Papel</b> (entran al PDF de boletas). PDF → <b>Digital</b>.</p>
       <div id="drop" class="drop">
@@ -322,7 +395,7 @@ html.m #lock .btn{font-size:19px;padding:19px}
       </button>
     </div>
 
-    <div class="card form hidden" id="resultCard">
+    <div class="card form tab-section hidden" id="resultCard" data-tab-section="review">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <h2 style="margin:0">2 · Datos extraídos</h2>
         <span class="tag" id="docTag">documento</span>
@@ -355,13 +428,13 @@ html.m #lock .btn{font-size:19px;padding:19px}
       <button class="btn full" style="margin-top:16px" onclick="saveCurrent()">💾 Guardar en histórico</button>
     </div>
 
-    <div class="card form" id="ratesCard">
+    <div class="card form tab-section" id="ratesCard" data-tab-section="rates">
       <h2>Tasas de cambio (a USD)</h2>
       <p class="sub">Carga manualmente el valor del dólar para cada moneda. <b>USD = monto local ÷ tasa.</b></p>
       <div id="ratesBody"><p class="empty" style="padding:8px">Agrega boletas para configurar las tasas.</p></div>
     </div>
 
-    <div class="card" id="histCard">
+    <div class="card tab-section" id="histCard" data-tab-section="history">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <h2 style="margin:0">3 · Histórico</h2>
         <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
@@ -387,7 +460,7 @@ html.m #lock .btn{font-size:19px;padding:19px}
       <input id="jsonIn" type="file" accept=".json,application/json" class="hidden">
     </div>
 
-    <div class="card" id="refCard">
+    <div class="card tab-section" id="refCard" data-tab-section="ref">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <h2 style="margin:0">Lista de referencia</h2>
         <span class="tag mono" id="refInfo" style="background:var(--ubi-lime);color:var(--ubi-navy)"></span>
@@ -471,6 +544,17 @@ let history = [];
 let rates   = {USD:1};
 let refHeader = [], refRows = [];
 let lsOK    = true;
+let activeTab = 'scan';
+function switchTab(tab){
+  activeTab = tab || 'scan';
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===activeTab));
+  document.querySelectorAll('[data-tab-section]').forEach(sec=>sec.classList.toggle('active-tab', sec.dataset.tabSection===activeTab));
+  if(activeTab==='review' && document.getElementById('resultCard').classList.contains('hidden')){
+    banner('Primero escanea una boleta para revisar los datos.','info');
+  }
+  try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
+}
+function currentMobile(){ return document.documentElement.classList.contains('m') || matchMedia('(max-width:820px)').matches; }
 
 /* ---------- Banner ---------- */
 function banner(msg,type='err'){ const b=document.getElementById('banner');
@@ -618,7 +702,8 @@ async function runScan(){
     if(!data) throw new Error('La IA no devolvió datos legibles. Intenta otra foto con mejor luz.');
     fillResult(data);
     document.getElementById('resultCard').classList.remove('hidden');
-    document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+    switchTab('review');
+    if(!currentMobile()) document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
     banner('Datos extraídos. Revísalos antes de guardar.','ok');
   }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
   finally{ btn.disabled=false; lbl.textContent='⚡ Escanear contenido'; }
@@ -726,8 +811,9 @@ function saveCurrent(){
   renderRates(); renderHistory();
   clearImage();
   document.getElementById('resultCard').classList.add('hidden');
+  switchTab('history');
   banner('Boleta guardada en el histórico.','ok');
-  document.getElementById('histCard').scrollIntoView({behavior:'smooth'});
+  if(!currentMobile()) document.getElementById('histCard').scrollIntoView({behavior:'smooth'});
 }
 
 /* ================= TASAS / USD ================= */
@@ -1244,7 +1330,7 @@ function init(){
     if(Object.keys(rates).length<=1){ rates=Object.assign({USD:1},DEMO_RATES); persistRates(); }
     if(!refRows.length && DEMO_REF.length){ buildRefList(DEMO_REF, true); }
   }
-  renderRates(); renderHistory();
+  renderRates(); renderHistory(); switchTab('scan');
 }
 init();
 </script>
