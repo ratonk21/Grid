@@ -3249,21 +3249,6 @@ input,select,textarea{
   .tab-btn{min-height:49px!important}
 }
 
-
-/* ===== Fix label escaneo: SVG real, no texto literal ===== */
-#scanLabel{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:9px!important;
-  width:100%;
-}
-@media (max-width:820px){
-  #scanLabel{
-    gap:9px!important;
-  }
-}
-
 </style>
 <script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
@@ -3465,7 +3450,6 @@ Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valore
 Pistas de país por identificador: RUT=Chile, NIT=Colombia, RUC=Perú o Ecuador, CUIT=Argentina, RFC=México.
 Los montos como números sin separador de miles ni símbolo. Responde únicamente el JSON.`;
 
-const SCAN_LABEL_HTML = `<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>`;
 let appCode = '';
 let curImg  = null;
 let history = [];
@@ -3623,7 +3607,18 @@ async function runScan(){
   if(!curImg){ banner('Primero captura o adjunta una imagen.'); return; }
   clearBanner();
   const btn=document.getElementById('scanBtn'), lbl=document.getElementById('scanLabel');
-  btn.disabled=true; lbl.innerHTML=SCAN_LABEL_HTML; }
+  btn.disabled=true; lbl.innerHTML='<span class="spin"></span> Escaneando…';
+  try{
+    const raw=await scan(curImg.b64,curImg.mediaType);
+    const data=extractJSON(raw);
+    if(!data) throw new Error('La IA no devolvió datos legibles. Intenta otra foto con mejor luz.');
+    fillResult(data);
+    document.getElementById('resultCard').classList.remove('hidden');
+    switchTab('review');
+    if(!currentMobile()) document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+    banner('Datos extraídos. Revísalos antes de guardar.','ok');
+  }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
+  finally{ btn.disabled=false; lbl.textContent='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
 }
 async function scan(b64,mediaType){
   try{
