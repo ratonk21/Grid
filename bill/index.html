@@ -253,9 +253,26 @@ html.m .bcard .rowline{font-size:17px}
 html.m .bcard .desc .editable{font-size:17px}
 html.m .app-title{font-size:13px}
 html.m .logo{font-size:24px}
+/* ===== Lock a pantalla completa en móvil ===== */
+@media (max-width:820px){
+  #lock{padding:0;align-items:stretch}
+  #lock .box{max-width:none;width:100%;min-height:100dvh;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;padding:0 32px}
+  #lock .logo svg{width:66px;height:66px}
+  #lock h1{font-size:27px}
+  #lock p{font-size:16px}
+  #lock input{font-size:26px;padding:19px}
+  #lock .btn{font-size:19px;padding:19px}
+}
+html.m #lock{padding:0;align-items:stretch}
+html.m #lock .box{max-width:none;width:100%;min-height:100dvh;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;padding:0 32px}
+html.m #lock .logo svg{width:66px;height:66px}
+html.m #lock h1{font-size:27px}
+html.m #lock p{font-size:16px}
+html.m #lock input{font-size:26px;padding:19px}
+html.m #lock .btn{font-size:19px;padding:19px}
 
 </style>
-<script>try{var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add("m");}catch(e){}</script>
+<script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
 <body>
 
