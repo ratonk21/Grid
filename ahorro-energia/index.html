@@ -693,6 +693,7 @@
               <label><input type="checkbox" data-ly="cprofile" checked> <span data-i18n="lyr_nodim">Astro sin dim</span></label>
               <label><input type="checkbox" data-ly="excess" checked> <span data-i18n="lyr_excess">Exceso del fijo</span></label>
               <label><input type="checkbox" data-ly="dst" checked> <span data-i18n="lyr_dst">Cambios de hora</span></label>
+              <label><input type="checkbox" data-ly="telegest" checked> <span data-i18n="tag_astro">Telegestión Ubicquia</span></label>
             </div>
             <canvas id="yearChart" width="1040" height="420"></canvas>
           </div>
@@ -734,6 +735,11 @@
             <div class="btnrow" style="margin-top:14px">
               <button class="btn" id="resetDim" data-i18n="reset_prof">Restablecer perfil</button>
               <button class="btn" id="flatDim" data-i18n="all100">Todo 100%</button>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+                <span data-i18n="bump_all">Subir todos</span>
+                <input type="number" id="bumpVal" value="5" step="5" min="-100" max="100" style="width:62px">%
+                <button class="btn" id="bumpApply" data-i18n="apply">Aplicar</button>
+              </span>
               <span style="display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--muted)">
                 <span data-i18n="apply_range">Aplicar a un rango:</span>
                 <input type="time" id="rngFrom" value="22:00" style="width:90px">→
@@ -835,7 +841,7 @@
 /* ============ i18n ============ */
 const DICT={
  es:{ docTitle:"Alumbrado público — calculadora",
-  io_title:"Guardar y cargar", io_hint:"Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.", io_export:"Exportar (.json)", io_import:"Importar archivo", io_copy:"Copiar código", io_paste:"Pegar código", io_paste_t:"Pegar configuración", io_paste_h:"Pega el código o el JSON que guardaste para restaurar esa configuración.", cancel:"Cancelar", exp_ok:"Configuración exportada.", exp_err:"No se pudo exportar.", code_ok:"Código copiado al portapapeles.", code_manual:"Copia este código manualmente:", imp_ok:"Configuración aplicada.", imp_err:"Archivo o código no válido.", flow_prev:"Anterior", flow_next:"Siguiente",
+  io_title:"Guardar y cargar", io_hint:"Exporta los cambios que hiciste y vuelve a aplicarlos cuando quieras, aquí o en otro equipo.", io_export:"Exportar (.json)", io_import:"Importar archivo", io_copy:"Copiar código", io_paste:"Pegar código", io_paste_t:"Pegar configuración", io_paste_h:"Pega el código o el JSON que guardaste para restaurar esa configuración.", cancel:"Cancelar", exp_ok:"Configuración exportada.", exp_err:"No se pudo exportar.", code_ok:"Código copiado al portapapeles.", code_manual:"Copia este código manualmente:", imp_ok:"Configuración aplicada.", imp_err:"Archivo o código no válido.", flow_prev:"Anterior", flow_next:"Siguiente", bump_all:"Subir todos",
   cfg_full_title:"Configuración detallada del análisis", exp_full_cfg:"Todos los parámetros particulares ingresados para este análisis.", cfg_loc:"Ubicación y tiempo", cfg_tar:"Tarifa y referencia", cfg_inv_t:"Inversión", cfg_scn:"Escenarios configurados", cfg_inv_list:"Inventario de luminarias", cfg_dim_t:"Perfil de dimerización (% por media hora)", cfg_state:"Estado", cfg_window:"Ventana de operación", cfg_on:"Activo", cfg_off:"Inactivo", cfg_power_sum:"Potencia instalada", cfg_dimkw:"Dimerizable", cfg_fixkw:"No dimerizable", yes:"Sí", no:"No", custom_loc:"Personalizada", col_hora:"Hora",
   eyebrow:"Alumbrado público · energía y costo", title:"Calculadora de consumo anual",
   city:"Ciudad", year:"Año", loc_time:"Ubicación y tiempo",
@@ -897,7 +903,7 @@ const DICT={
   ex_save_energy:"Ahorro de energía", ex_save_money:"Ahorro económico", ex_units:"luminarias"
  },
  en:{ docTitle:"Street lighting — calculator",
-  io_title:"Save & load", io_hint:"Export the changes you made and re-apply them anytime, here or on another device.", io_export:"Export (.json)", io_import:"Import file", io_copy:"Copy code", io_paste:"Paste code", io_paste_t:"Paste configuration", io_paste_h:"Paste the code or JSON you saved to restore that configuration.", cancel:"Cancel", exp_ok:"Configuration exported.", exp_err:"Export failed.", code_ok:"Code copied to clipboard.", code_manual:"Copy this code manually:", imp_ok:"Configuration applied.", imp_err:"Invalid file or code.", flow_prev:"Back", flow_next:"Next",
+  io_title:"Save & load", io_hint:"Export the changes you made and re-apply them anytime, here or on another device.", io_export:"Export (.json)", io_import:"Import file", io_copy:"Copy code", io_paste:"Paste code", io_paste_t:"Paste configuration", io_paste_h:"Paste the code or JSON you saved to restore that configuration.", cancel:"Cancel", exp_ok:"Configuration exported.", exp_err:"Export failed.", code_ok:"Code copied to clipboard.", code_manual:"Copy this code manually:", imp_ok:"Configuration applied.", imp_err:"Invalid file or code.", flow_prev:"Back", flow_next:"Next", bump_all:"Raise all",
   cfg_full_title:"Detailed analysis configuration", exp_full_cfg:"All the particular parameters entered for this analysis.", cfg_loc:"Location & time", cfg_tar:"Tariff & reference", cfg_inv_t:"Investment", cfg_scn:"Configured scenarios", cfg_inv_list:"Luminaire inventory", cfg_dim_t:"Dimming profile (% per half hour)", cfg_state:"Status", cfg_window:"Operating window", cfg_on:"Active", cfg_off:"Inactive", cfg_power_sum:"Installed power", cfg_dimkw:"Dimmable", cfg_fixkw:"Non-dimmable", yes:"Yes", no:"No", custom_loc:"Custom", col_hora:"Hour",
   eyebrow:"Street lighting · energy & cost", title:"Annual consumption calculator",
   city:"City", year:"Year", loc_time:"Location & time",
@@ -1042,7 +1048,7 @@ const S={
   C:{type:"solar", offEnc:0, offApag:0, useDim:false, enabled:true},
   inventory:[{name:"Luminaria 100 W",qty:1,power:100,dim:true}],
   selDay:172, perfilScn:"A", invScn:"A", tblScn:"A", tab:"guia",
-  yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true}, monthLayers:{a:true,c:true,b:true,money:false},
+  yearLayers:{night:true,fixed:true,cprofile:true,excess:true,dst:true,telegest:true}, monthLayers:{a:true,c:true,b:true,money:false},
   energyUnit:"auto", currency:{enabled:false,symbol:"$",rate:1}, baseScn:"B", nodeCost:0,
 };
 
@@ -1310,6 +1316,22 @@ function renderYear(id,layers){
     ctx.beginPath();for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunset));ctx.stroke();
     ctx.beginPath();for(let i=0;i<N;i++)ctx.lineTo(X(i),Y(sunCache[i].sunrise+24));ctx.stroke();
   }
+  if(layers.telegest&&S.A.enabled){
+    const wpx=Math.max(1,pw/(N-1)+1);
+    for(let i=0;i<N;i++){
+      const su=sunCache[i], on=su.sunset+S.A.offEnc/60, off=su.sunrise+S.A.offApag/60, x=X(i);
+      for(let k=0;k<48;k++){
+        const lvl=S.A.useDim?S.dim[k]:100; if(lvl<=0)continue;
+        const a=k*0.5,b=a+0.5;
+        const eve=Math.min(b,24)-Math.max(a,on);
+        const mor=Math.min(b,off)-Math.max(a,0);
+        if(eve<=0&&mor<=0)continue;
+        ctx.fillStyle=dimCellColor(lvl);
+        if(eve>0){const ya=Y(Math.max(a,on)),yb=Y(Math.min(b,24));ctx.fillRect(x,Math.min(ya,yb),wpx,Math.abs(yb-ya));}
+        if(mor>0){const ya=Y(Math.max(a,0)+24),yb=Y(Math.min(b,off)+24);ctx.fillRect(x,Math.min(ya,yb),wpx,Math.abs(yb-ya));}
+      }
+    }
+  }
   const onB=S.B.on,offB=S.B.off+24;
   if(layers.excess&&S.B.enabled){ctx.fillStyle="rgba(234,86,27,.16)";
     for(let i=0;i<N;i++){const ss=sunCache[i].sunset;if(onB<ss){ctx.fillRect(X(i),Y(onB),Math.max(1,pw/N+1),Y(ss)-Y(onB));}}
@@ -1393,6 +1415,9 @@ function wireDim(){
   document.getElementById("rngApply").onclick=()=>{const f=parseTime(document.getElementById("rngFrom").value),tt=parseTime(document.getElementById("rngTo").value);
     const val=Math.max(0,Math.min(100,parseFloat(document.getElementById("rngVal").value)||0));
     for(let k=0;k<48;k++){const hr=k*0.5;const inR=(f<=tt)?(hr>=f&&hr<tt):(hr>=f||hr<tt);if(inR)S.dim[k]=val;}buildDimTable();refreshLive();};
+  const bump=document.getElementById("bumpApply");
+  if(bump)bump.onclick=()=>{const d=Math.round(parseFloat(document.getElementById("bumpVal").value)||0);
+    if(!d)return;for(let k=0;k<48;k++){S.dim[k]=Math.max(0,Math.min(100,S.dim[k]+d));}buildDimTable();refreshLive();};
 }
 
 /* ============ inventory ============ */
@@ -1678,7 +1703,7 @@ function renderExec(){
   const series=monthSeries(false);
   const f=makeFmts(series.filter(s=>s.show).map(s=>s.vals),"energy");
   barsChart("execMonth",series,{axisFmt:f.axisFmt,barFmt:f.barFmt,unit:f.unit});
-  renderYear("execYear",{night:S.A.enabled,fixed:S.B.enabled,cprofile:S.C.enabled,excess:S.A.enabled&&S.B.enabled,dst:true});
+  renderYear("execYear",{night:S.A.enabled,fixed:S.B.enabled,cprofile:S.C.enabled,excess:S.A.enabled&&S.B.enabled,dst:true,telegest:S.A.enabled});
   const cPrim=[];let ap=0;for(let i=0;i<N;i++){ap+=primRes.days[i].nightH;cPrim.push(ap);}
   const cSec=[];let bp=0;if(secRes)for(let i=0;i<N;i++){bp+=secRes.days[i].nightH;cSec.push(bp);}
   lineChart("execHours",[
@@ -1949,6 +1974,8 @@ function syncScnState(){
   if(ylFixed) ylFixed.style.display=S.B.enabled?"":"none";
   if(ylProfile) ylProfile.style.display=S.C.enabled?"":"none";
   if(ylExcess) ylExcess.style.display=S.B.enabled?"":"none";
+  const ylTele=document.querySelector('#yearLayers input[data-ly="telegest"]');
+  if(ylTele&&ylTele.closest("label")) ylTele.closest("label").style.display=S.A.enabled?"":"none";
 
   // Base del %: ocultar botones de escenarios inactivos
   document.querySelectorAll(".baseSeg button[data-base]").forEach(btn=>{
@@ -2080,7 +2107,7 @@ function sanitizeState(raw){
   if(Array.isArray(src.inventory)){
     const inv=src.inventory.filter(g=>g&&typeof g==="object").map(g=>({name:String(g.name==null?"—":g.name),qty:Math.max(0,ioNum(g.qty,0)),power:Math.max(0,ioNum(g.power,0)),dim:g.dim!==false}));
     if(inv.length)out.inventory=inv;}
-  if(src.yearLayers&&typeof src.yearLayers==="object"){out.yearLayers=Object.assign({},S.yearLayers);["night","fixed","cprofile","excess","dst"].forEach(k=>{if(k in src.yearLayers)out.yearLayers[k]=!!src.yearLayers[k];});}
+  if(src.yearLayers&&typeof src.yearLayers==="object"){out.yearLayers=Object.assign({},S.yearLayers);["night","fixed","cprofile","excess","dst","telegest"].forEach(k=>{if(k in src.yearLayers)out.yearLayers[k]=!!src.yearLayers[k];});}
   if(src.monthLayers&&typeof src.monthLayers==="object"){out.monthLayers=Object.assign({},S.monthLayers);["a","c","b","money"].forEach(k=>{if(k in src.monthLayers)out.monthLayers[k]=!!src.monthLayers[k];});}
   if(src.currency&&typeof src.currency==="object"){out.currency=Object.assign({},S.currency);
     if("enabled" in src.currency)out.currency.enabled=!!src.currency.enabled;
