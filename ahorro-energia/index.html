@@ -1827,41 +1827,51 @@ function exportPDF(){
   const dlt=(v,d=0)=>(v>=0?"+":"-")+nf(Math.abs(v),d);
   const metaLines=[`${t("ex_loc")}: ${place}`,`${t("ex_year")}: ${S.year}`,`${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,`${nf(units)} ${t("ex_lum")} · ${nf(IKW,1)} kW`];
   y=pdfBrandHeader(doc,W,M,t("ex_title"),t("eyebrow"),metaLines);
-  function head(title){doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(title,M,y);y+=4;}
-  head(t("exp_dim_title"));
-  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(22,33,63);
-  {const sl=doc.splitTextToSize(dimStrategyPDF(),W-M*2);doc.text(sl,M,y+8);y+=8+sl.length*11+12;}
-  head(t("ex_key"));
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:10,textColor:[22,33,63]},
-    head:[[t("ex_energy"),t("ex_cost"),t("ex_power"),t("ex_lum")]],
-    body:[[nf(x.kAstroDim,0)+" kWh",money(x.kAstroDim*S.tariff),nf(IKW,1)+" kW",nf(units)]]});
-  y=doc.lastAutoTable.finalY+18;
-  head(t("ex_save_title"));
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[14,155,114],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
-    columnStyles:{0:{cellWidth:230}},
-    head:[[t("c_ind"),t("ex_save_energy")+" (kWh)",t("ex_save_money"),"%"]],
-    body:(()=>{const b=[];if(S.B.enabled)b.push([t("ex_save_sched"),dlt(x.schedSave),money(Math.abs(x.schedSave)*S.tariff),(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"%"]);b.push([t("ex_save_dim"),nf(x.dimSave,0),money(x.dimSave*S.tariff),(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"%"]);return b;})()});
-  y=doc.lastAutoTable.finalY+18;
-  head(t("ex_detail"));
-  {const act=activeScenarios();
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
-    columnStyles:{0:{cellWidth:230}},
-    head:[[t("c_ind"),...act.map(c=>c.lab)]],
-    body:[
-      [t("r_ophours"),...act.map(c=>nf(c.res.onH,1))],
-      [t("r_kwh_fleet"),...act.map(c=>nf(eKWh(c.key),0))],
-      [t("r_cost_fleet"),...act.map(c=>money(eKWh(c.key)*S.tariff))]
-    ]});}
-  y=doc.lastAutoTable.finalY+20;
-  const cw=(W-M*2-14)/2, chh=cw*0.5;
-  if(y+chh+30>Hp-40){doc.addPage();y=46;}
-  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);
-  doc.text(t("ex_month"),M,y);doc.text(t("ex_yearch"),M+cw+14,y);y+=8;
-  try{doc.addImage(document.getElementById("execMonth").toDataURL("image/png"),"PNG",M,y,cw,chh);
-      doc.addImage(document.getElementById("execYear").toDataURL("image/png"),"PNG",M+cw+14,y,cw,chh);}catch(e){}
-  y+=chh+18;
-  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
-  doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,y);
+  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
+  const act=activeScenarios();
+  const savPct=x.kAstro100? x.dimSave/x.kAstro100*100 : 0;
+  const convKwh=x.kAstro100, convUSD=convKwh*S.tariff;
+  const dimKwh=x.kAstroDim, dimUSD=dimKwh*S.tariff, savUSD=x.dimSave*S.tariff;
+  const pb=payback();
+  /* tarjetas KPI */
+  function kcard(cx,cy,cw,ch,k,v,s,accent){
+    doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundRect(cx,cy,cw,ch,6,"FD");
+    doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
+    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
+    doc.setFont("helvetica","bold");doc.setFontSize(17);doc.setTextColor(30,36,69);doc.text(v,cx+10,cy+39);
+    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(s,cx+10,cy+ch-9);
+  }
+  {const gap=12, cw=(W-2*M-2*gap)/3, ch=66;
+   kcard(M,y,cw,ch,t("pdf_kpi_energy"),nf(savPct,1)+"%",nf(dimKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"),[34,176,225]);
+   kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),money(savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
+   kcard(M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—",(pb.invest?t("pdf_inv")+" "+money(pb.invest):""),[34,176,225]);
+   y+=ch+18;}
+  /* narrativa */
+  doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(70,77,99);
+  {const nr=t("pdf_narr").replace("{convUSD}",money(convUSD)).replace("{convKwh}",nf(convKwh,0)+" kWh").replace("{dimUSD}",money(dimUSD)).replace("{savUSD}",money(savUSD)).replace("{pct}",nf(savPct,1)+"%");
+   const nl=doc.splitTextToSize(nr,W-2*M);doc.text(nl,M,y);y+=nl.length*12+12;}
+  /* gráfico mensual */
+  sec(t("ex_month"));
+  {const cw2=W-2*M, chh2=148; y+=4; try{doc.addImage(document.getElementById("execMonth").toDataURL("image/png"),"PNG",M,y,cw2,chh2);}catch(e){} y+=chh2+14;}
+  /* estrategia de dimerización */
+  sec(t("exp_dim_title"));
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(46,77,99);
+  {const sl=doc.splitTextToSize(dimStrategyPDF(),W-2*M);doc.text(sl,M,y+4);y+=4+sl.length*11+12;}
+  /* comparación de escenarios */
+  sec(t("pdf_scn_t"));
+  {const body=[[t("conv_name"),nf(convKwh,0),money(convUSD),"—",t("base"),"—"]];
+   act.forEach(c=>{const kk=eKWh(c.key),co=kk*S.tariff,sv=convKwh-kk,svp=convKwh?sv/convKwh*100:0;
+     const pbc=(c.key==="A"&&pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—";
+     body.push([c.lab,nf(kk,0),money(co),sv>0?money(sv*S.tariff):"—",sv>0?"−"+nf(svp,1)+"%":(Math.abs(svp)<0.05?t("base"):nf(svp,1)+"%"),pbc]);});
+   doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
+     headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
+     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:200}},
+     head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
+     body:body});
+   y=doc.lastAutoTable.finalY+14;}
+  /* metodología */
+  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,y);
 
   // ===== Página: configuración detallada del análisis =====
   doc.addPage("a4","portrait");
@@ -2244,7 +2254,9 @@ function importFromText(txt){
       return importCasesPayload(obj);
     }
     applyImportedState(obj);
-    try{ CASES.push(snapshotCase(t("imported_case"))); persistCases(); }catch(e){}
+    try{ const sv=savings(); const pct=sv.kAstro100? sv.dimSave/sv.kAstro100*100 : 0;
+      const nm=t("scn_savings_name").replace("{pct}", nf(pct,1)+"%");
+      CASES.push(snapshotCase(nm)); persistCases(); }catch(e){}
     if(typeof setTab==="function") setTab("comparador");
     try{ renderComparador(); }catch(e){}
     toast(t("imp_ok_case"),"ok"); return true;
@@ -2361,6 +2373,10 @@ Object.assign(DICT.es,{
   perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
   footer_tag:"Telegestión de alumbrado público",
   pdf_page:"Página",
+  pdf_kpi_energy:"Ahorro de energía", pdf_kpi_money:"Ahorro económico", pdf_kpi_money_sub:"por año vs convencional",
+  pdf_kpi_pay:"Retorno (payback)", pdf_inv:"inversión", pdf_scn_t:"Comparación de escenarios",
+  pdf_narr:"Sin dimerizar, la cuenta anual de la flota es de {convUSD} ({convKwh}). Con la estrategia de dimerización, baja a {dimUSD} — un ahorro de {savUSD} ({pct}) al año.",
+  scn_savings_name:"Escenario Ahorro {pct}",
   imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
   cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
   cmp_vs_ref:"frente a la referencia",
@@ -2396,6 +2412,10 @@ Object.assign(DICT.en,{
   perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
   footer_tag:"Smart street-lighting management",
   pdf_page:"Page",
+  pdf_kpi_energy:"Energy savings", pdf_kpi_money:"Economic savings", pdf_kpi_money_sub:"per year vs conventional",
+  pdf_kpi_pay:"Payback", pdf_inv:"investment", pdf_scn_t:"Scenario comparison",
+  pdf_narr:"Without dimming, the fleet's annual bill is {convUSD} ({convKwh}). With the dimming strategy it drops to {dimUSD} — a saving of {savUSD} ({pct}) per year.",
+  scn_savings_name:"Scenario Savings {pct}",
   imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
   cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
   cmp_vs_ref:"vs the reference",
