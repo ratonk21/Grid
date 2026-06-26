@@ -752,6 +752,9 @@
         </div>
         <p class="exp" data-i18n="perfil_parallel_note">Cada escenario activo se muestra en paralelo. Mueve el día para ver cómo cambia la noche en todos a la vez.</p>
         <div id="perfilGrid" class="perfil-grid"></div>
+        <div class="legend" style="margin-top:10px">
+          <span><span class="sw" style="background:rgba(78,178,112,.45);border:1px dashed rgba(78,178,112,.9)"></span><span data-i18n="perfil_savenote">Franja verde sobre la barra = energía que ahorras frente a la base (AP convencional; el horario fijo si está activo y elegido como base).</span></span>
+        </div>
         <div class="section">
           <div class="head"><h2 data-i18n="heat_title">El año encendido</h2><p data-i18n="heat_sub">Cada fila es un día; cada columna, una hora. Color = energía de esa hora.</p></div>
           <div id="heatGrid" class="heat-grid"></div>
@@ -1295,7 +1298,11 @@ function barsChart(id,series,o){
   ctx.clearRect(0,0,W,H);
   const act=series.filter(s=>s.show);
   // serie de Telegestión (A) y referencia (Convencional C, si no, Horario fijo B) para la sombra de ahorro
-  const aS=act.find(s=>s.key==="A"), refS=act.find(s=>s.key==="C")||act.find(s=>s.key==="B");
+  // referencia de ahorro = escenario base (Horario fijo; AP convencional cuando no está el fijo)
+  const aS=act.find(s=>s.key==="A");
+  const baseK=(typeof baseKeyFor==="function")?baseKeyFor():null;
+  let refS=baseK?act.find(s=>s.key===baseK):null;
+  if(!refS||refS===aS)refS=act.find(s=>s.key==="C")||act.find(s=>s.key==="B");
   const ghost=!!(aS&&refS&&aS!==refS);
   // leyenda
   const hasLeg=act.some(s=>s.lab);
@@ -1476,11 +1483,16 @@ function ensurePerfilGrid(keys){
 function renderDay(){
   const keys=activeScnKeys(); ensurePerfilGrid(keys);
   const i=Math.min(S.selDay,N)-1;
+  const refKey=(typeof baseKeyFor==="function")?baseKeyFor():null;
   const dd=document.getElementById("dayDate"); if(dd){const d0=dayProfile(i,scnObj(keys[0]));dd.textContent=fdate(d0.date);}
-  keys.forEach(k=>renderDayInto(k,i));
+  keys.forEach(k=>renderDayInto(k,i,refKey));
 }
-function renderDayInto(scnKey,i){
+function renderDayInto(scnKey,i,refKey){
   const scn=scnObj(scnKey); const d=dayProfile(i,scn);
+  // referencia de ahorro: escenario base (fijo o, si no está, AP convencional); si no aplica, plena potencia
+  const useRef=refKey&&refKey!==scnKey;
+  const refDay=useRef?dayProfile(i,scnObj(refKey)):null;
+  const refLab=useRef?scnLabel(refKey):t("c_astro_nodim");
   const cv=document.getElementById("dayChart_"+scnKey); if(!cv)return; const ctx=cv.getContext("2d");
   const W=cv.width,H=cv.height,padL=46,padR=10,padT=14,padB=28,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);const maxK=d.Pt*1.05||1;
@@ -1489,8 +1501,17 @@ function renderDayInto(scnKey,i){
   const order=[];for(let h=12;h<24;h++)order.push(h);for(let h=0;h<12;h++)order.push(h);
   const bw=pw/24;ctx.textAlign="center";
   order.forEach((h,idx)=>{const hr=d.hours[h];const x=padL+idx*bw;const bh=ph*(hr.kwh/maxK);
-    if(hr.frac>0){ctx.fillStyle=hr.state==="edge"?"#EA561B":(hr.dim<0.999?"#FAB512":"#22B0E1");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);}
+    if(hr.frac>0){
+      // sombra de ahorro: hasta el nivel del escenario de referencia (base)
+      if(useRef){const refK=refDay?refDay.hours[h].kwh:d.Pt*hr.frac;
+        if(refK>hr.kwh+1e-9){const yRef=padT+ph-ph*(Math.min(refK,maxK)/maxK),yBar=padT+ph-bh;
+          ctx.fillStyle="rgba(78,178,112,.18)";ctx.fillRect(x+1,yRef,bw-2,yBar-yRef);
+          ctx.strokeStyle="rgba(78,178,112,.7)";ctx.setLineDash([3,2]);ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(x+1,yRef+0.5);ctx.lineTo(x+bw-1,yRef+0.5);ctx.stroke();ctx.setLineDash([]);}}
+      ctx.fillStyle=hr.state==="edge"?"#EA561B":(hr.dim<0.999?"#FAB512":"#22B0E1");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);
+    }
     if(idx%3===0){ctx.fillStyle="#99A0B4";ctx.fillText(String(h).padStart(2,"0"),x+bw/2,H-10);}});
+  let dimSaveDay=0; if(useRef){for(const hr of d.hours){if(hr.frac>0){const refK=refDay?refDay.hours[hr.h].kwh:d.Pt*hr.frac;if(refK>hr.kwh)dimSaveDay+=refK-hr.kwh;}}}
   function mark(hr,color,label){let idx=hr-12;if(idx<0)idx+=24;const x=padL+idx/24*pw;
     ctx.strokeStyle=color;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+ph);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=color;ctx.font="10px 'Lato'";ctx.textAlign="center";ctx.fillText(label,x,padT+9);}
@@ -1507,6 +1528,7 @@ function renderDayInto(scnKey,i){
     <div class="brow"><span class="lab edge">${t("ch_henc")}</span><span class="val edge">${(onH.frac*60).toFixed(1)} min · ${onH.kwh.toFixed(4)} kWh</span></div>
     <div class="brow"><span class="lab edge">${t("ch_hapg")}</span><span class="val edge">${(offH.frac*60).toFixed(1)} min · ${offH.kwh.toFixed(4)} kWh</span></div>
     <div class="brow"><span class="lab">${t("ch_total")}</span><span class="val" style="color:var(--indigo);font-weight:700">${d.total.toFixed(4)} kWh</span></div>
+    ${(dimSaveDay>1e-6)?`<div class="brow"><span class="lab" style="color:#2E8B57">${t("perfil_saverow")} ${refLab}</span><span class="val" style="color:#2E8B57;font-weight:700">${dimSaveDay.toFixed(4)} kWh</span></div>`:""}
     <div class="callout">${t("edge_note")}</div>`;
 }
 
@@ -2517,6 +2539,7 @@ Object.assign(DICT.es,{
   cmp_base_conv:"Alumbrado Público Convencional", cmp_base_auto:"Auto · caso de mayor consumo",
   cases_imported:"{n} caso(s) importado(s) al comparador",
   perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
+  perfil_saverow:"Ahorro vs", perfil_savenote:"Franja verde sobre la barra = energía que ahorras frente a la base (AP convencional; el horario fijo si está activo y elegido como base).",
   footer_tag:"Telegestión de alumbrado público",
   pdf_page:"Página",
   pdf_kpi_energy:"Ahorro de energía", pdf_kpi_money:"Ahorro económico", pdf_kpi_money_sub:"por año vs convencional",
@@ -2562,6 +2585,7 @@ Object.assign(DICT.en,{
   cmp_base_conv:"Conventional Public Lighting", cmp_base_auto:"Auto · highest-use case",
   cases_imported:"{n} case(s) imported into the comparator",
   perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
+  perfil_saverow:"Savings vs", perfil_savenote:"Green band above the bar = energy saved vs the base (conventional lighting; fixed schedule if active and chosen as base).",
   footer_tag:"Smart street-lighting management",
   pdf_page:"Page",
   pdf_kpi_energy:"Energy savings", pdf_kpi_money:"Economic savings", pdf_kpi_money_sub:"per year vs conventional",
