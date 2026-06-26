@@ -3706,18 +3706,23 @@ var paused=false;
 function signalNow(h){
   var w=sunWin(), es=(typeof LANG==='undefined'||LANG==='es');
   function near(ev){var d=h-ev; if(d>12)d-=24; if(d<-12)d+=24; return d;}
+  function fwd(d){ if(d<-12)d+=24; if(d>12)d-=24; return d; }
   var dDusk=near(w.sunset), dDawn=near(w.sunrise);
+  // ATARDECER: la cuenta es REFERENCIA hacia el atardecer; el encendido ocurre en atardecer+offEnc
   var duskLo=Math.min(0,w.oe/60)-0.12, duskHi=Math.max(0,w.oe/60)+0.18;
   if(dDusk>=duskLo && dDusk<=duskHi){
-    var onNow=inOn(h,w.on,w.off), toOn=w.on-h; if(toOn<-12)toOn+=24; if(toOn>12)toOn-=24;
-    var sub=onNow?(es?'Encendido':'On'):(es?('ON en '+Math.max(0,Math.ceil(toOn*60))+' min'):('ON in '+Math.max(0,Math.ceil(toOn*60))+' min'));
-    return {kind:'dusk',label:(es?'Atardecer':'Dusk'),sub:sub,off:w.oe,pulse:1-Math.min(1,Math.abs(dDusk)/0.2)};
+    var toSet=fwd(w.sunset-h);
+    var sub=toSet>0?(es?('Atardecer en '+Math.ceil(toSet*60)+' min'):('Sunset in '+Math.ceil(toSet*60)+' min')):(es?'Atardecer':'Sunset');
+    var note=w.oe<0?(es?('enciende '+(-w.oe)+' min antes'):('on '+(-w.oe)+' min before')):w.oe>0?(es?('enciende '+w.oe+' min después'):('on '+w.oe+' min after')):(es?'enciende al atardecer':'on at sunset');
+    return {kind:'dusk',label:(es?'Atardecer':'Dusk'),sub:sub,note:note,off:w.oe,pulse:1-Math.min(1,Math.abs(dDusk)/0.2)};
   }
+  // AMANECER: la cuenta es REFERENCIA hacia el amanecer; el apagado ocurre en amanecer+offApag
   var dawnLo=Math.min(0,w.oa/60)-0.12, dawnHi=Math.max(0,w.oa/60)+0.18;
   if(dDawn>=dawnLo && dDawn<=dawnHi){
-    var stillOn=inOn(h,w.on,w.off), toOff=w.off-h; if(toOff<-12)toOff+=24; if(toOff>12)toOff-=24;
-    var sub2=stillOn?(es?('OFF en '+Math.max(0,Math.ceil(toOff*60))+' min'):('OFF in '+Math.max(0,Math.ceil(toOff*60))+' min')):(es?'Apagado':'Off');
-    return {kind:'dawn',label:(es?'Amanecer':'Dawn'),sub:sub2,off:w.oa,pulse:1-Math.min(1,Math.abs(dDawn)/0.2)};
+    var toRise=fwd(w.sunrise-h);
+    var sub2=toRise>0?(es?('Amanecer en '+Math.ceil(toRise*60)+' min'):('Sunrise in '+Math.ceil(toRise*60)+' min')):(es?'Amanecer':'Sunrise');
+    var note2=w.oa<0?(es?('apaga '+(-w.oa)+' min antes'):('off '+(-w.oa)+' min before')):w.oa>0?(es?('apaga '+w.oa+' min después'):('off '+w.oa+' min after')):(es?'apaga al amanecer':'off at sunrise');
+    return {kind:'dawn',label:(es?'Amanecer':'Dawn'),sub:sub2,note:note2,off:w.oa,pulse:1-Math.min(1,Math.abs(dDawn)/0.2)};
   }
   return null;
 }
@@ -3778,8 +3783,8 @@ function updateHUD(dt){
   rEl.save.textContent = dimNow>1 ? ('−'+Math.round(100-dimNow)+'%'+(es?' energía':' energy')) : '—';
   if(rEl.signal){
     if(curSig){ rEl.signal.style.display='flex';
-      var ic=curSig.kind==='dusk'?'🌇':'🌅', offv=(curSig.off>0?('+'+curSig.off):(''+curSig.off))+' min';
-      rEl.signal.innerHTML='<b>'+ic+' '+curSig.label+'</b> · '+curSig.sub+' <span class="o">offset '+offv+'</span>';
+      var ic=curSig.kind==='dusk'?'🌇':'🌅';
+      rEl.signal.innerHTML='<b>'+ic+' '+curSig.sub+'</b>'+(curSig.note?(' <span class="o">'+curSig.note+'</span>'):'');
     } else rEl.signal.style.display='none';
   }
 }
