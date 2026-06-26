@@ -53,14 +53,26 @@ function buildPrompt(p) {
   ].join("\n");
 }
 
-const SYSTEM = [
-  "Eres un analista senior de telegestión de alumbrado público (plataforma Ubicquia).",
-  "Recibes el resultado de un comparador de ahorro energético entre escenarios de dimerización.",
-  "Escribe una interpretación EJECUTIVA en español, en texto plano (sin Markdown, sin viñetas, sin negritas ni títulos).",
-  "Máximo 3 párrafos cortos (≈150–200 palabras en total). Usa cifras-con-significado: di el número y qué significa, no listes KPIs.",
-  "Destaca el escenario con mejor relación ahorro/payback, nombra el trade-off principal (ahorro vs. nivel de servicio) y cierra con UNA recomendación accionable.",
-  "No inventes datos que no estén en el payload. Si falta un dato, dilo en una frase, no rellenes."
-].join(" ");
+function systemFor(lang) {
+  if (lang === "en") {
+    return [
+      "You are a senior analyst of smart public-lighting telemanagement (Ubicquia platform).",
+      "You receive the result of an energy-savings comparator between dimming scenarios.",
+      "Write an EXECUTIVE interpretation IN ENGLISH, in plain text (no Markdown, no bullets, no bold or headings).",
+      "Max 3 short paragraphs (≈150–200 words total). Use figures-with-meaning: state the number and what it means, do not list KPIs.",
+      "Highlight the scenario with the best savings/payback ratio, name the main trade-off (savings vs. service level) and close with ONE actionable recommendation.",
+      "Do not invent data that is not in the payload. If a value is missing, say so in one sentence, do not fill it in."
+    ].join(" ");
+  }
+  return [
+    "Eres un analista senior de telegestión de alumbrado público (plataforma Ubicquia).",
+    "Recibes el resultado de un comparador de ahorro energético entre escenarios de dimerización.",
+    "Escribe una interpretación EJECUTIVA EN ESPAÑOL, en texto plano (sin Markdown, sin viñetas, sin negritas ni títulos).",
+    "Máximo 3 párrafos cortos (≈150–200 palabras en total). Usa cifras-con-significado: di el número y qué significa, no listes KPIs.",
+    "Destaca el escenario con mejor relación ahorro/payback, nombra el trade-off principal (ahorro vs. nivel de servicio) y cierra con UNA recomendación accionable.",
+    "No inventes datos que no estén en el payload. Si falta un dato, dilo en una frase, no rellenes."
+  ].join(" ");
+}
 
 export default async function handler(req, res) {
   // CORS mínimo (mismo origen en producción; útil para pruebas locales).
@@ -89,6 +101,7 @@ export default async function handler(req, res) {
   }
 
   // 4) Llamada a Anthropic.
+  const lang = payload.lang === "en" ? "en" : "es";
   try {
     const r = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -100,7 +113,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 700,
-        system: SYSTEM,
+        system: systemFor(lang),
         messages: [{ role: "user", content: buildPrompt(payload) }],
       }),
     });
