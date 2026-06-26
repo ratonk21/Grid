@@ -3717,7 +3717,7 @@ function signalNow(h){
     return {kind:'dusk',label:(es?'Atardecer':'Dusk'),sub:sub,note:note,off:w.oe,pulse:1-Math.min(1,Math.abs(dDusk)/0.2)};
   }
   // AMANECER: la cuenta es REFERENCIA hacia el amanecer; el apagado ocurre en amanecer+offApag
-  var dawnLo=Math.min(0,w.oa/60)-0.12, dawnHi=Math.max(0,w.oa/60)+0.18;
+  var dawnLo=Math.min(0,w.oa/60)-0.12, dawnHi=Math.max(0,w.oa/60)+0.22;  // simétrico a la tarde: sigue mostrando "Amanecer" tras el amanecer
   if(dDawn>=dawnLo && dDawn<=dawnHi){
     var toRise=fwd(w.sunrise-h);
     var sub2=toRise>0?(es?('Amanecer en '+Math.ceil(toRise*60)+' min'):('Sunrise in '+Math.ceil(toRise*60)+' min')):(es?'Amanecer':'Sunrise');
@@ -3791,14 +3791,14 @@ function updateHUD(dt){
 
 function update(dt){
   var w=sunWin();
-  function inSpan(h,a,b){var lo=Math.min(a,b),hi=Math.max(a,b);return h>=lo&&h<=hi;}
+  function inSpan(h,a,b){var lo=Math.min(a,b)-0.05,hi=Math.max(a,b)+0.13;return h>=lo&&h<=hi;} // pre 3min / post ~8min: la señal del evento queda visible (mañana = tarde)
   // durante la cuenta del offset (entre el evento solar y el switch) -> 1 s = 1 min
   var slow=(Math.abs(w.oe)>0.001 && inSpan(simHour,w.sunset,w.on)) || (Math.abs(w.oa)>0.001 && inSpan(simHour,w.sunrise,w.off));
   var rate = slow ? (1/60) : (hrPerSec*speedMul);
   if(!scrubbing && !paused){ simHour+=rate*dt; if(simHour>=24)simHour-=24; }   // scrubber/pausa mandan
   curSig=signalNow(simHour);
-  var target=dimAt(simHour), dtH=rate*dt, FADE=0.12;
-  if (scrubbing||REDUCED) dimNow=target; else dimNow+=(target-dimNow)*Math.min(1,dtH/FADE);
+  var target=dimAt(simHour), FADE_S=0.6;  // transición de brillo en SEGUNDOS reales: nítida a cualquier velocidad (antes iba atada al tiempo simulado y en cámara lenta apagaba tardísimo)
+  if (scrubbing||REDUCED) dimNow=target; else dimNow+=(target-dimNow)*Math.min(1,dt/FADE_S);
   if (Math.abs(target-dimNow)<0.3) dimNow=target;
   if(!paused){ updatePeople(dt); updateCars(dt); }
 }
