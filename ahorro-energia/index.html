@@ -408,6 +408,13 @@
 .cityScrub input[type=range]{width:100%;accent-color:#22B0E1;cursor:pointer;height:22px}
 .cityScrub .scrubTicks{display:flex;justify-content:space-between;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9px;color:#99A0B4;margin-top:-2px}
 </style>
+<style>
+#cityWrap .cityCtrls{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+#cityWrap .cityBtn{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:700;color:#dff0fb;background:rgba(17,21,31,.5);border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:5px 10px;cursor:pointer}
+#cityWrap .cityBtn:hover{border-color:#22B0E1}
+#cityWrap .cityBtn.on{background:#22B0E1;color:#06121a;border-color:#22B0E1}
+#cityWrap .cityDate{position:absolute;right:10px;bottom:8px;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:#cfe0ee;background:rgba(17,21,31,.42);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;pointer-events:none;white-space:nowrap}
+</style>
 </head>
 <body>
 <header class="topband band--navy"><div class="bandinner">
@@ -767,9 +774,10 @@
           <div class="surface" style="padding:12px">
             <div id="cityWrap"><canvas id="cityCanvas"></canvas>
               <div class="cityRead" id="cityRead"><span id="ctClock">--:--</span><span class="sep">·</span><span class="ph" id="ctPhase">—</span><span class="sep">·</span><span class="dim">DIM <span id="ctDim">0</span>%</span><span class="sep">·</span><span class="save" id="ctSave">—</span></div>
-              <button class="citySpeed" id="ctSpeed" type="button" aria-label="Velocidad">▸ 1×</button>
+              <div class="cityCtrls"><button class="cityBtn" id="ctPause" type="button" aria-label="Pausa">⏸</button><button class="cityBtn" id="ctSpeed" type="button" aria-label="Velocidad">▸ 1×</button></div>
               <div class="cityBanner" id="ctBanner">⚠ error · ver consola</div>
               <div class="citySignal" id="ctSignal" style="display:none"></div>
+              <div class="cityDate" id="ctDate"></div>
             </div>
             <div class="cityScrub"><input type="range" id="ctScrub" min="0" max="24" step="0.05" value="18" aria-label="Hora de la animación"><div class="scrubTicks"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
           </div>
@@ -3191,7 +3199,7 @@ applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); w
 pushStateToInputs(); renderFlowNav();
 </script>
 <script>
-/* Vista de ciudad — SOLO LECTURA de S.dim; ventana NOAA real + offsets + señal + slow-offset + scrubber */
+/* Vista de ciudad — SOLO LECTURA de S.dim; ventana NOAA + offsets + señal + slow-offset + scrubber + pausa + fecha */
 
 (function(){
 "use strict";
@@ -3683,6 +3691,7 @@ function drawClock(){
 
 var curSig=null;
 var scrubbing=false;
+var paused=false;
 function signalNow(h){
   var w=sunWin(), es=(typeof LANG==='undefined'||LANG==='es');
   function near(ev){var d=h-ev; if(d>12)d-=24; if(d<-12)d+=24; return d;}
@@ -3736,7 +3745,7 @@ function render(){
 }
 
 // ---- readout ----
-var rEl={clock:document.getElementById('ctClock'),phase:document.getElementById('ctPhase'),dim:document.getElementById('ctDim'),save:document.getElementById('ctSave'),signal:document.getElementById('ctSignal')};
+var rEl={clock:document.getElementById('ctClock'),phase:document.getElementById('ctPhase'),dim:document.getElementById('ctDim'),save:document.getElementById('ctSave'),signal:document.getElementById('ctSignal'),date:document.getElementById('ctDate')};
 var hudT=0;
 function fmt(h){var hh=Math.floor(h)%24,mm=Math.floor((h%1)*60);return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
 function updateHUD(dt){
@@ -3744,6 +3753,14 @@ function updateHUD(dt){
   if(!rEl.clock)return;
   rEl.clock.textContent=fmt(simHour);
   if(typeof scrub!=="undefined" && scrub && !scrubbing){ scrub.value=simHour; }
+  if(rEl.date){ try{
+    if(typeof sunCache!=='undefined' && sunCache.length){
+      var _i=Math.max(0,Math.min(sunCache.length-1,(S.selDay|0))), _d=sunCache[_i]&&sunCache[_i].date;
+      if(_d){ var _es=(typeof LANG==='undefined'||LANG==='es');
+        var _m=(typeof MES!=='undefined')?MES[_es?'es':'en'][_d.getUTCMonth()]:('/'+(_d.getUTCMonth()+1));
+        rEl.date.textContent='📅 '+_d.getUTCDate()+' '+_m+' '+_d.getUTCFullYear(); }
+    }
+  }catch(e){} }
   var ph=phaseOf(simHour); rEl.phase.textContent=ph[0];
   rEl.dim.textContent=Math.round(dimNow);
   var es=(typeof LANG==='undefined'||LANG==='es');
@@ -3762,13 +3779,12 @@ function update(dt){
   // durante la cuenta del offset (entre el evento solar y el switch) -> 1 s = 1 min
   var slow=(Math.abs(w.oe)>0.001 && inSpan(simHour,w.sunset,w.on)) || (Math.abs(w.oa)>0.001 && inSpan(simHour,w.sunrise,w.off));
   var rate = slow ? (1/60) : (hrPerSec*speedMul);
-  if(!scrubbing){ simHour+=rate*dt; if(simHour>=24)simHour-=24; }   // el scrubber manda si está activo
+  if(!scrubbing && !paused){ simHour+=rate*dt; if(simHour>=24)simHour-=24; }   // scrubber/pausa mandan
   curSig=signalNow(simHour);
   var target=dimAt(simHour), dtH=rate*dt, FADE=0.12;
   if (scrubbing||REDUCED) dimNow=target; else dimNow+=(target-dimNow)*Math.min(1,dtH/FADE);
   if (Math.abs(target-dimNow)<0.3) dimNow=target;
-  updatePeople(dt);
-  updateCars(dt);
+  if(!paused){ updatePeople(dt); updateCars(dt); }
 }
 
 var last=0,raf=0;
@@ -3817,6 +3833,8 @@ function init(){
   dimNow=dimAt(simHour);
   last=0; raf=requestAnimationFrame(loop);
 }
+var pauseBtn=document.getElementById('ctPause');
+if(pauseBtn){ pauseBtn.addEventListener('click',function(){ paused=!paused; pauseBtn.textContent=paused?'▶':'⏸'; pauseBtn.classList.toggle('on',paused); }); }
 var scrub=document.getElementById('ctScrub');
 if(scrub){
   scrub.addEventListener('input',function(){scrubbing=true; simHour=clamp(+scrub.value,0,23.999);});
