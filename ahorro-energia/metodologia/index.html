@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="es" data-lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metodología de cálculo — Calculadora de ahorro · Telegestión Ubicquia</title>
+<meta id="metaDesc" name="description" content="Cómo se calculan los ahorros de alumbrado público en la calculadora de griddata: motor astronómico NOAA, simulación día a día, resolución media-horaria y supuestos explícitos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* tokens fieles a la guía Ubicquia 9101 v2 (y a la calculadora) */
+    --ubi-navy:#1E2445; --ubi-blue:#22B0E1; --ubi-gray:#EEF0F5; --ubi-black:#000;
+    --ubi-deep:#464D63; --ubi-gray2:#99A0B4;
+    --ubi-lime:#AECC53; --ubi-darkgreen:#005B59;
+    --ubi-orange:#EA561B; --ubi-gold:#FAB512; --ubi-teal:#4EB270; --ubi-violet:#59509D;
+    --surface:#FFFFFF; --surface2:#F5F7FB; --line:#E2E6EF; --line-soft:#EEF0F5;
+    --ink:var(--ubi-navy); --muted:var(--ubi-deep); --faint:var(--ubi-gray2);
+    --indigo:#22B0E1; --indigo-soft:#D8F0FA; --teal-soft:#DDF1E5; --gold-soft:#FDEFC9; --rose-soft:#FBE0D4;
+    --font:"Lato",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --maxw:980px; --pad:clamp(18px,5vw,40px);
+    --shadow:0 1px 2px rgba(30,36,69,.05),0 6px 22px rgba(30,36,69,.07);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--ubi-gray);color:var(--ink);font-family:var(--font);font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  h1,h2,h3,h4{margin:0;letter-spacing:-.01em;line-height:1.2}
+  a{color:var(--ubi-blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .mono{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-variant-ligatures:none}
+
+  /* bandas + contenedor (color a sangre, texto acotado) */
+  .band{width:100%}
+  .band--navy{background:var(--ubi-navy);color:#fff}
+  .band--gray{background:var(--ubi-gray)}
+  .container{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad)}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
+  .brand{font-weight:900;font-size:18px;letter-spacing:-.02em}
+  .brand .ubi{color:var(--ubi-blue)} .brand .cquia{color:#fff} .brand .dot{color:var(--ubi-blue)}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#cfe9f7;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:5px 11px;border-radius:999px}
+  .pill .lamp{width:7px;height:7px;border-radius:50%;background:var(--ubi-blue);box-shadow:0 0 0 3px rgba(34,176,225,.25)}
+
+  /* selector de idioma */
+  .langsw{display:inline-flex;border:1px solid rgba(255,255,255,.2);border-radius:999px;overflow:hidden;background:rgba(255,255,255,.06)}
+  .langsw button{font-family:var(--font);font-size:12px;font-weight:800;letter-spacing:.04em;color:#aeb8d4;background:transparent;border:0;padding:6px 13px;cursor:pointer;transition:background .15s,color .15s}
+  .langsw button:hover{color:#fff}
+  .langsw button.active{background:var(--ubi-blue);color:#06283a}
+
+  /* hero compacto */
+  .hero{padding-block:clamp(20px,3.4vh,34px)}
+  .kicker{font-size:12.5px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--ubi-blue)}
+  .hero h1{font-size:clamp(26px,4.6vw,40px);font-weight:900;margin:.35em 0 .2em;max-width:18ch}
+  .hero .lede{color:#c8cee0;font-size:clamp(15px,2.2vw,18px);max-width:60ch}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .chip{font-size:12px;font-weight:700;color:#dbe6f3;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);padding:5px 11px;border-radius:8px}
+
+  /* layout cuerpo */
+  main{padding-block:clamp(26px,5vw,52px)}
+  section.block{margin-bottom:clamp(30px,5vw,52px);scroll-margin-top:20px}
+  .eyebrow{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+  .eyebrow .num{font-size:13px;font-weight:900;color:var(--ubi-blue);font-family:ui-monospace,monospace;letter-spacing:.04em}
+  .eyebrow h2{font-size:clamp(20px,3.1vw,26px);font-weight:900}
+  p{margin:0 0 14px} p:last-child{margin-bottom:0}
+  .muted{color:var(--muted)}
+  strong{font-weight:900;color:var(--ink)}
+  .lead{font-size:17.5px;color:var(--muted)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,3vw,26px)}
+  .card + .card{margin-top:16px}
+
+  /* pilares de confianza */
+  .pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:6px 0 4px}
+  .pillar{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;box-shadow:var(--shadow)}
+  .pillar .n{font-size:clamp(22px,3.6vw,28px);font-weight:900;line-height:1.05;color:var(--ubi-navy);letter-spacing:-.02em}
+  .pillar .n .u{font-size:.55em;font-weight:900;color:var(--ubi-blue);margin-left:3px}
+  .pillar .lab{font-size:12.5px;font-weight:800;color:var(--muted);margin-top:6px;letter-spacing:.01em}
+  .pillar .sub{font-size:12px;color:var(--faint);margin-top:3px;line-height:1.4}
+
+  /* escenarios */
+  .scn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .scn{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:var(--shadow);border-top:3px solid var(--line)}
+  .scn.a{border-top-color:var(--ubi-blue)}
+  .scn.c{border-top-color:var(--ubi-teal)}
+  .scn.b{border-top-color:var(--ubi-gold)}
+  .scn .tag{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;padding:4px 9px;border-radius:7px;margin-bottom:9px}
+  .scn.a .tag{color:#0c6f95;background:var(--indigo-soft)}
+  .scn.c .tag{color:#1f7a4d;background:var(--teal-soft)}
+  .scn.b .tag{color:#8a6500;background:var(--gold-soft)}
+  .scn h3{font-size:16px;font-weight:900;margin-bottom:6px}
+  .scn p{font-size:13.5px;color:var(--muted);margin:0}
+  .scn .role{font-size:12px;color:var(--faint);margin-top:9px;padding-top:9px;border-top:1px solid var(--line-soft)}
+
+  /* pasos numerados del motor */
+  .step{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:18px 0;border-top:1px solid var(--line)}
+  .step:first-child{border-top:0}
+  .step .dot{width:34px;height:34px;border-radius:9px;background:var(--ubi-navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;font-family:ui-monospace,monospace}
+  .step h3{font-size:16.5px;font-weight:900;margin-bottom:6px}
+  .step p{font-size:14.5px;color:var(--muted)}
+  .step ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
+  .step li{margin:3px 0}
+
+  /* callouts */
+  .callout{border-left:3px solid var(--ubi-blue);background:var(--indigo-soft);border-radius:0 10px 10px 0;padding:14px 16px;margin:14px 0;font-size:14px}
+  .callout.ok{border-left-color:var(--ubi-teal);background:var(--teal-soft)}
+  .callout.warn{border-left-color:var(--ubi-gold);background:var(--gold-soft)}
+  .callout b{font-weight:900}
+
+  /* fórmulas */
+  .formula{background:var(--ubi-navy);color:#eaf1f8;border-radius:12px;padding:18px 20px;margin:14px 0;font-family:ui-monospace,monospace;font-size:13.5px;line-height:1.95;overflow-x:auto}
+  .formula .k{color:#9fe3ff} .formula .c{color:#9aa3c0} .formula .h{color:var(--ubi-gold)}
+  .formula .row{white-space:nowrap}
+
+  /* tabla */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+  th{font-size:11.5px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);background:var(--surface2)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:nth-child(even){background:var(--surface2)}
+
+  /* diagrama SVG wrap */
+  .figure{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px;margin:14px 0}
+  .figure svg{width:100%;height:auto;display:block}
+  .figcap{font-size:12.5px;color:var(--faint);margin-top:10px;text-align:center}
+
+  /* lista chequeable */
+  .checks{list-style:none;margin:0;padding:0}
+  .checks li{position:relative;padding:8px 0 8px 30px;border-top:1px solid var(--line-soft);font-size:14.5px;color:var(--muted)}
+  .checks li:first-child{border-top:0}
+  .checks li::before{content:"";position:absolute;left:0;top:13px;width:16px;height:16px;border-radius:5px;background:var(--teal-soft);border:1.5px solid var(--ubi-teal)}
+  .checks li::after{content:"";position:absolute;left:5px;top:16px;width:4px;height:8px;border:solid var(--ubi-teal);border-width:0 2px 2px 0;transform:rotate(45deg)}
+
+  /* nav lateral / TOC */
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .toc a{font-size:12.5px;font-weight:700;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+  .toc a:hover{border-color:var(--ubi-blue);color:var(--ubi-blue);text-decoration:none}
+
+  /* CTA imprimir */
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .btn{font-family:var(--font);font-size:13.5px;font-weight:800;border-radius:9px;padding:9px 15px;cursor:pointer;border:1px solid transparent}
+  .btn.primary{background:var(--ubi-blue);color:#06283a;border-color:var(--ubi-blue)}
+  .btn.ghost{background:transparent;color:#dbe6f3;border-color:rgba(255,255,255,.22)}
+  .btn:hover{filter:brightness(1.05)}
+
+  /* footer */
+  footer .container{padding-block:26px}
+  .foot-grid{display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px;align-items:flex-start}
+  .foot-grid .small{font-size:12.5px;color:#b9c2d8;max-width:52ch;line-height:1.5}
+
+  @media (max-width:560px){
+    body{font-size:15px}
+    .step{grid-template-columns:1fr;gap:8px}
+    .step .dot{margin-bottom:2px}
+    .topbar{flex-wrap:wrap}
+  }
+  @media print{
+    :root{--pad:0}
+    body{background:#fff;font-size:11px}
+    .band--navy{background:var(--ubi-navy) !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .actions,.toc,.langsw{display:none !important}
+    section.block{break-inside:avoid}
+    .card,.pillar,.scn,.figure{box-shadow:none}
+    .formula{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="band band--navy">
+  <div class="container topbar">
+    <div class="brand"><span class="ubi">ubi</span><span class="cquia">cquia</span><span class="dot">.</span> <span style="color:#7f8aa8;font-weight:700">| griddata</span></div>
+    <div class="topbar-right">
+      <div class="langsw" role="group" aria-label="Idioma / Language">
+        <button type="button" data-setlang="es" class="active">ES</button>
+        <button type="button" data-setlang="en">EN</button>
+      </div>
+      <span class="pill"><span class="lamp"></span><span data-i18n="pill">Documento metodológico</span></span>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="band band--navy">
+  <div class="container hero">
+    <div class="kicker" data-i18n="hero_kicker">Telegestión de alumbrado público</div>
+    <h1 data-i18n="hero_h1">Metodología de cálculo de ahorros</h1>
+    <p class="lede" data-i18n="hero_lede">El presente documento describe el motor de cálculo que sustenta la calculadora de ahorro energético: una metodología transparente, reproducible y exenta de promedios que distorsionen los resultados. Se detalla, de manera secuencial, el origen de cada magnitud reportada, con el propósito de que las cifras resulten plenamente verificables y no admitan controversia.</p>
+    <div class="meta">
+      <span class="chip" data-i18n="chip1">Motor astronómico NOAA</span>
+      <span class="chip" data-i18n="chip2">365 / 366 días simulados</span>
+      <span class="chip" data-i18n="chip3">Resolución media-horaria</span>
+      <span class="chip" data-i18n="chip4">Supuestos explícitos</span>
+    </div>
+    <div class="toc">
+      <a href="#porque" data-i18n="toc1">Confiabilidad</a>
+      <a href="#problema" data-i18n="toc2">Antecedentes</a>
+      <a href="#escenarios" data-i18n="toc3">Escenarios de comparación</a>
+      <a href="#motor" data-i18n="toc4">Motor de cálculo</a>
+      <a href="#formulas" data-i18n="toc5">Formulación matemática</a>
+      <a href="#limites" data-i18n="toc6">Alcance y limitaciones</a>
+      <a href="#verificar" data-i18n="toc7">Procedimiento de verificación</a>
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="window.print()" data-i18n="btn_pdf">Descargar / imprimir PDF</button>
+    </div>
+  </div>
+</section>
+
+<main class="band band--gray">
+<div class="container">
+
+  <!-- 0. POR QUÉ CONFIAR -->
+  <section class="block" id="porque">
+    <div class="eyebrow"><span class="num">00</span><h2 data-i18n="s00_h2">Confiabilidad de los resultados</h2></div>
+    <p class="lead" data-i18n="s00_lead">La calculadora no recurre a estimaciones aproximadas. Reconstruye, para cada día del año y en intervalos de media hora, el consumo energético real de cada luminaria a lo largo de un ciclo anual completo, sobre la base de un modelo astronómico de referencia internacional. Cinco decisiones de ingeniería sustentan dicha confiabilidad:</p>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="n" data-i18n="p1n">NOAA</div>
+        <div class="lab" data-i18n="p1lab">Algoritmo público de referencia</div>
+        <div class="sub" data-i18n="p1sub">La salida y la puesta del sol se obtienen del modelo solar de la NOAA, y no de una formulación propietaria ni de tablas aproximadas.</div>
+      </div>
+      <div class="pillar">
+        <div class="n" data-i18n="p2n">365<span class="u">días</span></div>
+        <div class="lab" data-i18n="p2lab">Sin promedios anuales</div>
+        <div class="sub" data-i18n="p2sub">Cada día del año se simula de forma independiente, con su propia duración nocturna. El periodo estival y el invernal no se promedian.</div>
+      </div>
+      <div class="pillar">
+        <div class="n" data-i18n="p3n">48<span class="u">tramos</span></div>
+        <div class="lab" data-i18n="p3lab">Resolución media-horaria</div>
+        <div class="sub" data-i18n="p3sub">Cada día se subdivide en 48 intervalos de media hora; el encendido y el apagado emplean la fracción real de minutos, sin redondear a horas completas.</div>
+      </div>
+      <div class="pillar">
+        <div class="n" data-i18n="p4n">2<span class="u">efectos</span></div>
+        <div class="lab" data-i18n="p4lab">Ahorro descompuesto</div>
+        <div class="sub" data-i18n="p4sub">El ahorro atribuible al encendido astronómico y el atribuible a la regulación de intensidad se determinan por separado y resultan auditables de forma independiente.</div>
+      </div>
+      <div class="pillar">
+        <div class="n" data-i18n="p5n">100%</div>
+        <div class="lab" data-i18n="p5lab">Parámetros explícitos</div>
+        <div class="sub" data-i18n="p5sub">La tarifa, el inventario y las potencias constituyen datos provistos por el usuario. El modelo no incorpora parámetros ocultos: la totalidad de las entradas es revisable.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. EL PROBLEMA -->
+  <section class="block" id="problema">
+    <div class="eyebrow"><span class="num">01</span><h2 data-i18n="s01_h2">Antecedentes: limitaciones de los métodos convencionales</h2></div>
+    <div class="card">
+      <p data-i18n="s01_p1">La mayoría de las estimaciones de ahorro en alumbrado público se sustentan en dos simplificaciones que las tornan susceptibles de objeción:</p>
+      <p data-i18n="s01_p2"><strong>Simplificación 1 — promedio de horas nocturnas.</strong> Se adopta un valor único —por ejemplo, “11 horas de encendido diarias”— y se multiplica por 365. No obstante, la noche presenta una duración aproximada de 13 h en invierno y 10 h en verano según la latitud; un promedio fijo sobreestima o subestima el consumo de manera sistemática, y el origen de dicho valor resulta difícil de justificar ante una revisión.</p>
+      <p data-i18n="s01_p3"><strong>Simplificación 2 — redondeo a horas completas.</strong> Se asume que la luminaria enciende a una hora exacta (p. ej. 19:00). En la operación real, el encendido ocurre en la puesta del sol (p. ej. 18:43) y el apagado en la salida del sol (p. ej. 06:17). El redondeo de dichos límites introduce un error precisamente en los tramos de mayor incidencia sobre el consumo.</p>
+      <div class="callout ok" data-i18n="s01_callout"><b>Tratamiento adoptado por la calculadora:</b> no se aplican promedios ni redondeos. Se determinan la puesta y la salida del sol reales de cada uno de los días del año para la localización exacta, y en los tramos de encendido y apagado se contabiliza la fracción precisa de minutos. El resultado anual corresponde a la suma de 365 (o 366) días efectivos, sin recurrir a extrapolaciones.</div>
+    </div>
+  </section>
+
+  <!-- 2. ESCENARIOS -->
+  <section class="block" id="escenarios">
+    <div class="eyebrow"><span class="num">02</span><h2 data-i18n="s02_h2">Escenarios de comparación</h2></div>
+    <p class="muted" data-i18n="s02_intro">La credibilidad de un ahorro depende de la idoneidad de su punto de comparación. La calculadora modela tres modalidades de operación distintas <strong>sobre un mismo inventario y una misma tarifa</strong>, de modo que la única variable que se modifica es la forma de operar:</p>
+    <div class="scn-grid">
+      <div class="scn a">
+        <span class="tag" data-i18n="scnA_tag">Escenario A</span>
+        <h3 data-i18n="scnA_h3">Telegestión Ubicquia</h3>
+        <p data-i18n="scnA_p">Enciende en la puesta del sol y apaga en la salida del sol siguiendo el ciclo solar, y aplica el perfil de dimerización (regulación de intensidad por tramos horarios).</p>
+        <div class="role" data-i18n="scnA_role">Constituye la operación propuesta: reloj astronómico y regulación de intensidad.</div>
+      </div>
+      <div class="scn c">
+        <span class="tag" data-i18n="scnC_tag">Escenario C</span>
+        <h3 data-i18n="scnC_h3">Alumbrado convencional</h3>
+        <p data-i18n="scnC_p">Sigue el ciclo solar a plena potencia, sin regular la intensidad, de manera análoga a una fotocelda convencional. Reproduce un sistema desprovisto de telegestión.</p>
+        <div class="role" data-i18n="scnC_role">Línea base de referencia: aísla el efecto de la regulación sin sobredimensionar el escenario previo.</div>
+      </div>
+      <div class="scn b">
+        <span class="tag" data-i18n="scnB_tag">Escenario B</span>
+        <h3 data-i18n="scnB_h3">Horario fijo</h3>
+        <p data-i18n="scnB_p">Enciende y apaga a una hora fija definida por el usuario (p. ej. 20:00–06:00), de manera invariable a lo largo del año y a plena potencia.</p>
+        <div class="role" data-i18n="scnB_role">Representa la operación por horario; cuantifica el aporte del encendido astronómico.</div>
+      </div>
+    </div>
+    <div class="callout" data-i18n="s02_callout"><b>Pertinencia de la línea base.</b> El escenario convencional sigue igualmente el ciclo solar; no se le imputa un horario excesivo. En consecuencia, el ahorro reportado es de carácter conservador: proviene exclusivamente de la regulación de intensidad y de la eliminación del consumo superfluo en los límites de la noche, y no de una comparación contra un escenario previo deliberadamente desfavorable.</div>
+  </section>
+
+  <!-- DIAGRAMA: noche -->
+  <section class="block">
+    <div class="figure">
+      <svg viewBox="0 0 920 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparación de las tres operaciones a lo largo de una noche">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#1E2445"/><stop offset="0.12" stop-color="#2a3566"/>
+            <stop offset="0.5" stop-color="#10142a"/><stop offset="0.88" stop-color="#2a3566"/><stop offset="1" stop-color="#1E2445"/>
+          </linearGradient>
+        </defs>
+        <!-- franja de noche -->
+        <rect x="60" y="20" width="800" height="36" rx="6" fill="url(#sky)"/>
+        <text x="80" y="43" fill="#cfe0ff" font-family="Lato,sans-serif" font-size="12" font-weight="700" data-i18n="f1_sunset">puesta del sol 18:43</text>
+        <text x="760" y="43" fill="#cfe0ff" font-family="Lato,sans-serif" font-size="12" font-weight="700" text-anchor="end" data-i18n="f1_sunrise">salida del sol 06:17</text>
+        <circle cx="70" cy="38" r="6" fill="#FAB512"/><circle cx="850" cy="38" r="6" fill="#FAB512"/>
+
+        <!-- A: telegestión con dim -->
+        <text x="60" y="92" fill="#0c6f95" font-family="Lato,sans-serif" font-size="13" font-weight="900" data-i18n="f1_A">A · Telegestión</text>
+        <!-- perfil escalonado de potencia -->
+        <path d="M60,120 L120,120 L120,108 L200,108 L200,132 L420,132 L420,150 L560,150 L560,108 L720,108 L720,120 L860,120"
+              fill="none" stroke="#22B0E1" stroke-width="3"/>
+        <text x="125" y="104" fill="#0c6f95" font-family="Lato,sans-serif" font-size="10" font-weight="700">70%</text>
+        <text x="300" y="128" fill="#0c6f95" font-family="Lato,sans-serif" font-size="10" font-weight="700">40%</text>
+        <text x="470" y="146" fill="#0c6f95" font-family="Lato,sans-serif" font-size="10" font-weight="700" data-i18n="f1_off">0% / apagado</text>
+        <text x="620" y="104" fill="#0c6f95" font-family="Lato,sans-serif" font-size="10" font-weight="700">90%</text>
+
+        <!-- C: convencional plena potencia -->
+        <text x="60" y="190" fill="#1f7a4d" font-family="Lato,sans-serif" font-size="13" font-weight="900" data-i18n="f1_C">C · Convencional</text>
+        <path d="M60,212 L70,200 L850,200 L860,212" fill="none" stroke="#4EB270" stroke-width="3"/>
+        <line x1="70" y1="200" x2="850" y2="200" stroke="#4EB270" stroke-width="3"/>
+        <text x="430" y="194" fill="#1f7a4d" font-family="Lato,sans-serif" font-size="10" font-weight="700" text-anchor="middle" data-i18n="f1_allnight">100% toda la noche</text>
+
+        <!-- B: horario fijo -->
+        <text x="60" y="248" fill="#8a6500" font-family="Lato,sans-serif" font-size="13" font-weight="900" data-i18n="f1_B">B · Horario fijo</text>
+        <path d="M95,258 L95,255 L825,255 L825,258" fill="none" stroke="#FAB512" stroke-width="3"/>
+        <line x1="95" y1="255" x2="825" y2="255" stroke="#FAB512" stroke-width="3"/>
+        <line x1="60" y1="258" x2="95" y2="258" stroke="#cbb15a" stroke-width="2" stroke-dasharray="3 3"/>
+        <line x1="825" y1="258" x2="860" y2="258" stroke="#cbb15a" stroke-width="2" stroke-dasharray="3 3"/>
+        <text x="60" y="272" fill="#a98a2f" font-family="Lato,sans-serif" font-size="9.5" data-i18n="f1_bdesc">enciende y apaga con desfase respecto del ciclo solar</text>
+      </svg>
+      <div class="figcap" data-i18n="f1_cap">Una misma noche, tres modalidades de operación. La telegestión (A) reduce la intensidad por tramos; la convencional (C) opera a plena potencia durante toda la noche; el horario fijo (B) no se ajusta al ciclo solar. El área bajo cada curva representa la energía consumida.</div>
+    </div>
+  </section>
+
+  <!-- 3. EL MOTOR PASO A PASO -->
+  <section class="block" id="motor">
+    <div class="eyebrow"><span class="num">03</span><h2 data-i18n="s03_h2">Descripción del motor de cálculo</h2></div>
+    <div class="card">
+
+      <div class="step">
+        <div class="dot">1</div>
+        <div>
+          <h3 data-i18n="step1_h3">Modelo astronómico NOAA</h3>
+          <p data-i18n="step1_p1">A partir de la <strong>latitud, longitud, zona horaria y año</strong>, el motor determina la puesta y la salida del sol de cada día mediante el algoritmo solar de la <strong>NOAA</strong> (la misma serie de ecuaciones de su calculadora solar pública). Encadena las magnitudes astronómicas normalizadas:</p>
+          <ul>
+            <li data-i18n="step1_li1">Día y siglo julianos; longitud y anomalía media del Sol</li>
+            <li data-i18n="step1_li2">Ecuación del centro y longitud aparente del Sol</li>
+            <li data-i18n="step1_li3">Oblicuidad de la eclíptica y declinación solar</li>
+            <li data-i18n="step1_li4">Ecuación del tiempo y ángulo horario</li>
+            <li data-i18n="step1_li5">Salida y puesta con el cenit normalizado de <span class="mono">90,833°</span>, que incorpora la corrección por refracción atmosférica</li>
+          </ul>
+          <p style="margin-top:10px" data-i18n="step1_p2">No se trata de una formulación propietaria, sino de un algoritmo documentado y reproducible. Sus resultados pueden contrastarse con la calculadora solar pública de la NOAA para una fecha y localización determinadas.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="dot">2</div>
+        <div>
+          <h3 data-i18n="step2_h3">Cambio de horario estacional (DST) por país</h3>
+          <p data-i18n="step2_p">Previo al cálculo solar de cada día, el motor aplica la regla de horario de verano vigente del país seleccionado (Unión Europea, Estados Unidos, Chile, Paraguay, entre otros), o la omite cuando no corresponde. De este modo, las horas de encendido respetan el reloj local efectivo, incluidos los dos días del año en que se produce la transición horaria.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="dot">3</div>
+        <div>
+          <h3 data-i18n="step3_h3">Simulación diaria del ciclo anual</h3>
+          <p data-i18n="step3_p">El motor genera los <strong>365 días</strong> del año (366 en años bisiestos), cada uno con su propia puesta y salida del sol. <strong>No emplea una noche promedio.</strong> La variación estacional —noches prolongadas en invierno y reducidas en verano— queda representada conforme a su comportamiento real en la localización indicada.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="dot">4</div>
+        <div>
+          <h3 data-i18n="step4_h3">Intervalos de media hora con fracción real de minutos</h3>
+          <p data-i18n="step4_p">Cada día se subdivide en <strong>48 intervalos de 30 minutos</strong>. Para los intervalos en que la luminaria enciende o apaga, el motor no contabiliza el intervalo completo: determina <strong>la fracción exacta del mismo</strong> en que permaneció encendida (el solapamiento real entre el intervalo y la ventana puesta→salida del sol). Este tratamiento elimina el error derivado de redondear a horas completas en los límites de la noche.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="dot">5</div>
+        <div>
+          <h3 data-i18n="step5_h3">Perfil de regulación de intensidad (48 niveles)</h3>
+          <p data-i18n="step5_p">El perfil de regulación corresponde a un vector de <strong>48 valores</strong> (uno por intervalo de media hora), comprendidos entre 0 % y 100 %. En cada intervalo, la potencia se multiplica por dicho porcentaje. Un intervalo al 40 % consume el 40 % de la potencia nominal durante esos minutos; un intervalo al 0 % equivale a apagado total. Las luminarias clasificadas como <em>no regulables</em> se contabilizan invariablemente a plena potencia.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="dot">6</div>
+        <div>
+          <h3 data-i18n="step6_h3">Horas de operación y horas equivalentes</h3>
+          <p data-i18n="step6_p1">De cada día el motor extrae dos métricas auditables:</p>
+          <ul>
+            <li data-i18n="step6_li1"><strong>Horas de operación:</strong> suma de las fracciones de intervalo encendidas (el tiempo durante el cual la luminaria permaneció en servicio).</li>
+            <li data-i18n="step6_li2"><strong>Horas equivalentes:</strong> suma de (fracción × nivel de regulación); esto es, el tiempo a plena potencia que produciría un consumo idéntico.</li>
+          </ul>
+          <p style="margin-top:10px" data-i18n="step6_p2">La energía resulta del producto <strong>potencia instalada × horas equivalentes</strong>. La separación de ambas métricas permite revisar el cálculo sin necesidad de acceder al código fuente.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="dot">7</div>
+        <div>
+          <h3 data-i18n="step7_h3">Descomposición del ahorro y período de retorno</h3>
+          <p data-i18n="step7_p1">El ahorro total se reporta segregado en sus dos causas, de manera que cada una pueda sustentarse de forma autónoma:</p>
+          <ul>
+            <li data-i18n="step7_li1"><strong>Ahorro por regulación de intensidad:</strong> energía astronómica al 100 % menos energía astronómica con regulación.</li>
+            <li data-i18n="step7_li2"><strong>Ahorro por encendido astronómico:</strong> energía con horario fijo menos energía astronómica con regulación.</li>
+          </ul>
+          <p style="margin-top:10px" data-i18n="step7_p2">El <strong>período de retorno</strong> (payback) se obtiene de forma directa: la inversión (costo por nodo × cantidad de nodos) dividida por el ahorro anual monetizado (kWh ahorrados × tarifa).</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- DIAGRAMA: fracción de minutos -->
+  <section class="block">
+    <div class="figure">
+      <svg viewBox="0 0 920 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fracción real de minutos en el tramo de encendido">
+        <!-- regla de medias horas -->
+        <g font-family="Lato,sans-serif">
+          <rect x="60" y="70" width="120" height="50" fill="#F5F7FB" stroke="#E2E6EF"/>
+          <rect x="180" y="70" width="120" height="50" fill="#F5F7FB" stroke="#E2E6EF"/>
+          <rect x="300" y="70" width="120" height="50" fill="#D8F0FA" stroke="#22B0E1" stroke-width="1.5"/>
+          <rect x="420" y="70" width="120" height="50" fill="#D8F0FA" stroke="#22B0E1"/>
+          <rect x="540" y="70" width="120" height="50" fill="#D8F0FA" stroke="#22B0E1"/>
+          <!-- ventana real de encendido (atardecer dentro del tercer tramo) -->
+          <rect x="355" y="70" width="65" height="50" fill="#22B0E1" opacity="0.85"/>
+          <line x1="355" y1="55" x2="355" y2="135" stroke="#EA561B" stroke-width="2.5"/>
+          <circle cx="355" cy="50" r="5" fill="#FAB512"/>
+          <text x="355" y="40" fill="#EA561B" font-size="12" font-weight="900" text-anchor="middle" data-i18n="f2_sunset">puesta del sol 18:43</text>
+
+          <text x="120" y="100" fill="#99A0B4" font-size="11" text-anchor="middle" font-weight="700">18:00</text>
+          <text x="240" y="100" fill="#99A0B4" font-size="11" text-anchor="middle" font-weight="700">18:30</text>
+          <text x="378" y="155" fill="#0c6f95" font-size="11" text-anchor="middle" font-weight="900" data-i18n="f2_cnt">17 de 30 min</text>
+          <text x="480" y="100" fill="#0c6f95" font-size="11" text-anchor="middle" font-weight="700">19:30</text>
+          <text x="600" y="100" fill="#0c6f95" font-size="11" text-anchor="middle" font-weight="700">20:00</text>
+
+          <text x="700" y="85" fill="#1E2445" font-size="13" font-weight="900" data-i18n="f2_intv">Intervalo de la puesta</text>
+          <text x="700" y="104" fill="#464D63" font-size="12" data-i18n="f2_intv2">se contabiliza 17/30 = 0,57</text>
+          <text x="700" y="121" fill="#464D63" font-size="12" data-i18n="f2_intv3">no el intervalo completo</text>
+        </g>
+        <text x="460" y="185" fill="#99A0B4" font-size="12" text-anchor="middle" font-family="Lato,sans-serif" data-i18n="f2_bottom">El intervalo en que se produce la puesta del sol aporta únicamente la fracción de minutos efectivamente encendida — fuente del error que esta metodología suprime.</text>
+      </svg>
+      <div class="figcap" data-i18n="f2_cap">Resolución media-horaria con contabilización de la fracción real de minutos en los límites de la noche.</div>
+    </div>
+  </section>
+
+  <!-- 4. FÓRMULAS -->
+  <section class="block" id="formulas">
+    <div class="eyebrow"><span class="num">04</span><h2 data-i18n="s04_h2">Formulación matemática</h2></div>
+    <p class="muted" data-i18n="s04_intro">La totalidad de la lógica se reduce a operaciones aritméticas trazables. Ningún componente del cálculo permanece opaco al usuario:</p>
+    <div class="formula">
+      <div class="row" data-i18n="fr_c1"><span class="c"># energía de un intervalo de 30 min (por luminaria)</span></div>
+      <div class="row" data-i18n="fr_e">E<span class="k">intervalo</span> = P<span class="k">nom</span> [kW] · regulación<span class="k">intervalo</span> · fracción<span class="k">intervalo</span> [h]</div>
+      <div class="row" style="margin-top:10px" data-i18n="fr_c2"><span class="c"># métricas del día (suma sobre los 48 intervalos)</span></div>
+      <div class="row" data-i18n="fr_oh">horas_operación = Σ fracción<span class="k">intervalo</span></div>
+      <div class="row" data-i18n="fr_eh">horas_equivalentes = Σ ( fracción<span class="k">intervalo</span> · regulación<span class="k">intervalo</span> )</div>
+      <div class="row" style="margin-top:10px" data-i18n="fr_c3"><span class="c"># energía anual de la flota (suma sobre 365/366 días)</span></div>
+      <div class="row" data-i18n="fr_ey">E<span class="k">año</span> = kW<span class="k">regulable</span> · horas_equiv<span class="k">año</span> + kW<span class="k">fijo</span> · horas_operación<span class="k">año</span></div>
+      <div class="row" style="margin-top:10px" data-i18n="fr_c4"><span class="c"># descomposición del ahorro</span></div>
+      <div class="row" data-i18n="fr_dim"><span class="h">ahorro_regulación</span> = E(astro,100%) − E(astro,regulado)</div>
+      <div class="row" data-i18n="fr_sch"><span class="h">ahorro_horario</span>    = E(horario_fijo) − E(astro,regulado)</div>
+      <div class="row" style="margin-top:10px" data-i18n="fr_c5"><span class="c"># período de retorno de la inversión</span></div>
+      <div class="row" data-i18n="fr_ann">ahorro_anual$ = kWh<span class="k">ahorrados</span> · tarifa</div>
+      <div class="row" data-i18n="fr_pay">payback [años] = ( costo_nodo · n_nodos ) / ahorro_anual$</div>
+    </div>
+    <div class="callout" data-i18n="s04_callout"><b>Trazabilidad.</b> Conocidas la potencia instalada, las horas equivalentes de un año y la tarifa, el consumo y el ahorro pueden reproducirse mediante una hoja de cálculo convencional. La herramienta ejecuta esa misma operación de forma sistemática —35.040 veces (48 intervalos × 365 días × 2)— incorporando la posición solar exacta de cada día.</div>
+  </section>
+
+  <!-- 5. QUÉ NO HACE -->
+  <section class="block" id="limites">
+    <div class="eyebrow"><span class="num">05</span><h2 data-i18n="s05_h2">Alcance y limitaciones del modelo</h2></div>
+    <p class="muted" data-i18n="s05_intro">La declaración anticipada de los límites del modelo confiere solidez al cálculo: no subsisten supuestos implícitos susceptibles de cuestionamiento posterior. La herramienta constituye un <strong>modelo de energía de operación</strong>, lo cual implica lo siguiente:</p>
+    <table>
+      <thead><tr><th data-i18n="s05_th1">Comprende</th><th data-i18n="s05_th2">No comprende (fuera del alcance)</th></tr></thead>
+      <tbody>
+        <tr><td data-i18n="s05_r1a">Puesta y salida del sol reales por día (NOAA y DST)</td><td data-i18n="s05_r1b">Fallas, interrupciones de red o luminarias fuera de servicio</td></tr>
+        <tr><td data-i18n="s05_r2a">Consumo conforme a potencia nominal y perfil de regulación</td><td data-i18n="s05_r2b">Pérdidas de línea, factor de potencia del controlador y pérdidas en vacío</td></tr>
+        <tr><td data-i18n="s05_r3a">Energía y costo de energía (kWh × tarifa)</td><td data-i18n="s05_r3b">Cargos de potencia o demanda, tributos y demás conceptos de la facturación</td></tr>
+        <tr><td data-i18n="s05_r4a">Ahorro por encendido astronómico y por regulación de intensidad</td><td data-i18n="s05_r4b">Ahorros de operación y mantenimiento, vida útil del LED o costos de mantenimiento evitados</td></tr>
+        <tr><td data-i18n="s05_r5a">Inventario y tarifa ingresados por el usuario</td><td data-i18n="s05_r5b">Degradación lumínica o variaciones tarifarias futuras</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" data-i18n="s05_callout"><b>Interpretación de los resultados.</b> Las cifras tienen carácter referencial, orientado a la evaluación y comparación de modalidades de operación, y se calculan a partir de los parámetros ingresados. Su conciliación con una facturación real requiere validar el inventario, las potencias y la tarifa, así como considerar que la factura incorpora conceptos ajenos a un modelo de energía. Empleados con parámetros reales, los resultados se aproximan estrechamente a la medición.</div>
+  </section>
+
+  <!-- 6. VERIFICAR -->
+  <section class="block" id="verificar">
+    <div class="eyebrow"><span class="num">06</span><h2 data-i18n="s06_h2">Procedimiento de verificación</h2></div>
+    <div class="card">
+      <p class="muted" data-i18n="s06_intro">Los resultados admiten verificación independiente. Un evaluador puede auditar el motor mediante los siguientes procedimientos:</p>
+      <ul class="checks">
+        <li data-i18n="s06_ck1"><strong>Contraste de efemérides solares.</strong> A partir de la latitud/longitud y una fecha determinada, se comparan la puesta y la salida del sol calculadas por la herramienta con las de la calculadora solar pública de la NOAA o cualquier efeméride equivalente; deben coincidir al minuto.</li>
+        <li data-i18n="s06_ck2"><strong>Reproducción manual de un día.</strong> Para un día dado, se multiplican potencia × niveles de regulación × fracciones de intervalo; el consumo resultante debe reproducir el reportado por la herramienta.</li>
+        <li data-i18n="s06_ck3"><strong>Sensibilidad a la latitud.</strong> Al desplazar la localización hacia el norte o el sur, las horas de operación anuales deben incrementarse o reducirse de forma coherente con la duración de la noche, lo que evidencia que el modelo responde a la geografía y no a una constante.</li>
+        <li data-i18n="s06_ck4"><strong>Anulación de la regulación.</strong> Con el perfil al 100 %, el escenario de telegestión debe igualar al convencional; la diferencia entre ambos corresponde, exactamente, al ahorro por regulación de intensidad.</li>
+        <li data-i18n="s06_ck5"><strong>Sensibilidad a la tarifa.</strong> El costo escala linealmente con la tarifa ingresada, en tanto que los kWh permanecen invariables; energía y valor monetizado quedan disociados y son auditables por separado.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<!-- FOOTER -->
+<footer class="band band--navy">
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <div class="brand" style="font-size:16px"><span class="ubi">ubi</span><span class="cquia">cquia</span><span class="dot">.</span></div>
+        <p class="small" style="margin-top:8px" data-i18n="foot_p1">Documento metodológico de la calculadora de ahorro energético en alumbrado público. Telegestión Ubicquia · griddata.</p>
+      </div>
+      <div>
+        <p class="small" data-i18n="foot_p2"><b style="color:#fff">Nota.</b> La salida y la puesta del sol se determinan mediante el modelo astronómico normalizado de la NOAA para la latitud, longitud, zona horaria y año indicados. Constituye una herramienta de apoyo a la planificación; las cifras tienen carácter referencial y deben validarse contra el inventario y la tarifa reales del proyecto.</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  /* Diccionario EN. La versión ES es el contenido autorado en el HTML (fuente única). */
+  var EN = {
+    pill: "Methodology document",
+
+    hero_kicker: "Public lighting remote management",
+    hero_h1: "Savings calculation methodology",
+    hero_lede: "This document describes the calculation engine behind the energy-savings calculator: a transparent, reproducible methodology, free of averages that would distort the results. It sets out, step by step, the origin of every reported figure, so that the numbers are fully verifiable and leave no room for dispute.",
+
+    chip1: "NOAA astronomical engine",
+    chip2: "365 / 366 days simulated",
+    chip3: "Half-hourly resolution",
+    chip4: "Explicit assumptions",
+
+    toc1: "Reliability",
+    toc2: "Background",
+    toc3: "Comparison scenarios",
+    toc4: "Calculation engine",
+    toc5: "Mathematical formulation",
+    toc6: "Scope &amp; limitations",
+    toc7: "Verification procedure",
+
+    btn_pdf: "Download / print PDF",
+
+    s00_h2: "Reliability of the results",
+    s00_lead: "The calculator does not rely on rough estimates. For every day of the year and in half-hour intervals, it reconstructs the actual energy consumption of each luminaire across a full annual cycle, on the basis of an internationally referenced astronomical model. Five engineering decisions underpin that reliability:",
+    p1n: "NOAA",
+    p1lab: "Public reference algorithm",
+    p1sub: "Sunrise and sunset are obtained from NOAA&rsquo;s solar model, not from a proprietary formulation or approximate tables.",
+    p2n: "365<span class='u'>days</span>",
+    p2lab: "No annual averages",
+    p2sub: "Each day of the year is simulated independently, with its own night length. Summer and winter are not averaged together.",
+    p3n: "48<span class='u'>slots</span>",
+    p3lab: "Half-hourly resolution",
+    p3sub: "Each day is split into 48 half-hour intervals; switch-on and switch-off use the real fraction of minutes, without rounding to whole hours.",
+    p4n: "2<span class='u'>effects</span>",
+    p4lab: "Savings broken down",
+    p4sub: "The savings from astronomical switching and those from dimming are determined separately and can be audited independently.",
+    p5n: "100%",
+    p5lab: "Explicit parameters",
+    p5sub: "Tariff, inventory and ratings are data provided by the user. The model embeds no hidden parameters: every input is reviewable.",
+
+    s01_h2: "Background: limitations of conventional methods",
+    s01_p1: "Most public-lighting savings estimates rest on two simplifications that leave them open to challenge:",
+    s01_p2: "<strong>Simplification 1 &mdash; averaging night hours.</strong> A single value is adopted &mdash;for example, &ldquo;11 operating hours per day&rdquo;&mdash; and multiplied by 365. Yet the night lasts roughly 13&nbsp;h in winter and 10&nbsp;h in summer depending on latitude; a fixed average systematically over- or under-estimates consumption, and the origin of that value is hard to justify under review.",
+    s01_p3: "<strong>Simplification 2 &mdash; rounding to whole hours.</strong> The luminaire is assumed to switch on at an exact time (e.g. 19:00). In real operation, switch-on occurs at sunset (e.g. 18:43) and switch-off at sunrise (e.g. 06:17). Rounding those boundaries introduces error precisely in the intervals that weigh most on consumption.",
+    s01_callout: "<b>How the calculator handles it:</b> no averages and no rounding. The real sunset and sunrise of every day of the year are determined for the exact location, and in the switch-on and switch-off intervals the precise fraction of minutes is counted. The annual result is the sum of 365 (or 366) actual days, with no extrapolation.",
+
+    s02_h2: "Comparison scenarios",
+    s02_intro: "The credibility of a saving depends on how sound its comparison baseline is. The calculator models three distinct operating modes <strong>over the same inventory and the same tariff</strong>, so that the only variable that changes is how the system is operated:",
+    scnA_tag: "Scenario A",
+    scnA_h3: "Ubicquia Remote Management",
+    scnA_p: "Switches on at sunset and off at sunrise following the solar cycle, and applies the dimming profile (intensity regulation by time slot).",
+    scnA_role: "This is the proposed operation: astronomical clock plus dimming.",
+    scnC_tag: "Scenario C",
+    scnC_h3: "Conventional lighting",
+    scnC_p: "Follows the solar cycle at full power, without dimming, much like a conventional photocell. It reproduces a system with no remote management.",
+    scnC_role: "Reference baseline: it isolates the effect of dimming without overstating the prior scenario.",
+    scnB_tag: "Scenario B",
+    scnB_h3: "Fixed schedule",
+    scnB_p: "Switches on and off at a fixed user-defined time (e.g. 20:00&ndash;06:00), unchanged throughout the year and at full power.",
+    scnB_role: "Represents schedule-based operation; it quantifies the contribution of astronomical switching.",
+    s02_callout: "<b>Why the baseline matters.</b> The conventional scenario also follows the solar cycle; it is not charged an excessive schedule. As a result, the reported saving is conservative: it comes solely from dimming and from removing wasteful consumption at the edges of the night, not from a comparison against a deliberately unfavourable prior scenario.",
+
+    f1_sunset: "sunset 18:43",
+    f1_sunrise: "sunrise 06:17",
+    f1_A: "A · Remote management",
+    f1_off: "0% / off",
+    f1_C: "C · Conventional",
+    f1_allnight: "100% all night",
+    f1_B: "B · Fixed schedule",
+    f1_bdesc: "switches on/off out of sync with the solar cycle",
+    f1_cap: "One night, three operating modes. Remote management (A) reduces intensity by slots; conventional (C) runs at full power all night; the fixed schedule (B) does not adjust to the solar cycle. The area under each curve is the energy consumed.",
+
+    s03_h2: "How the calculation engine works",
+    step1_h3: "NOAA astronomical model",
+    step1_p1: "From the <strong>latitude, longitude, time zone and year</strong>, the engine determines each day&rsquo;s sunset and sunrise using NOAA&rsquo;s solar algorithm (the same set of equations as its public solar calculator). It chains the standard astronomical quantities:",
+    step1_li1: "Julian day and century; mean longitude and mean anomaly of the Sun",
+    step1_li2: "Equation of centre and apparent longitude of the Sun",
+    step1_li3: "Obliquity of the ecliptic and solar declination",
+    step1_li4: "Equation of time and hour angle",
+    step1_li5: "Sunrise and sunset at the standard zenith of <span class='mono'>90.833&deg;</span>, which includes the atmospheric-refraction correction",
+    step1_p2: "This is not a proprietary formulation but a documented, reproducible algorithm. Its results can be checked against NOAA&rsquo;s public solar calculator for a given date and location.",
+    step2_h3: "Seasonal time change (DST) by country",
+    step2_p: "Before each day&rsquo;s solar calculation, the engine applies the daylight-saving rule in force for the selected country (European Union, United States, Chile, Paraguay, among others), or skips it where it does not apply. This way, switching times respect the effective local clock, including the two days of the year on which the time transition occurs.",
+    step3_h3: "Day-by-day simulation of the annual cycle",
+    step3_p: "The engine generates all <strong>365 days</strong> of the year (366 in leap years), each with its own sunset and sunrise. <strong>It does not use an average night.</strong> The seasonal variation &mdash;long nights in winter, short ones in summer&mdash; is represented according to its real behaviour at the indicated location.",
+    step4_h3: "Half-hour intervals with the real fraction of minutes",
+    step4_p: "Each day is split into <strong>48 intervals of 30 minutes</strong>. For the intervals in which the luminaire switches on or off, the engine does not count the whole interval: it determines <strong>the exact fraction</strong> of it during which the luminaire was on (the real overlap between the interval and the sunset&rarr;sunrise window). This removes the error from rounding to whole hours at the edges of the night.",
+    step5_h3: "Dimming profile (48 levels)",
+    step5_p: "The dimming profile is a vector of <strong>48 values</strong> (one per half-hour interval), between 0&nbsp;% and 100&nbsp;%. In each interval, power is multiplied by that percentage. An interval at 40&nbsp;% consumes 40&nbsp;% of nominal power during those minutes; an interval at 0&nbsp;% is fully off. Luminaires classed as <em>non-dimmable</em> are always counted at full power.",
+    step6_h3: "Operating hours and equivalent hours",
+    step6_p1: "From each day the engine extracts two auditable metrics:",
+    step6_li1: "<strong>Operating hours:</strong> the sum of the switched-on interval fractions (the time the luminaire was in service).",
+    step6_li2: "<strong>Equivalent hours:</strong> the sum of (fraction × dimming level); that is, the full-power time that would produce the same consumption.",
+    step6_p2: "Energy is the product of <strong>installed power × equivalent hours</strong>. Keeping the two metrics separate lets the calculation be reviewed without access to the source code.",
+    step7_h3: "Savings breakdown and payback period",
+    step7_p1: "Total savings are reported split into their two causes, so that each can stand on its own:",
+    step7_li1: "<strong>Dimming savings:</strong> astronomical energy at 100&nbsp;% minus astronomical energy with dimming.",
+    step7_li2: "<strong>Astronomical-switching savings:</strong> fixed-schedule energy minus astronomical energy with dimming.",
+    step7_p2: "The <strong>payback period</strong> follows directly: the investment (cost per node × number of nodes) divided by the monetised annual saving (kWh saved × tariff).",
+
+    f2_sunset: "sunset 18:43",
+    f2_cnt: "17 of 30 min",
+    f2_intv: "Sunset interval",
+    f2_intv2: "counted as 17/30 = 0.57",
+    f2_intv3: "not the whole interval",
+    f2_bottom: "The interval containing sunset contributes only the fraction of minutes actually switched on — the source of the error this methodology removes.",
+    f2_cap: "Half-hourly resolution, counting the real fraction of minutes at the boundaries of the night.",
+
+    s04_h2: "Mathematical formulation",
+    s04_intro: "All of the logic reduces to traceable arithmetic. No component of the calculation stays opaque to the user:",
+    fr_c1: "<span class='c'># energy of a 30-min interval (per luminaire)</span>",
+    fr_e: "E<span class='k'>interval</span> = P<span class='k'>nom</span> [kW] · dimming<span class='k'>interval</span> · fraction<span class='k'>interval</span> [h]",
+    fr_c2: "<span class='c'># daily metrics (sum over the 48 intervals)</span>",
+    fr_oh: "operating_hours = Σ fraction<span class='k'>interval</span>",
+    fr_eh: "equivalent_hours = Σ ( fraction<span class='k'>interval</span> · dimming<span class='k'>interval</span> )",
+    fr_c3: "<span class='c'># annual fleet energy (sum over 365/366 days)</span>",
+    fr_ey: "E<span class='k'>year</span> = kW<span class='k'>dimmable</span> · equiv_hours<span class='k'>year</span> + kW<span class='k'>fixed</span> · operating_hours<span class='k'>year</span>",
+    fr_c4: "<span class='c'># savings breakdown</span>",
+    fr_dim: "<span class='h'>dimming_saving</span> = E(astro,100%) − E(astro,dimmed)",
+    fr_sch: "<span class='h'>schedule_saving</span>  = E(fixed_schedule) − E(astro,dimmed)",
+    fr_c5: "<span class='c'># investment payback period</span>",
+    fr_ann: "annual_saving$ = kWh<span class='k'>saved</span> · tariff",
+    fr_pay: "payback [years] = ( node_cost · n_nodes ) / annual_saving$",
+    s04_callout: "<b>Traceability.</b> Given the installed power, a year&rsquo;s equivalent hours and the tariff, consumption and savings can be reproduced with an ordinary spreadsheet. The tool runs that same operation systematically &mdash;35,040 times (48 intervals × 365 days × 2)&mdash; incorporating the exact solar position of each day.",
+
+    s05_h2: "Scope and limitations of the model",
+    s05_intro: "Stating the model&rsquo;s limits up front strengthens the calculation: no implicit assumption remains that could be challenged later. The tool is an <strong>operating-energy model</strong>, which means the following:",
+    s05_th1: "Covers",
+    s05_th2: "Does not cover (out of scope)",
+    s05_r1a: "Real daily sunset and sunrise (NOAA and DST)",
+    s05_r1b: "Faults, grid outages or luminaires out of service",
+    s05_r2a: "Consumption based on nominal power and dimming profile",
+    s05_r2b: "Line losses, controller power factor and no-load losses",
+    s05_r3a: "Energy and energy cost (kWh × tariff)",
+    s05_r3b: "Capacity or demand charges, taxes and other billing items",
+    s05_r4a: "Savings from astronomical switching and from dimming",
+    s05_r4b: "O&amp;M savings, LED lifetime or avoided maintenance costs",
+    s05_r5a: "Inventory and tariff entered by the user",
+    s05_r5b: "Lumen depreciation or future tariff changes",
+    s05_callout: "<b>Reading the results.</b> The figures are indicative, meant for evaluating and comparing operating modes, and are computed from the parameters entered. Reconciling them with a real bill requires validating the inventory, ratings and tariff, and bearing in mind that the bill includes items outside an energy model. Used with real parameters, the results closely approach the measurement.",
+
+    s06_h2: "Verification procedure",
+    s06_intro: "The results can be independently verified. An evaluator can audit the engine through the following procedures:",
+    s06_ck1: "<strong>Cross-check solar ephemeris.</strong> From the latitude/longitude and a given date, compare the tool&rsquo;s sunset and sunrise with NOAA&rsquo;s public solar calculator or any equivalent ephemeris; they must match to the minute.",
+    s06_ck2: "<strong>Reproduce one day by hand.</strong> For a given day, multiply power × dimming levels × interval fractions; the resulting consumption must reproduce the one reported by the tool.",
+    s06_ck3: "<strong>Latitude sensitivity.</strong> Moving the location north or south, the annual operating hours must rise or fall consistently with the length of the night, showing that the model responds to geography and not to a constant.",
+    s06_ck4: "<strong>Disabling dimming.</strong> With the profile at 100&nbsp;%, the remote-management scenario must equal the conventional one; the difference between them is, exactly, the dimming saving.",
+    s06_ck5: "<strong>Tariff sensitivity.</strong> Cost scales linearly with the tariff entered, while the kWh stay unchanged; energy and monetised value are decoupled and auditable separately.",
+
+    foot_p1: "Methodology document for the public-lighting energy-savings calculator. Ubicquia Remote Management · griddata.",
+    foot_p2: "<b style='color:#fff'>Note.</b> Sunrise and sunset are determined with NOAA&rsquo;s standard astronomical model for the indicated latitude, longitude, time zone and year. It is a planning-support tool; the figures are indicative and must be validated against the project&rsquo;s real inventory and tariff."
+  };
+
+  var META = {
+    title_en: "Calculation methodology — Savings calculator · Ubicquia Remote Management",
+    desc_en: "How public-lighting savings are calculated in the griddata calculator: NOAA astronomical engine, day-by-day simulation, half-hourly resolution and explicit assumptions."
+  };
+
+  /* Snapshot del contenido ES (fuente única) */
+  var nodes = Array.prototype.slice.call(document.querySelectorAll("[data-i18n]"));
+  nodes.forEach(function(el){
+    el.__es = (el.namespaceURI === SVGNS) ? el.textContent : el.innerHTML;
+  });
+  var titleEs = document.title;
+  var metaEl = document.getElementById("metaDesc");
+  var descEs = metaEl ? (metaEl.getAttribute("content") || "") : "";
+
+  function apply(lang){
+    try{
+      document.documentElement.setAttribute("lang", lang);
+      document.documentElement.setAttribute("data-lang", lang);
+      nodes.forEach(function(el){
+        var k = el.getAttribute("data-i18n");
+        var val = (lang === "en" && EN[k] != null) ? EN[k] : el.__es;
+        if(el.namespaceURI === SVGNS){ el.textContent = val; }
+        else { el.innerHTML = val; }
+      });
+      document.title = (lang === "en") ? META.title_en : titleEs;
+      if(metaEl){ metaEl.setAttribute("content", (lang === "en") ? META.desc_en : descEs); }
+      var btns = document.querySelectorAll("[data-setlang]");
+      for(var i=0;i<btns.length;i++){
+        btns[i].classList.toggle("active", btns[i].getAttribute("data-setlang") === lang);
+        btns[i].setAttribute("aria-pressed", btns[i].getAttribute("data-setlang") === lang ? "true" : "false");
+      }
+    }catch(err){
+      // Degradación elegante: ante cualquier fallo se conserva el español autorado.
+      console.error("i18n:", err);
+    }
+  }
+
+  /* Cableado de los botones */
+  var setBtns = document.querySelectorAll("[data-setlang]");
+  for(var i=0;i<setBtns.length;i++){
+    (function(b){
+      b.addEventListener("click", function(){ apply(b.getAttribute("data-setlang")); });
+    })(setBtns[i]);
+  }
+
+  /* Idioma inicial: ?lang=en en la URL (sin almacenamiento) */
+  var initial = "es";
+  try{
+    var q = new URLSearchParams(window.location.search).get("lang");
+    if(q && q.toLowerCase() === "en") initial = "en";
+  }catch(e){ /* navegadores sin URLSearchParams: queda en es */ }
+  apply(initial);
+})();
+</script>
+
+</body>
+</html>

@@ -33,7 +33,7 @@
   body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums}
   h1,h2,h3{font-family:var(--disp); margin:0; letter-spacing:-.01em}
   .mono{font-family:var(--mono)}
-  .wrap{max-width:1320px; margin:0 auto; padding:22px 20px 56px}
+  .wrap{max-width:var(--maxw,1480px); margin:0 auto; padding:22px var(--pad,32px) 56px}
   .top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px}
   .brand{display:flex; align-items:center; gap:14px}
   .logo{width:42px; height:42px; border-radius:12px; flex:none; background:radial-gradient(circle at 32% 32%, #5BC7EE, var(--indigo) 62%, #1E2445); box-shadow:0 6px 16px rgba(34,176,225,.30); position:relative}
@@ -379,15 +379,50 @@
   .iox-box textarea:focus{outline:2px solid var(--indigo); outline-offset:1px; border-color:var(--indigo)}
   .seg{flex-wrap:wrap}
 </style>
+<style>
+/* --- Vista de ciudad (solo lectura de S.dim) --- */
+#cityWrap{position:relative;width:100%;height:210px;border-radius:14px;overflow:hidden;background:#0a0d16;border:1px solid rgba(30,36,69,.12)}
+#cityCanvas{display:block;width:100%;height:100%}
+#cityRead{position:absolute;left:10px;bottom:8px;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#dff0fb;display:flex;gap:8px;align-items:center;background:rgba(17,21,31,.44);backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:5px 9px;pointer-events:none;white-space:nowrap}
+#cityRead .sep{color:rgba(255,255,255,.28)}
+#cityRead .dim{color:#22B0E1;font-weight:700}
+#cityRead .sv{color:#9ccf4a;font-weight:700}
+@media(max-width:560px){#cityWrap{height:150px}}
+</style>
+<style>
+#cityWrap .cityRead{position:absolute;left:10px;bottom:8px;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#dff0fb;display:flex;gap:8px;align-items:center;background:rgba(17,21,31,.46);backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:5px 9px;pointer-events:none;white-space:nowrap}
+#cityWrap .cityRead .sep{color:rgba(255,255,255,.28)} #cityWrap .cityRead .dim{color:#22B0E1;font-weight:700} #cityWrap .cityRead .save{color:#9ccf4a;font-weight:700}
+#cityWrap .citySpeed{position:absolute;right:10px;top:10px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#dff0fb;background:rgba(17,21,31,.5);border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:5px 10px;cursor:pointer}
+#cityWrap .citySpeed:hover{border-color:#22B0E1}
+#cityWrap .cityBanner{position:absolute;inset:auto 0 0 0;display:none;justify-content:center;padding:6px;background:rgba(234,86,27,.9);color:#fff;font-family:monospace;font-size:11px}
+#cityWrap .cityBanner.show{display:flex}
+</style>
+<style>
+#cityWrap .citySignal{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:none;align-items:center;gap:6px;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#fff;background:rgba(17,21,31,.62);backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 12px;white-space:nowrap;animation:ctpulse 1.6s infinite}
+#cityWrap .citySignal b{font-weight:900} #cityWrap .citySignal .o{color:#99A0B4}
+@keyframes ctpulse{0%{box-shadow:0 0 0 0 rgba(255,170,80,.45)}70%{box-shadow:0 0 0 10px rgba(255,170,80,0)}100%{box-shadow:0 0 0 0 rgba(255,170,80,0)}}
+@media(prefers-reduced-motion:reduce){#cityWrap .citySignal{animation:none}}
+</style>
+<style>
+.cityScrub{margin-top:10px}
+.cityScrub input[type=range]{width:100%;accent-color:#22B0E1;cursor:pointer;height:22px}
+.cityScrub .scrubTicks{display:flex;justify-content:space-between;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9px;color:#99A0B4;margin-top:-2px}
+</style>
+<style>
+#cityWrap .cityCtrls{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+#cityWrap .cityBtn{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:700;color:#dff0fb;background:rgba(17,21,31,.5);border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:5px 10px;cursor:pointer}
+#cityWrap .cityBtn:hover{border-color:#22B0E1}
+#cityWrap .cityBtn.on{background:#22B0E1;color:#06121a;border-color:#22B0E1}
+#cityWrap .cityDate{position:absolute;right:10px;bottom:8px;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:#cfe0ee;background:rgba(17,21,31,.42);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;pointer-events:none;white-space:nowrap}
+</style>
 </head>
 <body>
-<div class="wrap">
-
+<header class="topband band--navy"><div class="bandinner">
   <div class="top">
     <div class="brand">
       <div class="logo"></div>
       <div class="t">
-        <div class="eyebrow" data-i18n="eyebrow">Alumbrado público · energía y costo</div>
+        <div class="wordmark"><span class="w-ubi">ubi</span><span class="w-cq">cquia</span><sup class="w-r">®</sup></div>
         <h1 data-i18n="title">Calculadora de consumo anual</h1>
       </div>
     </div>
@@ -402,7 +437,9 @@
       </div>
     </div>
   </div>
+  </div></header>
 
+  <div class="wrap">
   <div class="shell">
     <aside>
       <div class="panel">
@@ -433,13 +470,12 @@
       <div class="tabs flat" id="tabs">
         <div class="tab active" data-tab="config" data-i18n="t_config">Ubicación y tarifa</div>
         <div class="tab" data-tab="inventario" data-i18n="t_inv">Inventario</div>
-        <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
         <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
-        <div class="tab" data-tab="perfil" data-i18n="t_perfil">Perfil diario</div>
-        <div class="tab" data-tab="tabla" data-i18n="t_tabla">Tabla anual</div>
+        <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
         <div class="tab" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
         <div class="tab" data-tab="exec" data-i18n="t_exec">Resumen ejecutivo</div>
         <div class="tab" data-tab="comparador" data-i18n="cmp_group">Comparar</div>
+        <div class="tab tab-tech" data-tab="tecnico" data-i18n="t_tecnico">Técnico</div>
       </div>
       </div>
 
@@ -476,7 +512,8 @@
         </div>
         <label class="toggle" style="margin-top:8px"><input type="checkbox" id="curEna"> <span data-i18n="use_local">Usar moneda local</span></label>
         <div id="curRows" style="display:none">
-          <div class="field"><label data-i18n="cur_sym">Moneda (símbolo)</label><input type="text" id="curSym" value="$" maxlength="4"></div>
+          <div class="field"><label data-i18n="cur_sym">Moneda (símbolo)</label><input type="text" id="curSym" value="$" maxlength="4" placeholder="$COP"></div>
+          <div class="hint" data-i18n="cur_sym_ex">Ej.: $COP, S/, Bs, $ — el texto que se mostrará junto a los importes.</div>
           <div class="field"><label data-i18n="cur_rate">Tasa (local por US$)</label><input type="number" id="curRate" step="0.01" value="1"></div>
           <div class="hint" data-i18n="cur_hint">Tasas aproximadas, edítalas según el cambio real.</div>
         </div>
@@ -715,6 +752,9 @@
         </div>
         <p class="exp" data-i18n="perfil_parallel_note">Cada escenario activo se muestra en paralelo. Mueve el día para ver cómo cambia la noche en todos a la vez.</p>
         <div id="perfilGrid" class="perfil-grid"></div>
+        <div class="legend" style="margin-top:10px">
+          <span><span class="sw" style="background:rgba(78,178,112,.45);border:1px dashed rgba(78,178,112,.9)"></span><span data-i18n="perfil_savenote">Franja verde sobre la barra = energía que ahorras frente a la base (AP convencional; el horario fijo si está activo y elegido como base).</span></span>
+        </div>
         <div class="section">
           <div class="head"><h2 data-i18n="heat_title">El año encendido</h2><p data-i18n="heat_sub">Cada fila es un día; cada columna, una hora. Color = energía de esa hora.</p></div>
           <div id="heatGrid" class="heat-grid"></div>
@@ -727,11 +767,35 @@
             </div>
           </div>
         </div>
+        <div class="section" id="heatSaveSection">
+          <div class="head"><h2 data-i18n="heatsave_title">El año — lo que ahorras</h2><p data-i18n="heatsave_sub">Cada fila es un día; cada columna, una hora. Verde = energía ahorrada esa hora frente a la base.</p></div>
+          <div id="heatSaveGrid" class="heat-grid"></div>
+          <div class="surface" style="margin-top:10px">
+            <div class="legend">
+              <span><span class="sw" style="background:rgb(241,243,246);border:1px solid var(--line)"></span><span data-i18n="heatsave_none">Sin ahorro</span></span>
+              <span><span class="sw" style="background:rgb(210,237,221)"></span><span data-i18n="heatsave_lo">Ahorro bajo</span></span>
+              <span><span class="sw" style="background:rgb(22,104,66)"></span><span data-i18n="heatsave_hi">Ahorro alto</span></span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- DIMERIZACIÓN -->
       <section class="view" id="view-dim">
         <div class="sec-help" data-help="dim"></div>
+        <div class="section" style="margin-top:0">
+          <div class="head"><h2 data-i18n="city_title">Vista de ciudad</h2><p data-i18n="city_sub">La ciudad refleja tu perfil: al anochecer las luminarias encienden y dimerizan según cada tramo. Edita la grilla y míralo cambiar.</p></div>
+          <div class="surface" style="padding:12px">
+            <div id="cityWrap"><canvas id="cityCanvas"></canvas>
+              <div class="cityRead" id="cityRead"><span id="ctClock">--:--</span><span class="sep">·</span><span class="ph" id="ctPhase">—</span><span class="sep">·</span><span class="dim">DIM <span id="ctDim">0</span>%</span><span class="sep">·</span><span class="save" id="ctSave">—</span></div>
+              <div class="cityCtrls"><button class="cityBtn on" id="ctToday" type="button" aria-label="Día">Hoy</button><button class="cityBtn" id="ctPause" type="button" aria-label="Pausa">⏸</button><button class="cityBtn" id="ctSpeed" type="button" aria-label="Velocidad">▸ 1×</button></div>
+              <div class="cityBanner" id="ctBanner">⚠ error · ver consola</div>
+              <div class="citySignal" id="ctSignal" style="display:none"></div>
+              <div class="cityDate" id="ctDate"></div>
+            </div>
+            <div class="cityScrub"><input type="range" id="ctScrub" min="0" max="24" step="0.05" value="18" aria-label="Hora de la animación"><div class="scrubTicks"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
+          </div>
+        </div>
         <div class="section" style="margin-top:0">
           <div class="head"><h2 data-i18n="dim_title">Dimerización por media hora</h2><p data-i18n="dim_sub">Escribe el % de potencia en cada tramo de 30 minutos. El color resalta cuánto se baja.</p></div>
           <div class="surface">
@@ -780,7 +844,6 @@
 
       <!-- TABLA ANUAL -->
       <section class="view" id="view-tabla">
-        <div class="sec-help" data-help="tabla"></div>
         <div class="section">
           <div class="head"><h2 data-i18n="hrs_title">Horas de encendido acumuladas</h2><p data-i18n="hrs_sub">Horas que las luminarias están encendidas, por día y acumulado en el año.</p></div>
           <div class="surface">
@@ -839,6 +902,10 @@
     </main>
   </div>
 </div>
+<footer class="footband band--navy"><div class="bandinner">
+  <span class="wordmark"><span class="w-ubi">ubi</span><span class="w-cq">cquia</span><sup class="w-r">®</sup></span>
+  <span class="ftag">griddata.cl · <span data-i18n="footer_tag">Telegestión de alumbrado público</span></span>
+</div></footer>
 
 <div class="iox-modal" id="ioxModal" hidden>
   <div class="iox-box">
@@ -865,16 +932,16 @@ const DICT={
   country:"País / ciudad", lat:"Latitud", lon:"Longitud", tz:"Zona horaria", dst:"Cambio de horario",
   dst_none:"Ninguno", dst_eu:"Unión Europea", dst_us:"Norteamérica / Caribe", dst_chile:"Chile", dst_py:"Paraguay",
   tariff_ref:"Tarifa y referencia", tariff:"Tarifa", ref_lum:"Luminaria de referencia",
-  eu_unit:"Unidad de energía", eu_auto:"Auto", invest_title:"Inversión y payback", cfg_group:"Configurar", res_group:"Resultados", ana_group:"Análisis", node_cost:"Costo por nodo", invest_hint:"Costo del nodo inteligente por luminaria. El payback compara la inversión total con el ahorro anual frente a la base.", pay_tag:"Payback", pay_k:"Recuperación de inversión", years:"años", pay_invest:"inversión", pay_nodes:"nodos", pay_setcost:"Ingresa el costo por nodo", pay_noinfo:"Sin ahorro frente a la base", use_local:"Usar moneda local", cur_sym:"Moneda (símbolo)", cur_rate:"Tasa (local por US$)", cur_hint:"Tasas aproximadas, edítalas según el cambio real.", base_pref:"Base del %:",
+  eu_unit:"Unidad de energía", eu_auto:"Auto", invest_title:"Inversión y payback", cfg_group:"Configurar", res_group:"Resultados", ana_group:"Análisis", node_cost:"Costo por nodo", invest_hint:"Costo del nodo inteligente por luminaria. El payback compara la inversión total con el ahorro anual frente a la base.", pay_tag:"Payback", pay_k:"Recuperación de inversión", years:"años", pay_invest:"inversión", pay_nodes:"nodos", pay_setcost:"Ingresa el costo por nodo", pay_noinfo:"Sin ahorro frente a la base", use_local:"Usar moneda local", cur_sym:"Moneda (símbolo)", cur_rate:"Tasa (local por US$)", cur_hint:"Tasas aproximadas, edítalas según el cambio real.", cur_sym_ex:"Ej.: $COP, S/, Bs, $ — el texto que se mostrará junto a los importes.", base_pref:"Base del %:",
   ref_hint:"Referencia para el perfil y la tabla diaria. El consumo de la flota usa el Inventario.",
   dimming:"Dimerización", dim_side:"Edítala por cada media hora en la pestaña Dimerización. Aquí ves un resumen.",
-  t_guia:"Guía", t_resumen:"Resumen", t_escenarios:"Escenarios", t_perfil:"Perfil diario", t_dim:"Dimerización", t_inv:"Inventario", t_tabla:"Tabla anual", t_exec:"Resumen ejecutivo",
+  t_guia:"Guía", t_resumen:"Resumen", t_escenarios:"Escenarios", t_perfil:"Perfil diario", t_dim:"Dimerización", t_inv:"Inventario", t_tabla:"Tabla anual", t_exec:"Resumen ejecutivo", t_tecnico:"Técnico",
   tag_astro:"Telegestión Ubicquia", tag_fixed:"Horario fijo", tag_nodim:"Convencional", energy_year:"Energía / año",
   sc_nodim:"Alumbrado Público Convencional", sc_nodim_d:"Sigue el sol a plena potencia (sin bajar intensidad), como una fotocelda común: imita un sistema sin telegestión. Útil para aislar el efecto de la dimerización.", ena_C:"Incluir en comparaciones", lyr_nodim:"Convencional", c_astro_dim:"Sistema de Telegestión Ubicquia", c_astro_nodim:"Alumbrado Público Convencional", desc_only:"Mostrando solo", desc_addmore:"Activa otro perfil para comparar.", v_dimv:"La dimerización ahorra:", hrs_title:"Horas de encendido acumuladas", hrs_sub:"Horas que las luminarias están encendidas, por día y acumulado en el año.", th_dia:"Día", th_hday:"Horas (día)", th_acc:"Acumulado (año)", pct_base:"% vs base", base:"base", pct_month:"% ahorro mensual", grid_title:"Detalle horario por día", xls_btn:"Descargar Excel", xls_hrs_note:"Descarga las horas por día y acumuladas en Excel.", ast_offhint:"Los minutos son un ajuste sobre el sol: 0 = enciende justo al atardecer y apaga al amanecer. Un valor positivo retrasa el encendido/apagado; uno negativo lo adelanta.", ex_astro_note:"Los horarios del reloj astronómico (atardecer → amanecer) son los del día seleccionado en el análisis y cambian cada día con el sol. El horario fijo se incluye solo como escenario de comparación cuando está activado.",
   exp_config:"Parámetros usados para todos los cálculos del informe.", exp_dim_title:"Estrategia de dimerización", exp_dim:"Porcentaje de potencia aplicado en cada franja; se combina con la ventana de encendido astronómica.", nodim_txt:"Sin dimerización: potencia plena durante toda la ventana de encendido.", dim_off:"apagada", exp_key:"Resultado principal: el reloj astronómico con tu perfil de dimerización (escenario recomendado).", exp_save:"Cuánto se ahorra: por dimerización (bajar potencia) y por seguir el sol en vez de un horario fijo.", exp_detail:"Mismos indicadores lado a lado para cada escenario activo.", exp_month:"Energía de la flota mes a mes por escenario; la última fila es el % de ahorro mensual frente a la base.", exp_oper:"Cuántas horas al año permanecen encendidas las luminarias y cuántos minutos se ahorran cada día al encender/apagar con el sol en lugar de un horario fijo: el reloj astronómico evita encender con luz de día o apagar cuando aún es de noche.", exp_hours:"Horas de operación y minutos ahorrados, desglosados por mes.", pdf_p2_title:"Consumos mensuales y ahorros", pdf_energy_m:"Energía mensual de la flota", pdf_cost_m:"Costo mensual de la flota", ex_hours_title:"Horas de operación y minutos por mes", avg_hpn:"Prom. h/noche", min_vs_fix:"Min vs fijo/día", acc_min:"Acum. min", avg_min:"Promedio", ex_oper_title:"Operación y minutos ahorrados", ex_oper_hours:"Horas de operación / año", min_saved_day:"Minutos ahorrados / día", hrs_saved_year:"Horas ahorradas / año", min_day:"min/día",
   save_sched:"Ahorro Telegestión vs fijo", save_dim:"Ahorro por dimerización",
   month_title:"Consumo de energía mes a mes", month_sub:"Energía de la flota por mes (kWh, cambia a MWh/GWh si es grande). Activa US$ para ver el costo.",
-  lyr_astro:"Telegestión Ubicquia", lyr_fixed:"Horario fijo", lyr_money:"Mostrar importe",
+  lyr_astro:"Telegestión Ubicquia", lyr_fixed:"Horario fijo", lyr_money:"Mostrar importe", lg_savebar:"Ahorro telegestión",
   sc_astro:"Sistema de Telegestión Ubicquia", sc_astro_d:"Enciende al atardecer y apaga al amanecer, siguiendo el sol cada día.",
   off_on:"Encendido vs atardecer", off_off:"Apagado vs amanecer", apply_dim:"Aplicar dimerización",
   sc_fixed:"Horario fijo (escenario a comparar)", sc_fixed_d:"Reloj fijo igual todo el año, sin seguir el sol.",
@@ -883,8 +950,10 @@ const DICT={
   year_title:"El año, hora por hora", year_sub:"Activa o desactiva las capas del gráfico.",
   lyr_night:"Noche (sol)", lyr_fixedline:"Horario fijo", lyr_excess:"Exceso del fijo", lyr_dst:"Cambios de hora",
   heat_title:"El año encendido", heat_sub:"Cada fila es un día; cada columna, una hora. Color = energía de esa hora.",
-  lg_off:"Apagada", lg_dim:"Dimerizada", lg_full:"Plena", lg_edge:"Encendido/apagado (parcial)",
+  heatsave_title:"El año — lo que ahorras", heatsave_sub:"Cada fila es un día; cada columna, una hora. Verde = energía ahorrada esa hora frente a la base.", heatsave_tag:"ahorro por hora", heatsave_none:"Sin ahorro", heatsave_lo:"Ahorro bajo", heatsave_hi:"Ahorro alto",
+  lg_off:"Apagada", lg_dim:"Dimerizada", lg_full:"Plena", lg_edge:"Encendido/apagado (parcial)", heat_partial:"Parcial",
   dim_title:"Dimerización por media hora", dim_sub:"Escribe el % de potencia en cada tramo de 30 minutos. El color resalta cuánto se baja.",
+  city_title:"Vista de ciudad", city_sub:"La ciudad refleja tu perfil: al anochecer las luminarias encienden y dimerizan según cada tramo de 30 min. Edita la grilla y míralo cambiar.",
   reset_prof:"Restablecer perfil", all100:"Todo 100%", apply_range:"Aplicar a un rango:", apply:"Aplicar",
   lg_zero:"0% (apagada)", lg_low:"baja", lg_full100:"plena (100%)",
   inv_title:"Inventario de luminarias", inv_sub:"Agrega grupos con su cantidad y potencia. Soporta miles de unidades y varias potencias.",
@@ -927,16 +996,16 @@ const DICT={
   country:"Country / city", lat:"Latitude", lon:"Longitude", tz:"Time zone", dst:"Daylight saving",
   dst_none:"None", dst_eu:"European Union", dst_us:"North America / Caribbean", dst_chile:"Chile", dst_py:"Paraguay",
   tariff_ref:"Tariff & reference", tariff:"Tariff", ref_lum:"Reference luminaire",
-  eu_unit:"Energy unit", eu_auto:"Auto", invest_title:"Investment & payback", cfg_group:"Configure", res_group:"Results", ana_group:"Analysis", node_cost:"Cost per node", invest_hint:"Smart-node cost per luminaire. Payback compares total investment with annual savings vs the base.", pay_tag:"Payback", pay_k:"Investment payback", years:"yrs", pay_invest:"investment", pay_nodes:"nodes", pay_setcost:"Enter cost per node", pay_noinfo:"No savings vs base", use_local:"Use local currency", cur_sym:"Currency (symbol)", cur_rate:"Rate (local per US$)", cur_hint:"Approximate rates, edit to match the real exchange rate.", base_pref:"% base:",
+  eu_unit:"Energy unit", eu_auto:"Auto", invest_title:"Investment & payback", cfg_group:"Configure", res_group:"Results", ana_group:"Analysis", node_cost:"Cost per node", invest_hint:"Smart-node cost per luminaire. Payback compares total investment with annual savings vs the base.", pay_tag:"Payback", pay_k:"Investment payback", years:"yrs", pay_invest:"investment", pay_nodes:"nodes", pay_setcost:"Enter cost per node", pay_noinfo:"No savings vs base", use_local:"Use local currency", cur_sym:"Currency (symbol)", cur_rate:"Rate (local per US$)", cur_hint:"Approximate rates, edit to match the real exchange rate.", cur_sym_ex:"E.g. $COP, S/, Bs, $ — the text shown next to the amounts.", base_pref:"% base:",
   ref_hint:"Reference for the profile and daily table. Fleet consumption uses the Inventory.",
   dimming:"Dimming", dim_side:"Edit it per half hour in the Dimming tab. Here is a preview.",
-  t_guia:"Guide", t_resumen:"Summary", t_escenarios:"Scenarios", t_perfil:"Daily profile", t_dim:"Dimming", t_inv:"Inventory", t_tabla:"Annual table", t_exec:"Executive summary",
+  t_guia:"Guide", t_resumen:"Summary", t_escenarios:"Scenarios", t_perfil:"Daily profile", t_dim:"Dimming", t_inv:"Inventory", t_tabla:"Annual table", t_exec:"Executive summary", t_tecnico:"Technical",
   tag_astro:"Ubicquia smart", tag_fixed:"Fixed schedule", tag_nodim:"Conventional", energy_year:"Energy / year",
   sc_nodim:"Conventional Public Lighting", sc_nodim_d:"Tracks the sun at full power (no dimming), like a standard photocell: it mimics a system without remote management. Useful to isolate the dimming effect.", ena_C:"Include in comparisons", lyr_nodim:"Conventional", c_astro_dim:"Ubicquia Smart Management System", c_astro_nodim:"Conventional Public Lighting", desc_only:"Showing only", desc_addmore:"Enable another profile to compare.", v_dimv:"Dimming saves:", hrs_title:"Accumulated operating hours", hrs_sub:"Hours luminaires are on, per day and cumulative over the year.", th_dia:"Day", th_hday:"Hours (day)", th_acc:"Cumulative (yr)", pct_base:"% vs base", base:"base", pct_month:"% monthly savings", grid_title:"Hourly detail per day", xls_btn:"Download Excel", xls_hrs_note:"Download daily and cumulative hours to Excel.", ast_offhint:"The minutes are an offset from the sun: 0 = turns on right at sunset and off at sunrise. A positive value delays on/off; a negative one brings it earlier.", ex_astro_note:"The astronomical clock times (sunset → sunrise) are those of the day selected in the analysis and change every day with the sun. The fixed schedule is included only as a comparison scenario when enabled.",
   exp_config:"Parameters used for every calculation in the report.", exp_dim_title:"Dimming strategy", exp_dim:"Power percentage applied in each slot; it is combined with the astronomical on-window.", nodim_txt:"No dimming: full power during the whole on-window.", dim_off:"off", exp_key:"Headline result: the astronomical clock with your dimming profile (recommended scenario).", exp_save:"How much is saved: by dimming (lowering power) and by tracking the sun instead of a fixed schedule.", exp_detail:"Same indicators side by side for each active scenario.", exp_month:"Fleet energy month by month per scenario; the last row is the monthly % savings vs the base.", exp_oper:"How many hours per year the luminaires stay on, and how many minutes are saved each day by switching with the sun instead of a fixed schedule: the astronomical clock avoids turning on in daylight or off while it is still dark.", exp_hours:"Operating hours and minutes saved, broken down by month.", pdf_p2_title:"Monthly consumption & savings", pdf_energy_m:"Monthly fleet energy", pdf_cost_m:"Monthly fleet cost", ex_hours_title:"Operating hours & minutes per month", avg_hpn:"Avg h/night", min_vs_fix:"Min vs fixed/day", acc_min:"Cum. min", avg_min:"Average", ex_oper_title:"Operation & minutes saved", ex_oper_hours:"Operating hours / year", min_saved_day:"Minutes saved / day", hrs_saved_year:"Hours saved / year", min_day:"min/day",
   save_sched:"Smart vs fixed savings", save_dim:"Dimming savings",
   month_title:"Monthly energy consumption", month_sub:"Fleet energy per month (kWh, switches to MWh/GWh when large). Toggle US$ for cost.",
-  lyr_astro:"Ubicquia smart", lyr_fixed:"Fixed schedule", lyr_money:"Show amount",
+  lyr_astro:"Ubicquia smart", lyr_fixed:"Fixed schedule", lyr_money:"Show amount", lg_savebar:"Smart-mgmt savings",
   sc_astro:"Ubicquia Smart Management System", sc_astro_d:"Turns on at sunset and off at sunrise, tracking the sun each day.",
   off_on:"Turn-on vs sunset", off_off:"Turn-off vs sunrise", apply_dim:"Apply dimming",
   sc_fixed:"Fixed schedule (scenario to compare)", sc_fixed_d:"Same fixed clock all year, not tracking the sun.",
@@ -945,8 +1014,10 @@ const DICT={
   year_title:"The year, hour by hour", year_sub:"Toggle the chart layers on or off.",
   lyr_night:"Night (sun)", lyr_fixedline:"Fixed schedule", lyr_excess:"Fixed excess", lyr_dst:"DST changes",
   heat_title:"The year lit", heat_sub:"Each row is a day; each column an hour. Color = energy that hour.",
-  lg_off:"Off", lg_dim:"Dimmed", lg_full:"Full", lg_edge:"Turn-on/off (partial)",
+  heatsave_title:"The year — what you save", heatsave_sub:"Each row is a day; each column an hour. Green = energy saved that hour vs the base.", heatsave_tag:"savings per hour", heatsave_none:"No savings", heatsave_lo:"Low savings", heatsave_hi:"High savings",
+  lg_off:"Off", lg_dim:"Dimmed", lg_full:"Full", lg_edge:"Turn-on/off (partial)", heat_partial:"Partial",
   dim_title:"Dimming per half hour", dim_sub:"Type the power % for each 30-minute slot. Color shows how much it is lowered.",
+  city_title:"City view", city_sub:"The city mirrors your profile: at dusk the luminaires turn on and dim per 30-min slot. Edit the grid and watch it change.",
   reset_prof:"Reset profile", all100:"All 100%", apply_range:"Apply to a range:", apply:"Apply",
   lg_zero:"0% (off)", lg_low:"low", lg_full100:"full (100%)",
   inv_title:"Luminaire inventory", inv_sub:"Add groups with their quantity and power. Supports thousands of units and various powers.",
@@ -1234,16 +1305,48 @@ function scaleUnit(max,kind){
   if(max>=1e6)return{div:1e6,u:"M US$"};if(max>=1e3)return{div:1e3,u:"k US$"};return{div:1,u:"US$"};
 }
 function barsChart(id,series,o){
+  o=o||{};
   const cv=document.getElementById(id),ctx=cv.getContext("2d");
-  const W=cv.width,H=cv.height,padL=58,padR=12,padT=16,padB=28,pw=W-padL-padR,ph=H-padT-padB;
+  const W=cv.width,H=cv.height,padL=58,padR=12,padB=28,pw=W-padL-padR;
   ctx.clearRect(0,0,W,H);
-  const act=series.filter(s=>s.show); const vals=[]; act.forEach(s=>vals.push(...s.vals)); const max=Math.max(...vals,1)*1.08;
+  const act=series.filter(s=>s.show);
+  // serie de Telegestión (A) y referencia (Convencional C, si no, Horario fijo B) para la sombra de ahorro
+  // referencia de ahorro = escenario base (Horario fijo; AP convencional cuando no está el fijo)
+  const aS=act.find(s=>s.key==="A");
+  const baseK=(typeof baseKeyFor==="function")?baseKeyFor():null;
+  let refS=baseK?act.find(s=>s.key===baseK):null;
+  if(!refS||refS===aS)refS=act.find(s=>s.key==="C")||act.find(s=>s.key==="B");
+  const ghost=!!(aS&&refS&&aS!==refS);
+  // leyenda
+  const hasLeg=act.some(s=>s.lab);
+  const legendH=hasLeg?20:0;
+  const padT=14+legendH, ph=H-padT-padB;
+  if(hasLeg){
+    let lx=padL, ly=11; ctx.textAlign="left"; ctx.textBaseline="middle"; ctx.font="10px 'Lato'";
+    const items=act.filter(s=>s.lab).map(s=>({color:s.color,lab:s.lab}));
+    if(ghost)items.push({color:"rgba(78,178,112,.85)",lab:t("lg_savebar"),hatch:true});
+    items.forEach(it=>{
+      if(it.hatch){ctx.fillStyle="rgba(78,178,112,.20)";ctx.fillRect(lx,ly-5,11,10);ctx.strokeStyle="rgba(78,178,112,.85)";ctx.setLineDash([3,2]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(lx,ly-5);ctx.lineTo(lx+11,ly-5);ctx.stroke();ctx.setLineDash([]);}
+      else{ctx.fillStyle=it.color;ctx.fillRect(lx,ly-5,11,10);}
+      lx+=15; ctx.fillStyle="#464D63"; ctx.fillText(it.lab,lx,ly);
+      lx+=ctx.measureText(it.lab).width+16;
+    });
+    ctx.textBaseline="alphabetic";
+  }
+  const vals=[]; act.forEach(s=>vals.push(...s.vals)); const max=Math.max(...vals,1)*1.08;
   ctx.strokeStyle="#E2E6EF";ctx.fillStyle="#99A0B4";ctx.font="11px 'Lato'";ctx.textAlign="right";
   for(let g=0;g<=4;g++){const y=padT+ph*(1-g/4);ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();ctx.fillText(o.axisFmt(max*g/4),padL-8,y+3);}
   if(o.unit){ctx.fillStyle="#464D63";ctx.font="bold 11px 'Lato'";ctx.textAlign="left";ctx.fillText(o.unit,4,padT-2);}
   const n=act.length||1, gw=pw/12, groupW=gw*0.72, bw=groupW/n, base=padT+ph;
+  const jA=ghost?act.indexOf(aS):-1;
   for(let m=0;m<12;m++){const x0=padL+m*gw+(gw-groupW)/2;
     act.forEach((s,j)=>{const h=ph*(s.vals[m]/max),bx=x0+j*bw;ctx.fillStyle=s.color;ctx.fillRect(bx+1,base-h,bw-2,h);});
+    // sombra de ahorro: sobre la barra de Telegestión, hasta el nivel de la referencia
+    if(ghost){const aVal=aS.vals[m],refVal=refS.vals[m];
+      if(refVal>aVal){const bxA=x0+jA*bw,aTopY=base-ph*(aVal/max),refTopY=base-ph*(refVal/max);
+        ctx.fillStyle="rgba(78,178,112,.16)";ctx.fillRect(bxA+1,refTopY,bw-2,aTopY-refTopY);
+        ctx.strokeStyle="rgba(78,178,112,.7)";ctx.setLineDash([3,2]);ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(bxA+1,refTopY+0.5);ctx.lineTo(bxA+bw-1,refTopY+0.5);ctx.stroke();ctx.setLineDash([]);}}
     ctx.fillStyle="#99A0B4";ctx.font="10px 'Lato'";ctx.textAlign="center";ctx.fillText(mes()[m],padL+m*gw+gw/2,H-6);}
 }
 function makeFmts(arrs,kind){const vals=[];arrs.forEach(a=>vals.push(...a));const max=Math.max(...vals,1);
@@ -1252,9 +1355,9 @@ function makeFmts(arrs,kind){const vals=[];arrs.forEach(a=>vals.push(...a));cons
 function monthSeries(useMoney){
   const mf=useMoney?S.tariff*curRate():1; const mk=key=>eKWhMonth(key).map(v=>v*mf);
   return [
-    {vals:mk("A"),color:"#22B0E1",show:S.A.enabled&&S.monthLayers.a},
-    {vals:mk("C"),color:"#4EB270",show:S.C.enabled&&S.monthLayers.c},
-    {vals:mk("B"),color:"#EA561B",show:S.B.enabled&&S.monthLayers.b},
+    {key:"A",lab:t("tag_astro"),vals:mk("A"),color:"#22B0E1",show:S.A.enabled&&S.monthLayers.a},
+    {key:"C",lab:t("tag_nodim"),vals:mk("C"),color:"#4EB270",show:S.C.enabled&&S.monthLayers.c},
+    {key:"B",lab:t("tag_fixed"),vals:mk("B"),color:"#EA561B",show:S.B.enabled&&S.monthLayers.b},
   ];
 }
 function monthRows(useMoney){
@@ -1393,11 +1496,16 @@ function ensurePerfilGrid(keys){
 function renderDay(){
   const keys=activeScnKeys(); ensurePerfilGrid(keys);
   const i=Math.min(S.selDay,N)-1;
+  const refKey=(typeof baseKeyFor==="function")?baseKeyFor():null;
   const dd=document.getElementById("dayDate"); if(dd){const d0=dayProfile(i,scnObj(keys[0]));dd.textContent=fdate(d0.date);}
-  keys.forEach(k=>renderDayInto(k,i));
+  keys.forEach(k=>renderDayInto(k,i,refKey));
 }
-function renderDayInto(scnKey,i){
+function renderDayInto(scnKey,i,refKey){
   const scn=scnObj(scnKey); const d=dayProfile(i,scn);
+  // referencia de ahorro: escenario base (fijo o, si no está, AP convencional); si no aplica, plena potencia
+  const useRef=refKey&&refKey!==scnKey;
+  const refDay=useRef?dayProfile(i,scnObj(refKey)):null;
+  const refLab=useRef?scnLabel(refKey):t("c_astro_nodim");
   const cv=document.getElementById("dayChart_"+scnKey); if(!cv)return; const ctx=cv.getContext("2d");
   const W=cv.width,H=cv.height,padL=46,padR=10,padT=14,padB=28,pw=W-padL-padR,ph=H-padT-padB;
   ctx.clearRect(0,0,W,H);const maxK=d.Pt*1.05||1;
@@ -1406,8 +1514,17 @@ function renderDayInto(scnKey,i){
   const order=[];for(let h=12;h<24;h++)order.push(h);for(let h=0;h<12;h++)order.push(h);
   const bw=pw/24;ctx.textAlign="center";
   order.forEach((h,idx)=>{const hr=d.hours[h];const x=padL+idx*bw;const bh=ph*(hr.kwh/maxK);
-    if(hr.frac>0){ctx.fillStyle=hr.state==="edge"?"#EA561B":(hr.dim<0.999?"#FAB512":"#22B0E1");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);}
+    if(hr.frac>0){
+      // sombra de ahorro: hasta el nivel del escenario de referencia (base)
+      if(useRef){const refK=refDay?refDay.hours[h].kwh:d.Pt*hr.frac;
+        if(refK>hr.kwh+1e-9){const yRef=padT+ph-ph*(Math.min(refK,maxK)/maxK),yBar=padT+ph-bh;
+          ctx.fillStyle="rgba(78,178,112,.28)";ctx.fillRect(x+1,yRef,bw-2,yBar-yRef);
+          ctx.strokeStyle="rgba(36,140,86,.95)";ctx.setLineDash([3,2]);ctx.lineWidth=1.4;
+          ctx.beginPath();ctx.moveTo(x+1,yRef+0.7);ctx.lineTo(x+bw-1,yRef+0.7);ctx.stroke();ctx.setLineDash([]);}}
+      ctx.fillStyle=hr.state==="edge"?"#EA561B":(hr.dim<0.999?"#FAB512":"#22B0E1");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);
+    }
     if(idx%3===0){ctx.fillStyle="#99A0B4";ctx.fillText(String(h).padStart(2,"0"),x+bw/2,H-10);}});
+  let dimSaveDay=0; if(useRef){for(const hr of d.hours){if(hr.frac>0){const refK=refDay?refDay.hours[hr.h].kwh:d.Pt*hr.frac;if(refK>hr.kwh)dimSaveDay+=refK-hr.kwh;}}}
   function mark(hr,color,label){let idx=hr-12;if(idx<0)idx+=24;const x=padL+idx/24*pw;
     ctx.strokeStyle=color;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+ph);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=color;ctx.font="10px 'Lato'";ctx.textAlign="center";ctx.fillText(label,x,padT+9);}
@@ -1424,6 +1541,7 @@ function renderDayInto(scnKey,i){
     <div class="brow"><span class="lab edge">${t("ch_henc")}</span><span class="val edge">${(onH.frac*60).toFixed(1)} min · ${onH.kwh.toFixed(4)} kWh</span></div>
     <div class="brow"><span class="lab edge">${t("ch_hapg")}</span><span class="val edge">${(offH.frac*60).toFixed(1)} min · ${offH.kwh.toFixed(4)} kWh</span></div>
     <div class="brow"><span class="lab">${t("ch_total")}</span><span class="val" style="color:var(--indigo);font-weight:700">${d.total.toFixed(4)} kWh</span></div>
+    ${(dimSaveDay>1e-6)?`<div class="brow"><span class="lab" style="color:#2E8B57">${t("perfil_saverow")} ${refLab}</span><span class="val" style="color:#2E8B57;font-weight:700">${dimSaveDay.toFixed(4)} kWh</span></div>`:""}
     <div class="callout">${t("edge_note")}</div>`;
 }
 
@@ -1438,9 +1556,36 @@ function ensureHeatGrid(keys){
   grid.dataset.keys=sig; grid.innerHTML="";
   keys.forEach(k=>{ const blk=document.createElement("div"); blk.className="heat-block";
     blk.innerHTML=`<div class="perfil-h"><span class="cmp-dot" style="background:${scnColor(k)}"></span>${scnLabel(k)}</div>`+
-      `<div class="surface"><div class="hourlbl" id="hourlbl_${k}" style="font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr);margin:0 0 4px"></div>`+
-      `<canvas id="heat_${k}" width="960" height="760"></canvas></div>`;
-    grid.appendChild(blk); });
+      `<div class="surface">`+
+        `<div class="heat-top"><div class="heat-corner"></div><div class="hourlbl" id="hourlbl_${k}" style="flex:1;font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr)"></div></div>`+
+        `<div class="heat-row"><div class="heat-y" id="heatY_${k}"></div>`+
+        `<div class="heat-cv"><canvas id="heat_${k}" width="960" height="760"></canvas><div class="heat-tip" id="heatTip_${k}"></div></div></div>`+
+      `</div>`;
+    grid.appendChild(blk); wireHeatHover(k); });
+}
+function wireHeatHover(scnKey){
+  const cv=document.getElementById("heat_"+scnKey), tip=document.getElementById("heatTip_"+scnKey);
+  if(!cv||!tip)return;
+  cv.addEventListener("mousemove",e=>{
+    try{
+      const days=scnRes(scnKey).days; if(!days||!days.length){tip.style.display="none";return;}
+      const r=cv.getBoundingClientRect(); if(!r.width||!r.height){tip.style.display="none";return;}
+      const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
+      const h=Math.max(0,Math.min(23,Math.floor(fx*24)));
+      const i=Math.max(0,Math.min(days.length-1,Math.floor(fy*days.length)));
+      const d=days[i], hr=d.hours[h];
+      let est;
+      if(hr.frac<=0) est=t("lg_off");
+      else if(hr.state==="edge") est=t("heat_partial")+" · "+(hr.frac*60).toFixed(0)+" min";
+      else if(hr.dim<0.999) est="DIM "+Math.round(hr.dim*100)+"%";
+      else est=t("lg_full");
+      tip.innerHTML=`<b>${fdate(d.date)}</b> · ${String(h).padStart(2,"0")}:00 · ${est}`;
+      tip.style.left=(e.clientX-r.left)+"px";
+      tip.style.top=(e.clientY-r.top)+"px";
+      tip.style.display="block";
+    }catch(err){tip.style.display="none";}
+  });
+  cv.addEventListener("mouseleave",()=>{tip.style.display="none";});
 }
 function renderHeat(){
   const keys=activeScnKeys(); ensureHeatGrid(keys);
@@ -1451,6 +1596,68 @@ function renderHeatInto(scnKey){
   const W=cv.width,H=cv.height,cw=W/24,ch=H/N;ctx.clearRect(0,0,W,H);
   for(let i=0;i<N;i++){const d=days[i];for(let h=0;h<24;h++){const hr=d.hours[h];ctx.fillStyle=cellColor(hr.frac,hr.dim,hr.state==="edge");ctx.fillRect(h*cw,i*ch,Math.ceil(cw),Math.ceil(ch)+0.5);}}
   const hl=document.getElementById("hourlbl_"+scnKey); if(hl){hl.innerHTML="";for(let h=0;h<24;h++){const s=document.createElement("span");s.style.textAlign="center";s.textContent=(h%3===0)?String(h).padStart(2,"0"):"";hl.appendChild(s);}}
+  const yl=document.getElementById("heatY_"+scnKey);
+  if(yl){yl.innerHTML="";let prev=-1;
+    for(let i=0;i<N;i++){const mo=sunCache[i].date.getUTCMonth();
+      if(mo!==prev){const sp=document.createElement("span");sp.style.top=((i+0.5)/N*100)+"%";sp.textContent=mes()[mo];yl.appendChild(sp);prev=mo;}}}
+}
+
+/* ============ heatmap de AHORRO (verde) ============ */
+function cellSaveColor(save,maxSave){
+  if(save<=1e-9) return "rgb(241,243,246)";
+  const tt=Math.max(0.10,Math.min(1,save/(maxSave||1)));
+  const c=mix([210,237,221],[22,104,66],tt); return `rgb(${c.join(",")})`;
+}
+function saveScnKeys(){ return activeScnKeys().filter(k=>scnObj(k).useDim); }
+function saveRefDays(){ const bk=(typeof baseKeyFor==="function")?baseKeyFor():null;
+  if(bk && activeScnKeys().includes(bk)) return {key:bk,days:scnRes(bk).days}; return null; }
+function heatSaveData(scnKey){
+  const days=scnRes(scnKey).days, ref=saveRefDays(); let maxSave=0; const save=[];
+  for(let i=0;i<days.length;i++){const d=days[i],row=new Array(24);
+    for(let h=0;h<24;h++){const hr=d.hours[h];const refK=ref?ref.days[i].hours[h].kwh:d.Pt*hr.frac;
+      let s=refK-hr.kwh; if(s<0)s=0; row[h]=s; if(s>maxSave)maxSave=s;}
+    save.push(row);}
+  return {days,save,maxSave,refKey:ref?ref.key:null};
+}
+function ensureHeatSaveGrid(keys){
+  const grid=document.getElementById("heatSaveGrid"); if(!grid)return;
+  const sig=keys.join(","); if(grid.dataset.keys===sig)return; grid.dataset.keys=sig; grid.innerHTML="";
+  keys.forEach(k=>{ const blk=document.createElement("div"); blk.className="heat-block";
+    blk.innerHTML=`<div class="perfil-h"><span class="cmp-dot" style="background:#1B7A4A"></span>${scnLabel(k)} · <span style="color:#1B7A4A">${t("heatsave_tag")}</span></div>`+
+      `<div class="surface">`+
+        `<div class="heat-top"><div class="heat-corner"></div><div class="hourlbl" id="hourlblS_${k}" style="flex:1;font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr)"></div></div>`+
+        `<div class="heat-row"><div class="heat-y" id="heatYS_${k}"></div>`+
+        `<div class="heat-cv"><canvas id="heatS_${k}" width="960" height="760"></canvas><div class="heat-tip" id="heatTipS_${k}"></div></div></div>`+
+      `</div>`;
+    grid.appendChild(blk); wireHeatSaveHover(k); });
+}
+function renderHeatSaveInto(scnKey){
+  const cv=document.getElementById("heatS_"+scnKey); if(!cv)return; const ctx=cv.getContext("2d");
+  const data=heatSaveData(scnKey); cv._saveData=data; const days=data.days;
+  const W=cv.width,H=cv.height,cw=W/24,ch=H/days.length; ctx.clearRect(0,0,W,H);
+  for(let i=0;i<days.length;i++){for(let h=0;h<24;h++){ctx.fillStyle=cellSaveColor(data.save[i][h],data.maxSave);ctx.fillRect(h*cw,i*ch,Math.ceil(cw),Math.ceil(ch)+0.5);}}
+  const hl=document.getElementById("hourlblS_"+scnKey); if(hl){hl.innerHTML="";for(let h=0;h<24;h++){const s=document.createElement("span");s.style.textAlign="center";s.textContent=(h%3===0)?String(h).padStart(2,"0"):"";hl.appendChild(s);}}
+  const yl=document.getElementById("heatYS_"+scnKey);
+  if(yl){yl.innerHTML="";let prev=-1;for(let i=0;i<days.length;i++){const mo=sunCache[i].date.getUTCMonth();if(mo!==prev){const sp=document.createElement("span");sp.style.top=((i+0.5)/days.length*100)+"%";sp.textContent=mes()[mo];yl.appendChild(sp);prev=mo;}}}
+}
+function renderHeatSave(){
+  const keys=saveScnKeys(); const sec=document.getElementById("heatSaveSection");
+  if(sec)sec.style.display=keys.length?"":"none";
+  ensureHeatSaveGrid(keys); keys.forEach(k=>renderHeatSaveInto(k));
+}
+function wireHeatSaveHover(scnKey){
+  const cv=document.getElementById("heatS_"+scnKey), tip=document.getElementById("heatTipS_"+scnKey);
+  if(!cv||!tip)return;
+  cv.addEventListener("mousemove",e=>{try{
+    const data=cv._saveData; if(!data){tip.style.display="none";return;} const days=data.days;
+    const r=cv.getBoundingClientRect(); if(!r.width||!r.height){tip.style.display="none";return;}
+    const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
+    const h=Math.max(0,Math.min(23,Math.floor(fx*24))), i=Math.max(0,Math.min(days.length-1,Math.floor(fy*days.length)));
+    const s=data.save[i][h]; const det = s>1e-9 ? ("+"+s.toFixed(4)+" kWh") : t("heatsave_none");
+    tip.innerHTML=`<b style="color:#7FE3A8">${fdate(days[i].date)}</b> · ${String(h).padStart(2,"0")}:00 · ${det}`;
+    tip.style.left=(e.clientX-r.left)+"px"; tip.style.top=(e.clientY-r.top)+"px"; tip.style.display="block";
+  }catch(err){tip.style.display="none";}});
+  cv.addEventListener("mouseleave",()=>{tip.style.display="none";});
 }
 
 /* ============ dim editor ============ */
@@ -1464,7 +1671,7 @@ function buildDimTable(){
       html+=`</tr>`;}
     html+=`</tbody></table>`;const div=document.createElement("div");div.innerHTML=html;wrap.appendChild(div.firstChild);}
   wrap.querySelectorAll("input[data-k]").forEach(inp=>inp.addEventListener("input",()=>{let v=Math.max(0,Math.min(100,parseFloat(inp.value)||0));
-    S.dim[+inp.dataset.k]=v;inp.parentElement.style.background=dimCellColor(v);recalc();renderTop();renderCards();renderMini();if(S.tab==="perfil"){renderDay();renderHeat();}}));
+    S.dim[+inp.dataset.k]=v;inp.parentElement.style.background=dimCellColor(v);recalc();renderTop();renderCards();renderMini();if(S.tab==="perfil"||S.tab==="tecnico"){renderDay();renderHeat();renderHeatSave();}}));
   renderMini();
 }
 function renderMini(){const m=document.getElementById("dimMini");if(!m)return;m.innerHTML="";for(let k=0;k<48;k++){const i=document.createElement("i");i.style.height=Math.max(3,S.dim[k]*0.30)+"px";i.style.background=S.dim[k]<=0?"#C6CEE0":"var(--amber)";m.appendChild(i);}}
@@ -1773,6 +1980,72 @@ function renderExec(){
 }
 
 /* ============ PDF ============ */
+/* marca: wordmark ubicquia® + bandas navy (cabecera/pie) para el reporte */
+function pdfWordmark(doc,x,y,size,onNavy){
+  doc.setFont("helvetica","bold");doc.setFontSize(size);
+  doc.setTextColor(34,176,225);doc.text("ubi",x,y);
+  const w1=doc.getTextWidth("ubi");
+  if(onNavy)doc.setTextColor(255,255,255);else doc.setTextColor(30,36,69);
+  doc.text("cquia",x+w1,y);
+  const w2=doc.getTextWidth("cquia");
+  doc.setFontSize(size*0.42);doc.setTextColor(34,176,225);
+  doc.text("®",x+w1+w2+1,y-size*0.42);
+}
+function pdfBrandHeader(doc,W,M,title,subtitle,metaLines){
+  const hb=80;
+  doc.setFillColor(30,36,69);doc.rect(0,0,W,hb,"F");
+  doc.setFillColor(174,204,83);doc.rect(0,hb,W,2.5,"F");
+  pdfWordmark(doc,M,32,18,true);
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(198,204,218);
+  doc.text(subtitle||"",M,47);
+  doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(255,255,255);
+  doc.text(title,M,66);
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(198,204,218);
+  (metaLines||[]).forEach((m,i)=>doc.text(String(m),W-M,30+i*11,{align:"right"}));
+  return hb+20;
+}
+function pdfBrandFooterAll(doc,M){
+  const n=doc.getNumberOfPages();
+  for(let p=1;p<=n;p++){doc.setPage(p);
+    const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
+    const fb=28;
+    doc.setFillColor(30,36,69);doc.rect(0,ph-fb,pw,fb,"F");
+    pdfWordmark(doc,M,ph-10,10,true);
+    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(158,182,232);
+    doc.text("griddata.cl · "+t("footer_tag"),pw/2,ph-10,{align:"center"});
+    doc.text(t("pdf_page")+" "+p+"/"+n,pw-M,ph-10,{align:"right"});
+  }
+}
+/* tarjeta KPI reutilizable para PDFs */
+function pdfKcard(doc,cx,cy,cw,ch,k,v,s,accent){
+  doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundedRect(cx,cy,cw,ch,6,6,"FD");
+  doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
+  doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
+  doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(30,36,69);doc.text(String(v),cx+10,cy+39);
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(String(s),cx+10,cy+ch-9);
+}
+/* mini-gráfico de barras mensual dibujado en jsPDF (sin canvas) */
+function pdfMiniBars(doc,x,y,w,h,A,B,colA,colB,labA,labB){
+  const n=12,max=Math.max.apply(null,A.concat(B).concat([1]));
+  const months=(LANG==="es")?["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  doc.setFontSize(7.5);
+  doc.setFillColor(colA[0],colA[1],colA[2]);doc.rect(x,y,8,8,"F");
+  doc.setTextColor(70,77,99);doc.text(String(labA),x+12,y+7);
+  const lw=doc.getTextWidth(String(labA))+30;
+  doc.setFillColor(colB[0],colB[1],colB[2]);doc.rect(x+lw,y,8,8,"F");
+  doc.text(String(labB),x+lw+12,y+7);
+  const top=y+18,plotH=h-18-16,base=top+plotH;
+  doc.setDrawColor(238,240,245);doc.setLineWidth(0.5);
+  for(let g=0;g<=4;g++){const yy=top+plotH*(1-g/4);doc.line(x,yy,x+w,yy);}
+  const gw=w/n,bw=gw*0.30,gap=gw*0.08,off=(gw-(bw*2+gap))/2;
+  for(let i=0;i<n;i++){
+    const gx=x+i*gw+off,ha=(A[i]/max)*plotH,hb=(B[i]/max)*plotH;
+    doc.setFillColor(colA[0],colA[1],colA[2]);doc.rect(gx,base-ha,bw,ha,"F");
+    doc.setFillColor(colB[0],colB[1],colB[2]);doc.rect(gx+bw+gap,base-hb,bw,hb,"F");
+    doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(153,160,180);
+    doc.text(months[i],x+i*gw+gw/2,base+10,{align:"center"});
+  }
+}
 function exportPDF(){
   if(!window.jspdf||!window.jspdf.jsPDF){alert(t("pdf_offline"));window.print();return;}
   renderExec();
@@ -1784,46 +2057,57 @@ function exportPDF(){
   const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
   const eqA=RA.equivH,eqB=RB.equivH,flA=eKWh("A"),flB=eKWh("B");
   const dlt=(v,d=0)=>(v>=0?"+":"-")+nf(Math.abs(v),d);
-  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
-  doc.text(t("ex_title"),M,y);y+=10;
-  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
-  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
-  doc.text(`${t("ex_loc")}: ${place}     ${t("ex_year")}: ${S.year}     ${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,M,y);y+=18;
-  function head(title){doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(title,M,y);y+=4;}
-  head(t("exp_dim_title"));
-  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(22,33,63);
-  {const sl=doc.splitTextToSize(dimStrategyPDF(),W-M*2);doc.text(sl,M,y+8);y+=8+sl.length*11+12;}
-  head(t("ex_key"));
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:10,textColor:[22,33,63]},
-    head:[[t("ex_energy"),t("ex_cost"),t("ex_power"),t("ex_lum")]],
-    body:[[nf(x.kAstroDim,0)+" kWh",money(x.kAstroDim*S.tariff),nf(IKW,1)+" kW",nf(units)]]});
-  y=doc.lastAutoTable.finalY+18;
-  head(t("ex_save_title"));
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[14,155,114],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
-    columnStyles:{0:{cellWidth:230}},
-    head:[[t("c_ind"),t("ex_save_energy")+" (kWh)",t("ex_save_money"),"%"]],
-    body:(()=>{const b=[];if(S.B.enabled)b.push([t("ex_save_sched"),dlt(x.schedSave),money(Math.abs(x.schedSave)*S.tariff),(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"%"]);b.push([t("ex_save_dim"),nf(x.dimSave,0),money(x.dimSave*S.tariff),(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"%"]);return b;})()});
-  y=doc.lastAutoTable.finalY+18;
-  head(t("ex_detail"));
-  {const act=activeScenarios();
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
-    columnStyles:{0:{cellWidth:230}},
-    head:[[t("c_ind"),...act.map(c=>c.lab)]],
-    body:[
-      [t("r_ophours"),...act.map(c=>nf(c.res.onH,1))],
-      [t("r_kwh_fleet"),...act.map(c=>nf(eKWh(c.key),0))],
-      [t("r_cost_fleet"),...act.map(c=>money(eKWh(c.key)*S.tariff))]
-    ]});}
-  y=doc.lastAutoTable.finalY+20;
-  const cw=(W-M*2-14)/2, chh=cw*0.5;
-  if(y+chh+30>Hp-40){doc.addPage();y=46;}
-  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);
-  doc.text(t("ex_month"),M,y);doc.text(t("ex_yearch"),M+cw+14,y);y+=8;
-  try{doc.addImage(document.getElementById("execMonth").toDataURL("image/png"),"PNG",M,y,cw,chh);
-      doc.addImage(document.getElementById("execYear").toDataURL("image/png"),"PNG",M+cw+14,y,cw,chh);}catch(e){}
-  y+=chh+18;
-  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
-  doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,y);
+  const metaLines=[`${t("ex_loc")}: ${place}`,`${t("ex_year")}: ${S.year}`,`${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,`${nf(units)} ${t("ex_lum")} · ${nf(IKW,1)} kW`];
+  y=pdfBrandHeader(doc,W,M,t("ex_title"),t("eyebrow"),metaLines);
+  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
+  const act=activeScenarios();
+  const savPct=x.kAstro100? x.dimSave/x.kAstro100*100 : 0;
+  const convKwh=x.kAstro100, convUSD=convKwh*S.tariff;
+  const dimKwh=x.kAstroDim, dimUSD=dimKwh*S.tariff, savUSD=x.dimSave*S.tariff;
+  const pb=payback();
+  /* tarjetas KPI */
+  function kcard(cx,cy,cw,ch,k,v,s,accent){
+    doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundedRect(cx,cy,cw,ch,6,6,"FD");
+    doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
+    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
+    doc.setFont("helvetica","bold");doc.setFontSize(17);doc.setTextColor(30,36,69);doc.text(v,cx+10,cy+39);
+    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(s,cx+10,cy+ch-9);
+  }
+  {const gap=12, cw=(W-2*M-2*gap)/3, ch=66;
+   kcard(M,y,cw,ch,t("pdf_kpi_energy"),nf(savPct,1)+"%",nf(dimKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"),[34,176,225]);
+   kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),money(savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
+   kcard(M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—",(pb.invest?t("pdf_inv")+" "+money(pb.invest):""),[34,176,225]);
+   y+=ch+18;}
+  /* narrativa */
+  doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(70,77,99);
+  {const nr=t("pdf_narr").replace("{convUSD}",money(convUSD)).replace("{convKwh}",nf(convKwh,0)+" kWh").replace("{dimUSD}",money(dimUSD)).replace("{savUSD}",money(savUSD)).replace("{pct}",nf(savPct,1)+"%");
+   const nl=doc.splitTextToSize(nr,W-2*M);doc.text(nl,M,y);y+=nl.length*12+12;}
+  /* gráfico mensual */
+  sec(t("ex_month"));
+  {const cw2=W-2*M, chh2=148; y+=4; try{doc.addImage(document.getElementById("execMonth").toDataURL("image/png"),"PNG",M,y,cw2,chh2);}catch(e){} y+=chh2+14;}
+  /* estrategia de dimerización */
+  sec(t("exp_dim_title"));
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(46,77,99);
+  {const sl=doc.splitTextToSize(dimStrategyPDF(),W-2*M);doc.text(sl,M,y+4);y+=4+sl.length*11+12;}
+  /* comparación de escenarios */
+  sec(t("pdf_scn_t"));
+  {const body=[[t("conv_name"),nf(convKwh,0),money(convUSD),"—",t("base"),"—"]];
+   let bestRow=-1,bestSav=-Infinity;
+   act.forEach(c=>{if(c.key==="C")return; const kk=eKWh(c.key),co=kk*S.tariff,sv=convKwh-kk,svp=convKwh?sv/convKwh*100:0;
+     const pbc=(c.key==="A"&&pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—";
+     body.push([c.lab,nf(kk,0),money(co),sv>0?money(sv*S.tariff):"—",sv>0?nf(svp,1)+"%":(Math.abs(svp)<0.05?t("base"):nf(svp,1)+"%"),pbc]);
+     if(sv>bestSav){bestSav=sv;bestRow=body.length-1;}});
+   if(bestRow>0&&bestSav>0)body[bestRow][0]=body[bestRow][0]+"  ·  "+t("recommended_tag");
+   doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
+     headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
+     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:210}},
+     head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
+     body:body,
+     didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===bestRow){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
+   y=doc.lastAutoTable.finalY+14;}
+  /* metodología */
+  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,y);
 
   // ===== Página: configuración detallada del análisis =====
   doc.addPage("a4","portrait");
@@ -1863,6 +2147,7 @@ function exportPDF(){
   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
   doc.text(doc.splitTextToSize(t("exp_month"),W2-M*2),M,y2);
 
+  pdfBrandFooterAll(doc,M);
   doc.save("resumen_ejecutivo_"+S.year+".pdf");
 }
 
@@ -1906,7 +2191,7 @@ function renderActive(){
   else if(S.tab==="perfil"){renderDay();renderHeat();}
   else if(S.tab==="dim"){renderMini();}
   else if(S.tab==="inventario"){renderInv();}
-  else if(S.tab==="tabla"){renderTable();renderHoursTable();}
+  else if(S.tab==="tecnico"){renderDay();renderHeat();renderHeatSave();renderTable();renderHoursTable();}
   else if(S.tab==="exec"){renderExec();}
   else if(S.tab==="comparador"){renderComparador();}
   if(typeof renderFlowNav==="function")renderFlowNav();
@@ -1919,7 +2204,11 @@ function setTab(tabId){
   if(!tabId)return;
   S.tab=tabId;
   document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===tabId));
-  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+tabId));
+  if(tabId==="tecnico"){
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id==="view-perfil"||v.id==="view-tabla"));
+  } else {
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+tabId));
+  }
   renderActive();
   renderFlowNav();
   window.scrollTo({top:0,behavior:"smooth"});
@@ -2064,13 +2353,12 @@ function toast(msg,kind){
 const FLOW=[
   {tab:"config",key:"t_config"},
   {tab:"inventario",key:"t_inv"},
-  {tab:"escenarios",key:"t_escenarios"},
   {tab:"dim",key:"t_dim"},
-  {tab:"perfil",key:"t_perfil"},
-  {tab:"tabla",key:"t_tabla"},
+  {tab:"escenarios",key:"t_escenarios"},
   {tab:"resumen",key:"t_resumen"},
   {tab:"exec",key:"t_exec"},
   {tab:"comparador",key:"t_comparador"},
+  {tab:"tecnico",key:"t_tecnico"},
 ];
 function flowIndex(){ const i=FLOW.findIndex(f=>f.tab===S.tab); return i<0?0:i; }
 function renderFlowNav(){
@@ -2205,7 +2493,9 @@ function importFromText(txt){
       return importCasesPayload(obj);
     }
     applyImportedState(obj);
-    try{ CASES.push(snapshotCase(t("imported_case"))); persistCases(); }catch(e){}
+    try{ const sv=savings(); const pct=sv.kAstro100? sv.dimSave/sv.kAstro100*100 : 0;
+      const nm=t("scn_savings_name").replace("{pct}", nf(pct,1)+"%");
+      CASES.push(snapshotCase(nm)); persistCases(); }catch(e){}
     if(typeof setTab==="function") setTab("comparador");
     try{ renderComparador(); }catch(e){}
     toast(t("imp_ok_case"),"ok"); return true;
@@ -2320,6 +2610,19 @@ Object.assign(DICT.es,{
   cmp_base_conv:"Alumbrado Público Convencional", cmp_base_auto:"Auto · caso de mayor consumo",
   cases_imported:"{n} caso(s) importado(s) al comparador",
   perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
+  perfil_saverow:"Ahorro vs", perfil_savenote:"Franja verde sobre la barra = energía que ahorras frente a la base (AP convencional; el horario fijo si está activo y elegido como base).",
+  footer_tag:"Telegestión de alumbrado público",
+  pdf_page:"Página",
+  pdf_kpi_energy:"Ahorro de energía", pdf_kpi_money:"Ahorro económico", pdf_kpi_money_sub:"por año vs convencional",
+  pdf_kpi_pay:"Retorno (payback)", pdf_inv:"inversión", pdf_scn_t:"Comparación de escenarios",
+  pdf_narr:"Sin dimerizar, la cuenta anual de la flota es de {convUSD} ({convKwh}). Con la estrategia de dimerización, baja a {dimUSD} — un ahorro de {savUSD} ({pct}) al año.",
+  scn_savings_name:"Escenario Ahorro {pct}",
+  recommended_tag:"recomendado",
+  ai_btn:"Interpretación IA", ai_title:"Interpretación ejecutiva (IA)",
+  ai_loading:"Generando interpretación…", ai_err:"No se pudo generar la interpretación.",
+  ai_empty:"Respuesta vacía.", ai_bad_code:"Código de acceso inválido.",
+  ai_code_prompt:"Ingresa el código de acceso de IA:", ai_need_cases:"Agrega al menos un caso para interpretar.",
+  ai_disclaimer:"Texto generado por IA a partir de las cifras ya calculadas. Revísalo antes de enviarlo; los números mandan.",
   imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
   cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
   cmp_vs_ref:"frente a la referencia",
@@ -2353,6 +2656,19 @@ Object.assign(DICT.en,{
   cmp_base_conv:"Conventional Public Lighting", cmp_base_auto:"Auto · highest-use case",
   cases_imported:"{n} case(s) imported into the comparator",
   perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
+  perfil_saverow:"Savings vs", perfil_savenote:"Green band above the bar = energy saved vs the base (conventional lighting; fixed schedule if active and chosen as base).",
+  footer_tag:"Smart street-lighting management",
+  pdf_page:"Page",
+  pdf_kpi_energy:"Energy savings", pdf_kpi_money:"Economic savings", pdf_kpi_money_sub:"per year vs conventional",
+  pdf_kpi_pay:"Payback", pdf_inv:"investment", pdf_scn_t:"Scenario comparison",
+  pdf_narr:"Without dimming, the fleet's annual bill is {convUSD} ({convKwh}). With the dimming strategy it drops to {dimUSD} — a saving of {savUSD} ({pct}) per year.",
+  scn_savings_name:"Scenario Savings {pct}",
+  recommended_tag:"recommended",
+  ai_btn:"AI interpretation", ai_title:"Executive interpretation (AI)",
+  ai_loading:"Generating interpretation…", ai_err:"Could not generate the interpretation.",
+  ai_empty:"Empty response.", ai_bad_code:"Invalid access code.",
+  ai_code_prompt:"Enter the AI access code:", ai_need_cases:"Add at least one case to interpret.",
+  ai_disclaimer:"AI-generated from the already-computed figures. Review before sending; the numbers prevail.",
   imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
   cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
   cmp_vs_ref:"vs the reference",
@@ -2363,12 +2679,36 @@ Object.assign(DICT.en,{
   cmp_mi_base_own:"Each case is compared against its own conventional lighting: its same fleet and inventory at full power (100%) over the same NOAA window. The base does not depend on the other cases."
 });
 document.head.insertAdjacentHTML("beforeend",`<style>
+  :root{--maxw:1480px; --pad:clamp(16px,4vw,40px)}
+  .band--navy{background:var(--ink); color:#fff}
+  .topband,.footband{width:100%}
+  .bandinner{max-width:var(--maxw); margin:0 auto; padding-inline:var(--pad)}
+  .topband .bandinner{padding-block:14px}
+  .topband .top{margin-bottom:0}
+  .topband .brand .t h1{color:#C6CCDA; font-size:13px; font-weight:600; margin-top:3px}
+  .topband .logo{box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .wordmark{font-family:var(--disp); font-weight:800; font-size:21px; letter-spacing:-.01em; line-height:1}
+  .wordmark .w-ubi{color:var(--indigo)} .wordmark .w-cq{color:#fff} .wordmark .w-r{font-size:9px; vertical-align:super; color:var(--indigo); margin-left:1px}
+  .footband .bandinner{padding-block:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .footband .ftag{color:#9fb6e8; font-size:12px; font-family:var(--mono)}
+  .footband .wordmark{font-size:17px}
+  @media print{ .topband,.footband{display:none!important} }
+
   .perfil-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:16px; align-items:start; margin-bottom:18px}
   .perfil-col{min-width:0}
   .perfil-col canvas{width:100%; height:auto; display:block}
   .perfil-h{display:flex; align-items:center; gap:8px; font-family:var(--disp); font-weight:700; font-size:14px; margin:0 0 8px; color:var(--ink)}
   .heat-grid{display:flex; flex-direction:column; gap:18px}
-  .heat-block canvas{width:100%; height:auto; display:block; image-rendering:pixelated}
+  .heat-block canvas{width:100%; height:auto; display:block; image-rendering:pixelated; cursor:crosshair}
+  .heat-top{display:flex; gap:6px; margin:0 0 4px}
+  .heat-corner{width:42px; flex:none}
+  .heat-row{display:flex; gap:6px; align-items:stretch}
+  .heat-y{width:42px; flex:none; position:relative; font-family:var(--mono); font-size:9px; color:var(--faint)}
+  .heat-y span{position:absolute; right:2px; transform:translateY(-50%); white-space:nowrap}
+  .heat-cv{position:relative; flex:1; min-width:0}
+  .heat-tip{position:absolute; left:0; top:0; pointer-events:none; display:none; background:#1E2445; color:#fff; font:11px/1.45 'Lato'; padding:6px 9px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.28); z-index:6; white-space:nowrap; transform:translate(-50%,calc(-100% - 10px))}
+  .heat-tip b{color:#7FD0F0}
+  @media print{ .heat-tip{display:none!important} }
 
   .cfg-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; align-items:start}
   .cfg-grid .panel{margin:0}
@@ -2385,6 +2725,7 @@ document.head.insertAdjacentHTML("beforeend",`<style>
   .tabs.flat .tab::before{counter-increment:step; content:counter(step); display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; margin-right:7px; border-radius:50%; background:var(--raise); color:var(--faint); font-size:11px; font-weight:800; vertical-align:middle}
   .tabs.flat .tab.active::before{background:var(--indigo); color:#fff}
   .tabs.flat .tab.active::after{display:none}
+  .tabs.flat .tab-tech{margin-left:6px; padding-left:15px; border-left:1px dashed #d3dae8}
   .sec-help{display:flex; gap:12px; align-items:flex-start; background:linear-gradient(180deg,var(--indigo-soft),#fff); border:1px solid #CDEBF8; border-radius:14px; padding:14px 16px; margin-bottom:18px}
   .sec-help .ic{flex:none; width:30px; height:30px; border-radius:9px; background:var(--indigo); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px}
   .sec-help .tx{font-size:13.5px; color:var(--muted); line-height:1.55}
@@ -2576,12 +2917,64 @@ function caseOwnSavings(c){
 }
 function casesSortedByOwn(){ return CASES.slice().sort((a,b)=>caseOwnSavings(a).savPct-caseOwnSavings(b).savPct); }
 
+/* ===== Conector IA del Resumen final (mismo patrón que Bill: proxy serverless cerrado + código) ===== */
+let AI_VEREDICTO="";
+const AI_ENDPOINT="/api/resumen-ia";   /* misma raíz que griddata.cl (Vercel) */
+function getAICode(){
+  let c=""; try{c=localStorage.getItem("griddata-ia-code")||"";}catch(e){}
+  if(!c){ try{c=window.prompt(t("ai_code_prompt"),"")||"";}catch(e){c="";} if(c){try{localStorage.setItem("griddata-ia-code",c);}catch(e){}} }
+  return c;
+}
+function aiPayload(){
+  const base=baselineCase(); if(!base)return null;
+  const ordered=casesSortedBySavings(base);
+  const others=CASES.filter(c=>c.id!==base.id);
+  const pcts=others.map(c=>caseDeltas(c,base).savPct), usds=others.map(c=>caseDeltas(c,base).savUSD), pbs=others.map(c=>caseDeltas(c,base).payback).filter(v=>v!=null&&isFinite(v));
+  const ctx=cmpSharedContext();
+  return {
+    place:ctx.place, year:ctx.year,
+    base:{name:base.name, annualKwh:nf(base.annualKwh,0)+" kWh", annualUSD:cusd(base.annualUSD)},
+    band:{pct:(pcts.length?(cpct(Math.min.apply(null,pcts))+" – "+cpct(Math.max.apply(null,pcts))):"—"),
+          usd:(usds.length?(cusd(Math.min.apply(null,usds))+" – "+cusd(Math.max.apply(null,usds))):"—"),
+          pay:(pbs.length?(nf(Math.min.apply(null,pbs),1)+" – "+cyrs(Math.max.apply(null,pbs))):"—")},
+    cases: ordered.filter(c=>c.id!==base.id).map(c=>{const d=caseDeltas(c,base);return {name:c.name, annualKwh:nf(c.annualKwh,0)+" kWh", annualUSD:cusd(c.annualUSD), savUSD:cusd(d.savUSD), savPct:cpct(d.savPct), payback:cyrs(d.payback)};})
+  };
+}
+function renderAIBox(){
+  const box=document.getElementById("aiVeredicto"); if(!box)return;
+  if(!AI_VEREDICTO){box.style.display="none";box.innerHTML="";return;}
+  box.style.display="block";
+  box.innerHTML=`<div style="font-weight:700;color:#1E2445;margin-bottom:6px">${t("ai_title")} <span style="background:#22B0E1;color:#fff;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:4px">IA</span></div>`+
+    `<div style="color:#2C3A4F;line-height:1.5">${escapeHtml(AI_VEREDICTO).replace(/\n/g,"<br>")}</div>`+
+    `<div style="color:#99A0B4;font-size:12px;font-style:italic;margin-top:8px">${t("ai_disclaimer")}</div>`;
+}
+async function generateAIVeredicto(){
+  const pl=aiPayload();
+  if(!pl||!pl.cases.length){toast(t("ai_need_cases"),"err");return;}
+  const code=getAICode(); if(!code){return;}
+  const box=document.getElementById("aiVeredicto");
+  if(box){box.style.display="block";box.innerHTML=`<div style="font-weight:700;color:#1E2445;margin-bottom:6px">${t("ai_title")}</div><div style="color:#22B0E1">${t("ai_loading")}</div>`;}
+  try{
+    const r=await fetch(AI_ENDPOINT,{method:"POST",headers:{"content-type":"application/json","x-access-code":code},body:JSON.stringify(pl)});
+    if(r.status===401){try{localStorage.removeItem("griddata-ia-code");}catch(e){} throw new Error(t("ai_bad_code"));}
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const j=await r.json(); const txt=((j&&j.text)||"").trim();
+    if(!txt)throw new Error(t("ai_empty"));
+    AI_VEREDICTO=txt; renderAIBox();
+  }catch(e){
+    AI_VEREDICTO="";
+    if(box)box.innerHTML=`<div style="font-weight:700;color:#1E2445;margin-bottom:6px">${t("ai_title")}</div><div style="color:#EA561B">${t("ai_err")} <span style="color:#99A0B4;font-size:12px">(${escapeHtml(String((e&&e.message)||e))})</span></div>`;
+  }
+}
+window.generateAIVeredicto=generateAIVeredicto;
+
 /* --- toolbar --- */
 function renderCmpToolbar(){
   const tb=document.getElementById("cmpToolbar"); if(!tb)return;
   if(!CASES.length){ tb.innerHTML=""; return; }
   tb.innerHTML=
     `<button class="btn primary" onclick="exportCasesPDF()">${t("cmp_export_pdf")}</button>`+
+    `<button class="btn" onclick="generateAIVeredicto()">${t("ai_btn")}</button>`+
     `<button class="btn" onclick="exportCasesXLSX()">${t("cmp_export_xlsx")}</button>`+
     `<button class="btn" onclick="exportCasesJSON()">${t("cmp_export_json")}</button>`+
     `<button class="btn" onclick="clearCases()">${t("cmp_clear")}</button>`;
@@ -2611,6 +3004,8 @@ function renderComparador(){
 
   let html=`<div class="exec">`;
   html+=`<div class="ehead"><div><h2>${t("cmp_final_t")}</h2></div><div class="meta">${t("cmp_cases")}: ${CASES.length}<br>${ctx.place} · ${ctx.year}</div></div>`;
+  AI_VEREDICTO="";
+  html+=`<div id="aiVeredicto" style="display:none;background:#F4FAFE;border-left:3px solid #22B0E1;border-radius:8px;padding:14px 16px;margin:4px 0 14px"></div>`;
 
   /* contexto compartido */
   html+=`<div class="cmp-context">`+
@@ -2656,7 +3051,7 @@ function renderComparador(){
   if(base.synthetic){
     html+=`<tr class="baserow"><td><span class="cmp-dot" style="display:inline-block;background:#99A0B4;margin-right:7px"></span>${escapeHtml(base.name)} <span class="cmp-base-pill">${t("cmp_base_tag")}</span></td>`+
       `<td class="num">${nf(base.annualKwh,0)}</td><td class="num">${cusd(base.annualUSD)}</td>`+
-      `<td class="num">—</td><td class="num">—</td><td class="num">${t("base")}</td><td class="num">—</td><td class="actc">—</td></tr>`;
+      `<td class="num">—</td><td class="num">—</td><td class="num">${t("base")}</td><td class="num">—</td><td class="actc"><button class="miniact" title="PDF" onclick="exportCasePDF('__conv__')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button></td></tr>`;
   }
   ordered.forEach(c=>{
     const d=caseDeltas(c,base);
@@ -2668,7 +3063,8 @@ function renderComparador(){
       `<td class="num">${d.isBase?"—":cusd(d.savUSD)}</td>`+
       `<td class="num">${d.isBase?t("base"):"−"+cpct(d.savPct)}</td>`+
       `<td class="num">${cyrs(d.payback)}</td>`+
-      `<td class="actc"><button class="miniact" onclick="loadCaseIntoCalc('${c.id}')">${t("act_load")}</button>`+
+      `<td class="actc"><button class="miniact" title="PDF" onclick="exportCasePDF('${c.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button>`+
+      `<button class="miniact" onclick="loadCaseIntoCalc('${c.id}')">${t("act_load")}</button>`+
       `<button class="miniact" onclick="renameCase('${c.id}')">✎</button>`+
       `<button class="miniact danger" onclick="delCase('${c.id}')">✕</button></td></tr>`;
   });
@@ -2728,14 +3124,15 @@ function renderComparador(){
   /* gráfico mensual: convencional en gris cuando es la referencia */
   try{
     const series=[];
-    if(base.synthetic && Array.isArray(base.monthKwh)) series.push({vals:base.monthKwh,color:"#99A0B4",show:true});
-    CASES.forEach(c=>series.push({vals:c.monthKwh,color:caseColor(c,base),show:true}));
+    if(base.synthetic && Array.isArray(base.monthKwh)) series.push({lab:t("conv_name"),vals:base.monthKwh,color:"#99A0B4",show:true});
+    CASES.forEach(c=>series.push({lab:c.name,vals:c.monthKwh,color:caseColor(c,base),show:true}));
     const f=makeFmts(series.map(s=>s.vals),"energy");
     barsChart("cmpMonth",series,{axisFmt:f.axisFmt,unit:f.unit});
   }catch(e){console.error("cmpMonth",e);}
 
   /* gráfico único de perfiles */
   try{ drawProfilesChart("cmpProfile",ordered,base); }catch(e){console.error("cmpProfile",e);}
+  renderAIBox();
 }
 function escapeHtml(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 
@@ -2772,56 +3169,139 @@ function exportCasesPDF(){
   const base=baselineCase(); const ordered=casesSortedBySavings(base);
   const others=CASES.filter(c=>c.id!==base.id); const ctx=cmpSharedContext();
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:"pt",format:"a4",orientation:"landscape",compress:true});
+  const doc=new jsPDF({unit:"pt",format:"a4",compress:true});
   const W=doc.internal.pageSize.getWidth(),Hp=doc.internal.pageSize.getHeight(),M=40; let y=46;
-  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
-  doc.text(t("cmp_final_t"),M,y);y+=10;
-  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
-  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
-  doc.text(`${t("cmp_cases")}: ${CASES.length}     ${ctx.place} · ${ctx.year}     ${new Date().toLocaleDateString(loc())}`,M,y);y+=14;
-  /* banda frente a la referencia */
+  const metaLines=[`${t("cmp_cases")}: ${CASES.length}`,`${ctx.place} · ${ctx.year}`,`${new Date().toLocaleDateString(loc())}`];
+  y=pdfBrandHeader(doc,W,M,t("cmp_final_t"),t("eyebrow"),metaLines);
+  /* banda min–max frente a la referencia */
   const pcts=others.map(c=>caseDeltas(c,base).savPct);
   const usds=others.map(c=>caseDeltas(c,base).savUSD);
   const pbs=others.map(c=>caseDeltas(c,base).payback).filter(v=>v!=null&&isFinite(v));
   const bandPct=pcts.length?(pcts.length>1?cpct(Math.min(...pcts))+" – "+cpct(Math.max(...pcts)):cpct(pcts[0])):"—";
   const bandUSD=usds.length?(usds.length>1?cusd(Math.min(...usds))+" – "+cusd(Math.max(...usds)):cusd(usds[0])):"—";
   const bandPay=pbs.length?(pbs.length>1?nf(Math.min(...pbs),1)+" – "+cyrs(Math.max(...pbs)):cyrs(pbs[0])):"—";
-  doc.setFontSize(9.5);doc.setTextColor(22,33,63);
-  doc.text(`${t("cmp_baseline")}: ${base.name} (${cusd(base.annualUSD)}${t("per_year")})    ·    ${t("cmp_band")}: ${bandPct} (${bandUSD}${t("per_year")})    ·    ${t("cmp_band_pay")}: ${bandPay}`,M,y+4);y+=18;
+  /* mejor caso (mayor ahorro US$) */
+  let bestCase=null,bestD=null;
+  others.forEach(c=>{const d=caseDeltas(c,base);if(!bestD||d.savUSD>bestD.savUSD){bestD=d;bestCase=c;}});
+  /* tarjetas KPI del mejor caso */
+  function kcard(cx,cy,cw,ch,k,v,s,accent){
+    doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundedRect(cx,cy,cw,ch,6,6,"FD");
+    doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
+    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
+    doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(30,36,69);doc.text(v,cx+10,cy+39);
+    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(s,cx+10,cy+ch-9);
+  }
+  {const gap=12,cw=(W-2*M-2*gap)/3,ch=66;
+   kcard(M,y,cw,ch,t("pdf_kpi_energy"),bestD?cpct(bestD.savPct):"—",bestCase?nf(bestCase.annualKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"):"",[34,176,225]);
+   kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),bestD?cusd(bestD.savUSD):"—",t("pdf_kpi_money_sub"),[174,204,83]);
+   kcard(M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(bestD&&bestD.payback!=null&&isFinite(bestD.payback))?cyrs(bestD.payback):"—",(ctx.invest>0?t("pdf_inv")+" "+cusd(ctx.invest):""),[34,176,225]);
+   y+=ch+16;}
+  /* línea de banda / referencia */
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(70,77,99);
+  {const ln=`${t("cmp_baseline")}: ${base.name}   ·   ${t("cmp_band")}: ${bandPct} (${bandUSD}${t("per_year")})   ·   ${t("cmp_band_pay")}: ${bandPay}`;
+   const ll=doc.splitTextToSize(ln,W-2*M);doc.text(ll,M,y);y+=ll.length*11+8;}
   /* narrativa */
   if(others.length){
-    const repl={ "{base}":base.name, "{basecost}":cusd(base.annualUSD), "{basekwh}":nf(base.annualKwh,0),
-      "{n}":others.length, "{bandUSD}":bandUSD, "{pct}":bandPct, "{invest}":cusd(ctx.invest||0), "{pay}":bandPay };
-    let narr=t("cmp_narr_ref");
-    if(ctx.invest>0&&bandPay!=="—")narr+=t("cmp_narr_invest");
+    const repl={ "{base}":base.name,"{basecost}":cusd(base.annualUSD),"{basekwh}":nf(base.annualKwh,0),"{n}":others.length,"{bandUSD}":bandUSD,"{pct}":bandPct,"{invest}":cusd(ctx.invest||0),"{pay}":bandPay };
+    let narr=t("cmp_narr_ref");if(ctx.invest>0&&bandPay!=="—")narr+=t("cmp_narr_invest");
     narr=narr.replace(/\{base\}|\{basecost\}|\{basekwh\}|\{n\}|\{bandUSD\}|\{pct\}|\{invest\}|\{pay\}/g,m=>repl[m]).replace(/<\/?b>/g,"");
     doc.setFontSize(9);doc.setTextColor(70,77,99);
-    const nl=doc.splitTextToSize(narr,W-M*2);doc.text(nl,M,y);y+=nl.length*11+8;
-    doc.setTextColor(22,33,63);
+    const nl=doc.splitTextToSize(narr,W-2*M);doc.text(nl,M,y);y+=nl.length*11+10;
   }
-  /* tabla */
-  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",
-    headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[22,33,63]},
-    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:150}},
-    head:[[t("th_case"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_kwh"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
-    body:(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—","—",t("base"),"—"]]:[]).concat(ordered.map(c=>{const d=caseDeltas(c,base);return [c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":nf(d.savKwh,0),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):"−"+cpct(d.savPct),cyrs(d.payback)];}))});
-  y=doc.lastAutoTable.finalY+18;
-  /* gráfico mensual embebido */
+  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
+  /* gráfico mensual */
   const cv=document.getElementById("cmpMonth");
-  if(cv){ try{ const cw=W-M*2, chh=Math.min(220,Hp-y-50);
-    if(y+chh>Hp-40){doc.addPage();y=46;}
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(t("cmp_monthly_t"),M,y);y+=8;
-    doc.addImage(cv.toDataURL("image/png"),"PNG",M,y,cw,chh); y+=chh+12;
-  }catch(e){} }
-  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
-  doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,Math.min(y,Hp-30));
+  if(cv){sec(t("cmp_monthly_t"));try{const cw2=W-2*M,chh2=150;y+=4;doc.addImage(cv.toDataURL("image/png"),"PNG",M,y,cw2,chh2);y+=chh2+14;}catch(e){}}
+  /* tabla de casos (6 col, como el ejecutivo) + recomendado resaltado */
+  sec(t("pdf_scn_t"));
+  const baseOffset=base.synthetic?1:0;
+  const cbody=(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—",t("base"),"—"]]:[]);
+  let cbest=-1,cbestSav=-Infinity;
+  ordered.forEach((c,i)=>{const d=caseDeltas(c,base);
+    cbody.push([c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):cpct(d.savPct),cyrs(d.payback)]);
+    if(!d.isBase&&d.savUSD>cbestSav){cbestSav=d.savUSD;cbest=baseOffset+i;}});
+  if(cbest>=0&&cbestSav>0)cbody[cbest][0]=cbody[cbest][0]+"  ·  "+t("recommended_tag");
+  doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
+    headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
+    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:185}},
+    head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
+    body:cbody,
+    didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===cbest){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
+  y=doc.lastAutoTable.finalY+14;
+  /* interpretación IA (si se generó) */
+  if(AI_VEREDICTO){
+    if(y>Hp-150){doc.addPage();y=46;}
+    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(t("ai_title"),M,y);y+=10;
+    doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(46,77,99);
+    const vl=doc.splitTextToSize(AI_VEREDICTO,W-2*M);doc.text(vl,M,y);y+=vl.length*12+12;
+  }
+  /* metodología */
+  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,Math.min(y,Hp-44));
+  pdfBrandFooterAll(doc,M);
   doc.save("comparador-casos-"+(ctx.year||"")+".pdf");
+}
+
+/* === PDF ejecutivo individual de un caso (o del convencional base) === */
+function exportCasePDF(id){
+  if(!window.jspdf||!window.jspdf.jsPDF){window.print();return;}
+  let c; if(id==="__conv__"){c=convencionalRef();} else {c=CASES.find(x=>x.id===id);}
+  if(!c)return;
+  const tariff=+c.tariff||0;
+  const own=c.synthetic?{conv:c.annualKwh,convUSD:c.annualUSD,savKwh:0,savUSD:0,savPct:0,payback:null}:caseOwnSavings(c);
+  const convM=c.synthetic?(Array.isArray(c.monthKwh)&&c.monthKwh.length===12?c.monthKwh:Array(12).fill((c.annualKwh||0)/12)):caseConvMonth(c);
+  const caseM=Array.isArray(c.monthKwh)&&c.monthKwh.length===12?c.monthKwh:Array(12).fill((c.annualKwh||0)/12);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:"pt",format:"a4",compress:true});
+  const W=doc.internal.pageSize.getWidth(),Hp=doc.internal.pageSize.getHeight(),M=40; let y=46;
+  const metaLines=[String(c.place||""),`${t("ex_year")}: ${c.year||""}`,new Date().toLocaleDateString(loc()),`${nf(c.units||0)} ${t("ex_lum")} · ${nf(c.IKW||0,1)} kW`];
+  y=pdfBrandHeader(doc,W,M,c.name,t("eyebrow"),metaLines);
+  const pb=own.payback;
+  /* KPIs */
+  {const gap=12,cw=(W-2*M-2*gap)/3,ch=66;
+   pdfKcard(doc,M,y,cw,ch,t("pdf_kpi_energy"),nf(own.savPct,1)+"%",nf(c.annualKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"),[34,176,225]);
+   pdfKcard(doc,M+cw+gap,y,cw,ch,t("pdf_kpi_money"),cusd(own.savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
+   pdfKcard(doc,M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(pb!=null&&isFinite(pb)&&pb>0)?cyrs(pb):"—",(c.invest>0?t("pdf_inv")+" "+cusd(c.invest):""),[34,176,225]);
+   y+=ch+18;}
+  /* narrativa */
+  doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(70,77,99);
+  {let nr;
+   if(c.synthetic||own.savUSD<=0){nr=(LANG==="es"?`${c.name}: ${nf(c.annualKwh,0)} kWh y ${cusd(c.annualUSD)} al año. Es la línea base de comparación (flota a potencia plena).`:`${c.name}: ${nf(c.annualKwh,0)} kWh and ${cusd(c.annualUSD)} per year. This is the comparison baseline (fleet at full power).`);}
+   else{nr=t("pdf_narr").replace("{convUSD}",cusd(own.conv*tariff)).replace("{convKwh}",nf(own.conv,0)+" kWh").replace("{dimUSD}",cusd(c.annualUSD)).replace("{savUSD}",cusd(own.savUSD)).replace("{pct}",nf(own.savPct,1)+"%");}
+   const nl=doc.splitTextToSize(nr,W-2*M);doc.text(nl,M,y);y+=nl.length*12+12;}
+  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
+  /* gráfico mensual */
+  sec(t("ex_month"));
+  {const cw2=W-2*M,chh2=150;y+=6;
+   pdfMiniBars(doc,M,y,cw2,chh2,convM,caseM,[153,160,180],[34,176,225],(LANG==="es"?"Convencional":"Conventional"),String(c.name).slice(0,26));y+=chh2+16;}
+  /* estrategia de dimerización */
+  sec(t("exp_dim_title"));
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(46,77,99);
+  {const sx=String(c.strategy||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()||t("nodim_txt");
+   const sl=doc.splitTextToSize(sx,W-2*M);doc.text(sl,M,y+4);y+=4+sl.length*11+12;}
+  /* tabla: convencional + este caso */
+  sec(t("pdf_scn_t"));
+  {const body=[[t("conv_name"),nf(own.conv,0),cusd(own.conv*tariff),"—",t("base"),"—"]];
+   if(!c.synthetic)body.push([c.name+"  ·  "+t("recommended_tag"),nf(c.annualKwh,0),cusd(c.annualUSD),own.savUSD>0?cusd(own.savUSD):"—",own.savPct>0?nf(own.savPct,1)+"%":t("base"),(pb!=null&&isFinite(pb)&&pb>0)?cyrs(pb):"—"]);
+   doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
+     headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
+     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:210}},
+     head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
+     body:body,
+     didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===1){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
+   y=doc.lastAutoTable.finalY+14;}
+  /* metodología + pie */
+  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,Math.min(y,Hp-44));
+  pdfBrandFooterAll(doc,M);
+  doc.save("reporte-"+String(c.name||"caso").replace(/[^\w\-]+/g,"_").slice(0,40)+".pdf");
 }
 
 /* exponer para onclick inline */
 window.saveCurrentCase=saveCurrentCase; window.loadCaseIntoCalc=loadCaseIntoCalc;
 window.delCase=delCase; window.renameCase=renameCase; window.clearCases=clearCases; window.setBaseCase=setBaseCase;
 window.exportCasesPDF=exportCasesPDF; window.exportCasesXLSX=exportCasesXLSX; window.exportCasesJSON=exportCasesJSON;
+window.exportCasePDF=exportCasePDF;
 
 /* botón Guardar caso en el resumen ejecutivo */
 (function(){ const b=document.getElementById("saveCaseBtn"); if(b)b.addEventListener("click",saveCurrentCase); })();
@@ -2844,12 +3324,12 @@ Object.assign(DICT.en,{
   inv_base_sub:"Conventional Public Lighting · your fleet at full power (100%) over the year window. This is the reference the comparator will use.",
   inv_base_energy:"Conventional energy / yr", inv_base_cost:"Conventional cost / yr"
 });
-const SEC_HELP_STEP={config:1,inv:2,scn:3,dim:4,perfil:5,tabla:6,resumen:7,exec:8,cmp:9};
+const SEC_HELP_STEP={config:1,inv:2,dim:3,scn:4,resumen:5,exec:6,cmp:7,perfil:8,tabla:8};
 Object.assign(DICT.es,{
   help_inv:"<b>Empieza por tu parque.</b> Agrega un grupo por cada tipo de luminaria con su cantidad y potencia (W). Marca <b>Dimerizable</b> en las que admiten regulación; las demás operan a potencia plena toda la noche.<span class='tip'>La suma define la potencia instalada de la flota.</span>",
-  help_scn:"<b>Define qué comparar.</b> Activa los escenarios: astronómico con dimerización (sigue el sol y aplica tu perfil), astronómico sin dimerización y horario fijo (la operación tradicional a superar).<span class='tip'>Elige la base del % contra la que se mide el ahorro.</span>",
+  help_scn:"<b>Define qué comparar.</b> Marca <b>Incluir en comparaciones</b> en cada tarjeta para sumar ese escenario al análisis: <b>Sistema de Telegestión Ubicquia</b> (sigue el sol y aplica tu perfil de dimerización), <b>Alumbrado Público Convencional</b> (a plena potencia, sin telegestión) y <b>Horario fijo</b> (la operación tradicional a superar).<span class='tip'>Elige la base del % contra la que se mide el ahorro.</span>",
   help_dim:"<b>Aquí está el ahorro.</b> Escribe el % de potencia en cada tramo de 30 min. Bajar la intensidad cuando la calle está vacía es energía que no se paga.<span class='tip'>Usa Aplicar a un rango para escribir el mismo % entre dos horas de golpe.</span>",
-  help_perfil:"<b>Cómo se ve una noche.</b> Un día hora por hora con tu perfil aplicado, más el mapa de calor del año para ver cómo cambia con las estaciones.",
+  help_perfil:"<b>Detalle técnico.</b> Aquí se aíslan el perfil diario (una noche hora por hora con tu perfil), el mapa de calor del año y la tabla anual (horas de encendido y detalle de los 365 días).<span class='tip'>Sección de apoyo para ingeniería; el resto del flujo es comercial.</span>",
   help_tabla:"<b>El detalle fino.</b> Horas de encendido acumuladas día a día y minutos ahorrados por seguir el sol.<span class='tip'>Puedes exportar el detalle de los 365 días a Excel/CSV.</span>",
   help_resumen:"<b>La foto del resultado.</b> Tarjetas de energía y ahorro, y el consumo mes a mes con el % de ahorro de cada mes frente a la base.",
   help_exec:"<b>El documento para presentar.</b> Configuración, resultados, ahorros, estrategia y gráficos en una vista lista para cliente.<span class='tip'>Descárgalo en PDF o pulsa Guardar caso para compararlo después.</span>",
@@ -2857,9 +3337,9 @@ Object.assign(DICT.es,{
 });
 Object.assign(DICT.en,{
   help_inv:"<b>Start with your fleet.</b> Add one group per luminaire type with its quantity and power (W). Tick <b>Dimmable</b> for the ones that support dimming; the rest run at full power all night.<span class='tip'>The sum defines the fleet's installed power.</span>",
-  help_scn:"<b>Set what to compare.</b> Enable the scenarios: astronomical with dimming (tracks the sun and applies your profile), astronomical no-dim, and fixed schedule (the traditional operation to beat).<span class='tip'>Choose the % base the savings are measured against.</span>",
+  help_scn:"<b>Set what to compare.</b> Tick <b>Include in comparisons</b> on each card to add that scenario to the analysis: <b>Ubicquia Smart Management System</b> (tracks the sun and applies your dimming profile), <b>Conventional Public Lighting</b> (full power, no remote management) and <b>Fixed schedule</b> (the traditional operation to beat).<span class='tip'>Choose the % base the savings are measured against.</span>",
   help_dim:"<b>This is where savings come from.</b> Type the power % for each 30-min slot. Lowering intensity when the street is empty is energy you don't pay for.<span class='tip'>Use Apply to a range to set the same % between two hours at once.</span>",
-  help_perfil:"<b>What a night looks like.</b> One day hour by hour with your profile applied, plus a full-year heatmap to see how it shifts with the seasons.",
+  help_perfil:"<b>Technical detail.</b> This tab isolates the daily profile (one night hour by hour with your profile), the year heatmap and the annual table (operating hours and the 365-day detail).<span class='tip'>Engineering support section; the rest of the flow stays commercial.</span>",
   help_tabla:"<b>The fine detail.</b> Cumulative operating hours day by day and minutes saved by tracking the sun.<span class='tip'>You can export the 365-day detail to Excel/CSV.</span>",
   help_resumen:"<b>The result at a glance.</b> Energy and savings cards, plus month-by-month consumption with each month's % savings vs the base.",
   help_exec:"<b>The document to present.</b> Configuration, results, savings, strategy and charts in a client-ready view.<span class='tip'>Download it as PDF or hit Save case to compare it later.</span>",
@@ -2883,6 +3363,674 @@ document.addEventListener("click",e=>{const x=e.target.closest("[data-help-close
 /* init */
 applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); wireDim(); refreshAll(); syncScnState();
 pushStateToInputs(); renderFlowNav();
+</script>
+<script>
+/* Vista de ciudad — SOLO LECTURA de S.dim; ventana NOAA + offsets + señal + slow-offset + scrubber + pausa + DÍA AUTO (hoy) */
+
+(function(){
+"use strict";
+var REDUCED=false; try{REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+
+// ---- parámetros (overridables por query: ?day=80&start=17.5) ----
+function qnum(k,def){ try{var v=new URLSearchParams(location.search).get(k); return v==null?def:parseFloat(v);}catch(e){return def;} }
+var DAY_SECONDS = clampN(qnum('day',80), 20, 600);      // duración del día completo
+var startHour   = clampN(qnum('start',17.5), 0, 23.99); // arranca al atardecer
+
+// perfil de telegestión (mismo que UbiVu: 100 -> 70 -> 40 -> 100)
+var SCHED={ duskOn:18.5, toDim70:22.0, toDim40:0.0, toFull:5.0, dawnOff:6.3 };
+// Ventana REAL del día seleccionado (motor NOAA) + offsets del escenario Telegestión (S.A)
+var useToday=true;
+function todayIndex(){            // día del año de HOY (reloj del equipo; no requiere internet)
+  try{
+    var now=new Date();
+    var y=(typeof S!=='undefined'&&S.year)?S.year:now.getFullYear();
+    var doy=Math.floor((Date.UTC(y,now.getMonth(),now.getDate())-Date.UTC(y,0,1))/86400000);
+    var max=(typeof sunCache!=='undefined'&&sunCache.length)?sunCache.length-1:364;
+    return Math.max(0,Math.min(max,doy));
+  }catch(e){ return (typeof S!=='undefined')?(S.selDay|0):0; }
+}
+function dayIdx(){ return useToday ? todayIndex() : ((typeof S!=='undefined')?(S.selDay|0):0); }
+function sunWin(){
+  try{
+    if(typeof sunCache!=='undefined' && sunCache.length && typeof S!=='undefined'){
+      var i=Math.max(0,Math.min(sunCache.length-1,dayIdx()));
+      var su=sunCache[i];
+      if(su && isFinite(su.sunset) && isFinite(su.sunrise)){
+        var oe=(S.A&&isFinite(+S.A.offEnc))?+S.A.offEnc:0;   // min vs atardecer (+ atrasa, − adelanta)
+        var oa=(S.A&&isFinite(+S.A.offApag))?+S.A.offApag:0;  // min vs amanecer
+        return {sunset:su.sunset,sunrise:su.sunrise,on:su.sunset+oe/60,off:su.sunrise+oa/60,oe:oe,oa:oa,real:true};
+      }
+    }
+  }catch(e){}
+  return {sunset:SCHED.duskOn,sunrise:SCHED.dawnOff,on:SCHED.duskOn,off:SCHED.dawnOff,oe:0,oa:0,real:false};
+}
+function inOn(h,on,off){ return on>off ? (h>=on||h<off) : (h>=on&&h<off); }
+var LAMP_VIAL_W=120;   // W luminaria vial
+var LAMP_PEAT_W=60;    // W luminaria peatonal
+
+var cv=document.getElementById('cityCanvas'), ctx=cv.getContext('2d',{alpha:false});
+var bannerEl=document.getElementById('ctBanner');
+var W=0,H=0,DPR=1;
+// líneas de profundidad (se calculan en resize)
+var horizonY=0, groundY=0, parkBaseY=0, walkY=0, roadTopY=0, roadBotY=0;
+var simHour=startHour, hrPerSec=24/DAY_SECONDS, dimNow=0;
+var SPEEDS=[1,2,4,8], speedIdx=0, speedMul=SPEEDS[0];
+var fpsAccum=0,fpsFrames=0,fpsVal=0;
+
+var SEED=20260625;
+function rng(){SEED=(SEED*1664525+1013904223)&0x7fffffff;return SEED/0x7fffffff;}
+function clampN(v,a,b){return v<a?a:(v>b?b:v);}
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function lerp(a,b,t){return a+(b-a)*t;}
+function smooth(e0,e1,x){var t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);}
+function lerpRGB(c1,c2,t){return [lerp(c1[0],c2[0],t),lerp(c1[1],c2[1],t),lerp(c1[2],c2[2],t)];}
+function rgb(c,a){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(a==null?1:a)+')';}
+
+function daylight(h){
+  var w=sunWin();
+  var up=smooth(w.sunrise-0.9,w.sunrise+1.1,h);
+  var down=smooth(w.sunset-1.1,w.sunset+0.6,h);
+  return clamp(up-down,0,1);
+}
+// perfil de dimerización vial (el peatonal hereda con un piso de seguridad más alto)
+function dimAt(h){
+  var w=sunWin();
+  if(!inOn(h,w.on,w.off)) return 0;                  // fuera de la ventana real (con offset) = apagadas
+  if(typeof S==='undefined' || !S.dim) return 100;
+  var k=clamp(Math.floor(h*2),0,47);                 // hora -> tramo de 30 min
+  var v=+S.dim[k]; return isFinite(v)?clamp(v,0,100):0;
+}
+// la luminaria peatonal nunca baja de 60% por seguridad de tránsito de personas
+function dimPeat(viaDim){ return viaDim<=0 ? 0 : Math.max(60, viaDim); }
+
+// densidad de personas por hora (subida respecto a la versión previa)
+// madrugada (00:00–05:00) casi sin gente; repunta hacia el amanecer
+var PEOPLE_KEYS=[[0,1],[4.5,1],[5,2],[6,12],[7,34],[8,48],[9,40],[10,34],[12,44],[14,38],[16,42],[17,52],[18,46],[19,34],[20,22],[21,12],[22,5],[23,2],[24,1]];
+function peopleTarget(h){
+  for (var i=0;i<PEOPLE_KEYS.length-1;i++){
+    var a=PEOPLE_KEYS[i],b=PEOPLE_KEYS[i+1];
+    if (h>=a[0]&&h<=b[0]){var t=(h-a[0])/(b[0]-a[0]);return lerp(a[1],b[1],t);}
+  } return 1;
+}
+function carTarget(h){
+  // más autos en horas punta; algo de tráfico siempre
+  if (h>=7&&h<=9) return 14;
+  if (h>=17&&h<=20) return 16;
+  if (h>=22||h<5) return 5;
+  return 9;
+}
+function phaseOf(h){
+  var es=(typeof LANG==='undefined'||LANG==='es'), w=sunWin();
+  if (h<w.sunrise-0.3) return [es?'Madrugada':'Late night','#3466AF'];
+  if (h<w.sunrise+1.3) return [es?'Amanecer':'Dawn','#FAB512'];
+  if (h<w.sunset-1)    return [es?'Día':'Day','#22B0E1'];
+  if (h<w.sunset+0.6)  return [es?'Atardecer':'Dusk','#EA561B'];
+  return [es?'Noche':'Night','#3466AF'];
+}
+
+// ---- entidades de escena ----
+var farB=[],nearB=[],stars=[],vlamps=[],plamps=[],trees=[],people=[],cars=[];
+var parkX0=0,parkX1=0; // rango horizontal del parque
+
+function buildScene(){
+  SEED=20260625;
+
+  // skyline lejano
+  farB=[]; var x=-20;
+  while(x<W+40){var bw=rng()*48+30,bh=rng()*H*0.20+H*0.10;farB.push({x:x,w:bw,h:bh});x+=bw+rng()*8;}
+
+  // parque: ocupa una franja horizontal (centro-izquierda), el resto es ciudad
+  var pw=clamp(W*0.30,180,W*0.42);
+  parkX0=W*0.06+rng()*W*0.04; parkX1=parkX0+pw;
+
+  // edificios cercanos con ventanas; algunos CORTADOS por el borde superior
+  nearB=[]; x=-30;
+  while(x<W+50){
+    var w2=rng()*90+54;
+    var inPark=(x+w2>parkX0 && x<parkX1);
+    if (inPark){ x=parkX1+6; continue; } // dejar hueco para el parque
+    var tall=rng()<0.32;                 // ~1/3 rascacielos que salen del marco
+    var h2= tall ? (horizonY+rng()*H*0.45+H*0.20)   // supera el horizonte hacia arriba => cortado
+                 : (rng()*H*0.30+H*0.16);
+    var cols=Math.max(2,Math.floor(w2/16)),rows=Math.max(3,Math.floor(h2/16));
+    var win=[]; for(var c=0;c<cols;c++)for(var r=0;r<rows;r++)win.push({c:c,r:r,thr:rng()});
+    nearB.push({x:x,w:w2,h:h2,cols:cols,rows:rows,win:win});
+    x+=w2+rng()*18+8;
+  }
+
+  // árboles del parque (en bandas de profundidad dentro del parque)
+  trees=[];
+  var nt=Math.max(5,Math.round(pw/46));
+  for(var ti=0;ti<nt;ti++){
+    var depth=rng();                                   // 0 fondo .. 1 frente
+    var ty=lerp(horizonY+ (groundY-horizonY)*0.35, parkBaseY, depth);
+    var tsc=lerp(0.7,1.35,depth);
+    trees.push({x:parkX0+8+rng()*(pw-16), y:ty, sc:tsc, r:rng()*0.5});
+  }
+  trees.sort(function(a,b){return a.y-b.y;});
+
+  // estrellas
+  stars=[]; for(var i=0;i<90;i++)stars.push({x:rng()*W,y:rng()*horizonY*0.92,r:rng()*1.2+0.3,tw:rng()*6.28});
+
+  // luminarias VIALES (grandes): al borde superior de la autopista, brazo sobre la calzada
+  vlamps=[]; var nv=Math.max(3,Math.round(W/230)),gv=W/nv;
+  var mastV=clamp((roadTopY-horizonY)*0.9, H*0.18, H*0.42); // mástil alto
+  for(var k=0;k<nv;k++){
+    var arm=(k%2===0)?1:-1; // brazo alterna para variar
+    vlamps.push({x:gv*(k+0.5),baseY:roadTopY,mast:mastV,arm:arm});
+  }
+
+  // luminarias PEATONALES (medianas): en el paseo y el sendero del parque
+  plamps=[]; var np=Math.max(4,Math.round(W/150)),gp=W/np;
+  var mastP=clamp((walkY-horizonY)*0.40, 26, 70);
+  for(var j=0;j<np;j++){
+    plamps.push({x:gp*(j+0.5),baseY:walkY-2,mast:mastP});
+  }
+  // un par extra en el sendero del parque
+  plamps.push({x:parkX0+pw*0.30,baseY:parkBaseY,mast:mastP*0.9});
+  plamps.push({x:parkX0+pw*0.70,baseY:parkBaseY,mast:mastP*0.9});
+
+  for(var pp=0;pp<people.length;pp++)assignLane(people[pp]);
+}
+
+// ---- personas ----
+function assignLane(p){
+  // 0 paseo cercano · 1 paseo lejano · 2 sendero del parque
+  if(p.lane===0){ p.y=lerp(walkY,roadTopY,0.42); p.scale=clamp(H/180,0.55,1.15); }
+  else if(p.lane===1){ p.y=lerp(walkY,roadTopY,0.05); p.scale=clamp(H/180,0.55,1.15)*0.8; }
+  else { p.y=parkBaseY-2; p.scale=clamp(H/180,0.55,1.15)*0.75; }
+}
+function spawnPerson(){
+  var dir=rng()<0.5?1:-1, laneR=rng();
+  var lane = laneR<0.5?0:(laneR<0.82?1:2);
+  var x0,x1;
+  if (lane===2){ x0=parkX0; x1=parkX1; } else { x0=0; x1=W; }
+  var p={dir:dir,lane:lane,x:dir>0?(x0-20):(x1+20),x0:x0,x1:x1,
+         speed:(rng()*16+22),color:pickColor(),step:rng()*6.28};
+  assignLane(p); people.push(p);
+}
+function pickColor(){var pal=['#2E3550','#465787','#5b6886','#7a4b4b','#4d6b52','#6b5a7a','#8a7a4b','#3a3a3a','#557089'];return pal[(rng()*pal.length)|0];}
+function updatePeople(dt){
+  var target=Math.round(peopleTarget(simHour));
+  if (people.length<target && rng()<0.20) spawnPerson();
+  for (var i=people.length-1;i>=0;i--){
+    var p=people[i]; p.x+=p.dir*p.speed*dt*p.scale; p.step+=dt*p.speed*0.12;
+    if (p.x<p.x0-40||p.x>p.x1+40) people.splice(i,1);
+  }
+  while(people.length>target+4) people.splice(0,1);
+}
+
+// ---- autos ----
+function spawnCar(){
+  var dir=rng()<0.5?1:-1;
+  // carril: dir>0 ocupa mitad inferior (cerca), dir<0 mitad superior (lejos)
+  var laneFrac = dir>0 ? lerp(0.55,0.92,rng()) : lerp(0.10,0.45,rng());
+  var sc=lerp(0.6,1.25,laneFrac);
+  var c={dir:dir,laneFrac:laneFrac,sc:sc,
+         x:dir>0?-60:W+60,speed:(rng()*70+90),color:pickCarColor()};
+  cars.push(c);
+}
+function pickCarColor(){var pal=['#cfd6e2','#9aa6bd','#3f4a63','#6b7488','#b5563f','#3f6b75','#8a8f9c'];return pal[(rng()*pal.length)|0];}
+function updateCars(dt){
+  var target=Math.round(carTarget(simHour));
+  if (cars.length<target && rng()<0.16) spawnCar();
+  for (var i=cars.length-1;i>=0;i--){
+    var c=cars[i]; c.x+=c.dir*c.speed*dt;
+    if (c.x<-90||c.x>W+90) cars.splice(i,1);
+  }
+  while(cars.length>target+5) cars.splice(0,1);
+}
+
+// ====================== DIBUJO ======================
+function drawSky(h){
+  var dl=daylight(h);
+  var K=[[0,[8,10,26],[22,26,58]],[5,[12,16,40],[44,44,84]],[6.2,[46,52,96],[210,128,96]],
+    [7,[120,150,205],[255,186,128]],[9,[110,165,232],[205,228,247]],[13,[92,158,234],[202,230,248]],
+    [17,[108,160,222],[222,224,238]],[18.4,[92,112,182],[255,158,86]],[19.3,[42,46,98],[196,86,78]],
+    [20.2,[16,20,52],[46,42,86]],[22,[8,10,30],[26,28,64]],[24,[8,10,26],[22,26,58]]];
+  var top=K[0][1],bot=K[0][2];
+  for (var i=0;i<K.length-1;i++){ if(h>=K[i][0]&&h<=K[i+1][0]){var t=(h-K[i][0])/(K[i+1][0]-K[i][0]);top=lerpRGB(K[i][1],K[i+1][1],t);bot=lerpRGB(K[i][2],K[i+1][2],t);break;} }
+  var g=ctx.createLinearGradient(0,0,0,horizonY+30);
+  g.addColorStop(0,rgb(top)); g.addColorStop(1,rgb(bot));
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,horizonY+30);
+
+  // estrellas (de noche)
+  if (dl<0.5){
+    var sa=(0.5-dl)*1.8;
+    for (var s=0;s<stars.length;s++){var st=stars[s],tw=0.6+0.4*Math.sin(st.tw+simHour*1.5);
+      ctx.fillStyle='rgba(235,242,255,'+(sa*tw).toFixed(2)+')';
+      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.28); ctx.fill();}
+  }
+  // sol (sale en el amanecer real, se pone en el atardecer real)
+  var w=sunWin();
+  if (h>w.sunrise-0.2 && h<w.sunset+0.2){
+    var f=clamp((h-w.sunrise)/((w.sunset-w.sunrise)||1),0,1), sx=f*W, sy=horizonY-Math.sin(f*Math.PI)*horizonY*0.78, R=clamp(H*0.06,10,22);
+    var sun=lerpRGB([255,180,110],[255,244,210],smooth(w.sunrise+0.4,w.sunrise+3,h));
+    var rgd=ctx.createRadialGradient(sx,sy,1,sx,sy,R*3);
+    rgd.addColorStop(0,rgb(sun,0.9)); rgd.addColorStop(0.4,rgb(sun,0.35)); rgd.addColorStop(1,rgb(sun,0));
+    ctx.fillStyle=rgd; ctx.beginPath(); ctx.arc(sx,sy,R*3,0,6.28); ctx.fill();
+    ctx.fillStyle=rgb(sun,0.98); ctx.beginPath(); ctx.arc(sx,sy,R,0,6.28); ctx.fill();
+  }
+  // luna (entre atardecer y amanecer reales)
+  if (h>=w.sunset || h<=w.sunrise){
+    var span=(24-w.sunset)+w.sunrise, hm=(h>=w.sunset)?(h-w.sunset):(h+(24-w.sunset));
+    var f2=clamp(hm/(span||1),0,1), mx=f2*W, my=horizonY-Math.sin(f2*Math.PI)*horizonY*0.72, mr=clamp(H*0.05,8,15);
+    ctx.fillStyle='rgba(235,240,250,0.95)'; ctx.beginPath(); ctx.arc(mx,my,mr,0,6.28); ctx.fill();
+    ctx.fillStyle='rgba(220,226,240,0.5)'; ctx.beginPath(); ctx.arc(mx+mr*0.35,my-mr*0.25,mr*0.92,0,6.28); ctx.fill();
+  }
+}
+
+function drawBuildings(h){
+  var dl=daylight(h);
+  // skyline lejano
+  ctx.fillStyle=rgb(lerpRGB([24,28,52],[120,140,170],dl));
+  for (var i=0;i<farB.length;i++){var b=farB[i];ctx.fillRect(b.x,horizonY-b.h,b.w,b.h);}
+  // cercanos
+  var nearShade=lerpRGB([16,20,40],[92,104,134],dl), litFrac=clamp(1-dl,0,1)*0.62;
+  for (var j=0;j<nearB.length;j++){
+    var nb=nearB[j], by=horizonY-nb.h;
+    ctx.fillStyle=rgb(nearShade); ctx.fillRect(nb.x,by,nb.w,nb.h+(groundY-horizonY)+4);
+    var cw=nb.w/nb.cols,ch=nb.h/nb.rows;
+    for (var k=0;k<nb.win.length;k++){var w=nb.win[k],on=w.thr<litFrac;
+      var wy=by+w.r*ch+ch*0.22; if(wy<0) continue;
+      var wx=nb.x+w.c*cw+cw*0.22, ww=cw*0.56, wh=ch*0.5;
+      ctx.fillStyle = on ? 'rgba(255,214,130,'+(0.55+0.4*(1-dl)).toFixed(2)+')'
+                         : (dl>0.5?'rgba(255,255,255,0.10)':'rgba(120,140,170,0.10)');
+      ctx.fillRect(wx,wy,ww,wh);
+    }
+  }
+}
+
+function drawGround(h){
+  var dl=daylight(h);
+  // tierra/base urbana (entre horizonte y paseo)
+  var gg=ctx.createLinearGradient(0,horizonY,0,walkY);
+  gg.addColorStop(0,rgb(lerpRGB([20,22,34],[60,64,78],dl)));
+  gg.addColorStop(1,rgb(lerpRGB([12,14,22],[46,48,58],dl)));
+  ctx.fillStyle=gg; ctx.fillRect(0,horizonY,W,walkY-horizonY);
+
+  // PARQUE: césped
+  var grass=lerpRGB([14,30,18],[58,104,58],dl);
+  ctx.fillStyle=rgb(grass);
+  ctx.fillRect(parkX0,horizonY+(groundY-horizonY)*0.30,parkX1-parkX0,parkBaseY-(horizonY+(groundY-horizonY)*0.30)+4);
+  // textura sutil del césped
+  ctx.strokeStyle=rgb(lerpRGB([10,22,14],[40,76,42],dl),0.5); ctx.lineWidth=1;
+  for(var gx=parkX0+6; gx<parkX1; gx+=14){
+    ctx.beginPath(); ctx.moveTo(gx,parkBaseY); ctx.lineTo(gx-3,parkBaseY-6); ctx.stroke();
+  }
+  // sendero del parque
+  ctx.fillStyle=rgb(lerpRGB([30,30,38],[120,118,120],dl),0.85);
+  ctx.fillRect(parkX0,parkBaseY-3,parkX1-parkX0,6);
+
+  // PASEO peatonal (vereda)
+  var walk=ctx.createLinearGradient(0,walkY,0,roadTopY);
+  walk.addColorStop(0,rgb(lerpRGB([26,28,40],[120,122,130],dl)));
+  walk.addColorStop(1,rgb(lerpRGB([20,22,32],[96,98,106],dl)));
+  ctx.fillStyle=walk; ctx.fillRect(0,walkY,W,roadTopY-walkY);
+  // junta vereda
+  ctx.fillStyle=rgb(lerpRGB([14,16,24],[70,72,80],dl)); ctx.fillRect(0,walkY-1,W,2);
+
+  // AUTOPISTA
+  var road=ctx.createLinearGradient(0,roadTopY,0,roadBotY);
+  road.addColorStop(0,rgb(lerpRGB([14,15,22],[58,60,68],dl)));
+  road.addColorStop(1,rgb(lerpRGB([8,9,14],[40,42,50],dl)));
+  ctx.fillStyle=road; ctx.fillRect(0,roadTopY,W,roadBotY-roadTopY);
+  // cuneta
+  ctx.fillStyle=rgb(lerpRGB([10,11,16],[52,54,62],dl)); ctx.fillRect(0,roadTopY,W,2);
+}
+
+function drawRoadMarks(h){
+  var dl=daylight(h);
+  var lineA=rgb(lerpRGB([120,110,70],[235,225,150],dl), 0.5+0.4*(1-dl));
+  // línea central de separación de sentidos
+  var midY=lerp(roadTopY,roadBotY,0.50);
+  ctx.fillStyle=lineA;
+  ctx.fillRect(0,midY-1,W,2);
+  // marcas de carril punteadas (dos niveles de profundidad)
+  [0.30,0.72].forEach(function(fr){
+    var ly=lerp(roadTopY,roadBotY,fr), dash=lerp(14,26,fr), gap=lerp(12,20,fr), wdt=lerp(1.4,2.6,fr);
+    for(var dx=-((simHour*40)%(dash+gap)); dx<W; dx+=dash+gap){
+      ctx.fillStyle=rgb(lerpRGB([110,104,72],[230,222,160],dl),0.42+0.35*(1-dl));
+      ctx.fillRect(dx,ly,dash,wdt);
+    }
+  });
+}
+
+function drawTrees(h){
+  var dl=daylight(h);
+  for(var i=0;i<trees.length;i++){
+    var t=trees[i], tx=t.x, ty=t.y, sc=t.sc;
+    // ¿iluminado por luminaria peatonal cercana?
+    var lit=0;
+    if(dimNow>1){ for(var L=0;L<plamps.length;L++){var d=Math.abs(plamps[L].x-tx); if(d<60)lit=Math.max(lit,(1-d/70)*(dimPeat(dimNow)/100));} }
+    var trunk=rgb(lerpRGB([24,18,14],[70,52,36],dl));
+    var leaf=lerpRGB([10,26,16],[48,96,52],dl);
+    leaf=lerpRGB(leaf,[150,168,90],lit*0.5); // tinte cálido-verde si hay luz
+    var th=26*sc, cr=13*sc;
+    ctx.fillStyle=trunk; ctx.fillRect(tx-2*sc,ty-th,4*sc,th);
+    ctx.fillStyle=rgb(leaf);
+    ctx.beginPath(); ctx.arc(tx,ty-th-cr*0.4,cr,0,6.28); ctx.fill();
+    ctx.beginPath(); ctx.arc(tx-cr*0.7,ty-th+cr*0.1,cr*0.8,0,6.28); ctx.fill();
+    ctx.beginPath(); ctx.arc(tx+cr*0.7,ty-th+cr*0.1,cr*0.8,0,6.28); ctx.fill();
+  }
+}
+
+// haces de luz (aditivos) — antes de autos/gente/postes
+function drawLampGlow(){
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  // VIALES (grandes, haz amplio sobre la calzada)
+  if (dimNow>0.5){
+    var iv=dimNow/100;
+    for (var i=0;i<vlamps.length;i++){
+      var lp=vlamps[i], hx=lp.x+lp.arm*lp.mast*0.16, gy=lerp(roadTopY,roadBotY,0.40);
+      var rad=lerp(70,clamp(H*1.05,120,260),iv);
+      var grd=ctx.createRadialGradient(hx,gy,4,hx,gy,rad), warm='255,206,120';
+      grd.addColorStop(0,'rgba('+warm+','+(0.55*iv).toFixed(3)+')');
+      grd.addColorStop(0.45,'rgba('+warm+','+(0.22*iv).toFixed(3)+')');
+      grd.addColorStop(1,'rgba('+warm+',0)');
+      ctx.save(); ctx.translate(hx,gy); ctx.scale(1.25,0.5); ctx.translate(-hx,-gy);
+      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(hx,gy,rad,0,6.28); ctx.fill(); ctx.restore();
+    }
+  }
+  // PEATONALES (medianas, cálidas, concentradas)
+  var dp=dimPeat(dimNow);
+  if (dp>0.5){
+    var ip=dp/100;
+    for (var j=0;j<plamps.length;j++){
+      var pl=plamps[j], px=pl.x, py=pl.baseY-pl.mast*0.06, prad=lerp(34,clamp(H*0.42,54,120),ip);
+      var pg=ctx.createRadialGradient(px,pl.baseY,3,px,pl.baseY,prad), warmp='255,214,140';
+      pg.addColorStop(0,'rgba('+warmp+','+(0.40*ip).toFixed(3)+')');
+      pg.addColorStop(0.5,'rgba('+warmp+','+(0.16*ip).toFixed(3)+')');
+      pg.addColorStop(1,'rgba('+warmp+',0)');
+      ctx.save(); ctx.translate(px,pl.baseY); ctx.scale(1,0.55); ctx.translate(-px,-pl.baseY);
+      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(px,pl.baseY,prad,0,6.28); ctx.fill(); ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCars(h){
+  var dl=daylight(h), night=clamp(1-dl,0,1);
+  // ordenar por profundidad (lejos primero)
+  cars.sort(function(a,b){return a.laneFrac-b.laneFrac;});
+  for (var i=0;i<cars.length;i++){
+    var c=cars[i], y=lerp(roadTopY,roadBotY,c.laneFrac), sc=c.sc;
+    var cw=26*sc, chh=10*sc;
+    // faros (de noche)
+    if (night>0.25){
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      var fx=c.x+c.dir*cw*0.55, beamR=22*sc;
+      var bg=ctx.createRadialGradient(fx,y,1,fx+c.dir*beamR*0.6,y,beamR);
+      bg.addColorStop(0,'rgba(255,246,210,'+(0.55*night).toFixed(2)+')');
+      bg.addColorStop(1,'rgba(255,246,210,0)');
+      ctx.fillStyle=bg;
+      ctx.beginPath();
+      ctx.moveTo(fx,y-chh*0.3); ctx.lineTo(fx+c.dir*beamR,y-beamR*0.5);
+      ctx.lineTo(fx+c.dir*beamR,y+beamR*0.5); ctx.lineTo(fx,y+chh*0.3); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    // sombra
+    ctx.fillStyle='rgba(0,0,0,'+(0.25*(0.4+dl*0.5)).toFixed(2)+')';
+    ctx.beginPath(); ctx.ellipse(c.x,y+chh*0.7,cw*0.55,chh*0.35,0,0,6.28); ctx.fill();
+    // carrocería
+    ctx.fillStyle=mix(c.color,dl*0.35+0.05);
+    rrect(c.x-cw/2,y-chh,cw,chh,3*sc); ctx.fill();
+    rrect(c.x-cw*0.32,y-chh*1.7,cw*0.62,chh*0.8,2.4*sc); ctx.fill();
+    // luces: faro delantero (cálido) + trasero (rojo)
+    ctx.fillStyle='rgba(255,240,200,'+(0.6+0.4*night)+')';
+    ctx.fillRect(c.x+c.dir*(cw*0.46)-1.5,y-chh*0.6,3,chh*0.4);
+    ctx.fillStyle='rgba(230,70,60,'+(0.55+0.4*night)+')';
+    ctx.fillRect(c.x-c.dir*(cw*0.46)-1.5,y-chh*0.6,3,chh*0.4);
+  }
+}
+
+function drawPosts(h){
+  var dl=daylight(h);
+  var poleC=rgb(lerpRGB([20,24,40],[70,78,96],dl));
+  // VIALES (grandes)
+  var iv=dimNow/100;
+  for (var i=0;i<vlamps.length;i++){
+    var lp=vlamps[i], topY=lp.baseY-lp.mast, armLen=lp.mast*0.34*lp.arm, hx=lp.x+armLen, hy=topY+4;
+    ctx.strokeStyle=poleC; ctx.lineWidth=Math.max(3,H*0.018); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(lp.x,lp.baseY); ctx.lineTo(lp.x,topY); ctx.stroke();   // mástil
+    ctx.beginPath(); ctx.moveTo(lp.x,topY); ctx.lineTo(hx,hy); ctx.stroke();           // brazo
+    // cabeza grande
+    var hw=Math.max(16,H*0.05), hh2=Math.max(6,H*0.018);
+    ctx.fillStyle=poleC; rrect(hx-hw*0.5,hy-hh2*0.5,hw,hh2,2); ctx.fill();
+    // lente emisora (escala con dim)
+    if (dimNow>0.5){
+      ctx.fillStyle='rgba(255,'+((205+45*iv)|0)+','+((140+70*iv)|0)+','+(0.65+0.35*iv).toFixed(2)+')';
+      rrect(hx-hw*0.42,hy+hh2*0.2,hw*0.84,Math.max(2.5,H*0.008),1.5); ctx.fill();
+    } else {
+      ctx.fillStyle='rgba(120,130,150,0.55)';
+      rrect(hx-hw*0.42,hy+hh2*0.2,hw*0.84,Math.max(2.5,H*0.008),1.5); ctx.fill();
+    }
+  }
+  // PEATONALES (medianas, tipo globo)
+  var dp=dimPeat(dimNow), ip=dp/100;
+  for (var j=0;j<plamps.length;j++){
+    var pl=plamps[j], pTop=pl.baseY-pl.mast;
+    ctx.strokeStyle=poleC; ctx.lineWidth=Math.max(2,H*0.010); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(pl.x,pl.baseY); ctx.lineTo(pl.x,pTop); ctx.stroke();
+    var gr=Math.max(4,H*0.016);
+    if (dp>0.5){
+      var hg=ctx.createRadialGradient(pl.x,pTop,1,pl.x,pTop,gr*2.2);
+      hg.addColorStop(0,'rgba(255,226,160,'+(0.95*ip).toFixed(2)+')'); hg.addColorStop(1,'rgba(255,226,160,0)');
+      ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(pl.x,pTop,gr*2.2,0,6.28); ctx.fill();
+      ctx.fillStyle='rgba(255,232,180,'+(0.85+0.15*ip)+')';
+    } else {
+      ctx.fillStyle='rgba(150,158,176,0.6)';
+    }
+    ctx.beginPath(); ctx.arc(pl.x,pTop,gr,0,6.28); ctx.fill();
+  }
+}
+
+function drawPerson(p,h){
+  var dl=daylight(h), x=p.x,y=p.y,sc=p.scale, bodyH=16*sc, headR=2.8*sc, lit=0;
+  if (dimNow>1){
+    var src = p.lane===2 ? plamps : plamps.concat(vlamps);
+    for(var i=0;i<src.length;i++){var d=Math.abs(src[i].x-x); if(d<lerp(34,80,dimNow/100))lit=Math.max(lit,(1-d/90)*(dimNow/100));}
+  }
+  var bright=dl*0.5+lit*0.7, sw=Math.sin(p.step)*2.6*sc;
+  ctx.fillStyle='rgba(0,0,0,'+(0.22*(0.4+dl*0.6)).toFixed(2)+')';
+  ctx.beginPath(); ctx.ellipse(x,y+1,4.4*sc,1.6*sc,0,0,6.28); ctx.fill();
+  ctx.strokeStyle=mix(p.color,bright); ctx.lineWidth=2.1*sc; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x,y-bodyH*0.45); ctx.lineTo(x-sw,y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x,y-bodyH*0.45); ctx.lineTo(x+sw,y); ctx.stroke();
+  ctx.lineWidth=3*sc; ctx.beginPath(); ctx.moveTo(x,y-bodyH); ctx.lineTo(x,y-bodyH*0.45); ctx.stroke();
+  ctx.fillStyle=mix(p.color,bright*0.9+0.1); ctx.beginPath(); ctx.arc(x,y-bodyH-headR*0.7,headR,0,6.28); ctx.fill();
+}
+
+// helpers
+function rrect(x,y,w,hh,r){r=Math.min(r,w*0.5,hh*0.5);ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+hh,r);ctx.arcTo(x+w,y+hh,x,y+hh,r);
+  ctx.arcTo(x,y+hh,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function mix(hex,b){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),bl=parseInt(hex.slice(5,7),16);
+  r=clamp(r+(255-r)*b,0,255);g=clamp(g+(255-g)*b,0,255);bl=clamp(bl+(255-bl)*b,0,255);return 'rgb('+(r|0)+','+(g|0)+','+(bl|0)+')';}
+
+function drawClock(){
+  var r=clamp(H*0.13,14,24), cx=r+12, cy=r+10;
+  ctx.fillStyle='rgba(30,36,69,0.74)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.28); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.32)'; ctx.lineWidth=1.3; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.28); ctx.stroke();
+  for (var m=0;m<12;m+=3){var a=m/12*6.2832-Math.PI/2;
+    ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*(r-2),cy+Math.sin(a)*(r-2)); ctx.lineTo(cx+Math.cos(a)*(r-6),cy+Math.sin(a)*(r-6)); ctx.stroke();}
+  var hh=simHour%12, mm=(simHour%1)*60;
+  var ah=(hh/12)*6.2832+(mm/60)*(6.2832/12)-Math.PI/2;
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(ah)*r*0.5,cy+Math.sin(ah)*r*0.5); ctx.stroke();
+  var am=(mm/60)*6.2832-Math.PI/2;
+  ctx.strokeStyle='#22B0E1'; ctx.lineWidth=1.7;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(am)*r*0.78,cy+Math.sin(am)*r*0.78); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,1.8,0,6.28); ctx.fill();
+}
+
+var curSig=null;
+var scrubbing=false;
+var paused=false;
+function signalNow(h){
+  var w=sunWin(), es=(typeof LANG==='undefined'||LANG==='es');
+  function near(ev){var d=h-ev; if(d>12)d-=24; if(d<-12)d+=24; return d;}
+  function fwd(d){ if(d<-12)d+=24; if(d>12)d-=24; return d; }
+  var dDusk=near(w.sunset), dDawn=near(w.sunrise);
+  // ATARDECER: la cuenta es REFERENCIA hacia el atardecer; el encendido ocurre en atardecer+offEnc
+  var duskLo=Math.min(0,w.oe/60)-0.12, duskHi=Math.max(0,w.oe/60)+0.18;
+  if(dDusk>=duskLo && dDusk<=duskHi){
+    var toSet=fwd(w.sunset-h);
+    var sub=toSet>0?(es?('Atardecer en '+Math.ceil(toSet*60)+' min'):('Sunset in '+Math.ceil(toSet*60)+' min')):(es?'Atardecer':'Sunset');
+    var note=w.oe<0?(es?('enciende '+(-w.oe)+' min antes'):('on '+(-w.oe)+' min before')):w.oe>0?(es?('enciende '+w.oe+' min después'):('on '+w.oe+' min after')):(es?'enciende al atardecer':'on at sunset');
+    return {kind:'dusk',label:(es?'Atardecer':'Dusk'),sub:sub,note:note,off:w.oe,pulse:1-Math.min(1,Math.abs(dDusk)/0.2)};
+  }
+  // AMANECER: la cuenta es REFERENCIA hacia el amanecer; el apagado ocurre en amanecer+offApag
+  var dawnLo=Math.min(0,w.oa/60)-0.12, dawnHi=Math.max(0,w.oa/60)+0.22;  // simétrico a la tarde: sigue mostrando "Amanecer" tras el amanecer
+  if(dDawn>=dawnLo && dDawn<=dawnHi){
+    var toRise=fwd(w.sunrise-h);
+    var sub2=toRise>0?(es?('Amanecer en '+Math.ceil(toRise*60)+' min'):('Sunrise in '+Math.ceil(toRise*60)+' min')):(es?'Amanecer':'Sunrise');
+    var note2=w.oa<0?(es?('apaga '+(-w.oa)+' min antes'):('off '+(-w.oa)+' min before')):w.oa>0?(es?('apaga '+w.oa+' min después'):('off '+w.oa+' min after')):(es?'apaga al amanecer':'off at sunrise');
+    return {kind:'dawn',label:(es?'Amanecer':'Dawn'),sub:sub2,note:note2,off:w.oa,pulse:1-Math.min(1,Math.abs(dDawn)/0.2)};
+  }
+  return null;
+}
+function drawSignal(){
+  if(!curSig) return;
+  var x=curSig.kind==='dusk'? Math.min(W-24,W*0.9) : Math.max(24,W*0.1), y=horizonY;
+  var col=curSig.kind==='dusk'?[234,86,27]:[250,181,18];
+  var t=REDUCED?1.57:performance.now()*0.005, pr=10+7*Math.abs(Math.sin(t));
+  var gr=ctx.createRadialGradient(x,y,1,x,y,pr+12);
+  gr.addColorStop(0,rgb(col,0.7)); gr.addColorStop(1,rgb(col,0));
+  ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,pr+12,0,6.28); ctx.fill();
+  ctx.strokeStyle=rgb(col,0.55+0.35*Math.abs(Math.sin(t))); ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(x,y,pr,0,6.28); ctx.stroke();
+  ctx.fillStyle=rgb(col,0.95); ctx.beginPath(); ctx.arc(x,y,3.2,0,6.28); ctx.fill();
+}
+function render(){
+  drawSky(simHour);
+  drawBuildings(simHour);
+  drawGround(simHour);
+  drawTrees(simHour);
+  drawRoadMarks(simHour);
+  drawLampGlow();
+  drawCars(simHour);
+  // gente ordenada por profundidad
+  people.sort(function(a,b){return a.y-b.y;});
+  for (var i=0;i<people.length;i++) drawPerson(people[i],simHour);
+  drawPosts(simHour);
+  drawSignal();
+  var dl=daylight(simHour);
+  if (dl<0.6){
+    var v=ctx.createRadialGradient(W/2,H*0.5,H*0.32,W/2,H*0.5,W*0.72);
+    v.addColorStop(0,'rgba(0,0,0,0)'); v.addColorStop(1,'rgba(0,0,0,'+(0.34*(1-dl)).toFixed(2)+')');
+    ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+  }
+  drawClock();
+}
+
+// ---- readout ----
+var rEl={clock:document.getElementById('ctClock'),phase:document.getElementById('ctPhase'),dim:document.getElementById('ctDim'),save:document.getElementById('ctSave'),signal:document.getElementById('ctSignal'),date:document.getElementById('ctDate')};
+var hudT=0;
+function fmt(h){var hh=Math.floor(h)%24,mm=Math.floor((h%1)*60);return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
+function updateHUD(dt){
+  hudT-=dt; if(hudT>0)return; hudT=0.1;
+  if(!rEl.clock)return;
+  rEl.clock.textContent=fmt(simHour);
+  if(typeof scrub!=="undefined" && scrub && !scrubbing){ scrub.value=simHour; }
+  if(rEl.date){ try{
+    if(typeof sunCache!=='undefined' && sunCache.length){
+      var _i=Math.max(0,Math.min(sunCache.length-1,dayIdx())), _d=sunCache[_i]&&sunCache[_i].date;
+      if(_d){ var _es=(typeof LANG==='undefined'||LANG==='es');
+        var _m=(typeof MES!=='undefined')?MES[_es?'es':'en'][_d.getUTCMonth()]:('/'+(_d.getUTCMonth()+1));
+        rEl.date.textContent='📅 '+_d.getUTCDate()+' '+_m+' '+_d.getUTCFullYear(); }
+    }
+  }catch(e){} }
+  var ph=phaseOf(simHour); rEl.phase.textContent=ph[0];
+  rEl.dim.textContent=Math.round(dimNow);
+  var es=(typeof LANG==='undefined'||LANG==='es');
+  rEl.save.textContent = dimNow>1 ? ('−'+Math.round(100-dimNow)+'%'+(es?' energía':' energy')) : '—';
+  if(rEl.signal){
+    if(curSig){ rEl.signal.style.display='flex';
+      var ic=curSig.kind==='dusk'?'🌇':'🌅';
+      rEl.signal.innerHTML='<b>'+ic+' '+curSig.sub+'</b>'+(curSig.note?(' <span class="o">'+curSig.note+'</span>'):'');
+    } else rEl.signal.style.display='none';
+  }
+}
+
+function update(dt){
+  var w=sunWin();
+  function inSpan(h,a,b){var lo=Math.min(a,b)-0.05,hi=Math.max(a,b)+0.13;return h>=lo&&h<=hi;} // pre 3min / post ~8min: la señal del evento queda visible (mañana = tarde)
+  // durante la cuenta del offset (entre el evento solar y el switch) -> 1 s = 1 min
+  var slow=(Math.abs(w.oe)>0.001 && inSpan(simHour,w.sunset,w.on)) || (Math.abs(w.oa)>0.001 && inSpan(simHour,w.sunrise,w.off));
+  var rate = slow ? (1/60) : (hrPerSec*speedMul);
+  if(!scrubbing && !paused){ simHour+=rate*dt; if(simHour>=24)simHour-=24; }   // scrubber/pausa mandan
+  curSig=signalNow(simHour);
+  var target=dimAt(simHour), FADE_S=0.6;  // transición de brillo en SEGUNDOS reales: nítida a cualquier velocidad (antes iba atada al tiempo simulado y en cámara lenta apagaba tardísimo)
+  if (scrubbing||REDUCED) dimNow=target; else dimNow+=(target-dimNow)*Math.min(1,dt/FADE_S);
+  if (Math.abs(target-dimNow)<0.3) dimNow=target;
+  if(!paused){ updatePeople(dt); updateCars(dt); }
+}
+
+var last=0,raf=0;
+function loop(ts){
+  raf=requestAnimationFrame(loop);
+  if (typeof S==='undefined' || S.tab!=='dim'){ last=ts; return; }   // solo en pestaña Dimerización
+  var _r=cv.getBoundingClientRect(), _w=Math.round(_r.width), _h=Math.round(_r.height);
+  if(_w>0 && (_w!==W||_h!==H)) resize();                              // (re)mide al hacerse visible
+  if(!W){ last=ts; return; }
+  if (!last) last=ts;
+  var dt=(ts-last)/1000; last=ts;
+  if (dt>0.05) dt=0.05; if (dt<=0) return;
+  fpsAccum+=dt; fpsFrames++; if(fpsAccum>=0.5){fpsVal=Math.round(fpsFrames/fpsAccum);fpsAccum=0;fpsFrames=0;}
+  try{ update(dt); render(); updateHUD(dt); }
+  catch(err){ console.error('banner error:',err); if(bannerEl)bannerEl.classList.add('show'); }
+}
+function resize(){
+  var r=cv.getBoundingClientRect();
+  W=Math.max(240,Math.round(r.width)); H=Math.max(120,Math.round(r.height));
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+  // líneas de profundidad
+  horizonY = H*0.44;
+  groundY  = H*0.56;
+  parkBaseY= H*0.62;
+  walkY    = H*0.64;
+  roadTopY = H*0.72;
+  roadBotY = H;
+  buildScene();
+}
+window.addEventListener('resize',function(){clearTimeout(window.__rzt);window.__rzt=setTimeout(resize,120);});
+var speedBtn=document.getElementById('ctSpeed');
+if(speedBtn){speedBtn.addEventListener('click',function(){
+  speedIdx=(speedIdx+1)%SPEEDS.length; speedMul=SPEEDS[speedIdx];
+  speedBtn.textContent='▸ '+speedMul+'×';
+});}
+document.addEventListener('visibilitychange',function(){
+  if (document.hidden){cancelAnimationFrame(raf);raf=0;} else if(!raf){last=0;raf=requestAnimationFrame(loop);}
+});
+function init(){
+  if(useToday){var _n=new Date(); simHour=clamp(_n.getHours()+_n.getMinutes()/60,0,23.999);}
+  resize();
+  var t0=Math.round(peopleTarget(simHour));
+  for (var i=0;i<t0;i++){spawnPerson(); var pp=people[people.length-1]; pp.x=pp.x0+Math.random()*(pp.x1-pp.x0);}
+  var c0=Math.round(carTarget(simHour));
+  for (var j=0;j<c0;j++){spawnCar(); cars[cars.length-1].x=Math.random()*W;}
+  dimNow=dimAt(simHour);
+  last=0; raf=requestAnimationFrame(loop);
+}
+var todayBtn=document.getElementById('ctToday');
+if(todayBtn){ todayBtn.addEventListener('click',function(){ useToday=!useToday; var es=(typeof LANG==='undefined'||LANG==='es'); todayBtn.textContent=useToday?(es?'Hoy':'Today'):(es?'Análisis':'Analysis'); todayBtn.classList.toggle('on',useToday); }); }
+var pauseBtn=document.getElementById('ctPause');
+if(pauseBtn){ pauseBtn.addEventListener('click',function(){ paused=!paused; pauseBtn.textContent=paused?'▶':'⏸'; pauseBtn.classList.toggle('on',paused); }); }
+var scrub=document.getElementById('ctScrub');
+if(scrub){
+  scrub.addEventListener('input',function(){scrubbing=true; simHour=clamp(+scrub.value,0,23.999);});
+  scrub.addEventListener('pointerdown',function(){scrubbing=true;});
+  ['pointerup','mouseup','touchend','change','blur'].forEach(function(ev){scrub.addEventListener(ev,function(){scrubbing=false;});});
+}
+var _dt=document.getElementById('dimTables');
+if(_dt) _dt.addEventListener('input',function(e){var k=e.target&&e.target.dataset?e.target.dataset.k:null;if(k!=null&&k!=='')simHour=clamp((+k)*0.5+0.25,0,23.99);});
+init();
+})();
+
 </script>
 </body>
 </html>
