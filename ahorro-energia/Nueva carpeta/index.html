@@ -33,7 +33,7 @@
   body{background:var(--bg); color:var(--ink); font-family:var(--body); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums}
   h1,h2,h3{font-family:var(--disp); margin:0; letter-spacing:-.01em}
   .mono{font-family:var(--mono)}
-  .wrap{max-width:var(--maxw,1480px); margin:0 auto; padding:22px var(--pad,32px) 56px}
+  .wrap{max-width:1320px; margin:0 auto; padding:22px 20px 56px}
   .top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px}
   .brand{display:flex; align-items:center; gap:14px}
   .logo{width:42px; height:42px; border-radius:12px; flex:none; background:radial-gradient(circle at 32% 32%, #5BC7EE, var(--indigo) 62%, #1E2445); box-shadow:0 6px 16px rgba(34,176,225,.30); position:relative}
@@ -381,12 +381,13 @@
 </style>
 </head>
 <body>
-<header class="topband band--navy"><div class="bandinner">
+<div class="wrap">
+
   <div class="top">
     <div class="brand">
       <div class="logo"></div>
       <div class="t">
-        <div class="wordmark"><span class="w-ubi">ubi</span><span class="w-cq">cquia</span><sup class="w-r">®</sup></div>
+        <div class="eyebrow" data-i18n="eyebrow">Alumbrado público · energía y costo</div>
         <h1 data-i18n="title">Calculadora de consumo anual</h1>
       </div>
     </div>
@@ -401,9 +402,7 @@
       </div>
     </div>
   </div>
-  </div></header>
 
-  <div class="wrap">
   <div class="shell">
     <aside>
       <div class="panel">
@@ -434,8 +433,8 @@
       <div class="tabs flat" id="tabs">
         <div class="tab active" data-tab="config" data-i18n="t_config">Ubicación y tarifa</div>
         <div class="tab" data-tab="inventario" data-i18n="t_inv">Inventario</div>
-        <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
         <div class="tab" data-tab="escenarios" data-i18n="t_escenarios">Escenarios</div>
+        <div class="tab" data-tab="dim" data-i18n="t_dim">Dimerización</div>
         <div class="tab" data-tab="perfil" data-i18n="t_perfil">Perfil diario</div>
         <div class="tab" data-tab="tabla" data-i18n="t_tabla">Tabla anual</div>
         <div class="tab" data-tab="resumen" data-i18n="t_resumen">Resumen</div>
@@ -840,10 +839,6 @@
     </main>
   </div>
 </div>
-<footer class="footband band--navy"><div class="bandinner">
-  <span class="wordmark"><span class="w-ubi">ubi</span><span class="w-cq">cquia</span><sup class="w-r">®</sup></span>
-  <span class="ftag">griddata.cl · <span data-i18n="footer_tag">Telegestión de alumbrado público</span></span>
-</div></footer>
 
 <div class="iox-modal" id="ioxModal" hidden>
   <div class="iox-box">
@@ -1778,72 +1773,6 @@ function renderExec(){
 }
 
 /* ============ PDF ============ */
-/* marca: wordmark ubicquia® + bandas navy (cabecera/pie) para el reporte */
-function pdfWordmark(doc,x,y,size,onNavy){
-  doc.setFont("helvetica","bold");doc.setFontSize(size);
-  doc.setTextColor(34,176,225);doc.text("ubi",x,y);
-  const w1=doc.getTextWidth("ubi");
-  if(onNavy)doc.setTextColor(255,255,255);else doc.setTextColor(30,36,69);
-  doc.text("cquia",x+w1,y);
-  const w2=doc.getTextWidth("cquia");
-  doc.setFontSize(size*0.42);doc.setTextColor(34,176,225);
-  doc.text("®",x+w1+w2+1,y-size*0.42);
-}
-function pdfBrandHeader(doc,W,M,title,subtitle,metaLines){
-  const hb=80;
-  doc.setFillColor(30,36,69);doc.rect(0,0,W,hb,"F");
-  doc.setFillColor(174,204,83);doc.rect(0,hb,W,2.5,"F");
-  pdfWordmark(doc,M,32,18,true);
-  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(198,204,218);
-  doc.text(subtitle||"",M,47);
-  doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(255,255,255);
-  doc.text(title,M,66);
-  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(198,204,218);
-  (metaLines||[]).forEach((m,i)=>doc.text(String(m),W-M,30+i*11,{align:"right"}));
-  return hb+20;
-}
-function pdfBrandFooterAll(doc,M){
-  const n=doc.getNumberOfPages();
-  for(let p=1;p<=n;p++){doc.setPage(p);
-    const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
-    const fb=28;
-    doc.setFillColor(30,36,69);doc.rect(0,ph-fb,pw,fb,"F");
-    pdfWordmark(doc,M,ph-10,10,true);
-    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(158,182,232);
-    doc.text("griddata.cl · "+t("footer_tag"),pw/2,ph-10,{align:"center"});
-    doc.text(t("pdf_page")+" "+p+"/"+n,pw-M,ph-10,{align:"right"});
-  }
-}
-/* tarjeta KPI reutilizable para PDFs */
-function pdfKcard(doc,cx,cy,cw,ch,k,v,s,accent){
-  doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundedRect(cx,cy,cw,ch,6,6,"FD");
-  doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
-  doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
-  doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(30,36,69);doc.text(String(v),cx+10,cy+39);
-  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(String(s),cx+10,cy+ch-9);
-}
-/* mini-gráfico de barras mensual dibujado en jsPDF (sin canvas) */
-function pdfMiniBars(doc,x,y,w,h,A,B,colA,colB,labA,labB){
-  const n=12,max=Math.max.apply(null,A.concat(B).concat([1]));
-  const months=(LANG==="es")?["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  doc.setFontSize(7.5);
-  doc.setFillColor(colA[0],colA[1],colA[2]);doc.rect(x,y,8,8,"F");
-  doc.setTextColor(70,77,99);doc.text(String(labA),x+12,y+7);
-  const lw=doc.getTextWidth(String(labA))+30;
-  doc.setFillColor(colB[0],colB[1],colB[2]);doc.rect(x+lw,y,8,8,"F");
-  doc.text(String(labB),x+lw+12,y+7);
-  const top=y+18,plotH=h-18-16,base=top+plotH;
-  doc.setDrawColor(238,240,245);doc.setLineWidth(0.5);
-  for(let g=0;g<=4;g++){const yy=top+plotH*(1-g/4);doc.line(x,yy,x+w,yy);}
-  const gw=w/n,bw=gw*0.30,gap=gw*0.08,off=(gw-(bw*2+gap))/2;
-  for(let i=0;i<n;i++){
-    const gx=x+i*gw+off,ha=(A[i]/max)*plotH,hb=(B[i]/max)*plotH;
-    doc.setFillColor(colA[0],colA[1],colA[2]);doc.rect(gx,base-ha,bw,ha,"F");
-    doc.setFillColor(colB[0],colB[1],colB[2]);doc.rect(gx+bw+gap,base-hb,bw,hb,"F");
-    doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(153,160,180);
-    doc.text(months[i],x+i*gw+gw/2,base+10,{align:"center"});
-  }
-}
 function exportPDF(){
   if(!window.jspdf||!window.jspdf.jsPDF){alert(t("pdf_offline"));window.print();return;}
   renderExec();
@@ -1855,57 +1784,46 @@ function exportPDF(){
   const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
   const eqA=RA.equivH,eqB=RB.equivH,flA=eKWh("A"),flB=eKWh("B");
   const dlt=(v,d=0)=>(v>=0?"+":"-")+nf(Math.abs(v),d);
-  const metaLines=[`${t("ex_loc")}: ${place}`,`${t("ex_year")}: ${S.year}`,`${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,`${nf(units)} ${t("ex_lum")} · ${nf(IKW,1)} kW`];
-  y=pdfBrandHeader(doc,W,M,t("ex_title"),t("eyebrow"),metaLines);
-  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
-  const act=activeScenarios();
-  const savPct=x.kAstro100? x.dimSave/x.kAstro100*100 : 0;
-  const convKwh=x.kAstro100, convUSD=convKwh*S.tariff;
-  const dimKwh=x.kAstroDim, dimUSD=dimKwh*S.tariff, savUSD=x.dimSave*S.tariff;
-  const pb=payback();
-  /* tarjetas KPI */
-  function kcard(cx,cy,cw,ch,k,v,s,accent){
-    doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundedRect(cx,cy,cw,ch,6,6,"FD");
-    doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
-    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
-    doc.setFont("helvetica","bold");doc.setFontSize(17);doc.setTextColor(30,36,69);doc.text(v,cx+10,cy+39);
-    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(s,cx+10,cy+ch-9);
-  }
-  {const gap=12, cw=(W-2*M-2*gap)/3, ch=66;
-   kcard(M,y,cw,ch,t("pdf_kpi_energy"),nf(savPct,1)+"%",nf(dimKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"),[34,176,225]);
-   kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),money(savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
-   kcard(M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—",(pb.invest?t("pdf_inv")+" "+money(pb.invest):""),[34,176,225]);
-   y+=ch+18;}
-  /* narrativa */
-  doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(70,77,99);
-  {const nr=t("pdf_narr").replace("{convUSD}",money(convUSD)).replace("{convKwh}",nf(convKwh,0)+" kWh").replace("{dimUSD}",money(dimUSD)).replace("{savUSD}",money(savUSD)).replace("{pct}",nf(savPct,1)+"%");
-   const nl=doc.splitTextToSize(nr,W-2*M);doc.text(nl,M,y);y+=nl.length*12+12;}
-  /* gráfico mensual */
-  sec(t("ex_month"));
-  {const cw2=W-2*M, chh2=148; y+=4; try{doc.addImage(document.getElementById("execMonth").toDataURL("image/png"),"PNG",M,y,cw2,chh2);}catch(e){} y+=chh2+14;}
-  /* estrategia de dimerización */
-  sec(t("exp_dim_title"));
-  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(46,77,99);
-  {const sl=doc.splitTextToSize(dimStrategyPDF(),W-2*M);doc.text(sl,M,y+4);y+=4+sl.length*11+12;}
-  /* comparación de escenarios */
-  sec(t("pdf_scn_t"));
-  {const body=[[t("conv_name"),nf(convKwh,0),money(convUSD),"—",t("base"),"—"]];
-   let bestRow=-1,bestSav=-Infinity;
-   act.forEach(c=>{const kk=eKWh(c.key),co=kk*S.tariff,sv=convKwh-kk,svp=convKwh?sv/convKwh*100:0;
-     const pbc=(c.key==="A"&&pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—";
-     body.push([c.lab,nf(kk,0),money(co),sv>0?money(sv*S.tariff):"—",sv>0?nf(svp,1)+"%":(Math.abs(svp)<0.05?t("base"):nf(svp,1)+"%"),pbc]);
-     if(sv>bestSav){bestSav=sv;bestRow=body.length-1;}});
-   if(bestRow>0&&bestSav>0)body[bestRow][0]=body[bestRow][0]+"  ·  "+t("recommended_tag");
-   doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
-     headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
-     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:210}},
-     head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
-     body:body,
-     didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===bestRow){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
-   y=doc.lastAutoTable.finalY+14;}
-  /* metodología */
-  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
-  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,y);
+  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
+  doc.text(t("ex_title"),M,y);y+=10;
+  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
+  doc.text(`${t("ex_loc")}: ${place}     ${t("ex_year")}: ${S.year}     ${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,M,y);y+=18;
+  function head(title){doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(title,M,y);y+=4;}
+  head(t("exp_dim_title"));
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(22,33,63);
+  {const sl=doc.splitTextToSize(dimStrategyPDF(),W-M*2);doc.text(sl,M,y+8);y+=8+sl.length*11+12;}
+  head(t("ex_key"));
+  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:10,textColor:[22,33,63]},
+    head:[[t("ex_energy"),t("ex_cost"),t("ex_power"),t("ex_lum")]],
+    body:[[nf(x.kAstroDim,0)+" kWh",money(x.kAstroDim*S.tariff),nf(IKW,1)+" kW",nf(units)]]});
+  y=doc.lastAutoTable.finalY+18;
+  head(t("ex_save_title"));
+  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[14,155,114],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
+    columnStyles:{0:{cellWidth:230}},
+    head:[[t("c_ind"),t("ex_save_energy")+" (kWh)",t("ex_save_money"),"%"]],
+    body:(()=>{const b=[];if(S.B.enabled)b.push([t("ex_save_sched"),dlt(x.schedSave),money(Math.abs(x.schedSave)*S.tariff),(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"%"]);b.push([t("ex_save_dim"),nf(x.dimSave,0),money(x.dimSave*S.tariff),(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"%"]);return b;})()});
+  y=doc.lastAutoTable.finalY+18;
+  head(t("ex_detail"));
+  {const act=activeScenarios();
+  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",headStyles:{fillColor:[46,84,150],textColor:255,fontSize:9},bodyStyles:{fontSize:9},
+    columnStyles:{0:{cellWidth:230}},
+    head:[[t("c_ind"),...act.map(c=>c.lab)]],
+    body:[
+      [t("r_ophours"),...act.map(c=>nf(c.res.onH,1))],
+      [t("r_kwh_fleet"),...act.map(c=>nf(eKWh(c.key),0))],
+      [t("r_cost_fleet"),...act.map(c=>money(eKWh(c.key)*S.tariff))]
+    ]});}
+  y=doc.lastAutoTable.finalY+20;
+  const cw=(W-M*2-14)/2, chh=cw*0.5;
+  if(y+chh+30>Hp-40){doc.addPage();y=46;}
+  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);
+  doc.text(t("ex_month"),M,y);doc.text(t("ex_yearch"),M+cw+14,y);y+=8;
+  try{doc.addImage(document.getElementById("execMonth").toDataURL("image/png"),"PNG",M,y,cw,chh);
+      doc.addImage(document.getElementById("execYear").toDataURL("image/png"),"PNG",M+cw+14,y,cw,chh);}catch(e){}
+  y+=chh+18;
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,y);
 
   // ===== Página: configuración detallada del análisis =====
   doc.addPage("a4","portrait");
@@ -1945,7 +1863,6 @@ function exportPDF(){
   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
   doc.text(doc.splitTextToSize(t("exp_month"),W2-M*2),M,y2);
 
-  pdfBrandFooterAll(doc,M);
   doc.save("resumen_ejecutivo_"+S.year+".pdf");
 }
 
@@ -2147,8 +2064,8 @@ function toast(msg,kind){
 const FLOW=[
   {tab:"config",key:"t_config"},
   {tab:"inventario",key:"t_inv"},
-  {tab:"dim",key:"t_dim"},
   {tab:"escenarios",key:"t_escenarios"},
+  {tab:"dim",key:"t_dim"},
   {tab:"perfil",key:"t_perfil"},
   {tab:"tabla",key:"t_tabla"},
   {tab:"resumen",key:"t_resumen"},
@@ -2288,9 +2205,7 @@ function importFromText(txt){
       return importCasesPayload(obj);
     }
     applyImportedState(obj);
-    try{ const sv=savings(); const pct=sv.kAstro100? sv.dimSave/sv.kAstro100*100 : 0;
-      const nm=t("scn_savings_name").replace("{pct}", nf(pct,1)+"%");
-      CASES.push(snapshotCase(nm)); persistCases(); }catch(e){}
+    try{ CASES.push(snapshotCase(t("imported_case"))); persistCases(); }catch(e){}
     if(typeof setTab==="function") setTab("comparador");
     try{ renderComparador(); }catch(e){}
     toast(t("imp_ok_case"),"ok"); return true;
@@ -2405,13 +2320,6 @@ Object.assign(DICT.es,{
   cmp_base_conv:"Alumbrado Público Convencional", cmp_base_auto:"Auto · caso de mayor consumo",
   cases_imported:"{n} caso(s) importado(s) al comparador",
   perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
-  footer_tag:"Telegestión de alumbrado público",
-  pdf_page:"Página",
-  pdf_kpi_energy:"Ahorro de energía", pdf_kpi_money:"Ahorro económico", pdf_kpi_money_sub:"por año vs convencional",
-  pdf_kpi_pay:"Retorno (payback)", pdf_inv:"inversión", pdf_scn_t:"Comparación de escenarios",
-  pdf_narr:"Sin dimerizar, la cuenta anual de la flota es de {convUSD} ({convKwh}). Con la estrategia de dimerización, baja a {dimUSD} — un ahorro de {savUSD} ({pct}) al año.",
-  scn_savings_name:"Escenario Ahorro {pct}",
-  recommended_tag:"recomendado",
   imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
   cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
   cmp_vs_ref:"frente a la referencia",
@@ -2445,13 +2353,6 @@ Object.assign(DICT.en,{
   cmp_base_conv:"Conventional Public Lighting", cmp_base_auto:"Auto · highest-use case",
   cases_imported:"{n} case(s) imported into the comparator",
   perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
-  footer_tag:"Smart street-lighting management",
-  pdf_page:"Page",
-  pdf_kpi_energy:"Energy savings", pdf_kpi_money:"Economic savings", pdf_kpi_money_sub:"per year vs conventional",
-  pdf_kpi_pay:"Payback", pdf_inv:"investment", pdf_scn_t:"Scenario comparison",
-  pdf_narr:"Without dimming, the fleet's annual bill is {convUSD} ({convKwh}). With the dimming strategy it drops to {dimUSD} — a saving of {savUSD} ({pct}) per year.",
-  scn_savings_name:"Scenario Savings {pct}",
-  recommended_tag:"recommended",
   imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
   cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
   cmp_vs_ref:"vs the reference",
@@ -2462,21 +2363,6 @@ Object.assign(DICT.en,{
   cmp_mi_base_own:"Each case is compared against its own conventional lighting: its same fleet and inventory at full power (100%) over the same NOAA window. The base does not depend on the other cases."
 });
 document.head.insertAdjacentHTML("beforeend",`<style>
-  :root{--maxw:1480px; --pad:clamp(16px,4vw,40px)}
-  .band--navy{background:var(--ink); color:#fff}
-  .topband,.footband{width:100%}
-  .bandinner{max-width:var(--maxw); margin:0 auto; padding-inline:var(--pad)}
-  .topband .bandinner{padding-block:14px}
-  .topband .top{margin-bottom:0}
-  .topband .brand .t h1{color:#C6CCDA; font-size:13px; font-weight:600; margin-top:3px}
-  .topband .logo{box-shadow:0 6px 16px rgba(0,0,0,.25)}
-  .wordmark{font-family:var(--disp); font-weight:800; font-size:21px; letter-spacing:-.01em; line-height:1}
-  .wordmark .w-ubi{color:var(--indigo)} .wordmark .w-cq{color:#fff} .wordmark .w-r{font-size:9px; vertical-align:super; color:var(--indigo); margin-left:1px}
-  .footband .bandinner{padding-block:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
-  .footband .ftag{color:#9fb6e8; font-size:12px; font-family:var(--mono)}
-  .footband .wordmark{font-size:17px}
-  @media print{ .topband,.footband{display:none!important} }
-
   .perfil-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:16px; align-items:start; margin-bottom:18px}
   .perfil-col{min-width:0}
   .perfil-col canvas{width:100%; height:auto; display:block}
@@ -2770,7 +2656,7 @@ function renderComparador(){
   if(base.synthetic){
     html+=`<tr class="baserow"><td><span class="cmp-dot" style="display:inline-block;background:#99A0B4;margin-right:7px"></span>${escapeHtml(base.name)} <span class="cmp-base-pill">${t("cmp_base_tag")}</span></td>`+
       `<td class="num">${nf(base.annualKwh,0)}</td><td class="num">${cusd(base.annualUSD)}</td>`+
-      `<td class="num">—</td><td class="num">—</td><td class="num">${t("base")}</td><td class="num">—</td><td class="actc"><button class="miniact" title="PDF" onclick="exportCasePDF('__conv__')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button></td></tr>`;
+      `<td class="num">—</td><td class="num">—</td><td class="num">${t("base")}</td><td class="num">—</td><td class="actc">—</td></tr>`;
   }
   ordered.forEach(c=>{
     const d=caseDeltas(c,base);
@@ -2782,8 +2668,7 @@ function renderComparador(){
       `<td class="num">${d.isBase?"—":cusd(d.savUSD)}</td>`+
       `<td class="num">${d.isBase?t("base"):"−"+cpct(d.savPct)}</td>`+
       `<td class="num">${cyrs(d.payback)}</td>`+
-      `<td class="actc"><button class="miniact" title="PDF" onclick="exportCasePDF('${c.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button>`+
-      `<button class="miniact" onclick="loadCaseIntoCalc('${c.id}')">${t("act_load")}</button>`+
+      `<td class="actc"><button class="miniact" onclick="loadCaseIntoCalc('${c.id}')">${t("act_load")}</button>`+
       `<button class="miniact" onclick="renameCase('${c.id}')">✎</button>`+
       `<button class="miniact danger" onclick="delCase('${c.id}')">✕</button></td></tr>`;
   });
@@ -2887,132 +2772,56 @@ function exportCasesPDF(){
   const base=baselineCase(); const ordered=casesSortedBySavings(base);
   const others=CASES.filter(c=>c.id!==base.id); const ctx=cmpSharedContext();
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:"pt",format:"a4",compress:true});
+  const doc=new jsPDF({unit:"pt",format:"a4",orientation:"landscape",compress:true});
   const W=doc.internal.pageSize.getWidth(),Hp=doc.internal.pageSize.getHeight(),M=40; let y=46;
-  const metaLines=[`${t("cmp_cases")}: ${CASES.length}`,`${ctx.place} · ${ctx.year}`,`${new Date().toLocaleDateString(loc())}`];
-  y=pdfBrandHeader(doc,W,M,t("cmp_final_t"),t("eyebrow"),metaLines);
-  /* banda min–max frente a la referencia */
+  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
+  doc.text(t("cmp_final_t"),M,y);y+=10;
+  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
+  doc.text(`${t("cmp_cases")}: ${CASES.length}     ${ctx.place} · ${ctx.year}     ${new Date().toLocaleDateString(loc())}`,M,y);y+=14;
+  /* banda frente a la referencia */
   const pcts=others.map(c=>caseDeltas(c,base).savPct);
   const usds=others.map(c=>caseDeltas(c,base).savUSD);
   const pbs=others.map(c=>caseDeltas(c,base).payback).filter(v=>v!=null&&isFinite(v));
   const bandPct=pcts.length?(pcts.length>1?cpct(Math.min(...pcts))+" – "+cpct(Math.max(...pcts)):cpct(pcts[0])):"—";
   const bandUSD=usds.length?(usds.length>1?cusd(Math.min(...usds))+" – "+cusd(Math.max(...usds)):cusd(usds[0])):"—";
   const bandPay=pbs.length?(pbs.length>1?nf(Math.min(...pbs),1)+" – "+cyrs(Math.max(...pbs)):cyrs(pbs[0])):"—";
-  /* mejor caso (mayor ahorro US$) */
-  let bestCase=null,bestD=null;
-  others.forEach(c=>{const d=caseDeltas(c,base);if(!bestD||d.savUSD>bestD.savUSD){bestD=d;bestCase=c;}});
-  /* tarjetas KPI del mejor caso */
-  function kcard(cx,cy,cw,ch,k,v,s,accent){
-    doc.setDrawColor(226,230,239);doc.setFillColor(255,255,255);doc.roundedRect(cx,cy,cw,ch,6,6,"FD");
-    doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(cx,cy,cw,3,"F");
-    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(153,160,180);doc.text(String(k).toUpperCase(),cx+10,cy+17);
-    doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(30,36,69);doc.text(v,cx+10,cy+39);
-    doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(70,77,99);doc.text(s,cx+10,cy+ch-9);
-  }
-  {const gap=12,cw=(W-2*M-2*gap)/3,ch=66;
-   kcard(M,y,cw,ch,t("pdf_kpi_energy"),bestD?cpct(bestD.savPct):"—",bestCase?nf(bestCase.annualKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"):"",[34,176,225]);
-   kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),bestD?cusd(bestD.savUSD):"—",t("pdf_kpi_money_sub"),[174,204,83]);
-   kcard(M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(bestD&&bestD.payback!=null&&isFinite(bestD.payback))?cyrs(bestD.payback):"—",(ctx.invest>0?t("pdf_inv")+" "+cusd(ctx.invest):""),[34,176,225]);
-   y+=ch+16;}
-  /* línea de banda / referencia */
-  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(70,77,99);
-  {const ln=`${t("cmp_baseline")}: ${base.name}   ·   ${t("cmp_band")}: ${bandPct} (${bandUSD}${t("per_year")})   ·   ${t("cmp_band_pay")}: ${bandPay}`;
-   const ll=doc.splitTextToSize(ln,W-2*M);doc.text(ll,M,y);y+=ll.length*11+8;}
+  doc.setFontSize(9.5);doc.setTextColor(22,33,63);
+  doc.text(`${t("cmp_baseline")}: ${base.name} (${cusd(base.annualUSD)}${t("per_year")})    ·    ${t("cmp_band")}: ${bandPct} (${bandUSD}${t("per_year")})    ·    ${t("cmp_band_pay")}: ${bandPay}`,M,y+4);y+=18;
   /* narrativa */
   if(others.length){
-    const repl={ "{base}":base.name,"{basecost}":cusd(base.annualUSD),"{basekwh}":nf(base.annualKwh,0),"{n}":others.length,"{bandUSD}":bandUSD,"{pct}":bandPct,"{invest}":cusd(ctx.invest||0),"{pay}":bandPay };
-    let narr=t("cmp_narr_ref");if(ctx.invest>0&&bandPay!=="—")narr+=t("cmp_narr_invest");
+    const repl={ "{base}":base.name, "{basecost}":cusd(base.annualUSD), "{basekwh}":nf(base.annualKwh,0),
+      "{n}":others.length, "{bandUSD}":bandUSD, "{pct}":bandPct, "{invest}":cusd(ctx.invest||0), "{pay}":bandPay };
+    let narr=t("cmp_narr_ref");
+    if(ctx.invest>0&&bandPay!=="—")narr+=t("cmp_narr_invest");
     narr=narr.replace(/\{base\}|\{basecost\}|\{basekwh\}|\{n\}|\{bandUSD\}|\{pct\}|\{invest\}|\{pay\}/g,m=>repl[m]).replace(/<\/?b>/g,"");
     doc.setFontSize(9);doc.setTextColor(70,77,99);
-    const nl=doc.splitTextToSize(narr,W-2*M);doc.text(nl,M,y);y+=nl.length*11+10;
+    const nl=doc.splitTextToSize(narr,W-M*2);doc.text(nl,M,y);y+=nl.length*11+8;
+    doc.setTextColor(22,33,63);
   }
-  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
-  /* gráfico mensual */
+  /* tabla */
+  doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",
+    headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[22,33,63]},
+    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:150}},
+    head:[[t("th_case"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_kwh"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
+    body:(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—","—",t("base"),"—"]]:[]).concat(ordered.map(c=>{const d=caseDeltas(c,base);return [c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":nf(d.savKwh,0),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):"−"+cpct(d.savPct),cyrs(d.payback)];}))});
+  y=doc.lastAutoTable.finalY+18;
+  /* gráfico mensual embebido */
   const cv=document.getElementById("cmpMonth");
-  if(cv){sec(t("cmp_monthly_t"));try{const cw2=W-2*M,chh2=150;y+=4;doc.addImage(cv.toDataURL("image/png"),"PNG",M,y,cw2,chh2);y+=chh2+14;}catch(e){}}
-  /* tabla de casos (6 col, como el ejecutivo) + recomendado resaltado */
-  sec(t("pdf_scn_t"));
-  const baseOffset=base.synthetic?1:0;
-  const cbody=(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—",t("base"),"—"]]:[]);
-  let cbest=-1,cbestSav=-Infinity;
-  ordered.forEach((c,i)=>{const d=caseDeltas(c,base);
-    cbody.push([c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):cpct(d.savPct),cyrs(d.payback)]);
-    if(!d.isBase&&d.savUSD>cbestSav){cbestSav=d.savUSD;cbest=baseOffset+i;}});
-  if(cbest>=0&&cbestSav>0)cbody[cbest][0]=cbody[cbest][0]+"  ·  "+t("recommended_tag");
-  doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
-    headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
-    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:185}},
-    head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
-    body:cbody,
-    didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===cbest){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
-  y=doc.lastAutoTable.finalY+14;
-  /* metodología */
-  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
-  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,Math.min(y,Hp-44));
-  pdfBrandFooterAll(doc,M);
+  if(cv){ try{ const cw=W-M*2, chh=Math.min(220,Hp-y-50);
+    if(y+chh>Hp-40){doc.addPage();y=46;}
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(t("cmp_monthly_t"),M,y);y+=8;
+    doc.addImage(cv.toDataURL("image/png"),"PNG",M,y,cw,chh); y+=chh+12;
+  }catch(e){} }
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
+  doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,Math.min(y,Hp-30));
   doc.save("comparador-casos-"+(ctx.year||"")+".pdf");
-}
-
-/* === PDF ejecutivo individual de un caso (o del convencional base) === */
-function exportCasePDF(id){
-  if(!window.jspdf||!window.jspdf.jsPDF){window.print();return;}
-  let c; if(id==="__conv__"){c=convencionalRef();} else {c=CASES.find(x=>x.id===id);}
-  if(!c)return;
-  const tariff=+c.tariff||0;
-  const own=c.synthetic?{conv:c.annualKwh,convUSD:c.annualUSD,savKwh:0,savUSD:0,savPct:0,payback:null}:caseOwnSavings(c);
-  const convM=c.synthetic?(Array.isArray(c.monthKwh)&&c.monthKwh.length===12?c.monthKwh:Array(12).fill((c.annualKwh||0)/12)):caseConvMonth(c);
-  const caseM=Array.isArray(c.monthKwh)&&c.monthKwh.length===12?c.monthKwh:Array(12).fill((c.annualKwh||0)/12);
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:"pt",format:"a4",compress:true});
-  const W=doc.internal.pageSize.getWidth(),Hp=doc.internal.pageSize.getHeight(),M=40; let y=46;
-  const metaLines=[String(c.place||""),`${t("ex_year")}: ${c.year||""}`,new Date().toLocaleDateString(loc()),`${nf(c.units||0)} ${t("ex_lum")} · ${nf(c.IKW||0,1)} kW`];
-  y=pdfBrandHeader(doc,W,M,c.name,t("eyebrow"),metaLines);
-  const pb=own.payback;
-  /* KPIs */
-  {const gap=12,cw=(W-2*M-2*gap)/3,ch=66;
-   pdfKcard(doc,M,y,cw,ch,t("pdf_kpi_energy"),nf(own.savPct,1)+"%",nf(c.annualKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"),[34,176,225]);
-   pdfKcard(doc,M+cw+gap,y,cw,ch,t("pdf_kpi_money"),cusd(own.savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
-   pdfKcard(doc,M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(pb!=null&&isFinite(pb)&&pb>0)?cyrs(pb):"—",(c.invest>0?t("pdf_inv")+" "+cusd(c.invest):""),[34,176,225]);
-   y+=ch+18;}
-  /* narrativa */
-  doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(70,77,99);
-  {let nr;
-   if(c.synthetic||own.savUSD<=0){nr=(LANG==="es"?`${c.name}: ${nf(c.annualKwh,0)} kWh y ${cusd(c.annualUSD)} al año. Es la línea base de comparación (flota a potencia plena).`:`${c.name}: ${nf(c.annualKwh,0)} kWh and ${cusd(c.annualUSD)} per year. This is the comparison baseline (fleet at full power).`);}
-   else{nr=t("pdf_narr").replace("{convUSD}",cusd(own.conv*tariff)).replace("{convKwh}",nf(own.conv,0)+" kWh").replace("{dimUSD}",cusd(c.annualUSD)).replace("{savUSD}",cusd(own.savUSD)).replace("{pct}",nf(own.savPct,1)+"%");}
-   const nl=doc.splitTextToSize(nr,W-2*M);doc.text(nl,M,y);y+=nl.length*12+12;}
-  function sec(title){doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(30,36,69);doc.text(title,M,y);y+=6;}
-  /* gráfico mensual */
-  sec(t("ex_month"));
-  {const cw2=W-2*M,chh2=150;y+=6;
-   pdfMiniBars(doc,M,y,cw2,chh2,convM,caseM,[153,160,180],[34,176,225],(LANG==="es"?"Convencional":"Conventional"),String(c.name).slice(0,26));y+=chh2+16;}
-  /* estrategia de dimerización */
-  sec(t("exp_dim_title"));
-  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(46,77,99);
-  {const sx=String(c.strategy||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()||t("nodim_txt");
-   const sl=doc.splitTextToSize(sx,W-2*M);doc.text(sl,M,y+4);y+=4+sl.length*11+12;}
-  /* tabla: convencional + este caso */
-  sec(t("pdf_scn_t"));
-  {const body=[[t("conv_name"),nf(own.conv,0),cusd(own.conv*tariff),"—",t("base"),"—"]];
-   if(!c.synthetic)body.push([c.name+"  ·  "+t("recommended_tag"),nf(c.annualKwh,0),cusd(c.annualUSD),own.savUSD>0?cusd(own.savUSD):"—",own.savPct>0?nf(own.savPct,1)+"%":t("base"),(pb!=null&&isFinite(pb)&&pb>0)?cyrs(pb):"—"]);
-   doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
-     headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
-     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:210}},
-     head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
-     body:body,
-     didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===1){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
-   y=doc.lastAutoTable.finalY+14;}
-  /* metodología + pie */
-  doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
-  doc.text(doc.splitTextToSize(t("ex_note"),W-2*M),M,Math.min(y,Hp-44));
-  pdfBrandFooterAll(doc,M);
-  doc.save("reporte-"+String(c.name||"caso").replace(/[^\w\-]+/g,"_").slice(0,40)+".pdf");
 }
 
 /* exponer para onclick inline */
 window.saveCurrentCase=saveCurrentCase; window.loadCaseIntoCalc=loadCaseIntoCalc;
 window.delCase=delCase; window.renameCase=renameCase; window.clearCases=clearCases; window.setBaseCase=setBaseCase;
 window.exportCasesPDF=exportCasesPDF; window.exportCasesXLSX=exportCasesXLSX; window.exportCasesJSON=exportCasesJSON;
-window.exportCasePDF=exportCasePDF;
 
 /* botón Guardar caso en el resumen ejecutivo */
 (function(){ const b=document.getElementById("saveCaseBtn"); if(b)b.addEventListener("click",saveCurrentCase); })();
@@ -3035,7 +2844,7 @@ Object.assign(DICT.en,{
   inv_base_sub:"Conventional Public Lighting · your fleet at full power (100%) over the year window. This is the reference the comparator will use.",
   inv_base_energy:"Conventional energy / yr", inv_base_cost:"Conventional cost / yr"
 });
-const SEC_HELP_STEP={config:1,inv:2,dim:3,scn:4,perfil:5,tabla:6,resumen:7,exec:8,cmp:9};
+const SEC_HELP_STEP={config:1,inv:2,scn:3,dim:4,perfil:5,tabla:6,resumen:7,exec:8,cmp:9};
 Object.assign(DICT.es,{
   help_inv:"<b>Empieza por tu parque.</b> Agrega un grupo por cada tipo de luminaria con su cantidad y potencia (W). Marca <b>Dimerizable</b> en las que admiten regulación; las demás operan a potencia plena toda la noche.<span class='tip'>La suma define la potencia instalada de la flota.</span>",
   help_scn:"<b>Define qué comparar.</b> Activa los escenarios: astronómico con dimerización (sigue el sol y aplica tu perfil), astronómico sin dimerización y horario fijo (la operación tradicional a superar).<span class='tip'>Elige la base del % contra la que se mide el ahorro.</span>",
