@@ -767,6 +767,17 @@
             </div>
           </div>
         </div>
+        <div class="section" id="heatSaveSection">
+          <div class="head"><h2 data-i18n="heatsave_title">El año — lo que ahorras</h2><p data-i18n="heatsave_sub">Cada fila es un día; cada columna, una hora. Verde = energía ahorrada esa hora frente a la base.</p></div>
+          <div id="heatSaveGrid" class="heat-grid"></div>
+          <div class="surface" style="margin-top:10px">
+            <div class="legend">
+              <span><span class="sw" style="background:rgb(241,243,246);border:1px solid var(--line)"></span><span data-i18n="heatsave_none">Sin ahorro</span></span>
+              <span><span class="sw" style="background:rgb(210,237,221)"></span><span data-i18n="heatsave_lo">Ahorro bajo</span></span>
+              <span><span class="sw" style="background:rgb(22,104,66)"></span><span data-i18n="heatsave_hi">Ahorro alto</span></span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- DIMERIZACIÓN -->
@@ -939,6 +950,7 @@ const DICT={
   year_title:"El año, hora por hora", year_sub:"Activa o desactiva las capas del gráfico.",
   lyr_night:"Noche (sol)", lyr_fixedline:"Horario fijo", lyr_excess:"Exceso del fijo", lyr_dst:"Cambios de hora",
   heat_title:"El año encendido", heat_sub:"Cada fila es un día; cada columna, una hora. Color = energía de esa hora.",
+  heatsave_title:"El año — lo que ahorras", heatsave_sub:"Cada fila es un día; cada columna, una hora. Verde = energía ahorrada esa hora frente a la base.", heatsave_tag:"ahorro por hora", heatsave_none:"Sin ahorro", heatsave_lo:"Ahorro bajo", heatsave_hi:"Ahorro alto",
   lg_off:"Apagada", lg_dim:"Dimerizada", lg_full:"Plena", lg_edge:"Encendido/apagado (parcial)", heat_partial:"Parcial",
   dim_title:"Dimerización por media hora", dim_sub:"Escribe el % de potencia en cada tramo de 30 minutos. El color resalta cuánto se baja.",
   city_title:"Vista de ciudad", city_sub:"La ciudad refleja tu perfil: al anochecer las luminarias encienden y dimerizan según cada tramo de 30 min. Edita la grilla y míralo cambiar.",
@@ -1002,6 +1014,7 @@ const DICT={
   year_title:"The year, hour by hour", year_sub:"Toggle the chart layers on or off.",
   lyr_night:"Night (sun)", lyr_fixedline:"Fixed schedule", lyr_excess:"Fixed excess", lyr_dst:"DST changes",
   heat_title:"The year lit", heat_sub:"Each row is a day; each column an hour. Color = energy that hour.",
+  heatsave_title:"The year — what you save", heatsave_sub:"Each row is a day; each column an hour. Green = energy saved that hour vs the base.", heatsave_tag:"savings per hour", heatsave_none:"No savings", heatsave_lo:"Low savings", heatsave_hi:"High savings",
   lg_off:"Off", lg_dim:"Dimmed", lg_full:"Full", lg_edge:"Turn-on/off (partial)", heat_partial:"Partial",
   dim_title:"Dimming per half hour", dim_sub:"Type the power % for each 30-minute slot. Color shows how much it is lowered.",
   city_title:"City view", city_sub:"The city mirrors your profile: at dusk the luminaires turn on and dim per 30-min slot. Edit the grid and watch it change.",
@@ -1505,9 +1518,9 @@ function renderDayInto(scnKey,i,refKey){
       // sombra de ahorro: hasta el nivel del escenario de referencia (base)
       if(useRef){const refK=refDay?refDay.hours[h].kwh:d.Pt*hr.frac;
         if(refK>hr.kwh+1e-9){const yRef=padT+ph-ph*(Math.min(refK,maxK)/maxK),yBar=padT+ph-bh;
-          ctx.fillStyle="rgba(78,178,112,.18)";ctx.fillRect(x+1,yRef,bw-2,yBar-yRef);
-          ctx.strokeStyle="rgba(78,178,112,.7)";ctx.setLineDash([3,2]);ctx.lineWidth=1;
-          ctx.beginPath();ctx.moveTo(x+1,yRef+0.5);ctx.lineTo(x+bw-1,yRef+0.5);ctx.stroke();ctx.setLineDash([]);}}
+          ctx.fillStyle="rgba(78,178,112,.28)";ctx.fillRect(x+1,yRef,bw-2,yBar-yRef);
+          ctx.strokeStyle="rgba(36,140,86,.95)";ctx.setLineDash([3,2]);ctx.lineWidth=1.4;
+          ctx.beginPath();ctx.moveTo(x+1,yRef+0.7);ctx.lineTo(x+bw-1,yRef+0.7);ctx.stroke();ctx.setLineDash([]);}}
       ctx.fillStyle=hr.state==="edge"?"#EA561B":(hr.dim<0.999?"#FAB512":"#22B0E1");ctx.fillRect(x+1,padT+ph-bh,bw-2,bh);
     }
     if(idx%3===0){ctx.fillStyle="#99A0B4";ctx.fillText(String(h).padStart(2,"0"),x+bw/2,H-10);}});
@@ -1589,6 +1602,64 @@ function renderHeatInto(scnKey){
       if(mo!==prev){const sp=document.createElement("span");sp.style.top=((i+0.5)/N*100)+"%";sp.textContent=mes()[mo];yl.appendChild(sp);prev=mo;}}}
 }
 
+/* ============ heatmap de AHORRO (verde) ============ */
+function cellSaveColor(save,maxSave){
+  if(save<=1e-9) return "rgb(241,243,246)";
+  const tt=Math.max(0.10,Math.min(1,save/(maxSave||1)));
+  const c=mix([210,237,221],[22,104,66],tt); return `rgb(${c.join(",")})`;
+}
+function saveScnKeys(){ return activeScnKeys().filter(k=>scnObj(k).useDim); }
+function saveRefDays(){ const bk=(typeof baseKeyFor==="function")?baseKeyFor():null;
+  if(bk && activeScnKeys().includes(bk)) return {key:bk,days:scnRes(bk).days}; return null; }
+function heatSaveData(scnKey){
+  const days=scnRes(scnKey).days, ref=saveRefDays(); let maxSave=0; const save=[];
+  for(let i=0;i<days.length;i++){const d=days[i],row=new Array(24);
+    for(let h=0;h<24;h++){const hr=d.hours[h];const refK=ref?ref.days[i].hours[h].kwh:d.Pt*hr.frac;
+      let s=refK-hr.kwh; if(s<0)s=0; row[h]=s; if(s>maxSave)maxSave=s;}
+    save.push(row);}
+  return {days,save,maxSave,refKey:ref?ref.key:null};
+}
+function ensureHeatSaveGrid(keys){
+  const grid=document.getElementById("heatSaveGrid"); if(!grid)return;
+  const sig=keys.join(","); if(grid.dataset.keys===sig)return; grid.dataset.keys=sig; grid.innerHTML="";
+  keys.forEach(k=>{ const blk=document.createElement("div"); blk.className="heat-block";
+    blk.innerHTML=`<div class="perfil-h"><span class="cmp-dot" style="background:#1B7A4A"></span>${scnLabel(k)} · <span style="color:#1B7A4A">${t("heatsave_tag")}</span></div>`+
+      `<div class="surface">`+
+        `<div class="heat-top"><div class="heat-corner"></div><div class="hourlbl" id="hourlblS_${k}" style="flex:1;font-family:var(--mono);font-size:9px;color:var(--faint);display:grid;grid-template-columns:repeat(24,1fr)"></div></div>`+
+        `<div class="heat-row"><div class="heat-y" id="heatYS_${k}"></div>`+
+        `<div class="heat-cv"><canvas id="heatS_${k}" width="960" height="760"></canvas><div class="heat-tip" id="heatTipS_${k}"></div></div></div>`+
+      `</div>`;
+    grid.appendChild(blk); wireHeatSaveHover(k); });
+}
+function renderHeatSaveInto(scnKey){
+  const cv=document.getElementById("heatS_"+scnKey); if(!cv)return; const ctx=cv.getContext("2d");
+  const data=heatSaveData(scnKey); cv._saveData=data; const days=data.days;
+  const W=cv.width,H=cv.height,cw=W/24,ch=H/days.length; ctx.clearRect(0,0,W,H);
+  for(let i=0;i<days.length;i++){for(let h=0;h<24;h++){ctx.fillStyle=cellSaveColor(data.save[i][h],data.maxSave);ctx.fillRect(h*cw,i*ch,Math.ceil(cw),Math.ceil(ch)+0.5);}}
+  const hl=document.getElementById("hourlblS_"+scnKey); if(hl){hl.innerHTML="";for(let h=0;h<24;h++){const s=document.createElement("span");s.style.textAlign="center";s.textContent=(h%3===0)?String(h).padStart(2,"0"):"";hl.appendChild(s);}}
+  const yl=document.getElementById("heatYS_"+scnKey);
+  if(yl){yl.innerHTML="";let prev=-1;for(let i=0;i<days.length;i++){const mo=sunCache[i].date.getUTCMonth();if(mo!==prev){const sp=document.createElement("span");sp.style.top=((i+0.5)/days.length*100)+"%";sp.textContent=mes()[mo];yl.appendChild(sp);prev=mo;}}}
+}
+function renderHeatSave(){
+  const keys=saveScnKeys(); const sec=document.getElementById("heatSaveSection");
+  if(sec)sec.style.display=keys.length?"":"none";
+  ensureHeatSaveGrid(keys); keys.forEach(k=>renderHeatSaveInto(k));
+}
+function wireHeatSaveHover(scnKey){
+  const cv=document.getElementById("heatS_"+scnKey), tip=document.getElementById("heatTipS_"+scnKey);
+  if(!cv||!tip)return;
+  cv.addEventListener("mousemove",e=>{try{
+    const data=cv._saveData; if(!data){tip.style.display="none";return;} const days=data.days;
+    const r=cv.getBoundingClientRect(); if(!r.width||!r.height){tip.style.display="none";return;}
+    const fx=(e.clientX-r.left)/r.width, fy=(e.clientY-r.top)/r.height;
+    const h=Math.max(0,Math.min(23,Math.floor(fx*24))), i=Math.max(0,Math.min(days.length-1,Math.floor(fy*days.length)));
+    const s=data.save[i][h]; const det = s>1e-9 ? ("+"+s.toFixed(4)+" kWh") : t("heatsave_none");
+    tip.innerHTML=`<b style="color:#7FE3A8">${fdate(days[i].date)}</b> · ${String(h).padStart(2,"0")}:00 · ${det}`;
+    tip.style.left=(e.clientX-r.left)+"px"; tip.style.top=(e.clientY-r.top)+"px"; tip.style.display="block";
+  }catch(err){tip.style.display="none";}});
+  cv.addEventListener("mouseleave",()=>{tip.style.display="none";});
+}
+
 /* ============ dim editor ============ */
 function dimCellColor(p){if(p<=0)return "#E8ECF4";const tt=p/100;const c=tt<0.7?mix([254,238,200],[250,181,18],tt/0.7):mix([250,181,18],[234,86,27],(tt-0.7)/0.3);return `rgb(${c.join(",")})`;}
 function buildDimTable(){
@@ -1600,7 +1671,7 @@ function buildDimTable(){
       html+=`</tr>`;}
     html+=`</tbody></table>`;const div=document.createElement("div");div.innerHTML=html;wrap.appendChild(div.firstChild);}
   wrap.querySelectorAll("input[data-k]").forEach(inp=>inp.addEventListener("input",()=>{let v=Math.max(0,Math.min(100,parseFloat(inp.value)||0));
-    S.dim[+inp.dataset.k]=v;inp.parentElement.style.background=dimCellColor(v);recalc();renderTop();renderCards();renderMini();if(S.tab==="perfil"||S.tab==="tecnico"){renderDay();renderHeat();}}));
+    S.dim[+inp.dataset.k]=v;inp.parentElement.style.background=dimCellColor(v);recalc();renderTop();renderCards();renderMini();if(S.tab==="perfil"||S.tab==="tecnico"){renderDay();renderHeat();renderHeatSave();}}));
   renderMini();
 }
 function renderMini(){const m=document.getElementById("dimMini");if(!m)return;m.innerHTML="";for(let k=0;k<48;k++){const i=document.createElement("i");i.style.height=Math.max(3,S.dim[k]*0.30)+"px";i.style.background=S.dim[k]<=0?"#C6CEE0":"var(--amber)";m.appendChild(i);}}
@@ -2120,7 +2191,7 @@ function renderActive(){
   else if(S.tab==="perfil"){renderDay();renderHeat();}
   else if(S.tab==="dim"){renderMini();}
   else if(S.tab==="inventario"){renderInv();}
-  else if(S.tab==="tecnico"){renderDay();renderHeat();renderTable();renderHoursTable();}
+  else if(S.tab==="tecnico"){renderDay();renderHeat();renderHeatSave();renderTable();renderHoursTable();}
   else if(S.tab==="exec"){renderExec();}
   else if(S.tab==="comparador"){renderComparador();}
   if(typeof renderFlowNav==="function")renderFlowNav();
