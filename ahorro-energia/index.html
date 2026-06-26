@@ -1860,18 +1860,14 @@ function exportPDF(){
   /* comparación de escenarios */
   sec(t("pdf_scn_t"));
   {const body=[[t("conv_name"),nf(convKwh,0),money(convUSD),"—",t("base"),"—"]];
-   let bestRow=-1,bestSav=-Infinity;
    act.forEach(c=>{const kk=eKWh(c.key),co=kk*S.tariff,sv=convKwh-kk,svp=convKwh?sv/convKwh*100:0;
      const pbc=(c.key==="A"&&pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—";
-     body.push([c.lab,nf(kk,0),money(co),sv>0?money(sv*S.tariff):"—",sv>0?nf(svp,1)+"%":(Math.abs(svp)<0.05?t("base"):nf(svp,1)+"%"),pbc]);
-     if(sv>bestSav){bestSav=sv;bestRow=body.length-1;}});
-   if(bestRow>0&&bestSav>0)body[bestRow][0]=body[bestRow][0]+"  ·  "+t("recommended_tag");
+     body.push([c.lab,nf(kk,0),money(co),sv>0?money(sv*S.tariff):"—",sv>0?"−"+nf(svp,1)+"%":(Math.abs(svp)<0.05?t("base"):nf(svp,1)+"%"),pbc]);});
    doc.autoTable({startY:y+4,margin:{left:M,right:M},theme:"grid",
      headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[30,36,69]},
-     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:210}},
+     styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:200}},
      head:[[t("ch_escenario"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
-     body:body,
-     didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===bestRow){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[30,36,69];}}});
+     body:body});
    y=doc.lastAutoTable.finalY+14;}
   /* metodología */
   doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(153,160,180);
@@ -2381,7 +2377,6 @@ Object.assign(DICT.es,{
   pdf_kpi_pay:"Retorno (payback)", pdf_inv:"inversión", pdf_scn_t:"Comparación de escenarios",
   pdf_narr:"Sin dimerizar, la cuenta anual de la flota es de {convUSD} ({convKwh}). Con la estrategia de dimerización, baja a {dimUSD} — un ahorro de {savUSD} ({pct}) al año.",
   scn_savings_name:"Escenario Ahorro {pct}",
-  recommended_tag:"recomendado",
   imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
   cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
   cmp_vs_ref:"frente a la referencia",
@@ -2421,7 +2416,6 @@ Object.assign(DICT.en,{
   pdf_kpi_pay:"Payback", pdf_inv:"investment", pdf_scn_t:"Scenario comparison",
   pdf_narr:"Without dimming, the fleet's annual bill is {convUSD} ({convKwh}). With the dimming strategy it drops to {dimUSD} — a saving of {savUSD} ({pct}) per year.",
   scn_savings_name:"Scenario Savings {pct}",
-  recommended_tag:"recommended",
   imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
   cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
   cmp_vs_ref:"vs the reference",
@@ -2858,8 +2852,11 @@ function exportCasesPDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({unit:"pt",format:"a4",orientation:"landscape",compress:true});
   const W=doc.internal.pageSize.getWidth(),Hp=doc.internal.pageSize.getHeight(),M=40; let y=46;
-  const metaLines=[`${t("cmp_cases")}: ${CASES.length}`,`${ctx.place} · ${ctx.year}`,`${new Date().toLocaleDateString(loc())}`];
-  y=pdfBrandHeader(doc,W,M,t("cmp_final_t"),t("eyebrow"),metaLines);
+  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
+  doc.text(t("cmp_final_t"),M,y);y+=10;
+  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
+  doc.text(`${t("cmp_cases")}: ${CASES.length}     ${ctx.place} · ${ctx.year}     ${new Date().toLocaleDateString(loc())}`,M,y);y+=14;
   /* banda frente a la referencia */
   const pcts=others.map(c=>caseDeltas(c,base).savPct);
   const usds=others.map(c=>caseDeltas(c,base).savUSD);
@@ -2881,19 +2878,11 @@ function exportCasesPDF(){
     doc.setTextColor(22,33,63);
   }
   /* tabla */
-  const baseOffset=base.synthetic?1:0;
-  const cbody=(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—","—",t("base"),"—"]]:[]);
-  let cbest=-1,cbestSav=-Infinity;
-  ordered.forEach((c,i)=>{const d=caseDeltas(c,base);
-    cbody.push([c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":nf(d.savKwh,0),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):cpct(d.savPct),cyrs(d.payback)]);
-    if(!d.isBase&&d.savUSD>cbestSav){cbestSav=d.savUSD;cbest=baseOffset+i;}});
-  if(cbest>=0&&cbestSav>0)cbody[cbest][0]=cbody[cbest][0]+"  ·  "+t("recommended_tag");
   doc.autoTable({startY:y,margin:{left:M,right:M},theme:"grid",
     headStyles:{fillColor:[46,84,150],textColor:255,fontSize:8.5},bodyStyles:{fontSize:8.5,textColor:[22,33,63]},
-    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:175}},
+    styles:{halign:"right",cellPadding:4},columnStyles:{0:{halign:"left",cellWidth:150}},
     head:[[t("th_case"),t("th_kwh_y"),t("th_cost_y"),t("th_sav_kwh"),t("th_sav_usd"),t("th_sav_pct"),t("th_pay")]],
-    body:cbody,
-    didParseCell:function(dc){if(dc.section==="body"&&dc.row.index===cbest){dc.cell.styles.fillColor=[224,242,251];dc.cell.styles.fontStyle="bold";dc.cell.styles.textColor=[22,33,63];}}});
+    body:(base.synthetic?[[base.name,nf(base.annualKwh,0),cusd(base.annualUSD),"—","—",t("base"),"—"]]:[]).concat(ordered.map(c=>{const d=caseDeltas(c,base);return [c.name,nf(c.annualKwh,0),cusd(c.annualUSD),d.isBase?"—":nf(d.savKwh,0),d.isBase?"—":cusd(d.savUSD),d.isBase?t("base"):"−"+cpct(d.savPct),cyrs(d.payback)];}))});
   y=doc.lastAutoTable.finalY+18;
   /* gráfico mensual embebido */
   const cv=document.getElementById("cmpMonth");
@@ -2904,7 +2893,6 @@ function exportCasesPDF(){
   }catch(e){} }
   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
   doc.text(doc.splitTextToSize(t("ex_note"),W-M*2),M,Math.min(y,Hp-30));
-  pdfBrandFooterAll(doc,M);
   doc.save("comparador-casos-"+(ctx.year||"")+".pdf");
 }
 
