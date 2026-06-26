@@ -1778,6 +1778,42 @@ function renderExec(){
 }
 
 /* ============ PDF ============ */
+/* marca: wordmark ubicquia® + bandas navy (cabecera/pie) para el reporte */
+function pdfWordmark(doc,x,y,size,onNavy){
+  doc.setFont("helvetica","bold");doc.setFontSize(size);
+  doc.setTextColor(34,176,225);doc.text("ubi",x,y);
+  const w1=doc.getTextWidth("ubi");
+  if(onNavy)doc.setTextColor(255,255,255);else doc.setTextColor(30,36,69);
+  doc.text("cquia",x+w1,y);
+  const w2=doc.getTextWidth("cquia");
+  doc.setFontSize(size*0.42);doc.setTextColor(34,176,225);
+  doc.text("®",x+w1+w2+1,y-size*0.42);
+}
+function pdfBrandHeader(doc,W,M,title,subtitle,metaLines){
+  const hb=80;
+  doc.setFillColor(30,36,69);doc.rect(0,0,W,hb,"F");
+  doc.setFillColor(174,204,83);doc.rect(0,hb,W,2.5,"F");
+  pdfWordmark(doc,M,32,18,true);
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(198,204,218);
+  doc.text(subtitle||"",M,47);
+  doc.setFont("helvetica","bold");doc.setFontSize(13);doc.setTextColor(255,255,255);
+  doc.text(title,M,66);
+  doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(198,204,218);
+  (metaLines||[]).forEach((m,i)=>doc.text(String(m),W-M,30+i*11,{align:"right"}));
+  return hb+20;
+}
+function pdfBrandFooterAll(doc,M){
+  const n=doc.getNumberOfPages();
+  for(let p=1;p<=n;p++){doc.setPage(p);
+    const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
+    const fb=28;
+    doc.setFillColor(30,36,69);doc.rect(0,ph-fb,pw,fb,"F");
+    pdfWordmark(doc,M,ph-10,10,true);
+    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(158,182,232);
+    doc.text("griddata.cl · "+t("footer_tag"),pw/2,ph-10,{align:"center"});
+    doc.text(t("pdf_page")+" "+p+"/"+n,pw-M,ph-10,{align:"right"});
+  }
+}
 function exportPDF(){
   if(!window.jspdf||!window.jspdf.jsPDF){alert(t("pdf_offline"));window.print();return;}
   renderExec();
@@ -1789,11 +1825,8 @@ function exportPDF(){
   const units=S.inventory.reduce((s,g)=>s+(+g.qty||0),0);
   const eqA=RA.equivH,eqB=RB.equivH,flA=eKWh("A"),flB=eKWh("B");
   const dlt=(v,d=0)=>(v>=0?"+":"-")+nf(Math.abs(v),d);
-  doc.setTextColor(22,33,63);doc.setFont("helvetica","bold");doc.setFontSize(16);
-  doc.text(t("ex_title"),M,y);y+=10;
-  doc.setDrawColor(22,33,63);doc.setLineWidth(1.2);doc.line(M,y,W-M,y);y+=16;
-  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,103,136);
-  doc.text(`${t("ex_loc")}: ${place}     ${t("ex_year")}: ${S.year}     ${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,M,y);y+=18;
+  const metaLines=[`${t("ex_loc")}: ${place}`,`${t("ex_year")}: ${S.year}`,`${t("ex_date")}: ${new Date().toLocaleDateString(loc())}`,`${nf(units)} ${t("ex_lum")} · ${nf(IKW,1)} kW`];
+  y=pdfBrandHeader(doc,W,M,t("ex_title"),t("eyebrow"),metaLines);
   function head(title){doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(58,76,192);doc.text(title,M,y);y+=4;}
   head(t("exp_dim_title"));
   doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(22,33,63);
@@ -1868,6 +1901,7 @@ function exportPDF(){
   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(140,160,190);
   doc.text(doc.splitTextToSize(t("exp_month"),W2-M*2),M,y2);
 
+  pdfBrandFooterAll(doc,M);
   doc.save("resumen_ejecutivo_"+S.year+".pdf");
 }
 
@@ -2326,6 +2360,7 @@ Object.assign(DICT.es,{
   cases_imported:"{n} caso(s) importado(s) al comparador",
   perfil_parallel_note:"Cada escenario activo (los que enciendas en Escenarios) se muestra en paralelo. Mueve el día y verás cambiar la noche en todos a la vez.",
   footer_tag:"Telegestión de alumbrado público",
+  pdf_page:"Página",
   imported_case:"Escenario importado", imp_ok_case:"Configuración importada y agregada al comparador",
   cmp_narr_ref:"Frente a <b>{base}</b> ({basecost} · {basekwh} kWh/año), los demás casos muestran una banda de ahorro de {bandUSD} al año ({pct}).",
   cmp_vs_ref:"frente a la referencia",
@@ -2360,6 +2395,7 @@ Object.assign(DICT.en,{
   cases_imported:"{n} case(s) imported into the comparator",
   perfil_parallel_note:"Each active scenario (those you enable in Scenarios) is shown side by side. Move the day and the night updates in all of them at once.",
   footer_tag:"Smart street-lighting management",
+  pdf_page:"Page",
   imported_case:"Imported scenario", imp_ok_case:"Configuration imported and added to the comparator",
   cmp_narr_ref:"Against <b>{base}</b> ({basecost} · {basekwh} kWh/yr), the other cases show a savings band of {bandUSD} per year ({pct}).",
   cmp_vs_ref:"vs the reference",
