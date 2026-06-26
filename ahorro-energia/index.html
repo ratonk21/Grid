@@ -397,6 +397,17 @@
 #cityWrap .cityBanner{position:absolute;inset:auto 0 0 0;display:none;justify-content:center;padding:6px;background:rgba(234,86,27,.9);color:#fff;font-family:monospace;font-size:11px}
 #cityWrap .cityBanner.show{display:flex}
 </style>
+<style>
+#cityWrap .citySignal{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:none;align-items:center;gap:6px;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#fff;background:rgba(17,21,31,.62);backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 12px;white-space:nowrap;animation:ctpulse 1.6s infinite}
+#cityWrap .citySignal b{font-weight:900} #cityWrap .citySignal .o{color:#99A0B4}
+@keyframes ctpulse{0%{box-shadow:0 0 0 0 rgba(255,170,80,.45)}70%{box-shadow:0 0 0 10px rgba(255,170,80,0)}100%{box-shadow:0 0 0 0 rgba(255,170,80,0)}}
+@media(prefers-reduced-motion:reduce){#cityWrap .citySignal{animation:none}}
+</style>
+<style>
+.cityScrub{margin-top:10px}
+.cityScrub input[type=range]{width:100%;accent-color:#22B0E1;cursor:pointer;height:22px}
+.cityScrub .scrubTicks{display:flex;justify-content:space-between;font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9px;color:#99A0B4;margin-top:-2px}
+</style>
 </head>
 <body>
 <header class="topband band--navy"><div class="bandinner">
@@ -758,7 +769,9 @@
               <div class="cityRead" id="cityRead"><span id="ctClock">--:--</span><span class="sep">·</span><span class="ph" id="ctPhase">—</span><span class="sep">·</span><span class="dim">DIM <span id="ctDim">0</span>%</span><span class="sep">·</span><span class="save" id="ctSave">—</span></div>
               <button class="citySpeed" id="ctSpeed" type="button" aria-label="Velocidad">▸ 1×</button>
               <div class="cityBanner" id="ctBanner">⚠ error · ver consola</div>
+              <div class="citySignal" id="ctSignal" style="display:none"></div>
             </div>
+            <div class="cityScrub"><input type="range" id="ctScrub" min="0" max="24" step="0.05" value="18" aria-label="Hora de la animación"><div class="scrubTicks"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
           </div>
         </div>
         <div class="section" style="margin-top:0">
@@ -3178,7 +3191,7 @@ applyI18n(); fillCountries(); setCurrencyDefaults(S.country); buildDimTable(); w
 pushStateToInputs(); renderFlowNav();
 </script>
 <script>
-/* Vista de ciudad (banner adaptado) — SOLO LECTURA de S.dim; NO toca el motor de cálculo */
+/* Vista de ciudad — SOLO LECTURA de S.dim; ventana NOAA real + offsets + señal + slow-offset + scrubber */
 
 (function(){
 "use strict";
@@ -3191,6 +3204,22 @@ var startHour   = clampN(qnum('start',17.5), 0, 23.99); // arranca al atardecer
 
 // perfil de telegestión (mismo que UbiVu: 100 -> 70 -> 40 -> 100)
 var SCHED={ duskOn:18.5, toDim70:22.0, toDim40:0.0, toFull:5.0, dawnOff:6.3 };
+// Ventana REAL del día seleccionado (motor NOAA) + offsets del escenario Telegestión (S.A)
+function sunWin(){
+  try{
+    if(typeof sunCache!=='undefined' && sunCache.length && typeof S!=='undefined'){
+      var i=Math.max(0,Math.min(sunCache.length-1,(S.selDay|0)));
+      var su=sunCache[i];
+      if(su && isFinite(su.sunset) && isFinite(su.sunrise)){
+        var oe=(S.A&&isFinite(+S.A.offEnc))?+S.A.offEnc:0;   // min vs atardecer (+ atrasa, − adelanta)
+        var oa=(S.A&&isFinite(+S.A.offApag))?+S.A.offApag:0;  // min vs amanecer
+        return {sunset:su.sunset,sunrise:su.sunrise,on:su.sunset+oe/60,off:su.sunrise+oa/60,oe:oe,oa:oa,real:true};
+      }
+    }
+  }catch(e){}
+  return {sunset:SCHED.duskOn,sunrise:SCHED.dawnOff,on:SCHED.duskOn,off:SCHED.dawnOff,oe:0,oa:0,real:false};
+}
+function inOn(h,on,off){ return on>off ? (h>=on||h<off) : (h>=on&&h<off); }
 var LAMP_VIAL_W=120;   // W luminaria vial
 var LAMP_PEAT_W=60;    // W luminaria peatonal
 
@@ -3213,14 +3242,15 @@ function lerpRGB(c1,c2,t){return [lerp(c1[0],c2[0],t),lerp(c1[1],c2[1],t),lerp(c
 function rgb(c,a){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+(a==null?1:a)+')';}
 
 function daylight(h){
-  var up=smooth(SCHED.dawnOff-0.8,SCHED.dawnOff+1.2,h);
-  var down=smooth(SCHED.duskOn-0.5,SCHED.duskOn+1.3,h);
+  var w=sunWin();
+  var up=smooth(w.sunrise-0.9,w.sunrise+1.1,h);
+  var down=smooth(w.sunset-1.1,w.sunset+0.6,h);
   return clamp(up-down,0,1);
 }
 // perfil de dimerización vial (el peatonal hereda con un piso de seguridad más alto)
 function dimAt(h){
-  var night=(h>=SCHED.duskOn || h<SCHED.dawnOff);
-  if(!night) return 0;                               // de día apagadas
+  var w=sunWin();
+  if(!inOn(h,w.on,w.off)) return 0;                  // fuera de la ventana real (con offset) = apagadas
   if(typeof S==='undefined' || !S.dim) return 100;
   var k=clamp(Math.floor(h*2),0,47);                 // hora -> tramo de 30 min
   var v=+S.dim[k]; return isFinite(v)?clamp(v,0,100):0;
@@ -3245,12 +3275,11 @@ function carTarget(h){
   return 9;
 }
 function phaseOf(h){
-  var es=(typeof LANG==='undefined'||LANG==='es');
-  if (h<SCHED.dawnOff-0.3) return [es?'Madrugada':'Late night','#3466AF'];
-  if (h<7.5) return [es?'Amanecer':'Dawn','#FAB512'];
-  if (h<12)  return [es?'Mañana':'Morning','#22B0E1'];
-  if (h<SCHED.duskOn-1) return [es?'Tarde':'Afternoon','#22B0E1'];
-  if (h<19.6) return [es?'Atardecer':'Dusk','#EA561B'];
+  var es=(typeof LANG==='undefined'||LANG==='es'), w=sunWin();
+  if (h<w.sunrise-0.3) return [es?'Madrugada':'Late night','#3466AF'];
+  if (h<w.sunrise+1.3) return [es?'Amanecer':'Dawn','#FAB512'];
+  if (h<w.sunset-1)    return [es?'Día':'Day','#22B0E1'];
+  if (h<w.sunset+0.6)  return [es?'Atardecer':'Dusk','#EA561B'];
   return [es?'Noche':'Night','#3466AF'];
 }
 
@@ -3387,18 +3416,20 @@ function drawSky(h){
       ctx.fillStyle='rgba(235,242,255,'+(sa*tw).toFixed(2)+')';
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.28); ctx.fill();}
   }
-  // sol
-  if (h>5.6 && h<19){
-    var f=(h-5.6)/(19-5.6), sx=f*W, sy=horizonY-Math.sin(f*Math.PI)*horizonY*0.78, R=clamp(H*0.06,10,22);
-    var sun=lerpRGB([255,180,110],[255,244,210],smooth(6.5,9,h));
+  // sol (sale en el amanecer real, se pone en el atardecer real)
+  var w=sunWin();
+  if (h>w.sunrise-0.2 && h<w.sunset+0.2){
+    var f=clamp((h-w.sunrise)/((w.sunset-w.sunrise)||1),0,1), sx=f*W, sy=horizonY-Math.sin(f*Math.PI)*horizonY*0.78, R=clamp(H*0.06,10,22);
+    var sun=lerpRGB([255,180,110],[255,244,210],smooth(w.sunrise+0.4,w.sunrise+3,h));
     var rgd=ctx.createRadialGradient(sx,sy,1,sx,sy,R*3);
     rgd.addColorStop(0,rgb(sun,0.9)); rgd.addColorStop(0.4,rgb(sun,0.35)); rgd.addColorStop(1,rgb(sun,0));
     ctx.fillStyle=rgd; ctx.beginPath(); ctx.arc(sx,sy,R*3,0,6.28); ctx.fill();
     ctx.fillStyle=rgb(sun,0.98); ctx.beginPath(); ctx.arc(sx,sy,R,0,6.28); ctx.fill();
   }
-  // luna
-  if (h>=19||h<=5){
-    var hm=(h>=19)?h-19:h+5, f2=hm/10, mx=f2*W, my=horizonY-Math.sin(f2*Math.PI)*horizonY*0.72, mr=clamp(H*0.05,8,15);
+  // luna (entre atardecer y amanecer reales)
+  if (h>=w.sunset || h<=w.sunrise){
+    var span=(24-w.sunset)+w.sunrise, hm=(h>=w.sunset)?(h-w.sunset):(h+(24-w.sunset));
+    var f2=clamp(hm/(span||1),0,1), mx=f2*W, my=horizonY-Math.sin(f2*Math.PI)*horizonY*0.72, mr=clamp(H*0.05,8,15);
     ctx.fillStyle='rgba(235,240,250,0.95)'; ctx.beginPath(); ctx.arc(mx,my,mr,0,6.28); ctx.fill();
     ctx.fillStyle='rgba(220,226,240,0.5)'; ctx.beginPath(); ctx.arc(mx+mr*0.35,my-mr*0.25,mr*0.92,0,6.28); ctx.fill();
   }
@@ -3650,6 +3681,38 @@ function drawClock(){
   ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,1.8,0,6.28); ctx.fill();
 }
 
+var curSig=null;
+var scrubbing=false;
+function signalNow(h){
+  var w=sunWin(), es=(typeof LANG==='undefined'||LANG==='es');
+  function near(ev){var d=h-ev; if(d>12)d-=24; if(d<-12)d+=24; return d;}
+  var dDusk=near(w.sunset), dDawn=near(w.sunrise);
+  var duskLo=Math.min(0,w.oe/60)-0.12, duskHi=Math.max(0,w.oe/60)+0.18;
+  if(dDusk>=duskLo && dDusk<=duskHi){
+    var onNow=inOn(h,w.on,w.off), toOn=w.on-h; if(toOn<-12)toOn+=24; if(toOn>12)toOn-=24;
+    var sub=onNow?(es?'Encendido':'On'):(es?('ON en '+Math.max(0,Math.ceil(toOn*60))+' min'):('ON in '+Math.max(0,Math.ceil(toOn*60))+' min'));
+    return {kind:'dusk',label:(es?'Atardecer':'Dusk'),sub:sub,off:w.oe,pulse:1-Math.min(1,Math.abs(dDusk)/0.2)};
+  }
+  var dawnLo=Math.min(0,w.oa/60)-0.12, dawnHi=Math.max(0,w.oa/60)+0.18;
+  if(dDawn>=dawnLo && dDawn<=dawnHi){
+    var stillOn=inOn(h,w.on,w.off), toOff=w.off-h; if(toOff<-12)toOff+=24; if(toOff>12)toOff-=24;
+    var sub2=stillOn?(es?('OFF en '+Math.max(0,Math.ceil(toOff*60))+' min'):('OFF in '+Math.max(0,Math.ceil(toOff*60))+' min')):(es?'Apagado':'Off');
+    return {kind:'dawn',label:(es?'Amanecer':'Dawn'),sub:sub2,off:w.oa,pulse:1-Math.min(1,Math.abs(dDawn)/0.2)};
+  }
+  return null;
+}
+function drawSignal(){
+  if(!curSig) return;
+  var x=curSig.kind==='dusk'? Math.min(W-24,W*0.9) : Math.max(24,W*0.1), y=horizonY;
+  var col=curSig.kind==='dusk'?[234,86,27]:[250,181,18];
+  var t=REDUCED?1.57:performance.now()*0.005, pr=10+7*Math.abs(Math.sin(t));
+  var gr=ctx.createRadialGradient(x,y,1,x,y,pr+12);
+  gr.addColorStop(0,rgb(col,0.7)); gr.addColorStop(1,rgb(col,0));
+  ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,pr+12,0,6.28); ctx.fill();
+  ctx.strokeStyle=rgb(col,0.55+0.35*Math.abs(Math.sin(t))); ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(x,y,pr,0,6.28); ctx.stroke();
+  ctx.fillStyle=rgb(col,0.95); ctx.beginPath(); ctx.arc(x,y,3.2,0,6.28); ctx.fill();
+}
 function render(){
   drawSky(simHour);
   drawBuildings(simHour);
@@ -3662,6 +3725,7 @@ function render(){
   people.sort(function(a,b){return a.y-b.y;});
   for (var i=0;i<people.length;i++) drawPerson(people[i],simHour);
   drawPosts(simHour);
+  drawSignal();
   var dl=daylight(simHour);
   if (dl<0.6){
     var v=ctx.createRadialGradient(W/2,H*0.5,H*0.32,W/2,H*0.5,W*0.72);
@@ -3672,22 +3736,36 @@ function render(){
 }
 
 // ---- readout ----
-var rEl={clock:document.getElementById('ctClock'),phase:document.getElementById('ctPhase'),dim:document.getElementById('ctDim'),save:document.getElementById('ctSave')};
+var rEl={clock:document.getElementById('ctClock'),phase:document.getElementById('ctPhase'),dim:document.getElementById('ctDim'),save:document.getElementById('ctSave'),signal:document.getElementById('ctSignal')};
 var hudT=0;
 function fmt(h){var hh=Math.floor(h)%24,mm=Math.floor((h%1)*60);return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;}
 function updateHUD(dt){
   hudT-=dt; if(hudT>0)return; hudT=0.1;
   if(!rEl.clock)return;
   rEl.clock.textContent=fmt(simHour);
+  if(typeof scrub!=="undefined" && scrub && !scrubbing){ scrub.value=simHour; }
   var ph=phaseOf(simHour); rEl.phase.textContent=ph[0];
   rEl.dim.textContent=Math.round(dimNow);
-  rEl.save.textContent = dimNow>1 ? ('−'+Math.round(100-dimNow)+'%'+((typeof LANG!=='undefined'&&LANG==='en')?' energy':' energía')) : '—';
+  var es=(typeof LANG==='undefined'||LANG==='es');
+  rEl.save.textContent = dimNow>1 ? ('−'+Math.round(100-dimNow)+'%'+(es?' energía':' energy')) : '—';
+  if(rEl.signal){
+    if(curSig){ rEl.signal.style.display='flex';
+      var ic=curSig.kind==='dusk'?'🌇':'🌅', offv=(curSig.off>0?('+'+curSig.off):(''+curSig.off))+' min';
+      rEl.signal.innerHTML='<b>'+ic+' '+curSig.label+'</b> · '+curSig.sub+' <span class="o">offset '+offv+'</span>';
+    } else rEl.signal.style.display='none';
+  }
 }
 
 function update(dt){
-  simHour+=hrPerSec*speedMul*dt; if(simHour>=24)simHour-=24;
-  var target=dimAt(simHour), dtH=hrPerSec*speedMul*dt, FADE=0.12;
-  if (REDUCED) dimNow=target; else dimNow+=(target-dimNow)*Math.min(1,dtH/FADE);
+  var w=sunWin();
+  function inSpan(h,a,b){var lo=Math.min(a,b),hi=Math.max(a,b);return h>=lo&&h<=hi;}
+  // durante la cuenta del offset (entre el evento solar y el switch) -> 1 s = 1 min
+  var slow=(Math.abs(w.oe)>0.001 && inSpan(simHour,w.sunset,w.on)) || (Math.abs(w.oa)>0.001 && inSpan(simHour,w.sunrise,w.off));
+  var rate = slow ? (1/60) : (hrPerSec*speedMul);
+  if(!scrubbing){ simHour+=rate*dt; if(simHour>=24)simHour-=24; }   // el scrubber manda si está activo
+  curSig=signalNow(simHour);
+  var target=dimAt(simHour), dtH=rate*dt, FADE=0.12;
+  if (scrubbing||REDUCED) dimNow=target; else dimNow+=(target-dimNow)*Math.min(1,dtH/FADE);
   if (Math.abs(target-dimNow)<0.3) dimNow=target;
   updatePeople(dt);
   updateCars(dt);
@@ -3738,6 +3816,12 @@ function init(){
   for (var j=0;j<c0;j++){spawnCar(); cars[cars.length-1].x=Math.random()*W;}
   dimNow=dimAt(simHour);
   last=0; raf=requestAnimationFrame(loop);
+}
+var scrub=document.getElementById('ctScrub');
+if(scrub){
+  scrub.addEventListener('input',function(){scrubbing=true; simHour=clamp(+scrub.value,0,23.999);});
+  scrub.addEventListener('pointerdown',function(){scrubbing=true;});
+  ['pointerup','mouseup','touchend','change','blur'].forEach(function(ev){scrub.addEventListener(ev,function(){scrubbing=false;});});
 }
 var _dt=document.getElementById('dimTables');
 if(_dt) _dt.addEventListener('input',function(e){var k=e.target&&e.target.dataset?e.target.dataset.k:null;if(k!=null&&k!=='')simHour=clamp((+k)*0.5+0.25,0,23.99);});
