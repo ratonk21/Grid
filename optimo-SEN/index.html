@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador de Restricciones Ambientales · SEN Centro–Sur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    /* Ubicquia — principal */
+    --ubi-navy:#1E2445; --ubi-blue:#22B0E1; --ubi-gray:#EEF0F5; --ubi-black:#000;
+    --ubi-deep:#464D63; --ubi-gray2:#99A0B4;
+    --ubi-lime:#AECC53; --ubi-darkgreen:#005B59; --ubi-matte:#2E2B2A;
+    --ubi-orange:#EA561B; --ubi-gold:#FAB512; --ubi-royal:#3466AF; --ubi-violet:#59509D; --ubi-green:#4EB270;
+    --ubi-surface:#fff; --ubi-line:rgba(30,36,69,.10);
+    --ubi-maxw:1200px; --ubi-pad:clamp(16px,5vw,40px);
+
+    /* alias funcionales (mantienen vivo el JS y los estilos inline) */
+    --panel:#fff; --line:rgba(30,36,69,.10);
+    --fog:#7A8298; --bone:#1E2445; --bone-dim:#464D63; --carbon:#1E2445;
+    --crema:#fff; --niebla:rgba(30,36,69,.14); --nieve:#EEF0F5;
+    --valdivia:#1E2445; --araucaria:#005B59; --helecho:#4EB270; --ambar:#FAB512;
+    --lapis:#22B0E1; --lapis-2:#1c9fcd;
+    --optimo:#005B59; --opt-soft:rgba(0,91,89,.12);
+    --desv:#22B0E1;   --desv-soft:rgba(34,176,225,.16);
+    /* contaminantes — paleta extendida (estados/digital) para distinción categórica */
+    --c-mar:#22B0E1; --c-nox:#59509D; --c-mp:#464D63; --c-so2:#FAB512; --c-cox:#3466AF; --c-otros:#99A0B4;
+    --ok:#4EB270; --warn:#EA561B; --bad:#EA561B;
+    --shadow:0 1px 0 rgba(255,255,255,.7), 0 12px 30px -24px rgba(30,36,69,.5);
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ubi-gray);
+    color:var(--ubi-deep); font-family:Lato,system-ui,sans-serif; font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--ubi-maxw);margin-inline:auto;padding-inline:var(--ubi-pad);width:100%}
+  a{color:var(--ubi-blue)}
+
+  /* ---------- Bands ---------- */
+  .band{width:100%}
+  .band--navy{background:var(--ubi-navy);color:#fff}
+
+  /* ---------- Header ---------- */
+  header.top{padding:0;border:0}
+  .topbar{display:flex;align-items:center;gap:14px;padding:14px 0}
+  .logo{font-family:Lato,sans-serif;font-weight:900;font-size:22px;letter-spacing:-.02em;line-height:1}
+  .logo .ubi{color:var(--ubi-blue)} .logo .cquia{color:#fff} .logo sup{font-size:.5em;font-weight:700;top:-.7em}
+  .topbar .tb-tag{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#9aa6d4;border:1px solid rgba(255,255,255,.18);padding:4px 9px;border-radius:999px}
+  .topbar .spacer{flex:1}
+  .topbar .tb-arc{opacity:.85}
+  .hero{padding-block:clamp(18px,3vh,30px)}
+  .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ubi-blue);margin:0 0 10px}
+  h1.title{font-family:Lato,sans-serif;font-weight:900;font-size:clamp(25px,4.2vw,38px);line-height:1.05;margin:0;letter-spacing:-.02em;color:#fff}
+  h1.title .accent{color:var(--ubi-blue)}
+  .sub{color:#c3c9de;max-width:700px;margin:12px 0 0;font-size:14.5px}
+  .src-tag{display:inline-block;margin-top:14px;font-family:"JetBrains Mono",monospace;font-size:11px;color:#cfd5e8;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);padding:5px 10px;border-radius:999px}
+
+  /* ---------- Tabs ---------- */
+  nav.tabs{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--ubi-line)}
+  .tabs-inner{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+  .tabs-inner::-webkit-scrollbar{display:none}
+  .tab{appearance:none;background:none;border:none;color:var(--ubi-gray2);font-family:Lato,sans-serif;font-weight:700;font-size:14px;padding:14px 16px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
+  .tab:hover{color:var(--ubi-navy)}
+  .tab.active{color:var(--ubi-navy);border-bottom-color:var(--ubi-blue)}
+  .tab .n{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ubi-blue);margin-right:7px}
+
+  main{padding:24px 0 60px}
+  .panel-view{display:none;animation:fade .22s ease}
+  .panel-view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  /* ---------- Cards ---------- */
+  .card{background:#fff;border:1px solid var(--ubi-line);border-radius:var(--r);box-shadow:var(--shadow)}
+  .card.pad{padding:20px 22px}
+  .card-h{font-family:Lato,sans-serif;font-weight:900;font-size:17px;margin:0 0 4px;letter-spacing:-.01em;color:var(--ubi-navy)}
+  .card-d{color:var(--ubi-gray2);font-size:13px;margin:0 0 16px}
+  .grid{display:grid;gap:16px}
+  .g-2{grid-template-columns:repeat(2,1fr)}
+  .g-3{grid-template-columns:repeat(3,1fr)}
+  .g-4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:860px){.g-2,.g-3,.g-4{grid-template-columns:1fr}}
+
+  /* ---------- KPIs ---------- */
+  .kpi{background:#fff;border:1px solid var(--ubi-line);border-radius:var(--r);padding:16px 18px 14px;position:relative;overflow:hidden}
+  .kpi::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--ubi-darkgreen)}
+  .kpi.warn::after{background:var(--ubi-blue)}
+  .kpi .k-label{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ubi-gray2)}
+  .kpi .k-val{font-family:Lato,sans-serif;font-weight:900;font-size:29px;line-height:1.1;margin-top:8px;letter-spacing:-.02em;color:var(--ubi-navy)}
+  .kpi .k-val.warn{color:var(--ubi-blue)}
+  .kpi .k-val.ok{color:var(--ubi-darkgreen)}
+  .kpi .k-foot{font-size:12px;color:var(--ubi-gray2);margin-top:6px}
+
+  /* ---------- Charts ---------- */
+  .hero-chart{margin-top:18px}
+  .chart-box{position:relative;height:300px}
+  .chart-box.sm{height:240px}
+  .legend-inline{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--ubi-deep)}
+  .legend-inline .li{display:flex;align-items:center;gap:7px}
+  .swatch{width:11px;height:11px;border-radius:3px;flex:none}
+  .empty{padding:26px;text-align:center;color:var(--ubi-gray2);font-size:13.5px;border:1px dashed var(--ubi-line);border-radius:10px;background:var(--ubi-gray)}
+  .empty b{color:var(--ubi-navy)}
+
+  /* ---------- Tables ---------- */
+  .table-scroll{overflow:auto;border-radius:10px;border:1px solid var(--ubi-line)}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:620px}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--ubi-line)}
+  th{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ubi-deep);background:var(--ubi-gray);position:sticky;top:0}
+  td{color:var(--ubi-deep)}
+  tr:hover td{background:rgba(34,176,225,.05)}
+  td.num,th.num{text-align:right;font-family:"JetBrains Mono",monospace}
+  .neg{color:var(--ubi-blue);font-weight:700}.pos{color:var(--ubi-darkgreen)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;padding:3px 9px;border-radius:6px;border:1px solid var(--ubi-line);white-space:nowrap;background:var(--ubi-gray)}
+  .pill .dot{width:7px;height:7px;border-radius:50%}
+  .pill.mar .dot{background:var(--c-mar)} .pill.nox .dot{background:var(--c-nox)}
+  .pill.mp .dot{background:var(--c-mp)} .pill.so2 .dot{background:var(--c-so2)}
+  .pill.cox .dot{background:var(--c-cox)} .pill.otros .dot{background:var(--c-otros)}
+
+  /* ---------- Form controls ---------- */
+  label.fld{display:block;font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ubi-gray2);margin:0 0 6px}
+  input,select,textarea{background:#fff;border:1px solid var(--ubi-line);color:var(--ubi-navy);border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ubi-blue);box-shadow:0 0 0 3px var(--desv-soft)}
+  textarea{resize:vertical;min-height:80px;font-size:13.5px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .row>div{flex:1;min-width:140px}
+  .btn{appearance:none;border:1px solid var(--ubi-line);background:#fff;color:var(--ubi-navy);font-family:Lato,sans-serif;font-weight:700;font-size:14px;padding:10px 16px;border-radius:8px;cursor:pointer;transition:transform .1s,border-color .15s,background .15s,box-shadow .15s;white-space:nowrap}
+  .btn:hover{border-color:var(--ubi-blue);transform:translateY(-1px);box-shadow:0 8px 16px -12px rgba(30,36,69,.4)}
+  .btn.primary{background:var(--ubi-blue);color:#06222e;border-color:var(--ubi-blue)}
+  .btn.primary:hover{background:#3fc0ee}
+  .btn.warn{background:var(--ubi-navy);color:#fff;border-color:var(--ubi-navy)}
+  .btn.warn:hover{background:#2a3160}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:7px 11px;font-size:12.5px}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+  .note{font-size:12.5px;color:var(--ubi-deep);background:var(--ubi-gray);border:1px dashed var(--ubi-line);border-radius:8px;padding:12px 14px;margin-top:14px}
+  .note b{color:var(--ubi-navy)}
+  .kicker{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ubi-blue);margin:0 0 10px}
+
+  .hours{overflow:auto;border:1px solid var(--ubi-line);border-radius:10px}
+  .hours table{min-width:560px}
+  .hours input{padding:6px 8px;border-radius:6px;text-align:right;font-family:"JetBrains Mono",monospace;font-size:12.5px}
+  .hours td{padding:5px 8px}
+
+  .ai-result{border:1px solid var(--ubi-line);border-radius:10px;padding:16px;margin-top:14px;background:var(--ubi-gray);display:none}
+  .ai-result.show{display:block}
+  .conf-bar{height:6px;border-radius:999px;background:var(--ubi-line);overflow:hidden;margin-top:6px}
+  .conf-bar i{display:block;height:100%;background:var(--ubi-blue)}
+  .endpoint{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ubi-deep);background:#fff;border:1px solid var(--ubi-line);border-radius:8px;padding:8px 10px;overflow:auto;white-space:nowrap}
+  .flag{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:10px;padding:2px 7px;border-radius:6px;border:1px solid var(--ubi-line);color:var(--ubi-gray2)}
+  .flag.live{color:var(--ubi-darkgreen);border-color:rgba(0,91,89,.4)}
+  .flag.pdf{color:var(--ubi-orange);border-color:rgba(234,86,27,.4)}
+  .conn-dot{width:11px;height:11px;border-radius:50%;background:var(--ubi-gray2);flex:none;box-shadow:0 0 0 3px rgba(30,36,69,.04)}
+  .conn-dot.on{background:var(--ubi-darkgreen);box-shadow:0 0 0 3px rgba(0,91,89,.16)}
+  .conn-dot.off{background:var(--ubi-orange);box-shadow:0 0 0 3px rgba(234,86,27,.16)}
+  .conn-dot.wait{background:var(--ubi-gold);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  code{background:var(--ubi-gray);border:1px solid var(--ubi-line);border-radius:5px;padding:1px 5px;font-family:"JetBrains Mono",monospace;font-size:.92em}
+  table a{text-decoration:none;font-family:"JetBrains Mono",monospace;font-size:11.5px}
+  table a:hover{text-decoration:underline}
+
+  footer.foot-band{margin-top:36px}
+  .foot{color:#aeb6d2;font-size:12px;text-align:center;padding:22px 0}
+  .foot b{color:#fff}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(30,36,69,.18);border-top-color:var(--ubi-blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hidden{display:none!important}
+</style>
+
+
+</head>
+<body>
+
+<header class="top band band--navy">
+  <div class="wrap">
+    <div class="topbar">
+      <span class="logo"><span class="ubi">ubi</span><span class="cquia">cquia</span><sup>®</sup></span>
+      <span class="tb-tag">SEN · Despacho económico–ambiental</span>
+      <span class="spacer"></span>
+      <svg class="tb-arc" width="150" height="26" viewBox="0 0 150 26" aria-hidden="true">
+        <path d="M4 18 Q 70 18 110 9 Q 132 4 146 7" fill="none" stroke="#22B0E1" stroke-width="1.6" stroke-dasharray="4 5"/>
+        <circle cx="146" cy="7" r="2.6" fill="#22B0E1"/>
+      </svg>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="hero">
+      <p class="eyebrow">Motor de análisis · restricciones ambientales</p>
+      <h1 class="title">Desviación del óptimo operacional por <span class="accent">restricciones ambientales</span></h1>
+      <p class="sub">Motor de cálculo para cuantificar la energía no suministrada (MWh) y su impacto económico (USD) cuando una unidad generadora se limita por norma ambiental (D.S. 13/2011 atmosférico · D.S. 90/2001 agua de mar). Aliméntalo con tu catastro, un CSV o la API del Coordinador.</p>
+      <span class="src-tag" id="srcTag">Motor vacío — carga un catastro, importa CSV o conéctate al SIP</span>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="wrap">
+    <div class="tabs-inner" id="tabs">
+      <button class="tab active" data-v="panel"><span class="n">01</span>Panel</button>
+      <button class="tab" data-v="catastro"><span class="n">02</span>Catastro</button>
+      <button class="tab" data-v="eval"><span class="n">03</span>Evaluación diaria</button>
+      <button class="tab" data-v="datos"><span class="n">04</span>Datos &amp; conector IA</button>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<!-- ====================== 01 PANEL ====================== -->
+<section class="panel-view active" id="v-panel">
+  <div class="card pad" id="emptyState" style="margin-bottom:16px;display:none">
+    <p class="kicker">Motor listo</p>
+    <h2 class="card-h">Aún no hay datos cargados</h2>
+    <p class="card-d" style="margin-bottom:0">Este es un motor de cálculo, no un informe precargado. Para empezar: ingresa limitaciones en <b style="color:var(--ubi-navy)">Catastro</b>, importa un CSV, corre una <b style="color:var(--ubi-navy)">Evaluación diaria</b>, o conéctate a la API del Coordinador en <b style="color:var(--ubi-navy)">Datos &amp; conector</b>. Los indicadores se calculan con lo que cargues.</p>
+  </div>
+
+  <div class="row" style="margin-bottom:16px;align-items:flex-end">
+    <div style="max-width:300px"><label class="fld" for="refGen">Generación anual de referencia [GWh] (opcional)</label><input id="refGen" type="number" placeholder="p. ej. 53890" min="0"></div>
+    <div style="flex:none;color:var(--ubi-gray2);font-size:12.5px;padding-bottom:10px">Permite expresar la desviación como % del sistema.</div>
+  </div>
+
+  <div class="grid g-4" id="kpis"></div>
+
+  <div class="card pad hero-chart">
+    <p class="kicker">Esquema del análisis</p>
+    <h2 class="card-h">Óptimo programado vs. operación restringida</h2>
+    <p class="card-d">La franja azul es la energía que el sistema dejó de despachar de forma óptima al cumplir la norma ambiental. Su tamaño escala con tus datos; selecciona un contaminante para aislar su aporte.</p>
+    <div class="row" style="margin-bottom:14px">
+      <div style="max-width:260px">
+        <label class="fld" for="heroFilter">Contaminante</label>
+        <select id="heroFilter"><option value="ALL">Todos los contaminantes</option></select>
+      </div>
+    </div>
+    <div class="chart-box"><canvas id="heroChart"></canvas></div>
+    <div class="legend-inline">
+      <span class="li"><span class="swatch" style="background:var(--optimo)"></span>Óptimo programado (sin restricción)</span>
+      <span class="li"><span class="swatch" style="background:var(--desv)"></span>Operación con restricción ambiental</span>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-top:16px">
+    <div class="card pad">
+      <h2 class="card-h">Desviación de energía por contaminante</h2>
+      <p class="card-d">Energía no suministrada, en GWh.</p>
+      <div class="empty" id="energyEmpty" style="display:none">Corre evaluaciones diarias para poblar este gráfico.</div>
+      <div class="chart-box sm"><canvas id="energyChart"></canvas></div>
+    </div>
+    <div class="card pad">
+      <h2 class="card-h">Sobrecosto del sistema por contaminante</h2>
+      <p class="card-d">Aumento de costo, en millones de USD.</p>
+      <div class="empty" id="costEmpty" style="display:none">El costo aparece al valorizar la energía con el costo marginal.</div>
+      <div class="chart-box sm"><canvas id="costChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <h2 class="card-h">Unidades con más limitaciones</h2>
+    <p class="card-d">Conteo desde tu catastro. El tamaño de la generadora pesa más que la cantidad: pocas limitaciones en una unidad grande desvían más energía que muchas en una pequeña.</p>
+    <div class="table-scroll">
+      <table id="topUnits"><thead><tr>
+        <th>Unidad</th><th>Central</th><th class="num">Pmáx [MW]</th><th class="num">Limitaciones</th><th>Contaminante predominante</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 02 CATASTRO ====================== -->
+<section class="panel-view" id="v-catastro">
+  <div class="card pad">
+    <p class="kicker">Sección 3 &amp; 4 del Informe de Novedades</p>
+    <h2 class="card-h">Catastro de limitaciones</h2>
+    <p class="card-d">Cada fila es una limitación invocada por una unidad. La columna <b>Contaminante</b> se asigna automáticamente leyendo el motivo (clasificador local); puedes reclasificar con IA en la pestaña 04.</p>
+
+    <div class="row">
+      <div><label class="fld">Día</label><input id="f-dia" type="number" min="1" max="31" placeholder="1"></div>
+      <div><label class="fld">Hora</label><input id="f-hora" type="text" placeholder="19:10"></div>
+      <div><label class="fld">Unidad</label><input id="f-unidad" type="text" placeholder="Ventanas 1"></div>
+      <div><label class="fld">Central</label><input id="f-central" type="text" placeholder="Ventanas"></div>
+      <div style="max-width:120px"><label class="fld">Potencia MW</label><input id="f-pot" type="number" placeholder="78"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:3;min-width:240px"><label class="fld">Motivo de la limitación</label><input id="f-motivo" type="text" placeholder="Control de temperatura de descarga de agua de mar"></div>
+      <div style="max-width:170px"><label class="fld">Estado</label>
+        <select id="f-estado"><option>Limitada</option><option>Cancela limitación</option><option>Con SDCF</option><option>Cancela SDCF</option></select></div>
+      <div style="flex:none"><button class="btn primary" id="addRow">+ Agregar</button></div>
+    </div>
+    <div class="note">El clasificador asignará el contaminante al agregar. Palabras como <b>“agua de mar”</b> → Temp. Agua de Mar (D.S. 90), <b>“SO2”</b> → SO2, <b>“material particulado / abatimiento”</b> → MP, <b>“NOx / VTF / combustión”</b> → NOx, <b>“partida / caldera / mínimo técnico”</b> → COx, ambiguo → Otros.</div>
+
+    <div class="row" style="margin-top:16px;justify-content:space-between">
+      <div style="flex:none;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm ghost" id="loadSample">Cargar ejemplo</button>
+        <button class="btn sm ghost" id="clearRows">Vaciar</button>
+      </div>
+      <div style="flex:none;display:flex;gap:8px;flex-wrap:wrap">
+        <label class="btn sm ghost" style="cursor:pointer">Importar CSV<input id="csvIn" type="file" accept=".csv" class="hidden"></label>
+        <button class="btn sm ghost" id="csvOut">Exportar CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 class="card-h" style="margin:0">Registros <span id="rowCount" style="color:var(--fog);font-weight:400">(0)</span></h2>
+      <select id="catFilter" style="max-width:220px"><option value="ALL">Todos los contaminantes</option></select>
+    </div>
+    <div class="table-scroll" style="margin-top:14px">
+      <table id="catTable"><thead><tr>
+        <th>Día</th><th>Hora</th><th>Unidad</th><th>Central</th><th class="num">MW</th><th>Motivo</th><th>Estado</th><th>Contaminante</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 03 EVALUACIÓN ====================== -->
+<section class="panel-view" id="v-eval">
+  <div class="card pad">
+    <p class="kicker">Capítulo 4 · Tabla 4.1</p>
+    <h2 class="card-h">Evaluación económica diaria por unidad</h2>
+    <p class="card-d">Formato horario por unidad. <b>Diferencial 1 = Programada − Pmáx</b> (capacidad retirada por la limitación). <b>Diferencial 2 = Real − Programada</b> (energía no suministrada o excedente). El total de 24 bloques se interpreta como energía (MWh) y se valoriza con el costo marginal.</p>
+
+    <div class="row">
+      <div><label class="fld">Unidad</label><select id="ev-unit"></select></div>
+      <div style="max-width:130px"><label class="fld">Pmáx [MW]</label><input id="ev-pmax" type="number"></div>
+      <div style="max-width:150px"><label class="fld">Disponibilidad %</label><input id="ev-disp" type="number" value="100" min="0" max="100"></div>
+      <div style="max-width:170px"><label class="fld">Costo marginal [USD/MWh]</label><input id="ev-cmg" type="number" value="" step="0.1" placeholder="p. ej. 70"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div style="max-width:230px"><label class="fld">Contaminante de la limitación</label><select id="ev-cont"></select></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div style="flex:none;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" id="ev-fillProg">Programar al % disponibilidad</button>
+        <button class="btn sm ghost" id="ev-copyReal">Real = Programada</button>
+        <button class="btn sm ghost" id="ev-zero">Reiniciar horas</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g-4" id="ev-kpis" style="margin-top:16px"></div>
+
+  <div class="grid g-2" style="margin-top:16px">
+    <div class="card pad">
+      <h2 class="card-h">Perfil horario</h2>
+      <div class="chart-box sm" style="margin-top:8px"><canvas id="evChart"></canvas></div>
+    </div>
+    <div class="card pad">
+      <h2 class="card-h">Bloques horarios</h2>
+      <p class="card-d">Edita Programada y Real. Negativo en un diferencial = energía no suministrada.</p>
+      <div class="hours" style="margin-top:8px;max-height:320px">
+        <table id="ev-table"><thead><tr>
+          <th class="num">Hora</th><th class="num">Pmáx</th><th class="num">Prog</th><th class="num">Real</th><th class="num">Dif 1</th><th class="num">Dif 2</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pad" style="margin-top:16px">
+    <button class="btn primary" id="ev-save">Guardar evaluación en el panel</button>
+    <span id="ev-saved" style="margin-left:12px;color:var(--ok);font-size:13px"></span>
+    <div class="note">La evaluación guardada alimenta los totales del Panel (desviación de energía y sobrecosto). Corre varias unidades/días para construir tu período de análisis.</div>
+  </div>
+</section>
+
+<!-- ====================== 04 DATOS & IA ====================== -->
+<section class="panel-view" id="v-datos">
+  <div class="card pad">
+    <p class="kicker">¿Qué publica hoy el Coordinador?</p>
+    <h2 class="card-h">Fuentes en 2026 — con enlaces directos</h2>
+    <p class="card-d">La conclusión de tu memoria —“no existe un documento oficial estandarizado”— sigue siendo cierta para el motivo de la limitación, pero el resto ya es descargable por CSV y API. Cada fila enlaza a la fuente oficial.</p>
+    <div class="table-scroll">
+      <table style="min-width:720px"><thead><tr>
+        <th>Fuente</th><th>Hoy</th><th>Formato</th><th>Enlace oficial</th>
+      </tr></thead><tbody>
+        <tr><td>Informe de Novedades del CDC<br><span style="color:var(--fog);font-size:11px">Resumen Ejecutivo + Informe Diario (Art. 2-59 NTCO)</span></td><td><span class="flag pdf">Sigue PDF</span></td><td>PDF diario (máx 30 días)</td><td><a href="https://www.coordinador.cl/operacion/documentos/novedades-cdc/" target="_blank" rel="noopener">Novedades CDC ↗</a></td></tr>
+        <tr><td>Generación Real / Programada</td><td><span class="flag live">Estructurado</span></td><td>CSV + API</td><td><a href="https://www.coordinador.cl/operacion/graficos/operacion-real/generacion-real/" target="_blank" rel="noopener">Generación real ↗</a></td></tr>
+        <tr><td>Costo Marginal Real / Online</td><td><span class="flag live">Estructurado</span></td><td>CSV + API</td><td><a href="https://www.coordinador.cl/mercados/graficos/descarga-datos-costos-marginales/costo-marginal-preliminar-real/" target="_blank" rel="noopener">Descarga CMg ↗</a></td></tr>
+        <tr><td>API Pública SIP</td><td><span class="flag live">Nuevo desde 2018</span></td><td>REST · API Key</td><td><a href="https://portal.api.coordinador.cl/" target="_blank" rel="noopener">Portal desarrollador ↗</a> · <a href="https://portal.api.coordinador.cl/documentacion?service=sipubv2" target="_blank" rel="noopener">Docs ↗</a></td></tr>
+        <tr><td>Registro / clave SIP</td><td><span class="flag live">Gratuito</span></td><td>user_key</td><td><a href="https://sipub.coordinador.cl/" target="_blank" rel="noopener">Crear cuenta SIP ↗</a></td></tr>
+      </tbody></table>
+    </div>
+    <div class="note">Flujo de integración: <b>SIP API</b> trae Real, Programada y Costo Marginal (datos duros) → <b>IA</b> lee el motivo del Informe de Novedades y lo categoriza por contaminante (el dato que sigue sin estandarizar). Ambos conectores corren por serverless para no exponer claves.</div>
+  </div>
+
+  <!-- Estado de conexión -->
+  <div class="card pad" style="margin-top:16px">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 class="card-h" style="margin:0">Estado de los conectores</h2>
+      <button class="btn sm ghost" id="pingBtn">Probar conexión</button>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div style="max-width:280px"><label class="fld" for="sen-code">Código de acceso</label><input id="sen-code" type="password" placeholder="SEN_ACCESS_CODE" autocomplete="off"></div>
+      <div style="flex:none;color:var(--ubi-gray2);font-size:12.5px;padding-bottom:10px">El mismo que configuras en Vercel. Se envía en <code>x-access-code</code>; nunca se guarda.</div>
+    </div>
+    <div class="grid g-2" style="margin-top:6px">
+      <div style="display:flex;align-items:center;gap:10px"><span class="conn-dot" id="dot-ai"></span><div><div style="color:var(--bone);font-weight:600">Conector IA <code style="font-family:'JetBrains Mono';font-size:11px;color:var(--fog)">/api/sen-clasifica</code></div><div id="st-ai" style="font-size:12.5px;color:var(--fog)">sin probar</div></div></div>
+      <div style="display:flex;align-items:center;gap:10px"><span class="conn-dot" id="dot-sip"></span><div><div style="color:var(--bone);font-weight:600">Conector SIP <code style="font-family:'JetBrains Mono';font-size:11px;color:var(--fog)">/api/sen-sip</code></div><div id="st-sip" style="font-size:12.5px;color:var(--fog)">sin probar</div></div></div>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-top:16px">
+    <div class="card pad">
+      <p class="kicker">Conector IA</p>
+      <h2 class="card-h">Clasificador de motivo → contaminante</h2>
+      <p class="card-d">Pega el texto del motivo del Informe de Novedades. Devuelve contaminante, decreto, confianza y justificación. Usa el backend si está desplegado; si no, cae al clasificador local.</p>
+      <label class="fld" for="ai-text">Motivo de la limitación</label>
+      <textarea id="ai-text" placeholder="Ej: Limitada a un mínimo de 250 MW por trabamiento de lampos de control de VTF y por controles de emisiones SO2."></textarea>
+      <div class="row" style="margin-top:12px">
+        <div style="flex:none"><button class="btn primary" id="ai-go">Clasificar con IA</button></div>
+        <div style="flex:none"><button class="btn ghost sm" id="ai-local">Clasificar local (sin red)</button></div>
+      </div>
+      <div class="ai-result" id="ai-result"></div>
+    </div>
+
+    <div class="card pad">
+      <p class="kicker">Conector de datos SIP — en vivo</p>
+      <h2 class="card-h">Costo marginal real desde la API</h2>
+      <p class="card-d">Consulta la API Pública del Coordinador vía serverless. Ajusta recurso/versión según tu plan (botón “Docs” arriba).</p>
+      <div class="row">
+        <div><label class="fld">Recurso</label><input id="sip-rec" value="costo-marginal-real"></div>
+        <div style="max-width:90px"><label class="fld">Versión</label><input id="sip-ver" value="v4"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div><label class="fld">Desde</label><input id="sip-from" type="date"></div>
+        <div><label class="fld">Hasta</label><input id="sip-to" type="date"></div>
+        <div style="flex:none"><button class="btn primary" id="sip-go">Consultar</button></div>
+      </div>
+      <div id="sip-out" class="ai-result"></div>
+    </div>
+  </div>
+
+  <div class="grid g-2" style="margin-top:16px">
+    <div class="card pad">
+      <p class="kicker">Procesamiento por lote</p>
+      <h2 class="card-h">Reclasificar el catastro completo</h2>
+      <p class="card-d">Recorre todas las filas del catastro y reasigna el contaminante con IA. Útil tras importar un CSV crudo del Informe de Novedades.</p>
+      <button class="btn warn" id="ai-batch">Reclasificar catastro con IA</button>
+      <span id="ai-batch-status" style="margin-left:10px;font-size:13px;color:var(--fog)"></span>
+    </div>
+
+    <div class="card pad">
+      <p class="kicker">Publicación</p>
+      <h2 class="card-h">Dejarlo online</h2>
+      <p class="card-d">Este paquete está listo para Vercel + GitHub (tu flujo de griddata.cl). Tres pasos:</p>
+      <ol style="margin:0;padding-left:18px;color:var(--bone-dim);font-size:13.5px;line-height:1.8">
+        <li>Sube la carpeta a tu repo (o <code>vercel</code> desde la terminal).</li>
+        <li>En Vercel → Settings → Environment Variables, agrega <code>SEN_ACCESS_CODE</code>, <code>SIP_USER_KEY</code> y reutiliza <code>ANTHROPIC_API_KEY</code>.</li>
+        <li>Listo. Los conectores quedan en <code>/api/sen-clasifica</code> y <code>/api/sen-sip</code>.</li>
+      </ol>
+      <div class="note" style="margin-top:14px">El <b>README.md</b> incluido trae los comandos exactos. Sin claves la app igual funciona: cargas datos a mano o por CSV y clasificas en modo local.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer class="band band--navy foot-band">
+  <div class="wrap"><p class="foot">Motor de análisis de restricciones ambientales del SEN · metodología basada en Quiñones Bustos, E. (2018), Universidad de Concepción. Fuentes 2026 verificadas en coordinador.cl · <b>ubicquia</b> · griddata.cl</p></div>
+</footer>
+
+<script>
+"use strict";
+(function(){
+  /* ---------------- Taxonomía (metodología, no datos) ---------------- */
+  // Categorías de contaminante + decreto. Sin datos precargados: el motor se llena con tu catastro/evaluaciones.
+  const CONTAM = {
+    "Temp. Agua de Mar": {key:"mar",   css:"--c-mar",   dec:"D.S. 90/2001"},
+    "COx":               {key:"cox",   css:"--c-cox",   dec:"D.S. 13/2011"},
+    "NOx":               {key:"nox",   css:"--c-nox",   dec:"D.S. 13/2011"},
+    "MP":                {key:"mp",    css:"--c-mp",    dec:"D.S. 13/2011"},
+    "SO2":               {key:"so2",   css:"--c-so2",   dec:"D.S. 13/2011"},
+    "Otros":             {key:"otros", css:"--c-otros", dec:"—"}
+  };
+
+  // Catálogo de referencia de unidades térmicas (Pmáx para autocompletar). Editable / ampliable; no son resultados.
+  const UNITS = [
+    {u:"Nueva Ventanas", c:"Nueva Ventanas", pmax:272, comb:"Carbón"},
+    {u:"Ventanas 1", c:"Ventanas", pmax:120, comb:"Carbón"},
+    {u:"Ventanas 2", c:"Ventanas", pmax:220, comb:"Carbón"},
+    {u:"Campiche", c:"Campiche", pmax:272, comb:"Carbón"},
+    {u:"Guacolda 1", c:"Guacolda", pmax:152, comb:"Carbón"},
+    {u:"Guacolda 2", c:"Guacolda", pmax:152, comb:"Carbón"},
+    {u:"Guacolda 3", c:"Guacolda", pmax:152, comb:"Carbón"},
+    {u:"Guacolda 4", c:"Guacolda", pmax:152, comb:"Carbón"},
+    {u:"Guacolda 5", c:"Guacolda", pmax:152, comb:"Carbón"},
+    {u:"Bocamina 2", c:"Bocamina", pmax:350, comb:"Carbón"},
+    {u:"San Isidro I", c:"San Isidro", pmax:379, comb:"Gas Natural"},
+    {u:"San Isidro II", c:"San Isidro II", pmax:399, comb:"Gas Natural"},
+    {u:"Nehuenco I", c:"Nehuenco", pmax:340, comb:"Gas Natural"},
+    {u:"Nehuenco II", c:"Nehuenco II", pmax:365, comb:"Gas Natural"},
+    {u:"Santa María", c:"Santa María", pmax:350, comb:"Carbón"},
+    {u:"Nueva Renca", c:"Nueva Renca", pmax:250, comb:"Gas Natural"}
+  ];
+  let refGenGWh = null; // generación anual de referencia (opcional) para el % del SEN
+
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const fmt = (n,d=0)=> (n==null||isNaN(n))?"—":n.toLocaleString("es-CL",{minimumFractionDigits:d,maximumFractionDigits:d});
+  const usd = n => "$"+fmt(n);
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  /* ---------------- Contaminant classifier (local) ---------------- */
+  function classifyLocal(text){
+    const t = (text||"").toLowerCase();
+    const has = (...w)=>w.some(x=>t.includes(x));
+    if(has("agua de mar","agua de refrigeración","agua de refrigeracion","temperatura de descarga","sistema de refrigeración","sistema de refrigeracion","refriger"))
+      return {cont:"Temp. Agua de Mar", dec:"D.S. 90/2001", conf:0.9, why:"Menciona descarga/temperatura de agua del sistema de refrigeración → residuos líquidos."};
+    if(has("so2","azufre","desulfur"))
+      return {cont:"SO2", dec:"D.S. 13/2011", conf:0.85, why:"Control de emisiones de dióxido de azufre."};
+    if(has("material particulado","particulado","mp ","filtro de manga","precipitador","abatimiento de emisiones","abatimiento"))
+      return {cont:"MP", dec:"D.S. 13/2011", conf:0.8, why:"Material particulado o equipos de abatimiento (precipitador/filtro)."};
+    if(has("nox","óxidos de nitr","oxidos de nitr","vtf","tiro forzado","combustión","combustion","mezcla combustible"))
+      return {cont:"NOx", dec:"D.S. 13/2011", conf:0.75, why:"Control de combustión / VTF → óxidos de nitrógeno."};
+    if(has("partida","arranque","caldera","mínimo técnico","minimo tecnico","carga fija","puesta en servicio","co ","monóxido","monoxido"))
+      return {cont:"COx", dec:"D.S. 13/2011", conf:0.65, why:"Partida/caldera/mínimo técnico → emisiones de CO/CO2."};
+    return {cont:"Otros", dec:"—", conf:0.4, why:"Motivo ambiguo: no se puede atribuir un contaminante con certeza."};
+  }
+
+  /* ---------------- State ---------------- */
+  let rows = [];            // catastro
+  let extraEval = [];       // evaluaciones guardadas {cont, gwh, usd}
+  let charts = {};
+
+  /* ---------------- Tabs ---------------- */
+  $("#tabs").addEventListener("click", e=>{
+    const b = e.target.closest(".tab"); if(!b) return;
+    $$(".tab").forEach(x=>x.classList.toggle("active", x===b));
+    const v = b.dataset.v;
+    $$(".panel-view").forEach(p=>p.classList.toggle("active", p.id==="v-"+v));
+    if(v==="panel") renderPanel();
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+
+  /* ---------------- Aggregation (desde catastro + evaluaciones) ---------------- */
+  function aggregate(){
+    const agg = {};
+    Object.keys(CONTAM).forEach(k=> agg[k] = {lim:0, gwh:0, usd:0});
+    rows.forEach(r=>{ if(!agg[r.cont]) agg[r.cont]={lim:0,gwh:0,usd:0}; agg[r.cont].lim++; });
+    extraEval.forEach(e=>{ if(!agg[e.cont]) agg[e.cont]={lim:0,gwh:0,usd:0}; agg[e.cont].gwh+=e.gwh; agg[e.cont].usd+=e.usd; });
+    return agg;
+  }
+  function hasData(){ return rows.length>0 || extraEval.length>0; }
+
+  /* ---------------- Panel ---------------- */
+  function renderPanel(){
+    const agg = aggregate();
+    const totGwh = extraEval.reduce((s,e)=>s+e.gwh,0);
+    const totUsd = extraEval.reduce((s,e)=>s+e.usd,0);
+    const extraN = extraEval.length;
+    const pct = (refGenGWh && refGenGWh>0) ? (Math.abs(totGwh)/refGenGWh*100) : null;
+
+    $("#kpis").innerHTML = `
+      <div class="kpi"><div class="k-label">Limitaciones en el catastro</div><div class="k-val">${fmt(rows.length)}</div><div class="k-foot">${rows.length?"registros cargados":"aún sin cargar"}</div></div>
+      <div class="kpi warn"><div class="k-label">Desviación de energía</div><div class="k-val warn">${extraN?fmt(totGwh,1):"—"} <span style="font-size:16px">${extraN?"GWh":""}</span></div><div class="k-foot">${pct!=null?fmt(pct,3)+"% de la generación de referencia":"de "+extraN+" evaluación(es)"}</div></div>
+      <div class="kpi warn"><div class="k-label">Sobrecosto del sistema</div><div class="k-val warn">${extraN?usd(Math.round(totUsd/1e6))+' <span style="font-size:16px">MM</span>':"—"}</div><div class="k-foot">${extraN?usd(Math.round(totUsd))+" USD":"corre una evaluación diaria"}</div></div>
+      <div class="kpi"><div class="k-label">Evaluaciones realizadas</div><div class="k-val ok">${extraN}</div><div class="k-foot">alimentan estos totales</div></div>`;
+
+    // estado vacío
+    const ev = $("#emptyState");
+    if(ev) ev.style.display = hasData() ? "none" : "block";
+
+    buildHeroFilter();
+    drawHero();
+    drawEnergy(agg);
+    drawCost(agg);
+    renderTopUnits();
+  }
+
+  function renderTopUnits(){
+    const tb = $("#topUnits tbody");
+    // cuenta por unidad desde el catastro
+    const byUnit = {};
+    rows.forEach(r=>{
+      const k = r.unidad || "(sin nombre)";
+      if(!byUnit[k]) byUnit[k] = {u:k, c:r.central||"", lim:0, conts:{}};
+      byUnit[k].lim++; byUnit[k].conts[r.cont]=(byUnit[k].conts[r.cont]||0)+1;
+      if(r.central) byUnit[k].c = r.central;
+    });
+    const list = Object.values(byUnit).sort((a,b)=>b.lim-a.lim).slice(0,10);
+    if(!list.length){ tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ubi-gray2);padding:22px">Sin datos. Las unidades aparecen al cargar limitaciones en el catastro.</td></tr>`; return; }
+    tb.innerHTML = list.map(u=>{
+      const dom = Object.keys(u.conts).sort((a,b)=>u.conts[b]-u.conts[a])[0] || "Otros";
+      const cat = UNITS.find(x=>x.u===u.u);
+      const c = CONTAM[dom];
+      return `<tr><td style="color:var(--bone)">${u.u}</td><td>${u.c}</td><td class="num">${cat?fmt(cat.pmax):"—"}</td><td class="num">${fmt(u.lim)}</td>
+        <td><span class="pill ${c?c.key:'otros'}"><span class="dot"></span>${dom}</span></td></tr>`;
+    }).join("");
+  }
+
+  function buildHeroFilter(){
+    const sel = $("#heroFilter");
+    if(sel.options.length>1) return;
+    Object.keys(CONTAM).forEach(k=>{ const o=document.createElement("option"); o.value=k;o.textContent=k; sel.appendChild(o); });
+    sel.addEventListener("change", drawHero);
+  }
+
+  function drawHero(){
+    const ctx = $("#heroChart");
+    const filter = $("#heroFilter").value;
+    // Curva horaria esquemática (demanda térmica) + franja de restricción según el aporte del contaminante (datos del usuario)
+    const hours = Array.from({length:24},(_,i)=>i+1);
+    const base = hours.map(h=> 700 + 260*Math.sin((h-7)/24*Math.PI*2) + 120*Math.exp(-Math.pow(h-20,2)/10));
+    const agg = aggregate();
+    const totGwh = Math.abs(extraEval.reduce((s,e)=>s+e.gwh,0));
+    let share;
+    if(!hasData()) share = 0.6;                 // esquema visible cuando aún no hay datos
+    else if(filter==="ALL") share = 1;
+    else share = totGwh>0 ? Math.abs(agg[filter].gwh)/totGwh : 0.3;
+    const restricted = base.map((v,i)=>{
+      const cut = (40 + 55*Math.exp(-Math.pow(hours[i]-20,2)/14)) * share;
+      return Math.max(0, v - cut);
+    });
+    if(charts.hero) charts.hero.destroy();
+    charts.hero = new Chart(ctx,{type:"line",
+      data:{labels:hours,datasets:[
+        {label:"Óptimo programado",data:base,borderColor:css("--optimo"),backgroundColor:css("--opt-soft"),fill:false,tension:.4,pointRadius:0,borderWidth:2},
+        {label:"Con restricción",data:restricted,borderColor:css("--desv"),backgroundColor:css("--desv-soft"),fill:"-1",tension:.4,pointRadius:0,borderWidth:2}
+      ]},
+      options:baseOpts({xTitle:"Hora del día",yTitle:"Despacho [MW]"})
+    });
+  }
+
+  function drawEnergy(agg){
+    const labels = Object.keys(CONTAM);
+    const data = labels.map(k=> Math.abs(agg[k].gwh));
+    const mx = data.indexOf(Math.max(...data));
+    const colors = labels.map((k,i)=> (data[i]>0 && i===mx) ? css("--warn") : css(CONTAM[k].css));
+    if(charts.energy) charts.energy.destroy();
+    charts.energy = new Chart($("#energyChart"),{type:"bar",
+      data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:5,borderWidth:0}]},
+      options:baseOpts({yTitle:"GWh", noLegend:true, valSuffix:" GWh"})
+    });
+    toggleEmpty("energyEmpty", extraEval.length===0);
+  }
+  function drawCost(agg){
+    const labels = Object.keys(CONTAM);
+    const data = labels.map(k=> agg[k].usd/1e6);
+    const mx = data.indexOf(Math.max(...data));
+    const colors = labels.map((k,i)=> (data[i]>0 && i===mx) ? css("--warn") : css(CONTAM[k].css));
+    if(charts.cost) charts.cost.destroy();
+    charts.cost = new Chart($("#costChart"),{type:"bar",
+      data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:5,borderWidth:0}]},
+      options:baseOpts({yTitle:"MM USD", noLegend:true, valPrefix:"$", valSuffix:" MM"})
+    });
+    toggleEmpty("costEmpty", extraEval.length===0);
+  }
+  function toggleEmpty(id, show){ const e=$("#"+id); if(e) e.style.display = show?"block":"none"; }
+
+  function baseOpts(o={}){
+    return {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:!o.noLegend, labels:{color:css("--bone-dim"),font:{family:"Lato"},boxWidth:12,boxHeight:12}},
+        tooltip:{callbacks:{label:c=>{
+          const v = c.parsed.y!=null?c.parsed.y:c.parsed;
+          return ` ${(o.valPrefix||"")}${Number(v).toLocaleString("es-CL",{maximumFractionDigits:1})}${(o.valSuffix||"")}`;
+        }}}
+      },
+      scales:{
+        x:{title:{display:!!o.xTitle,text:o.xTitle,color:css("--fog")},ticks:{color:css("--fog"),font:{family:"JetBrains Mono",size:10}},grid:{color:"rgba(20,59,43,.07)"}},
+        y:{title:{display:!!o.yTitle,text:o.yTitle,color:css("--fog")},ticks:{color:css("--fog"),font:{family:"JetBrains Mono",size:10}},grid:{color:"rgba(20,59,43,.08)"}}
+      }
+    };
+  }
+
+  /* ---------------- Catastro ---------------- */
+  function pill(cont){
+    const c = CONTAM[cont]; const key = c?c.key:"otros";
+    return `<span class="pill ${key}"><span class="dot"></span>${cont}</span>`;
+  }
+  function renderCatastro(){
+    const filter = $("#catFilter").value;
+    const tb = $("#catTable tbody");
+    const view = rows.filter(r=> filter==="ALL" || r.cont===filter);
+    tb.innerHTML = view.map(r=>`
+      <tr>
+        <td class="num">${r.dia||""}</td><td>${r.hora||""}</td>
+        <td style="color:var(--bone)">${r.unidad||""}</td><td>${r.central||""}</td>
+        <td class="num">${r.pot?fmt(r.pot):""}</td>
+        <td style="max-width:280px;white-space:normal">${r.motivo||""}</td>
+        <td>${r.estado||""}</td><td>${pill(r.cont)}</td>
+        <td><button class="btn sm ghost" data-del="${r.id}" style="padding:3px 8px">✕</button></td>
+      </tr>`).join("") || `<tr><td colspan="9" style="text-align:center;color:var(--ubi-gray2);padding:24px">Sin registros. Carga un ejemplo, importa un CSV o agrega una limitación.</td></tr>`;
+    $("#rowCount").textContent = `(${rows.length})`;
+    $("#srcTag").textContent = rows.length
+      ? `${rows.length} limitaciones en el catastro`
+      : `Motor vacío — carga un catastro, importa CSV o conéctate al SIP`;
+    buildCatFilter();
+    if($("#v-panel").classList.contains("active")) renderPanel();
+  }
+  function buildCatFilter(){
+    const sel = $("#catFilter");
+    if(sel.options.length>1) return;
+    Object.keys(CONTAM).forEach(k=>{ const o=document.createElement("option");o.value=k;o.textContent=k;sel.appendChild(o); });
+    sel.addEventListener("change", renderCatastro);
+  }
+  $("#catTable").addEventListener("click", e=>{
+    const id = e.target.getAttribute("data-del"); if(!id) return;
+    rows = rows.filter(r=> String(r.id)!==String(id)); renderCatastro();
+  });
+  $("#addRow").addEventListener("click", ()=>{
+    const motivo = $("#f-motivo").value.trim();
+    const cls = classifyLocal(motivo);
+    rows.unshift({id:Date.now()+Math.random(), dia:$("#f-dia").value, hora:$("#f-hora").value,
+      unidad:$("#f-unidad").value.trim(), central:$("#f-central").value.trim(),
+      pot:parseFloat($("#f-pot").value)||"", motivo, estado:$("#f-estado").value, cont:cls.cont, dec:cls.dec});
+    ["f-dia","f-hora","f-unidad","f-central","f-pot","f-motivo"].forEach(i=>$("#"+i).value="");
+    renderCatastro();
+  });
+  $("#clearRows").addEventListener("click", ()=>{ rows=[]; renderCatastro(); });
+  $("#loadSample").addEventListener("click", loadSample);
+  function loadSample(){
+    const s = [
+      {dia:1,hora:"19:10",unidad:"Unidad A",central:"Central Norte",pot:250,motivo:"Por control de emisiones SO2",estado:"Limitada"},
+      {dia:1,hora:"20:48",unidad:"Unidad B",central:"Central Costa",pot:78,motivo:"Control de temperatura de descarga de agua de mar",estado:"Limitada"},
+      {dia:2,hora:"08:00",unidad:"Unidad C",central:"Central Sur",pot:120,motivo:"Limitación por puesta en servicio de equipos de abatimiento de emisiones",estado:"Limitada"},
+      {dia:2,hora:"10:30",unidad:"Unidad A",central:"Central Norte",pot:140,motivo:"Limitación a carga fija por control de combustión de la caldera",estado:"Limitada"},
+      {dia:3,hora:"00:00",unidad:"Unidad D",central:"Central Valle",pot:200,motivo:"Limitada a mínimo por trabamiento de VTF y control de emisiones",estado:"Con SDCF"}
+    ];
+    rows = s.map(r=>{ const cls=classifyLocal(r.motivo); return {id:Date.now()+Math.random(),...r,cont:cls.cont,dec:cls.dec}; });
+    renderCatastro();
+  }
+
+  /* CSV */
+  $("#csvOut").addEventListener("click", ()=>{
+    const head = ["dia","hora","unidad","central","potencia_mw","motivo","estado","contaminante","decreto"];
+    const lines = [head.join(",")].concat(rows.map(r=>
+      [r.dia,r.hora,r.unidad,r.central,r.pot,`"${(r.motivo||"").replace(/"/g,'""')}"`,r.estado,r.cont,r.dec||""].join(",")));
+    const blob = new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="catastro_restricciones.csv"; a.click();
+  });
+  $("#csvIn").addEventListener("change", e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = ()=>{
+      try{
+        const txt = rd.result.replace(/\r/g,"");
+        const ls = txt.split("\n").filter(x=>x.trim());
+        const head = ls.shift().split(",").map(h=>h.trim().toLowerCase());
+        const idx = n => head.findIndex(h=>h.includes(n));
+        const iMot = idx("motivo"), iUni=idx("unidad"), iCen=idx("central"), iPot=idx("pot")>=0?idx("pot"):idx("mw"),
+              iDia=idx("dia")>=0?idx("dia"):idx("día"), iHora=idx("hora"), iEst=idx("estado");
+        rows = ls.map(l=>{
+          const cells = parseCsvLine(l);
+          const motivo = (cells[iMot]||"").trim();
+          const cls = classifyLocal(motivo);
+          return {id:Date.now()+Math.random(), dia:cells[iDia]||"", hora:cells[iHora]||"",
+            unidad:(cells[iUni]||"").trim(), central:(cells[iCen]||"").trim(),
+            pot:parseFloat(cells[iPot])||"", motivo, estado:(cells[iEst]||"").trim()||"Limitada",
+            cont:cls.cont, dec:cls.dec};
+        });
+        renderCatastro();
+      }catch(err){ alert("No se pudo leer el CSV: "+err.message); }
+    };
+    rd.readAsText(f,"UTF-8");
+  });
+  function parseCsvLine(line){
+    const out=[]; let cur="",q=false;
+    for(let i=0;i<line.length;i++){const ch=line[i];
+      if(q){ if(ch==='"'&&line[i+1]==='"'){cur+='"';i++;} else if(ch==='"'){q=false;} else cur+=ch; }
+      else { if(ch==='"')q=true; else if(ch===','){out.push(cur);cur="";} else cur+=ch; }
+    } out.push(cur); return out;
+  }
+
+  /* ---------------- Evaluación diaria ---------------- */
+  let ev = { pmax:120, prog:Array(24).fill(0), real:Array(24).fill(0) };
+  function buildEvUnits(){
+    const sel = $("#ev-unit");
+    sel.innerHTML = UNITS.map(u=>`<option value="${u.pmax}">${u.u} — ${u.c}</option>`).join("")
+      + `<option value="0">— unidad personalizada —</option>`;
+    sel.value = String(UNITS[0].pmax);
+    sel.addEventListener("change", ()=>{ $("#ev-pmax").value = sel.value; ev.pmax=+sel.value; renderEvTable(); });
+    $("#ev-pmax").value = UNITS[0].pmax;
+    ev.pmax = UNITS[0].pmax;
+    const cs = $("#ev-cont");
+    cs.innerHTML = Object.keys(CONTAM).map(k=>`<option value="${k}">${k}</option>`).join("");
+  }
+  $("#ev-pmax").addEventListener("input", ()=>{ ev.pmax = +$("#ev-pmax").value||0; renderEvTable(); });
+  $("#ev-fillProg").addEventListener("click", ()=>{
+    const disp = (+$("#ev-disp").value||0)/100;
+    ev.prog = Array(24).fill(Math.round(ev.pmax*disp));
+    renderEvTable();
+  });
+  $("#ev-copyReal").addEventListener("click", ()=>{ ev.real = ev.prog.slice(); renderEvTable(); });
+  $("#ev-zero").addEventListener("click", ()=>{ ev.prog=Array(24).fill(0); ev.real=Array(24).fill(0); renderEvTable(); });
+
+  function renderEvTable(){
+    const tb = $("#ev-table tbody");
+    tb.innerHTML = Array.from({length:24},(_,i)=>{
+      const dif1 = (ev.prog[i]||0) - ev.pmax;
+      const dif2 = (ev.real[i]||0) - (ev.prog[i]||0);
+      const cl1 = dif1<0?"neg":(dif1>0?"pos":""), cl2 = dif2<0?"neg":(dif2>0?"pos":"");
+      return `<tr><td class="num">${i+1}</td><td class="num">${fmt(ev.pmax)}</td>
+        <td class="num"><input data-k="prog" data-i="${i}" value="${ev.prog[i]||0}" style="width:62px"></td>
+        <td class="num"><input data-k="real" data-i="${i}" value="${ev.real[i]||0}" style="width:62px"></td>
+        <td class="num ${cl1}">${fmt(dif1)}</td><td class="num ${cl2}">${fmt(dif2)}</td></tr>`;
+    }).join("");
+    tb.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("input", e=>{
+        const i=+e.target.dataset.i, k=e.target.dataset.k;
+        ev[k][i] = parseFloat(e.target.value)||0; computeEv(); drawEvChart();
+        // refresh diffs cells without full rerender
+        const tr = e.target.closest("tr");
+        const d1=(ev.prog[i]||0)-ev.pmax, d2=(ev.real[i]||0)-(ev.prog[i]||0);
+        const cells=tr.querySelectorAll("td"); cells[4].textContent=fmt(d1); cells[5].textContent=fmt(d2);
+        cells[4].className="num "+(d1<0?"neg":d1>0?"pos":""); cells[5].className="num "+(d2<0?"neg":d2>0?"pos":"");
+      });
+    });
+    computeEv(); drawEvChart();
+  }
+
+  function computeEv(){
+    const sumD1 = ev.prog.reduce((s,p)=> s+(p-ev.pmax),0);
+    const sumD2 = ev.real.reduce((s,r,i)=> s+(r-(ev.prog[i]||0)),0);
+    const cmg = +$("#ev-cmg").value||0;
+    // base de energía: Dif2 si hay datos reales distintos a programada, si no Dif1
+    const hasReal = ev.real.some((r,i)=> r!==ev.prog[i]);
+    const energiaMWh = hasReal ? sumD2 : sumD1;
+    const usdImp = energiaMWh * cmg;
+    $("#ev-kpis").innerHTML = `
+      <div class="kpi"><div class="k-label">Σ Diferencial 1 (Prog−Pmáx)</div><div class="k-val ${sumD1<0?'warn':''}">${fmt(sumD1)} <span style="font-size:15px">MWh</span></div><div class="k-foot">capacidad retirada</div></div>
+      <div class="kpi"><div class="k-label">Σ Diferencial 2 (Real−Prog)</div><div class="k-val ${sumD2<0?'warn':''}">${fmt(sumD2)} <span style="font-size:15px">MWh</span></div><div class="k-foot">${hasReal?"base del cálculo":"sin datos reales"}</div></div>
+      <div class="kpi warn"><div class="k-label">Desviación de energía</div><div class="k-val warn">${fmt(energiaMWh)} <span style="font-size:15px">MWh</span></div><div class="k-foot">${hasReal?"Dif 2":"Dif 1"} · día</div></div>
+      <div class="kpi warn"><div class="k-label">Impacto económico</div><div class="k-val warn">${usd(Math.round(usdImp))}</div><div class="k-foot">× ${fmt(cmg,1)} USD/MWh</div></div>`;
+    return {energiaMWh, usdImp};
+  }
+  $("#ev-cmg").addEventListener("input", computeEv);
+  $("#ev-disp").addEventListener("input", ()=>{});
+
+  function drawEvChart(){
+    const hours = Array.from({length:24},(_,i)=>i+1);
+    if(charts.ev) charts.ev.destroy();
+    charts.ev = new Chart($("#evChart"),{type:"line",
+      data:{labels:hours,datasets:[
+        {label:"Pmáx",data:Array(24).fill(ev.pmax),borderColor:css("--fog"),borderDash:[5,4],pointRadius:0,borderWidth:1.5,tension:0},
+        {label:"Programada",data:ev.prog,borderColor:css("--optimo"),backgroundColor:css("--opt-soft"),pointRadius:0,borderWidth:2,tension:.3,fill:false},
+        {label:"Real",data:ev.real,borderColor:css("--desv"),backgroundColor:css("--desv-soft"),pointRadius:0,borderWidth:2,tension:.3,fill:false}
+      ]},
+      options:baseOpts({xTitle:"Hora",yTitle:"MW"})
+    });
+  }
+  $("#ev-save").addEventListener("click", ()=>{
+    const {energiaMWh, usdImp} = computeEv();
+    const cont = $("#ev-cont").value || "Otros";
+    extraEval.push({cont, gwh:energiaMWh/1000, usd:Math.max(0,usdImp)});
+    $("#ev-saved").textContent = `Guardada: ${fmt(energiaMWh)} MWh · ${usd(Math.round(usdImp))} (${cont})`;
+    if($("#v-panel").classList.contains("active")) renderPanel();
+    setTimeout(()=>$("#ev-saved").textContent="",4000);
+  });
+
+  /* ---------------- IA connector ---------------- */
+  function renderAi(cls, viaIA){
+    const box = $("#ai-result");
+    const c = CONTAM[cls.cont]; const key = c?c.key:"otros";
+    box.classList.add("show");
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="pill ${key}" style="font-size:13px;padding:6px 12px"><span class="dot"></span>${cls.cont}</span>
+        <span class="flag ${viaIA?'live':''}">${viaIA?'clasificado por IA':'clasificador local'}</span>
+      </div>
+      <div style="margin-top:12px;font-size:13px"><b style="color:var(--bone)">Decreto:</b> ${cls.dec}</div>
+      <div style="margin-top:8px;font-size:13px;color:var(--bone-dim)"><b style="color:var(--bone)">Justificación:</b> ${cls.why}</div>
+      <div style="margin-top:12px;font-size:11px;color:var(--fog);font-family:'JetBrains Mono',monospace">CONFIANZA ${Math.round(cls.conf*100)}%</div>
+      <div class="conf-bar"><i style="width:${Math.round(cls.conf*100)}%"></i></div>`;
+  }
+  $("#ai-local").addEventListener("click", ()=>{
+    const t = $("#ai-text").value.trim(); if(!t){ $("#ai-text").focus(); return; }
+    renderAi(classifyLocal(t), false);
+  });
+  $("#ai-go").addEventListener("click", async ()=>{
+    const t = $("#ai-text").value.trim(); if(!t){ $("#ai-text").focus(); return; }
+    const btn = $("#ai-go"); btn.disabled=true; const old=btn.innerHTML; btn.innerHTML='<span class="spin"></span>Clasificando…';
+    try{
+      const cls = await classifyAI(t);
+      renderAi(cls, true);
+    }catch(err){
+      const local = classifyLocal(t); local.why = "⚠ No se pudo conectar con la IA ("+err.message+"). Resultado del clasificador local. "+local.why;
+      renderAi(local, false);
+    }finally{ btn.disabled=false; btn.innerHTML=old; }
+  });
+
+  function normalizeCls(obj){
+    if(!obj || !CONTAM[obj.cont]) obj = Object.assign({cont:"Otros"}, obj||{});
+    if(!CONTAM[obj.cont]) obj.cont="Otros";
+    return {cont:obj.cont, dec:obj.dec||"—", conf:Math.max(0,Math.min(1,+obj.conf||0.5)), why:obj.why||"—"};
+  }
+  function aiPrompt(text){
+    return `Eres un analista del mercado eléctrico chileno. Clasifica el motivo de una limitación de una unidad generadora termoeléctrica según el contaminante ambiental y el decreto aplicable.
+
+Categorías de contaminante (usa exactamente una): "Temp. Agua de Mar", "NOx", "MP", "SO2", "COx", "Otros".
+Decretos: "D.S. 90/2001" para temperatura/descarga de agua de mar (residuos líquidos); "D.S. 13/2011" para emisiones atmosféricas (NOx, MP, SO2, COx); "—" si es ambiguo (Otros).
+
+Motivo: "${(text||"").replace(/"/g,"'")}"
+
+Responde SOLO con JSON, sin texto adicional ni markdown:
+{"cont":"<categoria>","dec":"<decreto>","conf":<0..1>,"why":"<una frase breve en español>"}`;
+  }
+  // Código de acceso (se manda en x-access-code; no se persiste)
+  function senCode(){ const el=document.getElementById("sen-code"); return el?el.value.trim():""; }
+  function senHeaders(){ const hd={"Content-Type":"application/json"}; const c=senCode(); if(c) hd["x-access-code"]=c; return hd; }
+  function friendlyErr(code){ return ({invalid_access_code:"Código de acceso inválido.",server_misconfigured:"Falta configurar el backend (claves en Vercel).",missing_dates:"Indica el rango de fechas.",non_json_response:"El recurso/versión del SIP no es válido para tu plan.",upstream_error:"La fuente no respondió."})[code] || code; }
+  // Cadena de conectores: 1) serverless /api/sen-clasifica (producción)  2) Anthropic directo (preview en claude.ai)  3) lanza error → el caller cae a local
+  async function classifyAI(text){
+    // 1) backend serverless
+    try{
+      const r = await fetch("/api/sen-clasifica",{method:"POST",headers:senHeaders(),body:JSON.stringify({text})});
+      if(r.ok){ return normalizeCls(await r.json()); }
+      if(r.status===401){ throw new Error("Código de acceso inválido"); }
+      if(r.status===500){ throw new Error("Backend sin claves configuradas"); }
+    }catch(e){ if(e && /Código|Backend/.test(e.message)) throw e; }
+    // 2) llamada directa (funciona dentro del preview de Claude, sin clave)
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:300, messages:[{role:"user",content:aiPrompt(text)}] })
+    });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    const txt = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").replace(/```json|```/g,"").trim();
+    return normalizeCls(JSON.parse(txt));
+  }
+
+  $("#ai-batch").addEventListener("click", async ()=>{
+    if(!rows.length){ $("#ai-batch-status").textContent="El catastro está vacío."; return; }
+    const btn=$("#ai-batch"); btn.disabled=true;
+    let done=0, fail=0;
+    // intento 1: un solo request por lote al backend
+    try{
+      $("#ai-batch-status").innerHTML=`<span class="spin"></span>Enviando lote al backend…`;
+      const r = await fetch("/api/sen-clasifica",{method:"POST",headers:senHeaders(),body:JSON.stringify({texts:rows.map(x=>x.motivo||"")})});
+      if(r.ok){
+        const d = await r.json();
+        if(d && Array.isArray(d.results)){
+          d.results.forEach((cls,i)=>{ const n=normalizeCls(cls); rows[i].cont=n.cont; rows[i].dec=n.dec; });
+          renderCatastro(); btn.disabled=false;
+          $("#ai-batch-status").textContent=`Listo: ${rows.length} filas clasificadas por el backend.`; return;
+        }
+      }
+    }catch(_){}
+    // intento 2: fila por fila (preview/local)
+    for(const r of rows){
+      $("#ai-batch-status").innerHTML=`<span class="spin"></span>Procesando ${done+1}/${rows.length}…`;
+      try{ const cls=await classifyAI(r.motivo||""); r.cont=cls.cont; r.dec=cls.dec; done++; }
+      catch(e){ const l=classifyLocal(r.motivo||""); r.cont=l.cont; r.dec=l.dec; fail++; done++; }
+      renderCatastro();
+    }
+    btn.disabled=false;
+    $("#ai-batch-status").textContent = `Listo: ${done} filas clasificadas${fail?` (${fail} por respaldo local)`:""}.`;
+  });
+
+  /* ---------------- Estado de conectores + SIP en vivo ---------------- */
+  function setDot(id, state, msg){ const d=$("#dot-"+id); d.className="conn-dot "+state; $("#st-"+id).textContent=msg; }
+  async function pingConnectors(){
+    setDot("ai","wait","probando…"); setDot("sip","wait","probando…");
+    // IA
+    try{
+      const r = await fetch("/api/sen-clasifica",{method:"GET"});
+      if(r.ok){ const d=await r.json(); setDot("ai","on","activo · modelo "+(d.model||"claude")); }
+      else throw 0;
+    }catch(_){ setDot("ai","off","backend no desplegado — usando modo local / preview"); }
+    // SIP
+    try{
+      const r = await fetch("/api/sen-sip?ping",{method:"GET"});
+      if(r.ok){ setDot("sip","on","activo · clave configurada en el servidor"); }
+      else { const d=await r.json().catch(()=>({})); setDot("sip","off", d.error||"backend sin SIP_USER_KEY"); }
+    }catch(_){ setDot("sip","off","backend no desplegado"); }
+  }
+  $("#pingBtn").addEventListener("click", pingConnectors);
+
+  $("#sip-go").addEventListener("click", async ()=>{
+    const out = $("#sip-out"); out.classList.add("show");
+    const rec=$("#sip-rec").value.trim(), ver=$("#sip-ver").value.trim();
+    const from=$("#sip-from").value, to=$("#sip-to").value;
+    if(!from||!to){ out.innerHTML='<span style="color:var(--desv)">Indica el rango de fechas.</span>'; return; }
+    out.innerHTML='<span class="spin"></span>Consultando la API del Coordinador…';
+    try{
+      const url=`/api/sen-sip?recurso=${encodeURIComponent(rec)}&version=${encodeURIComponent(ver)}&startDate=${from}&endDate=${to}&page=0`;
+      const r = await fetch(url,{headers:senHeaders()});
+      const d = await r.json();
+      if(!r.ok){ out.innerHTML=`<span style="color:var(--desv)">${friendlyErr(d&&d.error)||("HTTP "+r.status)}</span><div style="margin-top:8px;color:var(--fog);font-size:12px">Si el backend no está desplegado verás esto en el preview. Una vez en Vercel con <code>SIP_USER_KEY</code>, la consulta es real.</div>`; return; }
+      const results = d.results || d.data || [];
+      const count = d.count!=null?d.count:results.length;
+      const rate = d._meta && d._meta.rateRemaining;
+      let avg=null;
+      const vals = results.map(x=> x.cmg_usd_mwh ?? x.costo ?? x.valor ?? x.cmg ?? null).filter(v=>v!=null && !isNaN(+v)).map(Number);
+      if(vals.length) avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+      out.innerHTML = `
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--fog)">REGISTROS</div><div style="font-family:Lato;font-size:22px;color:var(--bone)">${fmt(count)}</div></div>
+          ${avg!=null?`<div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--fog)">CMg PROMEDIO</div><div style="font-family:Lato;font-size:22px;color:var(--optimo)">${fmt(avg,1)} <span style="font-size:12px">USD/MWh</span></div></div>`:""}
+          ${rate?`<div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--fog)">RATE LIMIT</div><div style="font-family:Lato;font-size:22px;color:var(--bone)">${rate}</div></div>`:""}
+        </div>
+        ${avg!=null?`<button class="btn sm primary" id="sip-apply" style="margin-top:12px">Usar ${fmt(avg,1)} como costo marginal en Evaluación</button>`:""}
+        <div style="margin-top:10px;font-size:11px;color:var(--fog)">Muestra de la respuesta cruda:</div>
+        <div class="endpoint" style="margin-top:4px;max-height:120px;white-space:pre-wrap">${JSON.stringify(results.slice(0,2),null,1).slice(0,600)||"(sin resultados)"}</div>`;
+      const ap=$("#sip-apply"); if(ap) ap.addEventListener("click", ()=>{ $("#ev-cmg").value=avg.toFixed(1); computeEv(); ap.textContent="✓ Aplicado en Evaluación diaria"; });
+    }catch(e){ out.innerHTML=`<span style="color:var(--desv)">No se pudo consultar: ${e.message}</span>`; }
+  });
+
+  /* ---------------- Init ---------------- */
+  // fechas por defecto: último mes
+  (function(){ const t=new Date(), p=new Date(Date.now()-30*864e5);
+    const iso=d=>d.toISOString().slice(0,10);
+    $("#sip-to").value=iso(t); $("#sip-from").value=iso(p);
+  })();
+  $("#refGen").addEventListener("input", ()=>{ const v=parseFloat($("#refGen").value); refGenGWh = (v>0)?v:null; renderPanel(); });
+  buildEvUnits();
+  renderEvTable();
+  renderCatastro();
+  renderPanel();
+})();
+</script>
+</body>
+</html>
