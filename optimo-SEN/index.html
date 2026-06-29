@@ -45,12 +45,13 @@ main{padding:22px 0 60px}.view{display:none}.view.active{display:block}.grid{dis
   </div>
 </header>
 <nav class="navband"><div class="wrap"><div class="tabs" id="tabs">
-  <button class="tab active" data-view="metodo">01 Metodología</button>
-  <button class="tab" data-view="carga">02 Carga previa</button>
-  <button class="tab" data-view="catastro">03 Catastro</button>
-  <button class="tab" data-view="sip">04 Últimos 7 días / SIP</button>
-  <button class="tab" data-view="eval">05 Evaluación</button>
-  <button class="tab" data-view="dashboard">06 Dashboard</button>
+  <button class="tab active" data-view="metodo">1 · Cómo funciona</button>
+  <button class="tab" data-view="carga">2 · Cargar PDF</button>
+  <button class="tab" data-view="pvr">3 · Programada vs Real</button>
+  <button class="tab" data-view="catastro">4 · Restricciones ambientales</button>
+  <button class="tab" data-view="sip">5 · Datos en vivo (SIP)</button>
+  <button class="tab" data-view="eval">6 · Evaluación</button>
+  <button class="tab" data-view="dashboard">7 · Resumen</button>
 </div></div></nav>
 <main class="wrap">
 <section class="view active" id="v-metodo">
@@ -132,6 +133,26 @@ main{padding:22px 0 60px}.view{display:none}.view.active{display:block}.grid{dis
   <div class="card pad" style="margin-top:16px">
     <div class="row"><div style="flex:1"><h2>Tabla de centrales del PDF</h2><p class="desc">Esta tabla sirve como contexto y base preliminar. Para evaluación oficial se recomienda cruzar con datos horarios SIP.</p></div><button class="btn sm ghost" id="makeCandidates">Crear candidatos TER con RO/LF</button><button class="btn sm ghost" id="exportDailyCsv">Exportar tabla CSV</button></div>
     <div class="table-scroll" style="margin-top:12px"><table id="dailyTable"><thead><tr><th>Central / Unidad</th><th class="num">Prog.</th><th class="num">Real</th><th class="num">Desv. %</th><th>Estado</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+<section class="view" id="v-pvr">
+  <div class="card pad">
+    <p class="kicker">El corazón de la metodología · Diferencial 2</p>
+    <h2>Programada vs Real</h2>
+    <p class="desc">Lo que el Coordinador <b>programó</b> que generara cada central, frente a lo que <b>realmente</b> generó. La diferencia <b>(Real − Programada)</b> es la energía que se desvió del óptimo operacional. Sale directo de la tabla 1.1 / 1.2 del Informe Diario que cargaste — no necesita IA.</p>
+    <div class="kpis" id="pvrKpis" style="margin-top:14px"><div class="empty" style="grid-column:1/-1">Carga el Informe Diario en <b>2 · Cargar PDF</b> y aquí verás Programada vs Real.</div></div>
+  </div>
+  <div class="card pad" style="margin-top:16px">
+    <div class="row"><div style="flex:1"><h3>Mayores diferencias Programada vs Real</h3><p class="desc">Top 15 centrales por diferencia absoluta (MWh). Barra oscura = programada, celeste = real.</p></div></div>
+    <div class="chartbox" style="margin-top:8px"><canvas id="pvrChart"></canvas></div>
+  </div>
+  <div class="card pad" style="margin-top:16px">
+    <div class="row">
+      <div style="flex:1"><h3>Detalle por central</h3><p class="desc">Programada, Real y Diferencial en MWh. Ordenado por mayor diferencia; busca una central específica.</p></div>
+      <div class="field md"><label>Buscar central</label><input id="pvrSearch" placeholder="Guacolda, San Isidro..."></div>
+      <button class="btn sm ghost" id="pvrExport">Exportar CSV</button>
+    </div>
+    <div class="table-scroll" style="margin-top:12px"><table id="pvrTable"><thead><tr><th>Central / Unidad</th><th class="num">Programada</th><th class="num">Real</th><th class="num">Diferencial (MWh)</th><th class="num">Desv. %</th><th>Estado</th></tr></thead><tbody></tbody></table></div>
   </div>
 </section>
 <section class="view" id="v-catastro">
@@ -229,7 +250,7 @@ function classifyLocal(text){
 }
 function chip(cont){ const c=CONTAM[cont]||CONTAM.Otros; return `<span class="chip ${c.key}"><span class="dot"></span>${cont}</span>`; }
 function initTabs(){ $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('.tab'); if(!b) return; showView(b.dataset.view); }); $$('[data-goto]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.goto))); }
-function showView(v){ $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v)); $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v)); if(v==='dashboard') renderDashboard(); }
+function showView(v){ $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v)); $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v)); if(v==='dashboard') renderDashboard(); if(v==='pvr') renderPVR(); }
 function updateHealth(){ let score=0, parts=[]; if(state.daily.rows.length){score+=28;parts.push(`Informe Diario: ${state.daily.rows.length} filas`)} if(Object.keys(state.exec.metrics).length){score+=22;parts.push('Resumen Ejecutivo cargado')} if(state.cat.length){score+=20;parts.push(`Catastro: ${state.cat.length} eventos`)} if(state.cmg!=null){score+=15;parts.push(`CMg: ${fmt(state.cmg,1)} USD/MWh`)} if(state.sipProg.length||state.sipReal.length){score+=15;parts.push(`SIP: ${state.sipProg.length+state.sipReal.length} registros`)} $('#healthBar').style.width=Math.min(100,score)+'%'; $('#dataHealth').innerHTML=parts.length?('<b>Datos listos.</b><br>'+parts.join(' · ')):'<b>Sin carga previa.</b><br>Sube el Informe Diario y/o Resumen Ejecutivo, o consulta el SIP desde Vercel.'; }
 function bindDrop(labelId,inputId,handler){ const box=$('#'+labelId), inp=$('#'+inputId); box.addEventListener('click',()=>inp.click()); ['dragenter','dragover'].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.add('drag')})); ['dragleave','drop'].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.remove('drag')})); box.addEventListener('drop',e=>{ const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) handler(f); }); inp.addEventListener('change',e=>{ const f=e.target.files&&e.target.files[0]; if(f) handler(f); inp.value=''; }); }
 async function extractPdfText(file,onProgress){
@@ -366,12 +387,29 @@ function bindSections(){
   el.addEventListener('click',async e=>{ const b=e.target.closest('[data-ai-section],[data-copy-section]'); if(!b) return; const items=el._items||[]; const idx=Number(b.dataset.aiSection??b.dataset.copySection); if(b.dataset.copySection!=null){ await navigator.clipboard.writeText(items[idx]?.txt||''); toast('Texto de sección copiado'); } else analyzeSection(idx); });
   const all=$('#analyzeAllSections'); if(all) all.addEventListener('click',async()=>{ const items=el._items||[]; for(let i=0;i<items.length;i++){ if(/3\.5|4\.1|Justificaci|3\.2/.test(items[i].name)) await analyzeSection(i); } });
 }
-async function handleDaily(file){ const st=$('#dailyStatus'); st.innerHTML='<span class="spin"></span> Leyendo PDF...'; try{ const text=await extractPdfText(file,p=>{st.textContent='Leyendo PDF '+Math.round(p*100)+'%';}); const {rows,meta}=parseDailyText(text); state.daily={rows,date:meta.label,time:meta.time,text}; state.sections.daily=extractPdfSections(text,'daily'); renderSections(); st.className='status ok'; st.textContent=`Cargado: ${rows.length} filas detectadas${meta.label?' · '+meta.label:''}`; renderDaily(); updateHealth(); toast('Informe Diario cargado'); }catch(e){ st.className='status err'; st.textContent='Error: '+e.message; }}
+async function handleDaily(file){ const st=$('#dailyStatus'); st.innerHTML='<span class="spin"></span> Leyendo PDF...'; try{ const text=await extractPdfText(file,p=>{st.textContent='Leyendo PDF '+Math.round(p*100)+'%';}); const {rows,meta}=parseDailyText(text); state.daily={rows,date:meta.label,time:meta.time,text}; state.sections.daily=extractPdfSections(text,'daily'); renderSections(); st.className='status ok'; st.textContent=`Cargado: ${rows.length} filas detectadas${meta.label?' · '+meta.label:''}`; renderDaily(); updateHealth(); toast('Informe Diario cargado'); renderPVR(); }catch(e){ st.className='status err'; st.textContent='Error: '+e.message; }}
 async function handleExec(file){ const st=$('#execStatus'); st.innerHTML='<span class="spin"></span> Leyendo PDF...'; try{ const text=await extractPdfText(file,p=>{st.textContent='Leyendo PDF '+Math.round(p*100)+'%';}); const {metrics,meta}=parseExecutiveText(text); state.exec={metrics,date:meta.label,time:meta.time,text}; state.sections.exec=extractPdfSections(text,'exec'); renderSections(); if(metrics.cmgQuillota && state.cmg==null) state.cmg=metrics.cmgQuillota; st.className='status ok'; st.textContent=`Cargado: ${Object.keys(metrics).filter(k=>metrics[k]!=null&&k!=='techs').length} métricas detectadas${meta.label?' · '+meta.label:''}`; renderExec(); updateHealth(); renderEval(); toast('Resumen Ejecutivo cargado'); }catch(e){ st.className='status err'; st.textContent='Error: '+e.message; }}
 function renderDaily(){ const rows=state.daily.rows; const tb=$('#dailyTable tbody'); tb.innerHTML=rows.slice(0,1200).map(r=>`<tr><td>${r.central}</td><td class="num">${fmt(r.prog,2)}</td><td class="num">${fmt(r.real,2)}</td><td class="num ${r.desv<0?'neg':'pos'}">${fmt(r.desv,2)}%</td><td>${r.status||''}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin tabla cargada.</td></tr>'; drawDailyChart(); }
 function renderExec(){ const m=state.exec.metrics||{}; const cards=[['Generación total',m.totalGWh,'GWh'],['Crecimiento anual',m.crecimientoAnual,'%'],['Participación ERNC',m.participacionERNC,'%'],['CMg Quillota',m.cmgQuillota,'USD/MWh'],['CMg Crucero',m.cmgCrucero,'USD/MWh'],['Frecuencia mín.',m.freqMin,'Hz']]; $('#execCards').innerHTML=cards.map(c=>`<div class="kpi"><div class="label">${c[0]}</div><div class="val">${fmt(c[1],c[2]==='%'?2:1)}</div><div class="sub">${c[2]}</div></div>`).join(''); }
 function draw(id,type,labels,data,opt={}){ if(charts[id]) charts[id].destroy(); const ctx=$('#'+id); if(!ctx) return; charts[id]=new Chart(ctx,{type,data:{labels,datasets:data},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:opt.legend!==false},tooltip:{mode:'index',intersect:false}},scales:opt.scales||{y:{beginAtZero:true}}}}); }
 function drawDailyChart(){ const top=state.daily.rows.slice().filter(r=>r.desv!=null).sort((a,b)=>Math.abs(b.desv)-Math.abs(a.desv)).slice(0,20); draw('dailyChart','bar',top.map(r=>r.central),[{label:'Desv. %',data:top.map(r=>r.desv),backgroundColor:top.map(r=>r.desv<0?'#EA561B':'#4EB270')}],{legend:false,scales:{y:{beginAtZero:false},x:{ticks:{display:false}}}}); }
+function pvrRows(){ return (state.daily.rows||[]).map(r=>({...r,dif:(r.real!=null&&r.prog!=null)?(r.real-r.prog):null})); }
+function renderPVR(){
+  const rows=pvrRows();
+  if(!rows.length){ $('#pvrKpis').innerHTML='<div class="empty" style="grid-column:1/-1">Carga el Informe Diario en <b>2 · Cargar PDF</b> y aquí verás Programada vs Real.</div>'; renderPVRTable(); if(charts['pvrChart']){charts['pvrChart'].destroy(); delete charts['pvrChart'];} return; }
+  const totP=rows.reduce((s,r)=>s+(r.prog||0),0), totR=rows.reduce((s,r)=>s+(r.real||0),0), net=totR-totP;
+  const k=[['Programada total',totP,'MWh'],['Real total',totR,'MWh'],['Diferencial neto (Real − Prog)',net,'MWh'],['Centrales',rows.length,'en el informe']];
+  $('#pvrKpis').innerHTML=k.map(c=>`<div class="kpi"><div class="label">${c[0]}</div><div class="val ${c[0].includes('Diferencial')?(net<0?'neg':'pos'):''}">${typeof c[1]==='number'?fmt(c[1],c[2]==='MWh'?1:0):c[1]}${c[0].includes('Diferencial')&&net>0?' ▲':c[0].includes('Diferencial')&&net<0?' ▼':''}</div><div class="sub">${c[2]}</div></div>`).join('');
+  const top=rows.filter(r=>r.dif!=null).sort((a,b)=>Math.abs(b.dif)-Math.abs(a.dif)).slice(0,15);
+  draw('pvrChart','bar',top.map(r=>r.central),[{label:'Programada',data:top.map(r=>r.prog),backgroundColor:'#005B59'},{label:'Real',data:top.map(r=>r.real),backgroundColor:'#22B0E1'}],{legend:true,scales:{y:{beginAtZero:true,title:{display:true,text:'MWh'}},x:{ticks:{display:false}}}});
+  renderPVRTable();
+}
+function renderPVRTable(){
+  const q=norm($('#pvrSearch')?.value||'');
+  const rows=pvrRows().filter(r=>!q||norm(r.central).includes(q)).sort((a,b)=>Math.abs(b.dif||0)-Math.abs(a.dif||0));
+  $('#pvrTable tbody').innerHTML=rows.slice(0,1500).map(r=>`<tr><td><b>${r.central}</b></td><td class="num">${fmt(r.prog,1)}</td><td class="num">${fmt(r.real,1)}</td><td class="num ${r.dif<0?'neg':'pos'}">${r.dif!=null?(r.dif>0?'+':'')+fmt(r.dif,1):''}</td><td class="num ${r.desv<0?'neg':'pos'}">${fmt(r.desv,1)}%</td><td>${r.status||''}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin datos. Carga el Informe Diario en la pestaña "2 · Cargar PDF".</td></tr>';
+}
+function bindPVR(){ $('#pvrSearch')?.addEventListener('input',renderPVRTable); $('#pvrExport')?.addEventListener('click',()=>downloadCsv('programada_vs_real.csv',pvrRows().map(r=>({central:r.central,programada_mwh:r.prog,real_mwh:r.real,diferencial_mwh:r.dif,desv_pct:r.desv,estado:r.status||''})))); }
 function addCat(row){ const cls=classifyLocal(row.motivo||row.reason||''); const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random()),fecha:row.fecha||$('#cFecha').value,inicio:row.inicio||'',termino:row.termino||'',unidad:row.unidad||'',central:row.central||'',pmax:toNum(row.pmax),disp:toNum(row.disp)??100,motivo:row.motivo||'',estado:row.estado||'Limitada',cont:row.cont||cls.cont,dec:row.dec||cls.dec,source:row.source||'Manual'}; state.cat.push(rec); renderCat(); updateHealth(); }
 function bindCat(){ Object.keys(CONTAM).forEach(k=>{ const o=document.createElement('option'); o.value=k;o.textContent=k; $('#catFilter').appendChild(o); }); $('#addCat').addEventListener('click',()=>{ addCat({fecha:$('#cFecha').value,inicio:$('#cInicio').value,termino:$('#cTermino').value,unidad:$('#cUnidad').value,central:$('#cCentral').value,pmax:$('#cPmax').value,disp:$('#cDisp').value,motivo:$('#cMotivo').value,estado:$('#cEstado').value}); ['cInicio','cTermino','cUnidad','cCentral','cPmax','cDisp','cMotivo'].forEach(id=>$('#'+id).value=''); }); $('#catFilter').addEventListener('change',renderCat); $('#clearCat').addEventListener('click',()=>{ if(confirm('¿Vaciar catastro?')){state.cat=[];renderCat();updateHealth();}}); $('#catTable').addEventListener('click',e=>{ const id=e.target.dataset.del; if(id){ state.cat=state.cat.filter(r=>r.id!==id); renderCat(); updateHealth(); }}); $('#parseObs').addEventListener('click',parseObs); $('#makeCandidates').addEventListener('click',makeCandidates); $('#exportCatCsv').addEventListener('click',()=>downloadCsv('catastro_restricciones.csv',state.cat)); $('#catCsv').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) importCatCsv(f); e.target.value=''; }); $('#exportDailyCsv').addEventListener('click',()=>downloadCsv('informe_diario_centrales.csv',state.daily.rows)); }
 function renderCat(){ const filter=$('#catFilter').value; const rows=state.cat.filter(r=>filter==='ALL'||r.cont===filter); $('#catCount').textContent=`(${state.cat.length})`; $('#catTable tbody').innerHTML=rows.map(r=>`<tr><td>${r.fecha||''}</td><td>${r.inicio||''}${r.termino?' - '+r.termino:''}</td><td><b>${r.unidad||r.central}</b><div class="mini">${r.central||''}</div></td><td class="num">${fmt(r.pmax,1)}</td><td class="num">${fmt(r.disp,1)}%</td><td>${r.motivo||''}</td><td>${chip(r.cont)}</td><td>${r.dec}</td><td>${r.source}</td><td><button class="btn sm ghost" data-del="${r.id}">Borrar</button></td></tr>`).join('')||'<tr><td colspan="10" class="empty">Sin restricciones cargadas.</td></tr>'; }
@@ -412,7 +450,7 @@ function by(rows,key,valKey){ const o={}; rows.forEach(r=>{ const k=r[key]||'—
 function drawEvalCharts(){ const e=by(state.evals,'cont','mwh'); draw('energyChart','bar',e.map(x=>x.key),[{label:'MWh',data:e.map(x=>x.val),backgroundColor:e.map(x=>(CONTAM[x.key]||CONTAM.Otros).color)}],{legend:false}); const c=by(state.evals,'cont','usd'); draw('costChart','bar',c.map(x=>x.key),[{label:'USD',data:c.map(x=>x.val/1e6),backgroundColor:c.map(x=>(CONTAM[x.key]||CONTAM.Otros).color)}],{legend:false,scales:{y:{beginAtZero:true,title:{display:true,text:'MMUSD'}}}}); }
 function renderDashboard(){ const totalCat=state.cat.length, totalEval=state.evals.reduce((s,r)=>s+Math.abs(r.mwh||0),0), totalUsd=state.evals.reduce((s,r)=>s+(r.usd||0),0), gen=state.exec.metrics.totalGWh; $('#dashKpis').innerHTML=[['Restricciones',totalCat,'catastro'],['Energía desviada',totalEval,'MWh'],['Sobrecosto',totalUsd,'USD'],['Generación SEN',gen,'GWh resumen']].map(k=>`<div class="kpi"><div class="label">${k[0]}</div><div class="val">${typeof k[1]==='number'?fmt(k[1],k[0]==='Sobrecosto'?0:1):k[1]}</div><div class="sub">${k[2]}</div></div>`).join(''); const cont=by(state.cat,'cont','pmax'); draw('contChart','doughnut',cont.map(x=>x.key),[{data:cont.map(x=>x.val||1),backgroundColor:cont.map(x=>(CONTAM[x.key]||CONTAM.Otros).color)}],{}); const unit=by(state.evals,'unidad','mwh').slice(0,10); draw('topImpactChart','bar',unit.map(x=>x.key),[{label:'MWh',data:unit.map(x=>x.val),backgroundColor:'#22B0E1'}],{legend:false,scales:{y:{beginAtZero:true},x:{ticks:{display:false}}}}); renderSummary(); }
 function renderSummary(){ const m=state.exec.metrics||{}, totalMwh=state.evals.reduce((s,r)=>s+Math.abs(r.mwh||0),0), totalUsd=state.evals.reduce((s,r)=>s+(r.usd||0),0), topC=by(state.evals,'cont','mwh')[0]; const lines=[]; lines.push(`Resumen ejecutivo operacional${state.exec.date?' - '+state.exec.date:''}`); lines.push(''); if(m.totalGWh) lines.push(`Generación diaria SEN reportada: ${fmt(m.totalGWh,2)} GWh${m.participacionERNC?`, con participación anual ERNC de ${fmt(m.participacionERNC,2)}%`:''}.`); if(state.cmg!=null) lines.push(`Costo marginal usado para valoración: ${fmt(state.cmg,2)} USD/MWh.`); lines.push(`Restricciones ambientales en catastro: ${state.cat.length}. Eventos evaluados: ${state.evals.length}.`); lines.push(`Energía desviada estimada: ${fmt(totalMwh,2)} MWh. Sobrecosto estimado: ${money(totalUsd)}.`); if(topC) lines.push(`Contaminante con mayor impacto: ${topC.key} (${fmt(topC.val,2)} MWh).`); lines.push(''); lines.push('Nota metodológica: el cálculo prioriza datos horarios SIP. Cuando sólo existe Informe Diario PDF, el resultado se marca como preliminar porque no contiene el bloque horario exacto por unidad.'); $('#autoSummary').textContent=lines.join('\n'); }
-function init(){ setToday(); initTabs(); bindDrop('dropDaily','dailyPdf',handleDaily); bindDrop('dropExec','execPdf',handleExec); bindCat(); bindSections(); bindSIP(); bindEval(); renderSections(); renderCat(); renderDaily(); renderExec(); renderEval(); renderDashboard(); updateHealth(); }
+function init(){ setToday(); initTabs(); bindDrop('dropDaily','dailyPdf',handleDaily); bindDrop('dropExec','execPdf',handleExec); bindCat(); bindSections(); bindSIP(); bindEval(); bindPVR(); renderSections(); renderCat(); renderDaily(); renderPVR(); renderExec(); renderEval(); renderDashboard(); updateHealth(); }
 init();
 })();
 </script>
