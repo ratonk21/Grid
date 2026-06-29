@@ -12,8 +12,9 @@ griddata/
 │   ├── resumen-ia.js           (ya existe)
 │   ├── scan-bill.mjs           (ya existe)
 │   ├── ubicquia.js             (ya existe)
-│   ├── sen-clasifica.js        ← AGREGAR
-│   └── sen-sip.js              ← AGREGAR
+│   ├── sen-clasifica.js        ← AGREGAR (clasifica un motivo suelto)
+│   ├── sen-extrae.js           ← AGREGAR (extrae limitaciones ambientales del PDF)
+│   └── sen-sip.js              ← AGREGAR (costo marginal real del SIP)
 ├── optimo-SEN/
 │   └── index.html              ← AGREGAR (la app)
 └── optimo-SEN.env.example      ← AGREGAR (referencia)
@@ -27,7 +28,7 @@ ya sirve para los nuevos `.js`, y el sitio funciona zero-config. No agregues un
 
 | Variable | Estado | Para qué |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | **ya existe** (resumen-ia / bill) | se reutiliza para `sen-clasifica` |
+| `ANTHROPIC_API_KEY` | **ya existe** (resumen-ia / bill) | se reutiliza para `sen-clasifica` y `sen-extrae` |
 | `SEN_ALLOWED_ORIGINS` | agregar | restringe `/api/sen-*` a tu dominio (ej. https://griddata.cl) |
 | `SIP_USER_KEY` | agregar (modo público) | clave user_key de la API del Coordinador |
 | `SIP_CLIENT_ID` / `SIP_CLIENT_SECRET` | agregar (modo operacional) | OAuth client_credentials, si tu recurso requiere aprobación |
@@ -39,19 +40,29 @@ ya sirve para los nuevos `.js`, y el sitio funciona zero-config. No agregues un
 
 `git push` (auto-deploy) o `vercel --prod`. Queda en:
 
-- App:  `https://griddata.cl/optimo-SEN/`
-- IA:   `https://griddata.cl/api/sen-clasifica`
-- SIP:  `https://griddata.cl/api/sen-sip`
+- App:        `https://griddata.cl/optimo-SEN/`
+- Clasifica:  `https://griddata.cl/api/sen-clasifica`
+- Extrae:     `https://griddata.cl/api/sen-extrae`   (texto de sección PDF → limitaciones ambientales)
+- SIP:        `https://griddata.cl/api/sen-sip`
 
-## 4. Uso
+## 4. Uso: reconstruir varios días
 
-En la app → pestaña **Datos & conector**: pulsa **Probar conexión**. Si los puntos quedan verdes, ya puedes clasificar
-motivos con IA y consultar el costo marginal real del SIP.
+1. **Sube los PDF del Coordinador** (Informe Diario y Resumen Ejecutivo), uno o varios días.
+   El navegador extrae el texto con PDF.js (no se sube el binario).
+2. La app parsea la **tabla 1.1/1.2** (Prog./Real/Desv./Estado) → datos duros de energía.
+3. En **Secciones detectadas**, pulsa **IA por sección** (o *Analizar todas*): cada sección
+   3.2 / 3.5 / 4.1 / Justificación se manda a `/api/sen-extrae`, que devuelve **solo las
+   limitaciones ambientales** ya clasificadas (SO2, NOx, MP, COx, Temp. Agua de Mar) y su decreto.
+4. El **Resumen Ejecutivo** aporta el **costo marginal** (Quillota). También puedes traerlo del SIP.
+5. **Evaluación** cruza limitación ambiental × energía desviada × costo marginal → MWh y USD por contaminante.
 
-> Sin claves la app igual funciona: cargas datos a mano / por CSV y clasificas
-> en modo local. El código de acceso solo habilita IA y SIP en vivo.
+> Sin claves la app igual funciona: cargas datos a mano / por CSV y clasificas en modo local
+> (el extractor cae a un troceo por regex). Con `ANTHROPIC_API_KEY` y `SIP_USER_KEY` se activan
+> el extractor IA y el costo marginal en vivo.
 
-## Notas de seguridad (idénticas a tu patrón)
-- Las claves viven solo en las funciones; nunca llegan al navegador.
-- `x-access-code` con comparación timing-safe (`crypto.timingSafeEqual`).
+## Notas de seguridad
+- Las claves viven solo en las funciones serverless; nunca llegan al navegador.
+- Acceso a `/api/sen-*` restringido por **origen** (`SEN_ALLOWED_ORIGINS`), no por código visible.
+- Origin/Referer es falsificable por clientes que no son navegadores: para blindaje fuerte,
+  suma **rate-limit** (Vercel WAF) sobre `/api/sen-*`.
 - El front cae a modo local si el backend no responde (degradación elegante).

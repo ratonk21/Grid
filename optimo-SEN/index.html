@@ -331,14 +331,34 @@ async function classifyBatchAI(rows){
     return true;
   }catch(e){ return false; }
 }
+async function extractSectionAI(text, fecha, seccion){
+  try{
+    const r=await fetch('/api/sen-extrae',{method:'POST',headers:{'content-type':'application/json','accept':'application/json'},body:JSON.stringify({text,fecha,seccion})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    if(!d || !Array.isArray(d.rows)) return null;
+    return d.rows;
+  }catch(e){ return null; }
+}
 async function analyzeSection(idx){
   const items=$('#sectionCards')._items||[]; const it=items[idx]; if(!it) return;
-  const st=$('#sectionAiStatus'); st.innerHTML='<span class="spin"></span> Analizando '+it.name+'...';
-  let rows=candidatesFromSection(it.txt,it.name);
-  const usedBackend=rows.length?await classifyBatchAI(rows):false;
-  rows=rows.filter(r=>r.env || r.cont!=='Otros' || it.name.includes('3.5') || it.name.includes('4.1')).slice(0,120);
+  const st=$('#sectionAiStatus'); st.innerHTML='<span class="spin"></span> Extrayendo limitaciones ambientales de '+it.name+'...';
+  const fecha=$('#cFecha').value || state.daily.date || '';
+  // 1) Extractor IA del servidor: extrae + clasifica + filtra a SOLO ambientales en una pasada.
+  const aiRows=await extractSectionAI(it.txt, fecha, it.name);
+  let rows=[], used='';
+  if(aiRows){
+    used=' (extractor IA)';
+    rows=aiRows.map(r=>({fecha:fecha||$('#cFecha').value, inicio:r.hora||'', termino:'', unidad:r.unidad||r.central, central:r.central, pmax:r.mw_limite, disp:'', motivo:r.motivo, estado:it.name.includes('3.5')?'RO':(it.name.includes('3.2')?'LF':'Limitada'), cont:r.cont, dec:r.dec, source:'IA extrae '+it.name}));
+  } else {
+    // 2) Fallback local (sin backend): troceo por regex + clasificador, filtrando a ambientales.
+    used=' (local, sin backend)';
+    rows=candidatesFromSection(it.txt,it.name);
+    if(rows.length) await classifyBatchAI(rows);
+    rows=rows.filter(r=>r.env || r.cont!=='Otros').slice(0,120);
+  }
   rows.forEach(r=>addCat(r));
-  st.className='status ok'; st.textContent=`IA sección ${it.name}: ${rows.length} observaciones/candidatos agregados${usedBackend?' con backend':' con clasificador local'}.`;
+  st.className='status ok'; st.textContent=`Sección ${it.name}: ${rows.length} limitaciones ambientales agregadas${used}.`;
   if(rows.length) showView('catastro');
 }
 function bindSections(){
