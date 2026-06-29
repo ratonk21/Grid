@@ -115,21 +115,22 @@ export default async function handler(req, res) {
     if (!userKey) return res.status(500).json({ error: "missing_user_key", hint: "Define SIP_USER_KEY o usa mode=op." });
     const recurso = String(q.recurso || process.env.SIP_RECURSO || "costo-marginal-real").replace(/[^a-z0-9_-]/gi, "");
     const version = String(q.version || process.env.SIP_VERSION || "v4").replace(/[^a-z0-9]/gi, "");
+    const metodo  = String(q.metodo  || process.env.SIP_METODO  || "findByDate").replace(/[^a-zA-Z]/g, "");
     const startDate = q.startDate, endDate = q.endDate;
     const page = Number(q.page || 0);
     if (!startDate || !endDate) return res.status(400).json({ error: "missing_dates", hint: "startDate y endDate (YYYY-MM-DD)" });
 
-    const url = `${SIP_PUB_BASE}/${recurso}/${version}/findAll`
+    const url = `${SIP_PUB_BASE}/${recurso}/${version}/${metodo}`
       + `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&page=${page}&user_key=${encodeURIComponent(userKey)}`;
     const r = await fetch(url, { headers: { accept: "application/json" } });
     const ctype = r.headers.get("content-type") || "";
     if (!ctype.includes("json")) {
       const txt = await r.text().catch(() => "");
-      return res.status(r.status).json({ error: "non_json_response", hint: "Revisa recurso/versión contra tu documentación del SIP.", recurso, version, http: r.status, preview: txt.slice(0, 200) });
+      return res.status(r.status).json({ error: "non_json_response", hint: "Revisa recurso/versión/método contra tu documentación del SIP.", recurso, version, metodo, http: r.status, preview: txt.slice(0, 200) });
     }
     const data = await r.json();
     return res.status(r.status).json({
-      _meta: { mode: "public", recurso, version, rateRemaining: r.headers.get("x-rate-limit-remaining"), rateLimit: r.headers.get("x-rate-limit") },
+      _meta: { mode: "public", recurso, version, metodo, rateRemaining: r.headers.get("x-rate-limit-remaining"), rateLimit: r.headers.get("x-rate-limit") },
       ...data
     });
   } catch (e) {

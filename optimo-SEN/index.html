@@ -428,8 +428,23 @@
       </div>
       <div id="sip-public-fields">
         <div class="row" style="margin-top:10px">
+          <div><label class="fld">Preset</label>
+            <select id="sip-preset">
+              <option value="">— elegir recurso —</option>
+              <option value="costo-marginal-real|v4|findByDate">Costo marginal real</option>
+              <option value="costo-marginal-online|v4|findByDate">Costo marginal online</option>
+              <option value="costo-marginal-programado|v3|findAll">Costo marginal programado</option>
+              <option value="generacion-real|v3|findByDate">Generación real</option>
+              <option value="generacion-programada|v3|findAll">Generación programada</option>
+              <option value="energia-no-suministrada|v4|findByDate">Energía no suministrada</option>
+              <option value="cotas-embalses-reales|v3|findAll">Cotas embalses reales</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
           <div><label class="fld">Recurso</label><input id="sip-rec" value="costo-marginal-real"></div>
           <div style="max-width:90px"><label class="fld">Versión</label><input id="sip-ver" value="v4"></div>
+          <div style="max-width:130px"><label class="fld">Método</label><input id="sip-met" value="findByDate"></div>
         </div>
         <div class="row" style="margin-top:10px">
           <div><label class="fld">Desde</label><input id="sip-from" type="date"></div>
@@ -992,6 +1007,12 @@ Responde SOLO con JSON, sin texto adicional ni markdown:
     $("#sip-public-fields").classList.toggle("hidden", op);
     $("#sip-op-fields").classList.toggle("hidden", !op);
   });
+  // preset → llena recurso/versión/método
+  $("#sip-preset").addEventListener("change", ()=>{
+    const v=$("#sip-preset").value; if(!v) return;
+    const [rec,ver,met]=v.split("|");
+    $("#sip-rec").value=rec; $("#sip-ver").value=ver; $("#sip-met").value=met;
+  });
 
   $("#sip-go").addEventListener("click", async ()=>{
     const out = $("#sip-out"); out.classList.add("show");
@@ -1002,10 +1023,10 @@ Responde SOLO con JSON, sin texto adicional ni markdown:
       if(!path){ out.innerHTML='<span style="color:var(--desv)">Indica la ruta del servicio operacional.</span>'; return; }
       url=`/api/sen-sip?mode=op&path=${encodeURIComponent(path)}`;
     } else {
-      const rec=$("#sip-rec").value.trim(), ver=$("#sip-ver").value.trim();
+      const rec=$("#sip-rec").value.trim(), ver=$("#sip-ver").value.trim(), met=$("#sip-met").value.trim()||"findByDate";
       const from=$("#sip-from").value, to=$("#sip-to").value;
       if(!from||!to){ out.innerHTML='<span style="color:var(--desv)">Indica el rango de fechas.</span>'; return; }
-      url=`/api/sen-sip?recurso=${encodeURIComponent(rec)}&version=${encodeURIComponent(ver)}&startDate=${from}&endDate=${to}&page=0`;
+      url=`/api/sen-sip?recurso=${encodeURIComponent(rec)}&version=${encodeURIComponent(ver)}&metodo=${encodeURIComponent(met)}&startDate=${from}&endDate=${to}&page=0`;
     }
     out.innerHTML='<span class="spin"></span>Consultando la API del Coordinador…';
     try{

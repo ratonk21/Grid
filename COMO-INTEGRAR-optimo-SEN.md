@@ -29,7 +29,9 @@ ya sirve para los nuevos `.js`, y el sitio funciona zero-config. No agregues un
 |---|---|---|
 | `ANTHROPIC_API_KEY` | **ya existe** (resumen-ia / bill) | se reutiliza para `sen-clasifica` |
 | `SEN_ACCESS_CODE` | agregar | gate de los dos conectores SEN |
-| `SIP_USER_KEY` | agregar | clave de la API del Coordinador |
+| `SIP_USER_KEY` | agregar (modo público) | clave user_key de la API del Coordinador |
+| `SIP_CLIENT_ID` / `SIP_CLIENT_SECRET` | agregar (modo operacional) | OAuth client_credentials, si tu recurso requiere aprobación |
+| `SIP_OP_BASE` | agregar (modo operacional) | base del servicio operacional (p.ej. mercados.api.coordinador.cl) |
 | `IA_MODEL` | opcional | override del modelo |
 | `SIP_RECURSO` / `SIP_VERSION` | opcional | recurso/versión SIP por defecto |
 
