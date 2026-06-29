@@ -98,6 +98,6 @@ export default async function handler(req, res) {
     const msg = e.message || "upstream_error";
     if (msg.startsWith("token_error")) return res.status(502).json({ error: "token_error" });
     if (msg === "missing_oauth_credentials") return res.status(500).json({ error: "missing_oauth_credentials" });
-    return res.status(502).json({ error: "upstream_error" });
+    return res.status(502).json({ error: "upstream_error", recurso: q.recurso || null, version: q.version || null, detail: msg.slice(0, 160) });
   }
 }
