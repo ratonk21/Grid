@@ -483,10 +483,8 @@ function scatterChart(ctx,points,xl,yl,color){
 /* ===================== TABS ===================== */
 const GROUPS=[
   {g:null,tabs:[{id:"syn",es:"Informe",en:"Report"}]},
-  {g:null,tabs:[{id:"integ",es:"Integridad",en:"Integrity"}]},
-  {g:{es:"Operaci\u00f3n",en:"Operation"},tabs:[{id:"prof",es:"Perfiles 24h",en:"24h profiles"},{id:"load",es:"Cargabilidad",en:"Loading"},{id:"cross",es:"D\u00eda \u00d7 hora",en:"Day \u00d7 hour"}]},
-  {g:{es:"Calidad y riesgo",en:"Quality & risk"},tabs:[{id:"pq",es:"Calidad energ\u00eda",en:"Power quality"},{id:"itic",es:"Eventos ITIC",en:"ITIC events"},{id:"therm",es:"T\u00e9rmico",en:"Thermal"}]},
-  {g:null,tabs:[{id:"nodes",es:"Nodos",en:"Nodes"}]}
+  {g:{es:"Operaci\u00f3n",en:"Operation"},tabs:[{id:"prof",es:"Perfiles 24h",en:"24h profiles"},{id:"cross",es:"D\u00eda \u00d7 hora",en:"Day \u00d7 hour"}]},
+  {g:{es:"Calidad y riesgo",en:"Quality & risk"},tabs:[{id:"pq",es:"Calidad energ\u00eda",en:"Power quality"},{id:"itic",es:"Eventos ITIC",en:"ITIC events"},{id:"therm",es:"T\u00e9rmico",en:"Thermal"}]}
 ];
 const TABS=GROUPS.flatMap(s=>s.tabs);
 const tabName=t=>L(t.es,t.en);
@@ -514,7 +512,7 @@ function renderTab(id){
   document.querySelectorAll("#subBar .stab").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   const host=document.getElementById("p_"+id);host.classList.add("active");
-  ({integ:tIntg,prof:tProf,load:tLoad,pq:tPQ,itic:tItic,cross:tCross,therm:tTherm,nodes:tNodes,syn:tSyn})[id](host,CUR.C);
+  ({prof:tProf,pq:tPQ,itic:tItic,cross:tCross,therm:tTherm,syn:tSyn})[id](host,CUR.C);
   const s=GROUPS[ai];
   if(s.g){const t=s.tabs.find(x=>x.id===id)||s.tabs[0];host.insertAdjacentHTML("afterbegin",`<div class="crumb">${L(s.g.es,s.g.en)} <b>\u203a ${tabName(t)}</b></div>`);}
 }
@@ -527,49 +525,6 @@ function cap(t){return `<div class="howto"><b>${L("C\u00f3mo leerlo","How to rea
 function stLegend(){return `<div class="stleg">`+`<span><i style="background:var(--ubi-darkgreen)"></i>${L("Verde \u00b7 normal / en rango","Green \u00b7 normal / in range")}</span>`+`<span><i style="background:var(--ubi-gold)"></i>${L("Amarillo \u00b7 vigilar tendencia","Yellow \u00b7 watch the trend")}</span>`+`<span><i style="background:var(--ubi-orange)"></i>${L("Rojo \u00b7 priorizar / validar en terreno","Red \u00b7 prioritize / verify on site")}</span>`+`<span><i style="background:var(--ubi-gray2)"></i>${L("Gris \u00b7 sin datos suficientes","Gray \u00b7 not enough data")}</span></div>`;}
 
 /* --- 1 Integridad --- */
-function tIntg(host,C){
-  const kpis=[
-    {num:C.n.toLocaleString(),lab:L("Registros","Records"),meta:L("este nodo","this node")},
-    {num:(C.tsQuality!=null?C.tsQuality+"%":"–"),lab:L("Estampas regulares","Regular timestamps"),cls:C.tsQuality<80?"warn":"ok",meta:L("cada ~","every ~")+(C.intervalMin??"?")+" min"},
-    {num:C.gaps,lab:L("Huecos >20 min","Gaps >20 min"),cls:C.gaps>10?"warn":"",meta:L("reinicios/cortes","resets/outages")},
-    {num:C.dups,lab:L("Estampas en mismo minuto","Same-minute marks"),cls:C.dups/Math.max(C.n,1)>.1?"warn":"",meta:L("por resolución de minuto","minute resolution")},
-    {num:saneStats.freq+saneStats.thd+saneStats.temp,lab:L("Lecturas saneadas","Sanitized readings"),cls:"warn",meta:"freq+thd+temp"}
-  ];
-  if(C.rssi.some(x=>x!=null)){const _rv=C.rssi.filter(x=>x!=null);kpis.push({num:r1(median(C.rssi))+" dBm",lab:L("RSSI mediano","Median RSSI"),cls:median(C.rssi)<-85?"warn":"ok",meta:L("peor ","worst ")+r1(Math.min(..._rv))+" dBm · "+L("comunicación","link")});}
-  // matriz completitud
-  const vars=[[L("Voltaje","Voltage"),C.V],[L("Corriente","Current"),C.I],[L("FP","PF"),C.PF],[L("Frecuencia","Frequency"),C.FREQ],[L("THD V","V THD"),C.VTHD],[L("THD I","I THD"),C.ITHD],[L("Energía","Energy"),C.ENE],[L("Corr. primaria","Primary curr."),C.HC]];
-  const STv={vacia:L("vacía","empty"),cte:L("constante","constant"),ok:"OK"};
-  let rowsHtml="";
-  vars.forEach(([nm,arr])=>{
-    for(let p=0;p<3;p++){
-      const a=arr[p]||[];const nonNull=a.filter(x=>x!=null).length;const uniq=new Set(a.filter(x=>x!=null)).size;
-      let st="—",cls="";
-      if(!a.length||!nonNull){st=STv.vacia;} else if(uniq<=1){st=STv.cte;cls="mid";} else {st=STv.ok;cls="ok";}
-      if(nonNull||a.length) rowsHtml+=`<tr><td>${nm} X${p+1}</td><td class="${cls}">${st}</td><td>${nonNull}</td></tr>`;
-    }
-  });
-  [["kVA",C.kva],[L("Temp aceite","Oil temp"),C.oilT],[L("Presión","Pressure"),C.press],["RSSI",C.rssi],[L("Desbalance","Imbalance"),C.imb]].forEach(([nm,a])=>{
-    const nonNull=a.filter(x=>x!=null).length;const uniq=new Set(a.filter(x=>x!=null)).size;
-    let st=!nonNull?STv.vacia:(uniq<=1?STv.cte:STv.ok),cls=!nonNull?"":(uniq<=1?"mid":"ok");
-    rowsHtml+=`<tr><td>${nm}</td><td class="${cls}">${st}</td><td>${nonNull}</td></tr>`;
-  });
-  // heatmap cobertura: hora × día, escala verde→rojo
-  const cov=Array.from({length:7},()=>new Array(24).fill(0));
-  C.ts.forEach(t=>{if(t)cov[t.getDay()][t.getHours()]++;});
-  const mxc=Math.max(...cov.flat(),1);
-  let heat=`<div style="overflow-x:auto"><div class="heat" style="grid-template-columns:auto repeat(24,1fr);min-width:620px">`;
-  heat+=`<div class="heatcell" style="background:none"></div>`+Array.from({length:24},(_,h)=>`<div class="heatcell" style="background:none;color:var(--ubi-gray2);font-size:9px">${h%3===0?h:''}</div>`).join("");
-  for(let d=0;d<7;d++){heat+=`<div class="heatcell" style="background:none;color:var(--ubi-gray2);font-weight:700;font-size:10px">${DOW[d]}</div>`;
-    for(let h=0;h<24;h++){const v=cov[d][h];const a=v/mxc;heat+=`<div class="heatcell" title="${DOW[d]} ${h}:00 — ${v} ${L("muestras","samples")}" style="background:${v===0?'#f0f0f0':heatGR(a)}"></div>`;}}
-  heat+=`</div></div><div class="legend"><span><i style="background:${heatGR(0)}"></i>${L("pocas muestras","few samples")}</span><span><i style="background:${heatGR(1)}"></i>${L("cobertura completa","full coverage")}</span></div>`;
-
-  host.innerHTML=
-    ficha(L("¿Puedo confiar en estos datos? ¿El medidor reportó parejo y qué variables llegan?","Can I trust this data? Did the meter report steadily and which variables arrive?"),L("Presentar las conclusiones como <b>firmes</b> o como <b>indicios</b>.","Present the conclusions as <b>solid</b> or as <b>indications</b>."))
-    +`<div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="num ${k.cls||''}">${k.num}</div><div class="lab">${k.lab}</div><div class="meta">${k.meta}</div></div>`).join("")}</div>`
-    +box(L("Cobertura temporal","Temporal coverage"),L("Muestras recibidas por hora × día de semana, en escala verde (completa) a rojo (escasa). Permite detectar cortes de comunicación o periodos sin datos que podrían invalidar conclusiones.","Samples received by hour × weekday, on a green (full) to red (sparse) scale. Detects communication outages or data-less periods that could invalidate conclusions."),heat+cap(L("Cada celda es una hora-día; gris o rojo = pocas muestras (posible corte de comunicación que invalida conclusiones a esa hora).","Each cell is an hour-day; gray or red = few samples (a possible comms outage that invalidates conclusions at that hour).")))
-    +box(L("Completitud de variables","Variable completeness"),L("Qué se sensa, qué viene vacío o constante (centinela) en este nodo.","What is sensed, what comes empty or constant (sentinel) on this node."),`<div style="max-height:340px;overflow:auto"><table class="data"><thead><tr><th>${L("Variable","Variable")}</th><th>${L("Estado","Status")}</th><th>${L("Valores","Values")}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`);
-}
-
 /* --- Distribución --- */
 /* --- Perfiles 24h --- */
 function tProf(host,C){
@@ -611,79 +566,6 @@ function tProf(host,C){
 }
 
 /* --- 4 Cargabilidad --- */
-function tLoad(host,C){
-  const kvaVals=C.kva.filter(x=>x!=null);
-  const nom=C.kvaNom;
-  const oilv=C.oilT.filter(x=>x!=null);const oilN=oilv.length;
-  const tp90=oilN?pct(C.oilT,90):null,tmed=oilN?median(C.oilT):null,tmax=oilN?Math.max(...oilv):null;
-  const aging=(oilN&&isFinite(tp90)&&isFinite(tmed))?Math.pow(2,(tp90-tmed)/8):null;
-  const kpis=[]; let narr="";
-  const iv=C.intervalMin||5;
-  if(nom&&nom>0){
-    const um=r1(Math.max(...kvaVals)/nom*100),up=r1(pct(C.kva,90)/nom*100),avg=r1(mean(C.kva)/nom*100),p10=r1(pct(C.kva,10)/nom*100);
-    const n100=kvaVals.filter(x=>x>nom).length,n80=kvaVals.filter(x=>x/nom>=0.8).length;
-    const hrs100=r1(n100*iv/60),hrs80=r1(n80*iv/60);
-    let run=0,maxrun=0;for(const x of C.kva){if(x!=null&&x>nom){run++;if(run>maxrun)maxrun=run;}else run=0;}
-    const streakH=r1(maxrun*iv/60);
-    const hr=nom-pct(C.kva,90);
-    kpis.push({num:um+"%",lab:L("Cargabilidad máx","Peak loading"),cls:um>=100?"warn":um>=80?"mid":"ok",meta:"vs "+nom+" kVA"});
-    kpis.push({num:up+"%",lab:L("P90 (pico sostenido)","P90 (sustained peak)"),cls:up>=100?"warn":up>=80?"mid":""});
-    kpis.push({num:avg+"%",lab:L("Carga promedio","Avg. load")});
-    kpis.push({num:p10+"%",lab:L("Carga base (P10)","Base load (P10)")});
-    kpis.push({num:hrs100,lab:L("Horas >100%","Hours >100%"),cls:hrs100>0?"warn":"ok",meta:L("en sobrecarga","in overload")});
-    kpis.push({num:hrs80,lab:L("Horas >80%","Hours >80%"),cls:hrs80>0?"mid":"ok",meta:L("zona de alerta","alert zone")});
-    kpis.push({num:streakH+" h",lab:L("Racha máx >100%","Max streak >100%"),cls:maxrun>0?"warn":"ok",meta:L("sobrecarga continua","continuous overload")});
-    kpis.push({num:r1(hr)+" kVA",lab:L("Capacidad disponible","Available capacity"),cls:hr<=0?"warn":(hr/nom<0.2?"mid":"ok"),meta:r1(hr/nom*100)+"% "+L("libre p/ nuevas conexiones","free for new loads")});
-    const verdict=um>=100?L("Requiere acción: hay sobrecarga real sobre la placa.","Action required: real overload above nameplate."):(um>=80?L("Margen ajustado; vigilar el crecimiento de demanda antes de conectar más carga.","Tight margin; watch demand growth before connecting more load."):L("Holgura saludable: hay capacidad disponible para nuevas conexiones.","Healthy headroom: there is capacity for new connections."));
-    narr=L(`Carga promedio <b>${avg}%</b> del nominal (${nom} kVA), con pico sostenido P90 <b>${up}%</b> y máximo <b>${um}%</b>. `,`Average load <b>${avg}%</b> of nameplate (${nom} kVA), with sustained P90 peak <b>${up}%</b> and maximum <b>${um}%</b>. `)
-      +(n100>0?L(`Opera <b>${hrs100} h</b> en sobrecarga (>100%), con una racha continua máxima de <b>${streakH} h</b>. `,`It runs <b>${hrs100} h</b> in overload (>100%), with a maximum continuous streak of <b>${streakH} h</b>. `):L("No registra sobrecarga (>100%) en el periodo. ","No overload (>100%) recorded in the period. "))
-      +(n80>0?L(`Pasa <b>${hrs80} h</b> en zona de alerta (>80%). `,`It spends <b>${hrs80} h</b> in the alert zone (>80%). `):"")
-      +verdict;
-  } else {
-    kpis.push({num:r1(Math.max(...kvaVals)),lab:L("kVA máximo","Peak kVA"),meta:L("sin placa: no hay %","no rating: no %")});
-    kpis.push({num:r1(mean(C.kva)/(Math.max(...kvaVals))*100)+"%",lab:L("Factor de carga","Load factor"),meta:L("media/pico","mean/peak")});
-    narr=L("Ingresa el kVA de placa en la barra superior para evaluar cargabilidad, horas en sobrecarga y capacidad disponible.","Enter the nameplate kVA in the top bar to assess loading, overload hours and available capacity.");
-  }
-  // curva de duración de carga
-  const sorted=kvaVals.slice().sort((a,b)=>b-a);
-  const target=Math.min(400,sorted.length);const ldc=[];for(let k=0;k<target;k++){const i=Math.floor(k/target*sorted.length);ldc.push({x:r1(k/target*100),y:sorted[i]});}
-  host.innerHTML=
-    ficha(L("¿El transformador está sobrecargado y cuánto margen le queda?","Is the transformer overloaded, and how much margin is left?"),L("Mantener, redistribuir carga o reemplazar — con cifras, no supuestos.","Keep, redistribute load, or replace — with figures, not assumptions."))
-    +`<div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="num ${k.cls||''}">${k.num}</div><div class="lab">${k.lab}</div><div class="meta">${k.meta||''}</div></div>`).join("")}</div>`
-    +box(L("Lectura de cargabilidad","Loadability reading"),L("Resumen automático.","Automatic summary."),`<p style="margin:0;line-height:1.65">${narr}</p>`)
-    +box(L("Curva de duración de carga","Load duration curve"),L("kVA ordenados de mayor a menor — cuánto tiempo el trafo pasa en cada nivel. Muestra si la sobrecarga es puntual o sostenida: una meseta alta a la izquierda justifica el reemplazo.","kVA sorted high to low — how long the transformer spends at each level. Shows whether overload is occasional or sustained: a high plateau on the left justifies replacement."),`<div class="localsel"><span style="font-size:11px;color:var(--ubi-gray2);align-self:center;font-weight:700">${L("Límite usuario (kVA)","User limit (kVA)")}</span><input type="number" id="ldcLim" inputmode="decimal" style="width:120px;font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 9px;border:1px solid var(--ubi-line);border-radius:7px" placeholder="—"></div>`+cb("c_ldc","tall")+cap(L("Lee de izquierda a derecha el % del tiempo. Una <b>meseta alta a la izquierda</b> = sobrecarga sostenida (justifica reemplazo); una caída rápida = picos puntuales.","Read left to right as % of time. A <b>high plateau on the left</b> = sustained overload (justifies replacement); a fast drop = occasional peaks.")))
-    +box(L("kVA en el tiempo","kVA over time"),L("Serie de carga a lo largo del periodo; permite identificar cuándo y con qué frecuencia ocurren los picos.","Load series over the period; shows when and how often peaks occur."),cb("c_kva")+cap(L("Cada cruce de la línea naranja (placa) es un momento de sobrecarga; observa si son aislados o se repiten.","Each crossing of the orange line (nameplate) is an overload moment; watch whether they are isolated or recurring.")))
-    +(nom?box(L("% del tiempo sobre cada nivel de carga","% of time above each load level"),L("Cuánto del periodo el transformador supera cada umbral de cargabilidad — separa la sobrecarga puntual de la crónica y respalda la decisión de reemplazo o ampliación.","How much of the period the transformer exceeds each loading threshold — separates occasional from chronic overload and backs the upgrade decision."),cb("c_over")+cap(L("Cuánto del periodo supera cada nivel; barras altas a la derecha (≥90%–100%) = sobrecarga crónica, no anecdótica.","How much of the period exceeds each level; tall bars on the right (≥90%–100%) = chronic, not anecdotal, overload."))):"")
-    +(oilN?box(L("Envejecimiento térmico del aislamiento","Insulation thermal aging"),L("La temperatura es lo que envejece el aislamiento: cada 8–10 °C sostenidos sobre lo normal reducen su vida útil a la mitad. Aquí, cuánto tiempo opera caliente y el ritmo relativo de envejecimiento.","Temperature is what ages the insulation: every sustained 8–10 °C above normal halves its life. Here, how long it runs hot and the relative aging rate."),
-        `<div class="kpis"><div class="kpi"><div class="num">${r1(tp90)}°</div><div class="lab">${L("Temp aceite P90","Oil temp P90")}</div></div><div class="kpi"><div class="num">${r1(tmax)}°</div><div class="lab">${L("Temp máx","Max temp")}</div></div><div class="kpi"><div class="num ${aging>=2?"warn":(aging>=1.3?"mid":"ok")}">${aging?aging.toFixed(1)+"×":"—"}</div><div class="lab">${L("Envejecimiento en horas calientes","Aging in hot hours")}</div><div class="meta">${L("vs operación típica (regla 8 °C)","vs typical operation (8 °C rule)")}</div></div></div>`
-        +cb("c_tstress")
-        +`<div class="note">${L("Estimación relativa por temperatura (regla de Montsinger / 8 °C). No reemplaza el modelo térmico completo IEEE C57.91, que requiere la temperatura de punto caliente.","Relative temperature estimate (Montsinger / 8 °C rule). It does not replace the full IEEE C57.91 thermal model, which requires hot-spot temperature.")}</div>`):"")
-    +(nom?"":`<div class="note"><b>${L("Falta el kVA de placa.","Nameplate kVA missing.")}</b> ${L("Ingresa el valor en la barra superior para calcular cargabilidad real. El export trae","Enter it in the top bar to compute real loading. The export has")} <span class="mono">Operating KVA</span> ${L("vacío.","empty.")}</div>`);
-  let ldcChart=null;
-  const drawLDC=()=>{
-    if(ldcChart){try{ldcChart.destroy();}catch(e){}}
-    const lim=num(document.getElementById("ldcLim").value);
-    const ds=[{label:"kVA",data:ldc,borderColor:cssv("--ubi-blue"),borderWidth:2,pointRadius:0,fill:true,backgroundColor:"rgba(34,176,225,.1)"}];
-    if(nom)ds.push({label:L("kVA placa","Nameplate kVA"),data:[{x:0,y:nom},{x:100,y:nom}],borderColor:cssv("--ubi-orange"),borderWidth:1.8,borderDash:[7,4],pointRadius:0});
-    if(lim)ds.push({label:L("Límite usuario","User limit"),data:[{x:0,y:lim},{x:100,y:lim}],borderColor:cssv("--ubi-violet")||"#59509D",borderWidth:1.8,borderDash:[3,3],pointRadius:0});
-    ldcChart=mkChart(document.getElementById("c_ldc"),{type:"line",data:{datasets:ds},
-      options:baseOpts({parsing:true,plugins:{legend:{display:!!(nom||lim),labels:{filter:i=>i.text!=="kVA",font:{size:10}}},tooltip:{callbacks:{label:i=>`${i.parsed.y.toFixed(1)} kVA @ ${i.parsed.x}% ${L("del tiempo","of time")}`}}},scales:{x:{type:"linear",title:{display:true,text:L("% del tiempo","% of time"),font:{size:10}},ticks:{color:cssv("--ubi-gray2")}},y:{title:{display:true,text:"kVA",font:{size:10}}}}})});
-  };
-  drawLDC();
-  const li=document.getElementById("ldcLim");li.onchange=drawLDC;li.oninput=drawLDC;
-  lineChart(document.getElementById("c_kva"),C.ts,C.kva,cssv("--ubi-blue"),"kVA", nom?[{val:nom,color:cssv("--ubi-orange"),label:L("kVA placa","Nameplate kVA")}]:null);
-  if(nom){
-    const ths=[50,70,80,90,100,110],cols=["#005B59","#4EB270","#AECC53","#FAB512","#EA561B","#c0392b"];
-    const ov=ths.map(t=>r1(kvaVals.filter(v=>v/nom*100>=t).length/kvaVals.length*100));
-    mkChart(document.getElementById("c_over"),{type:"bar",data:{labels:ths.map(t=>"≥"+t+"%"),datasets:[{label:L("% del tiempo","% of time"),data:ov,backgroundColor:cols}]},options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.parsed.y+"% "+L("del tiempo","of time")}}},scales:{x:{ticks:{color:cssv("--ubi-gray2")}},y:{beginAtZero:true,max:100,ticks:{color:cssv("--ubi-gray2"),callback:v=>v+"%"}}}})});
-  }
-  if(oilN){
-    const tt=[45,55,65,75,85],tcols=["#4EB270","#AECC53","#FAB512","#EA561B","#c0392b"];
-    const tv=tt.map(t=>r1(oilv.filter(v=>v>=t).length/oilN*100));
-    mkChart(document.getElementById("c_tstress"),{type:"bar",data:{labels:tt.map(t=>"≥"+t+"°"),datasets:[{label:L("% del tiempo","% of time"),data:tv,backgroundColor:tcols}]},options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.parsed.y+"% "+L("del tiempo","of time")}}},scales:{x:{ticks:{color:cssv("--ubi-gray2")}},y:{beginAtZero:true,max:100,ticks:{color:cssv("--ubi-gray2"),callback:v=>v+"%"}}}})});
-  }
-}
-
 /* --- 5 Calidad de energía --- */
 function tPQ(host,C){
   const band=C.vnom?{lo:C.vnom*.95,hi:C.vnom*1.05}:null;
@@ -847,28 +729,6 @@ function tTherm(host,C){
 }
 
 /* --- 8 Nodos (comparación) --- */
-function tNodes(host,C){
-  const ds=CUR.ds;const names=ds.nodeNames;
-  let rows="";const summ=[];
-  names.forEach(nm=>{
-    const cc=computeNode(ds,nm,null);
-    const kvaMax=cc.kva.filter(x=>x!=null).length?Math.max(...cc.kva.filter(x=>x!=null)):null;
-    const meds=cc.phases.map(p=>median(cc.V[p])).filter(x=>x!=null);
-    const imbV=meds.length>=2?r1((Math.max(...meds)-Math.min(...meds))/mean(meds)*100):null;
-    summ.push({nm,kvaMax,imbV,tsq:cc.tsQuality,n:cc.n});
-    rows+=`<tr><td>${nm}</td><td>${cc.n}</td><td class="${cc.tsQuality<80?'bad':'ok'}">${cc.tsQuality??'–'}%</td><td>${kvaMax!=null?r1(kvaMax):'–'}</td><td class="${imbV>5?'bad':'ok'}">${imbV!=null?imbV+'%':'–'}</td><td>${cc.phases.map(p=>'X'+(p+1)).join('/')}</td></tr>`;
-  });
-  // small multiples: perfil kVA mediano por hora, por nodo
-  host.innerHTML=
-    ficha(L("Entre todos los transformadores del dataset, ¿cuál reviso primero?","Among all transformers in the dataset, which one do I review first?"),L("Priorizar dónde intervenir primero, de un vistazo, en vez de nodo por nodo.","Prioritize where to act first, at a glance, instead of node by node."))
-    +box(L("Comparación de nodos · ","Node comparison · ")+dsLabel(ds),L("Todos los nodos del dataset, lado a lado — registros, calidad de datos, carga y desbalance. La fila roja señala el activo a revisar.","All dataset nodes, side by side — records, data quality, load and imbalance. The red cell flags the asset to review."),`<div style="overflow:auto"><table class="data"><thead><tr><th>${L("Nodo","Node")}</th><th>${L("Registros","Records")}</th><th>${L("Estampas OK","Timestamps OK")}</th><th>kVA ${L("máx","max")}</th><th>${L("Desbalance V","V imbalance")}</th><th>${L("Fases","Phases")}</th></tr></thead><tbody>${rows}</tbody></table></div>`)
-    +box(L("Perfil de carga por nodo","Load profile per node"),L("kVA mediano por hora del día — small multiples. Permite comparar el patrón de consumo de cada transformador de un vistazo.","Median kVA by hour of day — small multiples. Compares each transformer's consumption pattern at a glance."),cb("c_sm","tall")+cap(L("Cada línea es un transformador; las que se despegan hacia arriba son las más cargadas — revísalas primero.","Each line is a transformer; those rising above the rest are the most loaded — review them first.")));
-  const labels=Array.from({length:24},(_,h)=>h+"h");
-  const palette=[cssv("--x1"),cssv("--x2"),cssv("--x3"),cssv("--ubi-gold"),cssv("--ubi-violet")||"#59509D",cssv("--ubi-darkgreen"),cssv("--ubi-orange"),cssv("--ubi-royal")||"#3466AF"];
-  const dsets=names.slice(0,12).map((nm,k)=>{const cc=computeNode(ds,nm,null);return {label:nm,data:hourly(cc.ts,cc.kva).map(p=>p.med),borderColor:palette[k%palette.length],borderWidth:1.6,pointRadius:0,tension:.3};});
-  mkChart(document.getElementById("c_sm"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({plugins:{legend:{labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${r1(i.parsed.y)} kVA`}}}})});
-}
-
 /* --- 9 Red --- */
 /* --- 10 Resumen ejecutivo (bilingüe, adaptativo) --- */
 /* ===== Perito integrado: diagnóstico IA sobre el nodo actual ===== */
@@ -1071,15 +931,11 @@ function tItic(host,C){
 
 /* --- Motor de informe de salud (alimenta el Informe) --- */
 function healthReport(C){
-  const nom=C.kvaNom, kvaVals=C.kva.filter(x=>x!=null);
-  const util=nom?{mean:mean(C.kva)/nom*100,p90:pct(C.kva,90)/nom*100,max:Math.max(...kvaVals)/nom*100}:null;
-  const pctOver=nom?kvaVals.filter(x=>x>nom).length/kvaVals.length*100:null;
-  const health=util?(util.max>=100?"overload":util.max>=80?"tight":"healthy"):"unknown";
   const ev=C.events||[];
   const isSwell=e=>{const t=(e.type||"").toUpperCase();if(t==="SWELL")return true;if(t==="SAG")return false;const mp=e.magPct!=null?e.magPct:(e.nominal?e.mag/e.nominal*100:0);return mp>=100;};
   const swellN=ev.filter(isSwell).length, sagN=ev.length-swellN;
+  let sev=0; ev.forEach(e=>{const mp=e.magPct!=null?e.magPct:(e.nominal&&e.mag?e.mag/e.nominal*100:null);if(mp!=null&&(mp>=120||mp<=70))sev++;});
   const oilv=C.oilT.filter(x=>x!=null), presv=C.press.filter(x=>x!=null);
-  const A={health,temp:oilv.length>0,pres:presv.length>0};
   const band=C.vnom?{lo:C.vnom*0.95,hi:C.vnom*1.05}:null;
   let vOut=0,vTot=0; if(band)C.phases.forEach(ph=>(C.V[ph]||[]).forEach(x=>{if(x==null)return;vTot++;if(x<band.lo||x>band.hi)vOut++;}));
   const vOutPct=vTot?vOut/vTot*100:null;
@@ -1092,76 +948,62 @@ function healthReport(C){
   const vthdP95=vthdA.length?pct(vthdA,95):null, ithdP95=ithdA.length?pct(ithdA,95):null;
   const vthdLim=(C.vnom&&C.vnom<=1000)?8:5;
   const tP90=oilv.length?pct(C.oilT,90):null, tMax=oilv.length?Math.max(...oilv):null;
-  const fmt=(v,d)=>v==null?"—":(+v).toFixed(d);
+  const fmt=(v,d)=>v==null?"\u2014":(+v).toFixed(d);
   const stTxt={ok:L("En rango","In range"),mid:L("Vigilar","Watch"),bad:L("Revisar","Review"),na:L("s/d","n/a")};
   const F=[];
-  if(util)F.push(["⚡ "+L("Carga","Load"),r1(util.max)+"% "+L("máx","max"),util.max>=100?"bad":util.max>=80?"mid":"ok",util.max>=100?L("Sobrecarga sobre placa.","Overload above nameplate."):util.max>=80?L("Margen ajustado.","Tight margin."):L("Dentro de capacidad.","Within capacity.")]);
-  else F.push(["⚡ "+L("Carga","Load"),r1(Math.max(...kvaVals))+" kVA","na",L("Falta kVA de placa para calcular %.","Nameplate kVA missing for %.")]);
-  if(vOutPct!=null)F.push(["🔌 "+L("Voltaje","Voltage"),r1(vOutPct)+"% "+L("fuera ±5%","out ±5%"),vOutPct>5?"bad":vOutPct>1?"mid":"ok",vOutPct>5?L("Tensión fuera de norma con frecuencia.","Voltage out of spec frequently."):L("Tensión mayormente en banda.","Voltage mostly within band.")]);
-  if(imbV!=null)F.push(["⚖ "+L("Desbalance de tensión","Voltage imbalance"),r1(imbV)+"%",imbV>=5?"bad":imbV>=3?"mid":"ok",imbV>=5?L("Desbalance alto entre fases.","High phase imbalance."):L("Desbalance bajo.","Low imbalance.")]);
-  if(pfPct!=null)F.push(["🔄 "+L("Factor de potencia","Power factor"),r1(pfPct)+"% <0.9",pfPct>20?"bad":pfPct>5?"mid":"ok",pfPct>5?L("FP bajo frecuente; revisar reactiva.","Frequent low PF; check reactive."):L("FP saludable.","Healthy PF.")]);
-  if(vthdP95!=null)F.push(["〰 "+L("THD de tensión","Voltage THD"),r1(vthdP95)+"% (P95)",vthdP95>vthdLim?"bad":vthdP95>vthdLim*0.8?"mid":"ok",vthdP95>vthdLim?L("Sobre límite IEEE 519 ("+vthdLim+"%).","Above IEEE 519 limit ("+vthdLim+"%)."):L("Dentro de límite.","Within limit.")]);
-  if(ithdP95!=null)F.push(["〰 "+L("THD de corriente","Current THD"),r1(ithdP95)+"% (P95)","ok",L("Referencial (depende de la carga / TDD).","Reference (load-dependent / TDD).")]);
-  if(tP90!=null)F.push(["🌡 "+L("Temperatura","Temperature"),r1(tP90)+"° P90 / "+r1(tMax)+"° "+L("máx","max"),tMax>=75?"bad":tP90>=55?"mid":"ok",tMax>=75?L("Picos térmicos altos.","High thermal peaks."):L("Comportamiento térmico normal.","Normal thermal behavior.")]);
-  else F.push(["🌡 "+L("Temperatura","Temperature"),stTxt.na,"na",L("Sensor sin datos válidos en el periodo.","Sensor returned no valid data.")]);
-  if(presv.length)F.push(["🧭 "+L("Presión","Pressure"),r1(pct(C.press,90))+" P90","ok",L("Reportada en el periodo.","Reported during the period.")]);
-  else F.push(["🧭 "+L("Presión","Pressure"),stTxt.na,"na",L("Sensor sin datos válidos en el periodo.","Sensor returned no valid data.")]);
-  F.push(["▽ "+L("Caídas de tensión (Vsag)","Voltage sags (Vsag)"),sagN+"",sagN>0?"mid":"ok",sagN>0?L("Caídas registradas; correlacionar con demanda.","Sags recorded; correlate with demand."):L("Sin caídas en el periodo.","No sags in the period.")]);
-  F.push(["△ "+L("Subidas de tensión (Vswell)","Voltage swell (Vswell)"),swellN+"",swellN>0?"mid":"ok",swellN>0?L("Sobre-tensiones registradas.","Over-voltage events recorded."):L("Sin subidas en el periodo.","No swells in the period.")]);
-  if(pctOver!=null)F.push(["🔥 "+L("Sobrecarga","Overload"),r1(pctOver)+"% "+L("del tiempo","of time"),pctOver>5?"bad":pctOver>0?"mid":"ok",pctOver>0?L("Operación sobre la nominal recurrente.","Recurring operation above rated."):L("Sin sobrecarga.","No overload.")]);
-  const kpis=[];
-  if(util)kpis.push({num:r1(util.max)+"%",lab:L("Máx. utilización","Max utilization"),cls:util.max>=100?"warn":util.max>=80?"mid":"ok"});
-  if(pctOver!=null)kpis.push({num:r1(pctOver)+"%",lab:L("Tiempo en sobrecarga","Time in overload"),cls:pctOver>5?"warn":"ok"});
-  kpis.push({num:sagN,lab:L("Eventos Vsag","Vsag events"),cls:sagN>0?"mid":"ok"});
-  kpis.push({num:swellN,lab:L("Eventos Vswell","Vswell events"),cls:swellN>0?"mid":"ok"});
-  if(vOutPct!=null)kpis.push({num:r1(vOutPct)+"%",lab:L("Voltaje fuera ±5%","Voltage out ±5%"),cls:vOutPct>5?"warn":vOutPct>1?"mid":"ok"});
-  if(tP90!=null)kpis.push({num:r1(tP90)+"°",lab:L("Temp aceite P90","Oil temp P90"),cls:tMax>=75?"warn":"ok"});
+  if(vOutPct!=null)F.push(["\ud83d\udd0c "+L("Voltaje","Voltage"),r1(vOutPct)+"% "+L("fuera \u00b15%","out \u00b15%"),vOutPct>5?"bad":vOutPct>1?"mid":"ok",vOutPct>5?L("Tensi\u00f3n fuera de norma con frecuencia.","Voltage out of spec frequently."):L("Tensi\u00f3n mayormente en banda.","Voltage mostly within band.")]);
+  if(imbV!=null)F.push(["\u2696 "+L("Desbalance de tensi\u00f3n","Voltage imbalance"),r1(imbV)+"%",imbV>=5?"bad":imbV>=3?"mid":"ok",imbV>=5?L("Desbalance alto entre fases.","High phase imbalance."):L("Desbalance bajo.","Low imbalance.")]);
+  if(pfPct!=null)F.push(["\ud83d\udd04 "+L("Factor de potencia","Power factor"),r1(pfPct)+"% <0.9",pfPct>20?"bad":pfPct>5?"mid":"ok",pfPct>5?L("FP bajo frecuente; revisar reactiva.","Frequent low PF; check reactive."):L("FP saludable.","Healthy PF.")]);
+  if(vthdP95!=null)F.push(["\u3030 "+L("THD de tensi\u00f3n","Voltage THD"),r1(vthdP95)+"% (P95)",vthdP95>vthdLim?"bad":vthdP95>vthdLim*0.8?"mid":"ok",vthdP95>vthdLim?L("Sobre l\u00edmite IEEE 519 ("+vthdLim+"%).","Above IEEE 519 limit ("+vthdLim+"%)."):L("Dentro de l\u00edmite.","Within limit.")]);
+  if(ithdP95!=null)F.push(["\u3030 "+L("THD de corriente","Current THD"),r1(ithdP95)+"% (P95)","ok",L("Referencial (depende de la carga / TDD).","Reference (load-dependent / TDD).")]);
+  if(tP90!=null)F.push(["\ud83c\udf21 "+L("Temperatura","Temperature"),r1(tP90)+"\u00b0 P90 / "+r1(tMax)+"\u00b0 "+L("m\u00e1x","max"),tMax>=75?"bad":tP90>=55?"mid":"ok",tMax>=75?L("Picos t\u00e9rmicos altos.","High thermal peaks."):L("Comportamiento t\u00e9rmico normal.","Normal thermal behavior.")]);
+  else F.push(["\ud83c\udf21 "+L("Temperatura","Temperature"),stTxt.na,"na",L("Sensor sin datos v\u00e1lidos en el periodo.","Sensor returned no valid data.")]);
+  if(presv.length)F.push(["\ud83e\udded "+L("Presi\u00f3n","Pressure"),r1(pct(C.press,90))+" P90","ok",L("Reportada en el periodo.","Reported during the period.")]);
+  F.push(["\u25bd "+L("Ca\u00eddas de tensi\u00f3n (Vsag)","Voltage sags (Vsag)"),sagN+"",sagN>0?"mid":"ok",sagN>0?L("Ca\u00eddas registradas; correlacionar con demanda.","Sags recorded; correlate with demand."):L("Sin ca\u00eddas en el periodo.","No sags in the period.")]);
+  F.push(["\u25b3 "+L("Subidas de tensi\u00f3n (Vswell)","Voltage swell (Vswell)"),swellN+"",swellN>0?"mid":"ok",swellN>0?L("Sobre-tensiones registradas.","Over-voltage events recorded."):L("Sin subidas en el periodo.","No swells in the period.")]);
+  const anyBad=(vOutPct!=null&&vOutPct>5)||(imbV!=null&&imbV>=5)||(pfPct!=null&&pfPct>20)||(vthdP95!=null&&vthdP95>vthdLim)||(tMax!=null&&tMax>=75)||sev>0;
+  const anyMid=(vOutPct!=null&&vOutPct>1)||(imbV!=null&&imbV>=3)||(pfPct!=null&&pfPct>5)||(vthdP95!=null&&vthdP95>vthdLim*0.8)||(tP90!=null&&tP90>=55)||ev.length>0;
+  const hasData=vOutPct!=null||imbV!=null||pfPct!=null||tP90!=null||ev.length>0;
+  const health=anyBad?"bad":anyMid?"mid":hasData?"ok":"unknown";
+  const A={temp:oilv.length>0,pres:presv.length>0};
   const concl=()=>{const c=[];
-    c.push(L("<strong>Visión completa del activo.</strong> El DTM permitió evaluar el comportamiento estacionario y los eventos transientes con datos objetivos.","<strong>Complete asset view.</strong> The DTM enabled assessment of steady-state behavior and transient events with objective data."));
-    if(util)c.push(L(`<strong>Patrón de carga.</strong> Promedio ${fmt(util.mean,1)}%, P90 ${fmt(util.p90,1)}% y máximo ${fmt(util.max,1)}% respecto a la nominal.`,`<strong>Load pattern.</strong> Average ${fmt(util.mean,1)}%, P90 ${fmt(util.p90,1)}% and max ${fmt(util.max,1)}% of rated.`));
-    if(health==="overload")c.push(L(`<strong>Sobrecarga acumulativa.</strong> La operación sobre la nominal fue repetitiva (${fmt(pctOver,1)}% del tiempo), no aislada.`,`<strong>Cumulative overload.</strong> Operation above rated was repeated (${fmt(pctOver,1)}% of the time), not isolated.`));
-    if(health==="healthy")c.push(L("<strong>Margen holgado.</strong> La carga se mantuvo bajo la nominal; el activo opera en condiciones saludables.","<strong>Ample margin.</strong> Load stayed below rated; the asset operates in healthy conditions."));
-    if(sagN>0)c.push(L(`<strong>Calidad de energía.</strong> ${sagN} caída(s) de tensión, útiles para correlacionar con la demanda.`,`<strong>Power quality.</strong> ${sagN} voltage sag(s), useful to correlate with demand.`));
-    c.push(L("<strong>De reactivo a basado en evidencia.</strong> El DTM convierte la operación del activo en una historia trazable.","<strong>From reactive to evidence-based.</strong> The DTM turns asset operation into a traceable story."));
+    c.push(L("<strong>Lectura del suministro.</strong> El DTM muestra c\u00f3mo se comporta la energ\u00eda entregada hora a hora, con datos objetivos en lugar de inspecciones puntuales.","<strong>Supply reading.</strong> The DTM shows how delivered energy behaves hour by hour, with objective data instead of spot inspections."));
+    if(vOutPct!=null)c.push(L(`<strong>Calidad de tensi\u00f3n.</strong> La tensi\u00f3n sale de la banda \u00b15% un ${fmt(vOutPct,1)}% del tiempo${imbV!=null?` y el desbalance entre fases es ${fmt(imbV,1)}%`:""}.`,`<strong>Voltage quality.</strong> Voltage is out of the \u00b15% band ${fmt(vOutPct,1)}% of the time${imbV!=null?` and phase imbalance is ${fmt(imbV,1)}%`:""}.`));
+    if(ev.length>0)c.push(L(`<strong>Eventos de tensi\u00f3n.</strong> Se registraron ${sagN} ca\u00edda(s) y ${swellN} subida(s)${sev?`, ${sev} de magnitud importante`:""}; el DTM respalda cu\u00e1ndo ocurren y si se repiten.`,`<strong>Voltage events.</strong> ${sagN} sag(s) and ${swellN} swell(s) recorded${sev?`, ${sev} of significant magnitude`:""}; the DTM backs up when they happen and whether they repeat.`));
+    if(tP90!=null)c.push(L(`<strong>Respuesta t\u00e9rmica.</strong> El aceite alcanza P90 ${fmt(tP90,1)}\u00b0 (m\u00e1x ${fmt(tMax,1)}\u00b0), se\u00f1al de c\u00f3mo responde el equipo al esfuerzo.`,`<strong>Thermal response.</strong> Oil reaches P90 ${fmt(tP90,1)}\u00b0 (max ${fmt(tMax,1)}\u00b0), a signal of how the unit responds to stress.`));
+    c.push(L("<strong>De reactivo a basado en evidencia.</strong> La plataforma no reemplaza la revisi\u00f3n t\u00e9cnica; la hace m\u00e1s r\u00e1pida, priorizada y defendible con datos.","<strong>From reactive to evidence-based.</strong> The platform does not replace technical review; it makes it faster, prioritized and defensible with data."));
     return c;};
   const recs=()=>{const r=[];
-    if(health==="overload"){r.push(L("<strong>Evaluar redimensionamiento o redistribución de carga.</strong>","<strong>Evaluate resizing or load redistribution.</strong>"));r.push(L("<strong>Configurar alertas de sobrecarga y alta temperatura</strong> como señales prioritarias.","<strong>Configure overload and high-temperature alerts</strong> as priority signals."));}
-    else if(health==="tight")r.push(L("<strong>Vigilar el margen en horas punta</strong> con alertas de utilización cercana a la nominal (P90).","<strong>Watch the peak-hour margin</strong> with alerts on utilization near rated (P90)."));
-    else r.push(L("<strong>Mantener este periodo como línea base</strong> del activo.","<strong>Keep this period as the asset baseline.</strong>"));
-    r.push(L("<strong>Revisar perfiles diarios de 24 h</strong> (mediana y P10–P90) para identificar patrones repetitivos.","<strong>Review 24-h daily profiles</strong> (median and P10–P90) to spot repeating patterns."));
-    if(!A.temp||!A.pres)r.push(L(`<strong>Verificar sensores no reportados:</strong> en este periodo ${[!A.temp?"temperatura":null,!A.pres?"presión":null].filter(Boolean).join(" y ")} no entregó datos válidos.`,`<strong>Check unreported sensors:</strong> in this period ${[!A.temp?"temperature":null,!A.pres?"pressure":null].filter(Boolean).join(" and ")} returned no valid data.`));
-    r.push(L("<strong>Priorizar activos por combinación de señales,</strong> no por una sola variable.","<strong>Prioritize assets by a combination of signals,</strong> not a single variable."));
+    if((vOutPct!=null&&vOutPct>5)||(imbV!=null&&imbV>=5))r.push(L("<strong>Revisar la calidad de tensi\u00f3n y el reparto de carga entre fases</strong> en las horas se\u00f1aladas.","<strong>Review voltage quality and phase load balance</strong> at the flagged hours."));
+    if(sev>0)r.push(L("<strong>Priorizar los eventos de mayor magnitud</strong> contrast\u00e1ndolos con la curva ITIC.","<strong>Prioritize the largest-magnitude events</strong> against the ITIC curve."));
+    if(vthdP95!=null&&vthdP95>vthdLim)r.push(L("<strong>Evaluar fuentes de arm\u00f3nicos</strong> frente al l\u00edmite de referencia IEEE 519.","<strong>Assess harmonic sources</strong> against the IEEE 519 reference limit."));
+    if(tMax!=null&&tMax>=75)r.push(L("<strong>Vigilar la temperatura del aceite</strong> en los picos t\u00e9rmicos.","<strong>Watch oil temperature</strong> at thermal peaks."));
+    if(!A.temp||!A.pres)r.push(L(`<strong>Verificar sensores no reportados:</strong> en este periodo ${[!A.temp?"temperatura":null,!A.pres?"presi\u00f3n":null].filter(Boolean).join(" y ")} no entreg\u00f3 datos v\u00e1lidos.`,`<strong>Check unreported sensors:</strong> in this period ${[!A.temp?"temperature":null,!A.pres?"pressure":null].filter(Boolean).join(" and ")} returned no valid data.`));
+    r.push(L("<strong>Presentar los hallazgos como indicios que orientan la revisi\u00f3n,</strong> no como causa probada.","<strong>Present findings as indications that guide review,</strong> not as proven cause."));
     return r;};
-  const hcls={overload:"bad",tight:"mid",healthy:"ok",unknown:"na"}[health];
-  const hlab={overload:L("SOBRECARGA","OVERLOAD"),tight:L("MARGEN AJUSTADO","TIGHT MARGIN"),healthy:L("SALUDABLE","HEALTHY"),unknown:L("SIN CALIFICAR","UNRATED")}[health];
-  return {F,concl:concl(),recs:recs(),stTxt,health,hcls,hlab};
+  const hcls={bad:"bad",mid:"mid",ok:"ok",unknown:"na"}[health];
+  const hlab={bad:L("REQUIERE REVISI\u00d3N","NEEDS REVIEW"),mid:L("EN OBSERVACI\u00d3N","UNDER WATCH"),ok:L("SUMINISTRO ESTABLE","STABLE SUPPLY"),unknown:L("SIN CALIFICAR","UNRATED")}[health];
+  return {F,concl:concl(),recs:recs(),stTxt,health,hcls,hlab,vOutPct,imbV,pfPct,vthdP95,vthdLim,ithdP95,tP90,tMax,sagN,swellN,sev,A};
 }
 
 function corrOf(a,b){if(!a||!b)return null;const xs=[],ys=[];for(let i=0;i<a.length;i++){if(a[i]!=null&&b[i]!=null){xs.push(a[i]);ys.push(b[i]);}}if(xs.length<10)return null;const mx=mean(xs),my=mean(ys);let nu=0,dx=0,dy=0;for(let i=0;i<xs.length;i++){nu+=(xs[i]-mx)*(ys[i]-my);dx+=(xs[i]-mx)**2;dy+=(ys[i]-my)**2;}return (dx&&dy)?nu/Math.sqrt(dx*dy):null;}
 function execRows(C,ds){
-  const nom=C.kvaNom, kvaVals=C.kva.filter(x=>x!=null), rows=[];
+  const kvaVals=C.kva.filter(x=>x!=null), rows=[];
   const push=(a,s,t)=>rows.push([a,s,t]);
-  const tq=C.tsQuality;
-  push(L("Integridad","Integrity"),tq==null?"na":(tq>=80?"ok":tq>=50?"mid":"bad"),
-    tq==null?L("Sin estampas v\u00e1lidas.","No valid timestamps."):L(`Estampas regulares ${tq}% (cada ~${C.intervalMin||"?"} min)${C.gaps?", "+C.gaps+" huecos":""}.`,`Regular timestamps ${tq}% (every ~${C.intervalMin||"?"} min)${C.gaps?", "+C.gaps+" gaps":""}.`));
   if(kvaVals.length){const m=mean(kvaVals),sd=Math.sqrt(mean(kvaVals.map(x=>(x-m)**2))),cv=m?sd/m*100:null;
-    push(L("Distribuci\u00f3n","Distribution"),cv==null?"na":(cv<25?"ok":cv<50?"mid":"bad"),
+    push(L("Variabilidad de carga","Load variability"),cv==null?"na":(cv<25?"ok":cv<50?"mid":"bad"),
       L(`Carga ${cv<25?"estable":cv<50?"variable":"muy variable"} (CV ${r1(cv)}%).`,`${cv<25?"Stable":cv<50?"Variable":"Highly variable"} load (CV ${r1(cv)}%).`));
-  } else push(L("Distribuci\u00f3n","Distribution"),"na",L("Sin carga para evaluar dispersi\u00f3n.","No load to assess spread."));
+  } else push(L("Variabilidad de carga","Load variability"),"na",L("Sin carga para evaluar.","No load to assess."));
   if(kvaVals.length){const h=hourly(C.ts,C.kva).map(p=>p.med);let bi=0,bv=-1;h.forEach((v,i)=>{if(v!=null&&v>bv){bv=v;bi=i;}});
     push(L("Perfiles 24h","24h profiles"),"ok",L(`Pico de demanda ~${bi}h.`,`Demand peak ~${bi}h.`));
   } else push(L("Perfiles 24h","24h profiles"),"na",L("Sin carga para el perfil.","No load for the profile."));
-  if(nom&&kvaVals.length){const um=Math.max(...kvaVals)/nom*100,over=kvaVals.filter(x=>x>nom).length*(C.intervalMin||5)/60;
-    push(L("Cargabilidad","Loading"),um>=100?"bad":um>=80?"mid":"ok",
-      L(`Carga m\u00e1x ${r1(um)}% de placa${over>0?", "+r1(over)+" h en sobrecarga":""}.`,`Peak ${r1(um)}% of nameplate${over>0?", "+r1(over)+" h overloaded":""}.`));
-  } else push(L("Cargabilidad","Loading"),"na",L("Falta kVA de placa para evaluar.","Nameplate kVA missing."));
   const band=C.vnom?{lo:C.vnom*0.95,hi:C.vnom*1.05}:null;let vo=0,vt=0;if(band)C.phases.forEach(p=>C.V[p].forEach(x=>{if(x==null)return;vt++;if(x<band.lo||x>band.hi)vo++;}));
   const voutPct=vt?vo/vt*100:null;const vmd=C.phases.map(p=>median(C.V[p])).filter(x=>x!=null);const imbV=vmd.length>=2?(Math.max(...vmd)-Math.min(...vmd))/mean(vmd)*100:null;
   push(L("Calidad de energ\u00eda","Power quality"),voutPct==null?"na":((voutPct>5||(imbV||0)>5)?"bad":(voutPct>1||(imbV||0)>3)?"mid":"ok"),
     voutPct==null?L("Sin nominal para evaluar la banda.","No nominal to assess the band."):L(`Fuera de \u00b15% ${r1(voutPct)}% del tiempo; desbalance ${imbV!=null?r1(imbV)+"%":"\u2013"}.`,`Out of \u00b15% ${r1(voutPct)}% of time; imbalance ${imbV!=null?r1(imbV)+"%":"\u2013"}.`));
   const ev=C.events||[];
   if(ev.length){let sev=0;ev.forEach(e=>{const mp=e.magPct!=null?e.magPct:(e.nominal&&e.mag?e.mag/e.nominal*100:null);if(mp!=null&&(mp>=120||mp<=70))sev++;});
-    push(L("Eventos ITIC","ITIC events"),sev>0?"bad":"mid",L(`${ev.length} eventos de tensi\u00f3n${sev?", "+sev+" de magnitud severa":""}.`,`${ev.length} voltage events${sev?", "+sev+" of severe magnitude":""}.`));
+    push(L("Eventos ITIC","ITIC events"),sev>0?"bad":"mid",L(`${ev.length} eventos de tensi\u00f3n${sev?", "+sev+" de magnitud severa":""}.`,`${ev.length} voltage events${sev?", "+sev+" severe":""}.`));
   } else push(L("Eventos ITIC","ITIC events"),"na",L("Sin reporte de eventos cargado.","No event report loaded."));
   const oilv=C.oilT.filter(x=>x!=null);
   if(oilv.length){const p90=pct(C.oilT,90),md=median(C.oilT),aging=(isFinite(p90)&&isFinite(md))?Math.pow(2,(p90-md)/8):null;
@@ -1171,14 +1013,7 @@ function execRows(C,ds){
   cands.push([L("kVA\u2195V","kVA\u2195V"),corrOf(C.kva,C.phases.length?C.V[C.phases[0]]:null)]);
   if(oilv.length)cands.push([L("kVA\u2195T\u00b0","kVA\u2195T\u00b0"),corrOf(C.kva,C.oilT)]);
   let best=null;cands.forEach(c=>{if(c[1]!=null&&(best==null||Math.abs(c[1])>Math.abs(best[1])))best=c;});
-  push(L("Cruces","Cross-plots"),best?"ok":"na",best?L(`Relaci\u00f3n m\u00e1s marcada: ${best[0]} (r=${r2(best[1])}).`,`Strongest relationship: ${best[0]} (r=${r2(best[1])}).`):L("Datos insuficientes para correlaci\u00f3n.","Not enough data for correlation."));
-  const names=ds.nodeNames;
-  if(names.length>1){const arr=names.map(nm=>{const cc=computeNode(ds,nm,null);const kv=cc.kva.filter(x=>x!=null);return {nm,mx:kv.length?Math.max(...kv):-1};}).sort((a,b)=>b.mx-a.mx);const k=arr.findIndex(x=>x.nm===C.nodeName)+1;
-    push(L("Nodos","Nodes"),k===1?"mid":"ok",L(`Este transformador es el #${k} de ${names.length} por carga m\u00e1xima.`,`This transformer ranks #${k} of ${names.length} by peak load.`));
-  } else push(L("Nodos","Nodes"),"ok",L("\u00danico nodo en el dataset.","Single node in the dataset."));
-  const rssiv=C.rssi.filter(x=>x!=null);
-  if(rssiv.length){const md=median(C.rssi);push(L("Red","Network"),md<-85?"mid":"ok",L(`RSSI mediano ${r1(md)} dBm.`,`Median RSSI ${r1(md)} dBm.`));}
-  else push(L("Red","Network"),"na",L("Sin RSSI reportado.","No RSSI reported."));
+  push(L("D\u00eda \u00d7 hora","Day \u00d7 hour"),best?"ok":"na",best?L(`Relaci\u00f3n m\u00e1s marcada: ${best[0]} (r=${r2(best[1])}).`,`Strongest relationship: ${best[0]} (r=${r2(best[1])}).`):L("Datos insuficientes para correlaci\u00f3n.","Not enough data for correlation."));
   return rows;
 }
 function genExecSummary(C,ds){
@@ -1195,34 +1030,13 @@ function genExecSummary(C,ds){
 
 function tSyn(host,C){
   const HR=healthReport(C);
-  const kvaVals=C.kva.filter(x=>x!=null);const nom=C.kvaNom;
-  let util=null,cls="healthy";
-  if(nom&&nom>0){util=Math.max(...kvaVals)/nom*100;cls=util>=100?"overload":util>=80?"tight":"healthy";}
-  else cls="unknown";
-  const clsTxt={overload:L("SOBRECARGA","OVERLOAD"),tight:L("AJUSTADO","TIGHT"),healthy:L("SALUDABLE","HEALTHY"),unknown:L("SIN PLACA","NO RATING")}[cls];
-  const clsCol={overload:"var(--ubi-orange)",tight:"var(--ubi-gold)",healthy:"var(--ubi-darkgreen)",unknown:"var(--ubi-gray2)"}[cls];
-  const band=C.vnom?{lo:C.vnom*.95,hi:C.vnom*1.05}:null;
-  let sag=0,swell=0,vtot=0;if(band)C.phases.forEach(p=>C.V[p].forEach(x=>{if(x==null)return;vtot++;if(x<band.lo)sag++;else if(x>band.hi)swell++;}));
-  const meds=C.phases.map(p=>median(C.V[p])).filter(x=>x!=null);
-  const imbV=meds.length>=2?r1((Math.max(...meds)-Math.min(...meds))/mean(meds)*100):null;
-  let pfBad=0,pfTot=0;C.phases.forEach(p=>C.PF[p].forEach(x=>{if(x==null)return;pfTot++;if(Math.abs(x)<0.9)pfBad++;}));
-
+  const clsCol={bad:"var(--ubi-orange)",mid:"var(--ubi-gold)",ok:"var(--ubi-darkgreen)",na:"var(--ubi-gray2)"}[HR.hcls];
   const kpis=[];
-  if(util!=null)kpis.push({num:r1(util)+"%",lab:L("Cargabilidad máx","Peak loading"),cls:util>=100?"warn":util>=80?"mid":"ok",meta:"P90 "+r1(pct(C.kva,90)/nom*100)+"%"});
-  else kpis.push({num:r1(Math.max(...kvaVals)),lab:L("kVA máximo","Peak kVA"),meta:L("sin placa","no rating")});
-  kpis.push({num:vtot?r1((sag+swell)/vtot*100)+"%":"–",lab:L("Voltaje fuera ±5%","Voltage out ±5%"),cls:(sag+swell)/Math.max(vtot,1)>.05?"warn":"ok",meta:sag+" sag · "+swell+" swell"});
-  if(imbV!=null)kpis.push({num:imbV+"%",lab:L("Desbalance voltaje","Voltage imbalance"),cls:imbV>5?"warn":"ok",meta:L("umbral 5%","5% limit")});
-  kpis.push({num:(C.tsQuality??"–")+"%",lab:L("Estampas regulares","Timestamp regularity"),cls:C.tsQuality<80?"warn":"ok",meta:"~"+(C.intervalMin??"?")+" min"});
-
-  const score=[
-    [L("Cargabilidad","Loading"),util!=null?r1(util)+"%":L("sin placa","no rating"),cls==="unknown"?"mid":util>=100?"bad":util>=80?"mid":"ok"],
-    [L("Voltaje fuera de banda","Voltage out of band"),vtot?r1((sag+swell)/vtot*100)+"%":"–",(sag+swell)/Math.max(vtot,1)>.05?"bad":"ok"],
-    [L("Desbalance voltaje","Voltage imbalance"),imbV!=null?imbV+"%":"–",imbV>5?"bad":"ok"],
-    [L("FP bajo 0.9","PF below 0.9"),pfTot?r1(pfBad/pfTot*100)+"%":"–",pfBad/Math.max(pfTot,1)>.2?"bad":"ok"],
-    [L("Calidad de estampas","Timestamp quality"),(C.tsQuality??"–")+"%",C.tsQuality<80?"bad":"ok"],
-    [L("Temp aceite P90","Oil temp P90"),C.oilT.some(x=>x!=null)?r1(pct(C.oilT,90))+"°":L("sin sensor","no sensor"),pct(C.oilT,90)>65?"bad":"ok"]
-  ];
-  const stTxt={ok:L("OK","OK"),bad:L("Atención","Attention"),mid:L("Vigilar","Watch")};
+  if(HR.vOutPct!=null)kpis.push({num:r1(HR.vOutPct)+"%",lab:L("Voltaje fuera ±5%","Voltage out ±5%"),cls:HR.vOutPct>5?"warn":HR.vOutPct>1?"mid":"ok",meta:HR.sagN+" sag · "+HR.swellN+" swell"});
+  if(HR.imbV!=null)kpis.push({num:r1(HR.imbV)+"%",lab:L("Desbalance voltaje","Voltage imbalance"),cls:HR.imbV>=5?"warn":HR.imbV>=3?"mid":"ok",meta:L("umbral 5%","5% limit")});
+  if(HR.pfPct!=null)kpis.push({num:r1(HR.pfPct)+"%",lab:L("FP bajo 0.9","PF below 0.9"),cls:HR.pfPct>20?"warn":HR.pfPct>5?"mid":"ok",meta:""});
+  kpis.push({num:(C.events||[]).length,lab:L("Eventos de tensión","Voltage events"),cls:HR.sev>0?"warn":((C.events||[]).length>0?"mid":"ok"),meta:HR.sev?HR.sev+L(" severos"," severe"):""});
+  if(HR.tP90!=null)kpis.push({num:r1(HR.tP90)+"°",lab:L("Temp aceite P90","Oil temp P90"),cls:HR.tMax>=75?"warn":"ok",meta:L("máx ","max ")+r1(HR.tMax)+"°"});
 
   const keyVars=[];
   C.phases.forEach(p=>keyVars.push({l:L("Voltaje X","Voltage X")+(p+1),u:"V",d:C.V[p]}));
@@ -1231,28 +1045,14 @@ function tSyn(host,C){
   const pctTable=`<table class="data"><thead><tr><th>${L("Variable","Variable")}</th><th>P10</th><th>${L("Mediana","Median")}</th><th>P90</th><th>${L("Máx","Max")}</th></tr></thead><tbody>`+
     keyVars.map(v=>`<tr><td>${v.l} (${v.u})</td><td>${r2(pct(v.d,10))}</td><td>${r2(median(v.d))}</td><td>${r2(pct(v.d,90))}</td><td>${r2(Math.max(...v.d.filter(x=>x!=null)))}</td></tr>`).join("")+`</tbody></table>`;
 
-  // ---- lectura operativa data-aware ----
-  const rd=[];
-  if(util!=null){
-    if(util>=100)rd.push(L(`Opera por sobre su capacidad nominal en los picos (cargabilidad máx ${r1(util)}%): hay riesgo de pérdida de vida útil del activo y no queda margen para conectar nuevas cargas sin repotenciar.`,`It operates above nameplate capacity at peaks (peak loading ${r1(util)}%): there is asset life-loss risk and no headroom to connect new loads without an upgrade.`));
-    else if(util>=80)rd.push(L(`Opera cerca de su límite en horas punta (cargabilidad máx ${r1(util)}%): el margen para nuevas conexiones es estrecho; conviene planificar antes de comprometer carga adicional.`,`It runs close to its limit at peak hours (peak loading ${r1(util)}%): headroom for new connections is tight; plan before committing extra load.`));
-    else rd.push(L(`Tiene holgura de capacidad (cargabilidad máx ${r1(util)}%): hay margen para conectar nuevas cargas sin reemplazo inmediato.`,`It has spare capacity (peak loading ${r1(util)}%): there is room to connect new loads without an immediate upgrade.`));
-  } else rd.push(L("No es posible dimensionar el margen de capacidad sin el kVA de placa — ingrésalo arriba para cerrar la conclusión de capacidad.","Capacity margin cannot be sized without the nameplate kVA — enter it above to complete the capacity conclusion."));
-  const voutPct=vtot?(sag+swell)/vtot*100:null;
-  if(voutPct!=null)rd.push(voutPct>5?L(`La tensión entregada sale de la banda ±5% un ${r1(voutPct)}% del tiempo, lo que expone a observaciones de calidad y eventuales hallazgos regulatorios.`,`Delivered voltage is out of the ±5% band ${r1(voutPct)}% of the time, raising the risk of power-quality and regulatory findings.`):L("La tensión entregada se mantiene dentro de norma, sin observaciones de calidad relevantes.","Delivered voltage stays within spec, with no relevant quality findings."));
-  if(imbV!=null&&imbV>5)rd.push(L(`Existe un desbalance de voltaje entre fases de ${imbV}%, que conviene corregir para reducir pérdidas técnicas y calentamiento.`,`There is a ${imbV}% voltage imbalance between phases, worth correcting to cut technical losses and heating.`));
-  if(C.tsQuality!=null&&C.tsQuality<80)rd.push(L("La regularidad de las estampas es baja: hubo cortes de comunicación que reducen la confianza de las conclusiones.","Timestamp regularity is low: communication gaps reduce confidence in the conclusions."));
-  const reading=`<div class="card"><h3>${L("Lectura operativa","Operational reading")}</h3><div class="sub">${L("Qué significan los números para la operación.","What the numbers mean for operations.")}</div><p style="margin:0;line-height:1.65">${rd.join(" ")}</p></div>`;
-  // ---- guía del documento ----
   const fam=[
-    [L("Confianza · Integridad","Trust · Integrity"),L("Confirma que el dato es confiable antes de decidir.","Confirms the data is reliable before deciding.")],
-    [L("Operación · Distribución / Perfiles / Cargabilidad","Operation · Distribution / Profiles / Loading"),L("Cómo opera, a qué hora exige y cuánta capacidad queda.","How it operates, when it peaks and how much capacity is left.")],
-    [L("Calidad y riesgo · Calidad / ITIC / Térmico","Quality & risk · Quality / ITIC / Thermal"),L("Cumplimiento de la energía, respaldo de eventos y envejecimiento.","Energy compliance, event backing and aging.")],
-    [L("Relaciones · Cruces","Relations · Cross-plots"),L("Por qué pasa lo que pasa — relación, no causa probada.","Why things happen — relationship, not proven cause.")],
-    [L("Flota · Nodos / Red","Fleet · Nodes / Network"),L("Dónde actuar primero y la salud de la comunicación.","Where to act first and communication health.")],
-    [L("Técnico · Análisis técnico","Technical · Technical analysis"),L("Exploración libre de todas las variables en el tiempo.","Free exploration of all variables over time.")]
+    [L("Operación · Perfiles 24h / Día × hora","Operation · 24h profiles / Day × hour"),L("Cómo opera y a qué hora exige más.","How it operates and when it peaks.")],
+    [L("Calidad y riesgo · Calidad / ITIC / Térmico","Quality & risk · Quality / ITIC / Thermal"),L("Cumplimiento de la energía, respaldo de eventos y respuesta térmica.","Energy compliance, event backing and thermal response.")]
   ];
-  const guide=box(L("Qué encontrará en este informe","What you'll find in this report"),L("Los grupos de análisis y la decisión que habilita cada uno.","The analysis groups and the decision each one enables."),`<table class="data"><thead><tr><th>${L("Grupo","Group")}</th><th>${L("Qué decisión habilita","Decision it enables")}</th></tr></thead><tbody>${fam.map(([t,d])=>`<tr><td><b>${t}</b></td><td>${d}</td></tr>`).join("")}</tbody></table>`);
+  const guide=box(L("Qué encontrará en este informe","What you'll find in this report"),L("Los grupos de análisis y la decisión que habilita cada uno.","The analysis groups and the decision each enables."),`<table class="data"><thead><tr><th>${L("Grupo","Group")}</th><th>${L("Qué decisión habilita","Decision it enables")}</th></tr></thead><tbody>${fam.map(([t,d])=>`<tr><td><b>${t}</b></td><td>${d}</td></tr>`).join("")}</tbody></table>`);
+
+  const story=narrative(C);
+  const storyCard=`<div class="card"><div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--ubi-blue);text-transform:uppercase">${L("La lectura en simple","The plain-language read")}</div><h3 style="font-size:20px;margin:6px 0 8px">${L("¿Qué cuenta este transformador?","What does this transformer tell us?")}</h3>`+story.map(p=>`<p style="margin:0 0 8px;line-height:1.65">${p}</p>`).join("")+`</div>`;
 
   host.innerHTML=
     `<div class="barbtns" style="display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:0">
@@ -1261,40 +1061,37 @@ function tSyn(host,C){
       <button class="btn" id="expSyn">⤓ ${L("Exportar resumen JSON","Export summary JSON")}</button>
     </div>`
     +`<div id="peritoOut"></div>`
-    +intro(L("Una sola página que traduce la telemetría en decisiones: <b>capacidad disponible, cumplimiento de la energía, riesgos y dónde priorizar.</b> El detalle técnico está en las pestañas agrupadas que siguen.","A single page that turns telemetry into decisions: <b>available capacity, energy compliance, risks and where to prioritize.</b> The technical detail is in the grouped tabs that follow."))
+    +ficha(L("¿Puedo confiar en la energía que entrega y dónde conviene mirar?","Can I trust the delivered energy and where should I look?"),L("Presentar el estado del suministro como estable, en observación o a revisar — con la evidencia detrás.","Present the supply state as stable, watch or review — with the evidence behind it."))
+    +storyCard
     +stLegend()
     +`<div class="exec-screen">${genExecSummary(C,CUR.ds)}</div>`
-    +`<div class="duo"><div class="card" style="border-left:5px solid ${clsCol}">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--ubi-blue);text-transform:uppercase">${L("Resumen ejecutivo · Transformador","Executive summary · Transformer")}</div>
-      <h3 style="font-size:22px;margin:6px 0 4px">${C.nodeName} — <span style="color:${clsCol}">${clsTxt}</span></h3>
-      <div class="sub">${L("Ventana","Window")} ${C.win?C.win.days+L(" días"," days"):"?"} · ${C.n.toLocaleString()} ${L("registros","records")} · ${L("fases","phases")} ${C.phases.map(p=>'X'+(p+1)).join('/')} · ${L("nominal","nominal")} ${C.vnom||'?'} V${nom?' / '+nom+' kVA':''} · ${CUR.ds.tx||""}</div>
+    +`<div class="card" style="border-left:5px solid ${clsCol}">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--ubi-blue);text-transform:uppercase">${L("Resumen ejecutivo · Suministro","Executive summary · Supply")}</div>
+      <h3 style="font-size:22px;margin:6px 0 4px">${C.nodeName} — <span style="color:${clsCol}">${HR.hlab}</span></h3>
+      <div class="sub">${L("Ventana","Window")} ${C.win?C.win.days+L(" días"," days"):"?"} · ${C.n.toLocaleString()} ${L("registros","records")} · ${L("fases","phases")} ${C.phases.map(p=>'X'+(p+1)).join('/')} · ${L("nominal","nominal")} ${C.vnom||'?'} V · ${CUR.ds.tx||""}</div>
     </div>`
-    +reading
-    +`</div>`
     +`<div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="num ${k.cls||''}">${k.num}</div><div class="lab">${k.lab}</div><div class="meta">${k.meta||''}</div></div>`).join("")}</div>
     <div class="grid2">`
-    +box(L("Perfil de carga 24h","24h load profile"),L("El día típico de demanda — dónde está el margen y dónde el riesgo.","The typical demand day — where the margin and the risk are."),cb("c_exec","tall")+cap(L("La curva es el día típico de carga; el punto más alto es la hora de mayor exigencia. Si toca la línea de placa, no queda margen a esa hora.","The curve is the typical load day; the highest point is the peak-demand hour. If it touches the nameplate line, there is no margin at that hour.")))
-    +box(L("Perfil de voltaje 24h","24h voltage profile"),L("Tensión entregada por hora; la banda muestra la variación intradía.","Delivered voltage by hour; the band shows intraday spread."),cb("c_execv","tall")+cap(L("La banda verde es el rango normativo ±5%; si la mediana sale de la banda, la tensión entregada no cumple a esa hora.","The green band is the ±5% regulatory range; if the median leaves the band, delivered voltage is out of spec at that hour.")))
+    +box(L("Perfil de carga 24h","24h load profile"),L("El día típico de demanda — a qué hora exige más el transformador.","The typical demand day — when the transformer is most stressed."),cb("c_exec","tall")+cap(L("La curva es el día típico de carga; el punto más alto es la hora de mayor exigencia.","The curve is the typical load day; the highest point is the peak-demand hour.")))
+    +box(L("Perfil de voltaje 24h","24h voltage profile"),L("Tensión entregada por hora; la banda muestra la variación intradía.","Delivered voltage by hour; the band shows intraday spread."),cb("c_execv","tall")+cap(L("La banda verde es el rango normativo ±5%; si la mediana sale de la banda, la tensión no cumple a esa hora.","The green band is the ±5% regulatory range; if the median leaves it, voltage is out of spec at that hour.")))
     +`</div>`
     +`<div class="subgrid">`
-    +box(L("Estado por parámetro","Per-parameter status"),L("Cada variable del DTM2 con su estado y el hallazgo que sugiere — la base del informe de salud.","Each DTM2 variable with its status and the finding it suggests — the basis of the health report."),`<table class="data"><thead><tr><th>${L("Parámetro","Parameter")}</th><th>${L("Valor","Value")}</th><th>${L("Estado","Status")}</th><th>${L("Hallazgo","Finding")}</th></tr></thead><tbody>${HR.F.map(f=>`<tr><td>${f[0]}</td><td class="mono">${f[1]}</td><td class="${f[2]==="na"?"":f[2]}">${HR.stTxt[f[2]]}</td><td>${f[3]}</td></tr>`).join("")}</tbody></table>`
-       +(nom?"":`<div class="note">${L("Ingresa el kVA de placa arriba para cerrar el indicador de cargabilidad.","Enter the nameplate kVA above to complete the loading indicator.")}</div>`))
+    +box(L("Estado por parámetro","Per-parameter status"),L("Cada variable del DTM2 con su estado y el hallazgo que sugiere.","Each DTM2 variable with its status and the finding it suggests."),`<table class="data"><thead><tr><th>${L("Parámetro","Parameter")}</th><th>${L("Valor","Value")}</th><th>${L("Estado","Status")}</th><th>${L("Hallazgo","Finding")}</th></tr></thead><tbody>${HR.F.map(f=>`<tr><td>${f[0]}</td><td class="mono">${f[1]}</td><td class="${f[2]==="na"?"":f[2]}">${HR.stTxt[f[2]]}</td><td>${f[3]}</td></tr>`).join("")}</tbody></table>`)
     +box(L("Conclusiones","Conclusions"),"",`<ol style="margin:0;padding-left:18px;line-height:1.7">${HR.concl.map(x=>"<li>"+x+"</li>").join("")}</ol>`)
     +box(L("Recomendaciones","Recommendations"),"",`<ol style="margin:0;padding-left:18px;line-height:1.7">${HR.recs.map(x=>"<li>"+x+"</li>").join("")}</ol>`)
-    +box(L("Percentiles de variables clave","Key variable percentiles"),L("Rango robusto de voltaje, carga y corriente — el P90 es el pico real a dimensionar.","Robust range of voltage, load and current — P90 is the real peak to size for."),pctTable)
-    +box(L("Comparación de nodos","Node comparison"),L("Todos los nodos del dataset para priorizar dónde actuar.","All nodes in the dataset to prioritize where to act."),`<div style="overflow:auto"><table class="data"><thead><tr><th>${L("Nodo","Node")}</th><th>${L("Registros","Records")}</th><th>kVA ${L("máx","max")}</th><th>${L("Desbalance V","V imbalance")}</th></tr></thead><tbody>${nodeRows(CUR.ds)}</tbody></table></div>`)
+    +box(L("Percentiles de variables clave","Key variable percentiles"),L("Rango robusto de voltaje, carga y corriente — el P90 es el pico real.","Robust range of voltage, load and current — P90 is the real peak."),pctTable)
     +guide
     +`</div>`;
 
   const hL=Array.from({length:24},(_,h)=>h+"h");
-  profileChart(document.getElementById("c_exec"),hL,hourly(C.ts,C.kva),cssv("--ubi-blue"),"kVA", nom?[hline(hL,nom,cssv("--ubi-orange"),L("kVA placa","Nameplate kVA"))]:null);
+  profileChart(document.getElementById("c_exec"),hL,hourly(C.ts,C.kva),cssv("--ubi-blue"),"kVA",null);
   const vband=C.vnom?bandDS(hL,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.12)").concat([hline(hL,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]):null;
-  profileChart(document.getElementById("c_execv"),hL,hourly(C.ts,C.V[C.phases[0]]),cssv("--ubi-darkgreen"),"V", vband);
+  profileChart(document.getElementById("c_execv"),hL,hourly(C.ts,C.V[C.phases[0]]),cssv("--ubi-darkgreen"),"V",vband);
 
   document.getElementById("genDiag").onclick=runPerito;
   {const pp=document.getElementById("expPDF");if(pp)pp.onclick=pdfFull;}
   document.getElementById("expSyn").onclick=()=>{
-    const out={node:C.nodeName,class:cls,loadingMaxPct:util?r1(util):null,voltageOutOfBandPct:vtot?r1((sag+swell)/vtot*100):null,voltageImbalancePct:imbV,pfBelow09Pct:pfTot?r1(pfBad/pfTot*100):null,timestampQualityPct:C.tsQuality,intervalMin:C.intervalMin,records:C.n,window:C.win?{from:C.win.from.toISOString().slice(0,10),to:C.win.to.toISOString().slice(0,10),days:C.win.days}:null};
+    const out={node:C.nodeName,verdict:HR.health,voltageOutOfBandPct:HR.vOutPct!=null?r1(HR.vOutPct):null,voltageImbalancePct:HR.imbV!=null?r1(HR.imbV):null,pfBelow09Pct:HR.pfPct!=null?r1(HR.pfPct):null,vthdP95:HR.vthdP95!=null?r1(HR.vthdP95):null,oilTempP90:HR.tP90!=null?r1(HR.tP90):null,events:(C.events||[]).length,severeEvents:HR.sev,records:C.n,window:C.win?{from:C.win.from.toISOString().slice(0,10),to:C.win.to.toISOString().slice(0,10),days:C.win.days}:null};
     const b=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="resumen_"+C.nodeName+".json";a.click();URL.revokeObjectURL(a.href);
   };
 }
@@ -1372,6 +1169,20 @@ const _stripTags=h=>{const s=String(h==null?"":h).replace(/<[^>]+>/g,"");let out
 function chartPNG(id){const c=document.getElementById(id);try{return (c&&c.toDataURL)?c.toDataURL("image/png",1.0):null;}catch(e){return null;}}
 function pdfMeta(C){return [C.nodeName,(C.win?C.win.days+L(" d\u00edas"," days"):"?")+" \u00b7 "+C.n.toLocaleString()+" "+L("reg","rec"),L("nominal","nominal")+" "+(C.vnom||"?")+" V"+(C.kvaNom?" / "+C.kvaNom+" kVA":""),new Date().toLocaleDateString()];}
 function addImageFit(doc,png,x,y,maxW,maxH){if(!png)return y;let p;try{p=doc.getImageProperties(png);}catch(e){return y;}const r=p.width/p.height;let w=maxW,h=w/r;if(h>maxH){h=maxH;w=h*r;}doc.addImage(png,"PNG",x,y,w,h);return y+h;}
+function narrative(C){
+  const HR=healthReport(C);
+  const hl=hourly(C.ts,C.kva); let ph=null,pv=-Infinity; hl.forEach((p,i)=>{if(p.med!=null&&p.med>pv){pv=p.med;ph=i;}});
+  const word={bad:L("una condici\u00f3n que merece revisi\u00f3n","a condition that warrants review"),mid:L("una condici\u00f3n para observar","a condition to watch"),ok:L("estable","stable"),unknown:L("sin calificar a\u00fan","not yet rated")}[HR.health];
+  const P=[];
+  P.push(L(`Este informe traduce las mediciones del transformador ${C.nodeName} en se\u00f1ales simples para decidir. Cubre ${C.win?C.win.days:"?"} d\u00edas con ${C.n.toLocaleString()} mediciones. No son n\u00fameros aislados: son se\u00f1ales para priorizar la operaci\u00f3n.`,`This report turns the measurements of transformer ${C.nodeName} into simple signals for decisions. It covers ${C.win?C.win.days:"?"} days with ${C.n.toLocaleString()} measurements. These are not isolated numbers: they are signals to prioritize operations.`));
+  if(HR.vOutPct!=null)P.push(L(`La "presi\u00f3n el\u00e9ctrica" (el voltaje) que entrega el equipo se mantuvo ${HR.vOutPct>5?"fuera del rango esperado parte del tiempo":"casi siempre dentro de lo esperado"}${HR.imbV!=null?`, con un reparto entre fases ${HR.imbV>=5?"desparejo":"parejo"}`:""}. ${HR.vOutPct>5?"Conviene revisarlo: puede afectar a los equipos conectados.":"Es buena se\u00f1al de calidad de servicio."}`,`The "electrical pressure" (voltage) delivered stayed ${HR.vOutPct>5?"out of the expected range part of the time":"almost always within expectations"}${HR.imbV!=null?`, with a ${HR.imbV>=5?"uneven":"even"} balance across phases`:""}. ${HR.vOutPct>5?"Worth reviewing: it can affect connected equipment.":"A good sign of service quality."}`));
+  if(ph!=null)P.push(L(`A lo largo del d\u00eda, la mayor exigencia ocurre alrededor de las ${ph}h. Conocer la hora punta ayuda a planificar mantenimientos y nuevas conexiones sin sorpresas.`,`Across the day, the highest demand occurs around ${ph}h. Knowing the peak hour helps plan maintenance and new connections without surprises.`));
+  if((C.events||[]).length)P.push(L(`Durante el periodo se registraron ${(C.events||[]).length} evento(s) de tensi\u00f3n${HR.sev?`, ${HR.sev} de magnitud importante`:""}. La plataforma muestra exactamente cu\u00e1ndo ocurrieron \u2014 \u00fatil para respaldar reclamos o descartar causas.`,`During the period ${(C.events||[]).length} voltage event(s) were recorded${HR.sev?`, ${HR.sev} of significant magnitude`:""}. The platform shows exactly when they happened \u2014 useful to back up claims or rule out causes.`));
+  else P.push(L("A\u00fan no se carg\u00f3 un reporte de eventos; al sumarlo, el informe podr\u00e1 respaldar ca\u00eddas o subidas de tensi\u00f3n con fecha y hora.","No event report has been loaded yet; adding it lets the report back up voltage sags or swells with date and time."));
+  if(HR.tP90!=null)P.push(L(`La temperatura del aceite ${HR.tP90>=65?"alcanz\u00f3 valores altos":"se mantuvo en rangos normales"} (P90 ${r1(HR.tP90)}\u00b0): es una se\u00f1al de c\u00f3mo responde el equipo al esfuerzo el\u00e9ctrico.`,`Oil temperature ${HR.tP90>=65?"reached high values":"stayed in normal ranges"} (P90 ${r1(HR.tP90)}\u00b0): a signal of how the unit responds to electrical stress.`));
+  P.push(L(`En resumen, el suministro de este transformador aparece como ${word}. La plataforma no reemplaza la revisi\u00f3n t\u00e9cnica: la hace m\u00e1s r\u00e1pida, priorizada y defendible con datos.`,`In short, this transformer's supply appears as ${word}. The platform does not replace technical review: it makes it faster, prioritized and defensible with data.`));
+  return P;
+}
 function pdfFull(){
   ensurePdfLibs(()=>{ try{
     if(CUR.tab!=="syn")renderTab("syn");
@@ -1419,6 +1230,9 @@ function pdfFull(){
     const oilv=C.oilT.filter(x=>x!=null); const p90o=oilv.length?pct(C.oilT,90):null; const omd=oilv.length?median(C.oilT):null;
     const aging=(p90o!=null&&omd!=null)?Math.pow(2,(p90o-omd)/8):null;
 
+    sec(L("La lectura en simple","The plain-language read"));
+    narrative(C).forEach(p=>para(p));
+
     /* 01 Resumen ejecutivo */
     sec(L("Resumen ejecutivo","Executive summary"));
     const rows=execRows(C,ds);
@@ -1426,18 +1240,6 @@ function pdfFull(){
       rows.map(r=>[r[0],_statusWord(r[1]),_stripTags(r[2])]), i=>rows[i][1],1,{0:{cellWidth:92,fontStyle:"bold"},1:{cellWidth:62}});
     subhead(L("Conclusiones","Conclusions")); bullets(HR.concl);
     subhead(L("Recomendaciones","Recommendations")); bullets(HR.recs);
-
-    /* 02 Integridad */
-    sec(L("Integridad y confianza","Integrity & trust"));
-    const rv=C.rssi.filter(x=>x!=null);
-    figTable([
-      [L("Registros","Records"), C.n.toLocaleString()],
-      [L("Estampas regulares","Regular timestamps"), C.tsQuality!=null?C.tsQuality+"% ("+L("cada ~","every ~")+(C.intervalMin==null?"?":C.intervalMin)+" min)":"\u2014"],
-      [L("Huecos >20 min","Gaps >20 min"), C.gaps],
-      [L("Estampas en mismo minuto","Same-minute marks"), C.dups],
-      rv.length?[L("RSSI mediano","Median RSSI"), r1(median(C.rssi))+" dBm ("+L("peor ","worst ")+r1(Math.min.apply(null,rv))+")"]:null
-    ]);
-    para(C.tsQuality!=null&&C.tsQuality>=80?L("La base temporal es regular; el resto del an\u00e1lisis se apoya en datos confiables.","Time base is regular; the rest of the analysis rests on reliable data."):L("Conviene revisar la regularidad de las estampas antes de conclusiones finas.","Worth checking timestamp regularity before fine-grained conclusions."));
 
     /* 03 Operación — carga */
     sec(L("Operaci\u00f3n \u2014 perfil de carga","Operation \u2014 load profile"),320);
@@ -1448,18 +1250,6 @@ function pdfFull(){
       cv!=null?[L("Variabilidad (CV)","Variability (CV)"), r1(cv)+"%"]:null,
       kvv.length?[L("Carga m\u00e1xima","Peak load"), r1(Math.max.apply(null,kvv))+" kVA"]:null
     ]);
-
-    /* 04 Cargabilidad */
-    sec(L("Cargabilidad","Loading"));
-    const um=(C.kvaNom&&kvv.length)?Math.max.apply(null,kvv)/C.kvaNom*100:null;
-    const ov=C.kvaNom?C.kva.filter(x=>x!=null&&x>C.kvaNom).length*((C.intervalMin||5)/60):null;
-    figTable([
-      [L("Capacidad de placa","Nameplate"), C.kvaNom?C.kvaNom+" kVA":"\u2014"],
-      um!=null?[L("Carga m\u00e1x vs placa","Peak vs nameplate"), r1(um)+"%"]:null,
-      ov!=null?[L("Horas en sobrecarga","Overload hours"), r1(ov)+" h"]:null,
-      aging!=null?[L("Factor de envejecimiento","Aging factor"), "\u00d7"+aging.toFixed(1)]:null
-    ]);
-    para(um!=null&&um>=100?L("La carga supera la capacidad de placa; prioriza redimensionamiento o redistribuci\u00f3n.","Load exceeds nameplate; prioritize resizing or redistribution."):L("La carga se mantiene dentro de la capacidad de placa en el periodo.","Load stays within nameplate over the period."));
 
     /* 05 Día × hora */
     sec(L("Mapa d\u00eda \u00d7 hora","Day \u00d7 hour map"));
@@ -1516,20 +1306,6 @@ function pdfFull(){
     stTable([L("Par\u00e1metro","Parameter"),L("Valor","Value"),L("Estado","Status"),L("Hallazgo","Finding")],
       HR.F.map(f=>[_stripTags(f[0]),f[1],_statusWord(f[2]),_stripTags(f[3])]), i=>HR.F[i][2],2,
       {0:{cellWidth:150,fontStyle:"bold"},1:{cellWidth:72},2:{cellWidth:52}});
-
-    /* 10 Flota — nodos */
-    sec(L("Flota \u2014 comparaci\u00f3n de nodos","Fleet \u2014 node comparison"));
-    const names=ds.nodeNames||[];
-    if(names.length>1){
-      const rank=names.map(nm=>{const cc=computeNode(ds,nm,null);const kk=cc.kva.filter(x=>x!=null);const mx=kk.length?Math.max.apply(null,kk):null;return {nm,mx,pp:(cc.kvaNom&&mx!=null)?mx/cc.kvaNom*100:null};}).sort((a,b)=>(b.mx==null?-1:b.mx)-(a.mx==null?-1:a.mx));
-      const bodyN=rank.map((r,i)=>[String(i+1),(r.nm===C.nodeName?"\u2022 ":"")+r.nm,r.mx!=null?r1(r.mx)+" kVA":"\u2014",r.pp!=null?r1(r.pp)+"%":"\u2014"]);
-      doc.autoTable({startY:y,head:[["#",L("Nodo","Node"),L("Pico kVA","Peak kVA"),L("% placa","% nameplate")]],body:bodyN,theme:"grid",
-        styles:{font:"helvetica",fontSize:8.5,cellPadding:3,textColor:PINK,lineColor:PLINE},
-        headStyles:{fillColor:PNAVY,textColor:[255,255,255],fontStyle:"bold"},columnStyles:{0:{cellWidth:28},3:{cellWidth:78}},
-        margin:{left:M,right:M,top:M+30},didDrawPage:()=>runHead(),
-        didParseCell:d=>{ if(d.section==="body"&&rank[d.row.index].nm===C.nodeName)d.cell.styles.fontStyle="bold"; }});
-      y=doc.lastAutoTable.finalY+12;
-    } else { para(L("\u00danico nodo en el conjunto de datos.","Single node in the dataset.")); }
 
     /* pie en todas las páginas (desde la 2) */
     pdfFooterAll(doc,M,2);
