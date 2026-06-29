@@ -1,28 +1,30 @@
 // api/sen-clasifica.js
 // Conector IA del analizador SEN (optimo-SEN): clasifica el "motivo" de una
-// limitación por contaminante y decreto. Mismo patrón que api/resumen-ia.js:
-// el secreto (ANTHROPIC_API_KEY) vive SOLO aquí; el front manda el código en
-// x-access-code. La clave NUNCA viaja al navegador.
+// limitación por contaminante y decreto. Plataforma de cara al cliente: el front
+// llama sin código; la clave (ANTHROPIC_API_KEY) vive SOLO aquí y el acceso se
+// restringe por ORIGEN (dominio), no por código visible.
 //
 // Variables de entorno (Vercel · Production):
-//   ANTHROPIC_API_KEY   -> tu API key de Anthropic (sk-ant-...)   [compartida con el resto del sitio]
-//   SEN_ACCESS_CODE     -> código que pide el front de optimo-SEN
+//   ANTHROPIC_API_KEY      -> tu API key de Anthropic (sk-ant-...)  [compartida con el sitio]
 // Opcional:
-//   IA_MODEL            -> override del modelo (default: claude-sonnet-4-6)
-
-import crypto from "node:crypto";
+//   SEN_ALLOWED_ORIGINS    -> lista separada por comas de orígenes permitidos
+//                             (ej. "https://griddata.cl,https://www.griddata.cl")
+//                             si no se define, el endpoint queda abierto.
+//   IA_MODEL               -> override del modelo (default: claude-sonnet-4-6)
 
 const MODEL = process.env.IA_MODEL || "claude-sonnet-4-6";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const CONTAMS = ["Temp. Agua de Mar", "NOx", "MP", "SO2", "COx", "Otros"];
 
-// Comparación en tiempo (casi) constante para el código de acceso.
-function codeOk(provided, expected) {
-  if (!expected) return false;
-  const a = Buffer.from(String(provided || ""), "utf8");
-  const b = Buffer.from(String(expected), "utf8");
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(a, b);
+// Restricción por origen: protege la clave sin exponer un código en el front.
+// Nota: Origin/Referer es falsificable por clientes que no son navegadores;
+// para blindaje fuerte, sumar rate-limit (Vercel WAF) sobre este endpoint.
+function originOk(req) {
+  const allow = (process.env.SEN_ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
+  if (!allow.length) return true; // sin configurar → abierto
+  const o = req.headers.origin || "";
+  const ref = req.headers.referer || "";
+  return allow.some(a => o === a || ref.startsWith(a));
 }
 
 async function readJson(req) {
@@ -79,23 +81,18 @@ async function classifyOne(apiKey, text) {
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "content-type, x-access-code");
+  res.setHeader("Access-Control-Allow-Headers", "content-type");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  // Health check (sin código): permite al front mostrar "backend activo".
   if (req.method === "GET") {
-    return res.status(200).json({ ok: true, service: "sen-clasifica", model: MODEL, needsCode: true });
+    return res.status(200).json({ ok: true, service: "sen-clasifica", model: MODEL });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  const accessCode = process.env.SEN_ACCESS_CODE;
-  if (!apiKey || !accessCode) return res.status(500).json({ error: "server_misconfigured" });
-
-  if (!codeOk(req.headers["x-access-code"], accessCode)) {
-    return res.status(401).json({ error: "invalid_access_code" });
-  }
+  if (!apiKey) return res.status(500).json({ error: "server_misconfigured" });
+  if (!originOk(req)) return res.status(403).json({ error: "forbidden_origin" });
 
   const body = await readJson(req);
   const items = Array.isArray(body.texts) ? body.texts : (body.text != null ? [body.text] : null);

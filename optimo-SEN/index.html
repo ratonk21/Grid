@@ -205,7 +205,7 @@
       <button class="tab active" data-v="panel"><span class="n">01</span>Panel</button>
       <button class="tab" data-v="catastro"><span class="n">02</span>Catastro</button>
       <button class="tab" data-v="eval"><span class="n">03</span>Evaluación diaria</button>
-      <button class="tab" data-v="datos"><span class="n">04</span>Datos &amp; conector IA</button>
+      <button class="tab" data-v="datos"><span class="n">04</span>Datos del SEN</button>
     </div>
   </div>
 </nav>
@@ -218,7 +218,7 @@
   <div class="card pad" id="emptyState" style="margin-bottom:16px;display:none">
     <p class="kicker">Motor listo</p>
     <h2 class="card-h">Aún no hay datos cargados</h2>
-    <p class="card-d" style="margin-bottom:0">Este es un motor de cálculo, no un informe precargado. Para empezar: ingresa limitaciones en <b style="color:var(--ubi-navy)">Catastro</b>, importa un CSV, corre una <b style="color:var(--ubi-navy)">Evaluación diaria</b>, o conéctate a la API del Coordinador en <b style="color:var(--ubi-navy)">Datos &amp; conector</b>. Los indicadores se calculan con lo que cargues.</p>
+    <p class="card-d" style="margin-bottom:0">Este es un motor de cálculo, no un informe precargado. Para empezar: ingresa limitaciones en <b style="color:var(--ubi-navy)">Catastro</b>, importa un CSV, corre una <b style="color:var(--ubi-navy)">Evaluación diaria</b>, o trae el costo marginal real desde <b style="color:var(--ubi-navy)">Datos del SEN</b>. Los indicadores se calculan con lo que cargues.</p>
   </div>
 
   <div class="row" style="margin-bottom:16px;align-items:flex-end">
@@ -371,118 +371,47 @@
 <!-- ====================== 04 DATOS & IA ====================== -->
 <section class="panel-view" id="v-datos">
   <div class="card pad">
-    <p class="kicker">¿Qué publica hoy el Coordinador?</p>
-    <h2 class="card-h">Fuentes en 2026 — con enlaces directos</h2>
-    <p class="card-d">La conclusión de tu memoria —“no existe un documento oficial estandarizado”— sigue siendo cierta para el motivo de la limitación, pero el resto ya es descargable por CSV y API. Cada fila enlaza a la fuente oficial.</p>
-    <div class="table-scroll">
-      <table style="min-width:720px"><thead><tr>
-        <th>Fuente</th><th>Hoy</th><th>Formato</th><th>Enlace oficial</th>
-      </tr></thead><tbody>
-        <tr><td>Informe de Novedades del CDC<br><span style="color:var(--fog);font-size:11px">Resumen Ejecutivo + Informe Diario (Art. 2-59 NTCO)</span></td><td><span class="flag pdf">Sigue PDF</span></td><td>PDF diario (máx 30 días)</td><td><a href="https://www.coordinador.cl/operacion/documentos/novedades-cdc/" target="_blank" rel="noopener">Novedades CDC ↗</a></td></tr>
-        <tr><td>Generación Real / Programada</td><td><span class="flag live">Estructurado</span></td><td>CSV + API</td><td><a href="https://www.coordinador.cl/operacion/graficos/operacion-real/generacion-real/" target="_blank" rel="noopener">Generación real ↗</a></td></tr>
-        <tr><td>Costo Marginal Real / Online</td><td><span class="flag live">Estructurado</span></td><td>CSV + API</td><td><a href="https://www.coordinador.cl/mercados/graficos/descarga-datos-costos-marginales/costo-marginal-preliminar-real/" target="_blank" rel="noopener">Descarga CMg ↗</a></td></tr>
-        <tr><td>API Pública SIP</td><td><span class="flag live">Nuevo desde 2018</span></td><td>REST · API Key</td><td><a href="https://portal.api.coordinador.cl/" target="_blank" rel="noopener">Portal desarrollador ↗</a> · <a href="https://portal.api.coordinador.cl/documentacion?service=sipubv2" target="_blank" rel="noopener">Docs ↗</a></td></tr>
-        <tr><td>Registro / clave SIP</td><td><span class="flag live">Gratuito</span></td><td>user_key</td><td><a href="https://sipub.coordinador.cl/" target="_blank" rel="noopener">Crear cuenta SIP ↗</a></td></tr>
-      </tbody></table>
-    </div>
-    <div class="note">Flujo de integración: <b>SIP API</b> trae Real, Programada y Costo Marginal (datos duros) → <b>IA</b> lee el motivo del Informe de Novedades y lo categoriza por contaminante (el dato que sigue sin estandarizar). Ambos conectores corren por serverless para no exponer claves.</div>
-  </div>
-
-  <!-- Estado de conexión -->
-  <div class="card pad" style="margin-top:16px">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <h2 class="card-h" style="margin:0">Estado de los conectores</h2>
-      <button class="btn sm ghost" id="pingBtn">Probar conexión</button>
-    </div>
-    <div class="row" style="margin-top:14px">
-      <div style="max-width:280px"><label class="fld" for="sen-code">Código de acceso</label><input id="sen-code" type="password" placeholder="SEN_ACCESS_CODE" autocomplete="off"></div>
-      <div style="flex:none;color:var(--ubi-gray2);font-size:12.5px;padding-bottom:10px">El mismo que configuras en Vercel. Se envía en <code>x-access-code</code>; nunca se guarda.</div>
-    </div>
-    <div class="grid g-2" style="margin-top:6px">
-      <div style="display:flex;align-items:center;gap:10px"><span class="conn-dot" id="dot-ai"></span><div><div style="color:var(--bone);font-weight:600">Conector IA <code style="font-family:'JetBrains Mono';font-size:11px;color:var(--fog)">/api/sen-clasifica</code></div><div id="st-ai" style="font-size:12.5px;color:var(--fog)">sin probar</div></div></div>
-      <div style="display:flex;align-items:center;gap:10px"><span class="conn-dot" id="dot-sip"></span><div><div style="color:var(--bone);font-weight:600">Conector SIP <code style="font-family:'JetBrains Mono';font-size:11px;color:var(--fog)">/api/sen-sip</code></div><div id="st-sip" style="font-size:12.5px;color:var(--fog)">sin probar</div></div></div>
-    </div>
+    <p class="kicker">Datos oficiales en vivo</p>
+    <h2 class="card-h">Conectado al Coordinador Eléctrico Nacional</h2>
+    <p class="card-d" style="margin-bottom:0">El costo marginal y la clasificación de las limitaciones se obtienen automáticamente desde fuentes oficiales del SEN. No necesitas configurar nada: consulta y usa los valores directo en tu análisis.</p>
   </div>
 
   <div class="grid g-2" style="margin-top:16px">
     <div class="card pad">
-      <p class="kicker">Conector IA</p>
-      <h2 class="card-h">Clasificador de motivo → contaminante</h2>
-      <p class="card-d">Pega el texto del motivo del Informe de Novedades. Devuelve contaminante, decreto, confianza y justificación. Usa el backend si está desplegado; si no, cae al clasificador local.</p>
-      <label class="fld" for="ai-text">Motivo de la limitación</label>
-      <textarea id="ai-text" placeholder="Ej: Limitada a un mínimo de 250 MW por trabamiento de lampos de control de VTF y por controles de emisiones SO2."></textarea>
-      <div class="row" style="margin-top:12px">
-        <div style="flex:none"><button class="btn primary" id="ai-go">Clasificar con IA</button></div>
-        <div style="flex:none"><button class="btn ghost sm" id="ai-local">Clasificar local (sin red)</button></div>
-      </div>
-      <div class="ai-result" id="ai-result"></div>
-    </div>
-
-    <div class="card pad">
-      <p class="kicker">Conector de datos SIP — en vivo</p>
-      <h2 class="card-h">Consulta a la API del Coordinador</h2>
-      <p class="card-d">Dos esquemas según tu plan: <b>Público</b> (user_key, recurso/versión) u <b>Operacional</b> (OAuth, ruta libre). Ajústalo según tu suscripción.</p>
+      <p class="kicker">Costo marginal del SEN</p>
+      <h2 class="card-h">Traer costo marginal real</h2>
+      <p class="card-d">Consulta el costo marginal real publicado por el Coordinador para valorizar la energía desviada. Filtra por barra si quieres una unidad específica.</p>
       <div class="row">
-        <div style="max-width:170px"><label class="fld">Modo</label>
-          <select id="sip-mode"><option value="public">Público · user_key</option><option value="op">Operacional · OAuth</option></select></div>
-      </div>
-      <div id="sip-public-fields">
-        <div class="row" style="margin-top:10px">
-          <div><label class="fld">Preset</label>
-            <select id="sip-preset">
-              <option value="">— elegir recurso —</option>
-              <option value="costo-marginal-real|v4|findByDate">Costo marginal real</option>
-              <option value="costo-marginal-online|v4|findByDate">Costo marginal online</option>
-              <option value="costo-marginal-programado|v3|findAll">Costo marginal programado</option>
-              <option value="generacion-real|v3|findByDate">Generación real</option>
-              <option value="generacion-programada|v3|findAll">Generación programada</option>
-              <option value="energia-no-suministrada|v4|findByDate">Energía no suministrada</option>
-              <option value="cotas-embalses-reales|v3|findAll">Cotas embalses reales</option>
-            </select>
-          </div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <div><label class="fld">Recurso</label><input id="sip-rec" value="costo-marginal-real"></div>
-          <div style="max-width:90px"><label class="fld">Versión</label><input id="sip-ver" value="v4"></div>
-          <div style="max-width:130px"><label class="fld">Método</label><input id="sip-met" value="findByDate"></div>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <div><label class="fld">Desde</label><input id="sip-from" type="date"></div>
-          <div><label class="fld">Hasta</label><input id="sip-to" type="date"></div>
-        </div>
-      </div>
-      <div id="sip-op-fields" class="hidden">
-        <div class="row" style="margin-top:10px">
-          <div><label class="fld">Ruta del servicio operacional</label><input id="sip-path" placeholder="client-supplier/findbyrut?rut=13016438-2"></div>
-        </div>
+        <div><label class="fld">Barra (opcional)</label><input id="sip-barra" placeholder="ej. QUILLOTA, ALTO MELIPILLA…"></div>
       </div>
       <div class="row" style="margin-top:10px">
+        <div><label class="fld">Desde</label><input id="sip-from" type="date"></div>
+        <div><label class="fld">Hasta</label><input id="sip-to" type="date"></div>
         <div style="flex:none"><button class="btn primary" id="sip-go">Consultar</button></div>
       </div>
       <div id="sip-out" class="ai-result"></div>
     </div>
+
+    <div class="card pad">
+      <p class="kicker">Clasificación inteligente</p>
+      <h2 class="card-h">Identificar el contaminante</h2>
+      <p class="card-d">Pega el motivo de una limitación (como aparece en el reporte de operación) y la plataforma identifica el contaminante y el decreto aplicable.</p>
+      <label class="fld" for="ai-text">Motivo de la limitación</label>
+      <textarea id="ai-text" placeholder="Ej: Limitada a un mínimo de 250 MW por control de emisiones de SO2."></textarea>
+      <div class="row" style="margin-top:12px">
+        <div style="flex:none"><button class="btn primary" id="ai-go">Identificar contaminante</button></div>
+        <div style="flex:none"><button class="btn ghost sm" id="ai-local">Sin conexión</button></div>
+      </div>
+      <div class="ai-result" id="ai-result"></div>
+    </div>
   </div>
 
-  <div class="grid g-2" style="margin-top:16px">
-    <div class="card pad">
-      <p class="kicker">Procesamiento por lote</p>
-      <h2 class="card-h">Reclasificar el catastro completo</h2>
-      <p class="card-d">Recorre todas las filas del catastro y reasigna el contaminante con IA. Útil tras importar un CSV crudo del Informe de Novedades.</p>
-      <button class="btn warn" id="ai-batch">Reclasificar catastro con IA</button>
-      <span id="ai-batch-status" style="margin-left:10px;font-size:13px;color:var(--fog)"></span>
-    </div>
-
-    <div class="card pad">
-      <p class="kicker">Publicación</p>
-      <h2 class="card-h">Dejarlo online</h2>
-      <p class="card-d">Este paquete está listo para Vercel + GitHub (tu flujo de griddata.cl). Tres pasos:</p>
-      <ol style="margin:0;padding-left:18px;color:var(--bone-dim);font-size:13.5px;line-height:1.8">
-        <li>Sube la carpeta a tu repo (o <code>vercel</code> desde la terminal).</li>
-        <li>En Vercel → Settings → Environment Variables, agrega <code>SEN_ACCESS_CODE</code>, <code>SIP_USER_KEY</code> y reutiliza <code>ANTHROPIC_API_KEY</code>.</li>
-        <li>Listo. Los conectores quedan en <code>/api/sen-clasifica</code> y <code>/api/sen-sip</code>.</li>
-      </ol>
-      <div class="note" style="margin-top:14px">El <b>README.md</b> incluido trae los comandos exactos. Sin claves la app igual funciona: cargas datos a mano o por CSV y clasificas en modo local.</div>
-    </div>
+  <div class="card pad" style="margin-top:16px">
+    <p class="kicker">Catastro completo</p>
+    <h2 class="card-h">Clasificar todas las limitaciones</h2>
+    <p class="card-d">Recorre tu catastro e identifica el contaminante de cada limitación automáticamente. Útil después de importar un listado del reporte de operación.</p>
+    <button class="btn warn" id="ai-batch">Clasificar catastro</button>
+    <span id="ai-batch-status" style="margin-left:10px;font-size:13px;color:var(--ubi-gray2)"></span>
   </div>
 </section>
 
@@ -930,20 +859,15 @@ Motivo: "${(text||"").replace(/"/g,"'")}"
 Responde SOLO con JSON, sin texto adicional ni markdown:
 {"cont":"<categoria>","dec":"<decreto>","conf":<0..1>,"why":"<una frase breve en español>"}`;
   }
-  // Código de acceso (se manda en x-access-code; no se persiste)
-  function senCode(){ const el=document.getElementById("sen-code"); return el?el.value.trim():""; }
-  function senHeaders(){ const hd={"Content-Type":"application/json"}; const c=senCode(); if(c) hd["x-access-code"]=c; return hd; }
-  function friendlyErr(code){ return ({invalid_access_code:"Código de acceso inválido.",server_misconfigured:"Falta configurar el backend (claves en Vercel).",missing_dates:"Indica el rango de fechas.",non_json_response:"El recurso/versión del SIP no es válido para tu plan.",upstream_error:"La fuente no respondió."})[code] || code; }
-  // Cadena de conectores: 1) serverless /api/sen-clasifica (producción)  2) Anthropic directo (preview en claude.ai)  3) lanza error → el caller cae a local
+  // Conectores (transparentes para el cliente; las claves viven en el servidor)
+  function senHeaders(){ return {"Content-Type":"application/json"}; }
+  function friendlyErr(code){ return ({missing_dates:"Indica el rango de fechas.",non_json_response:"No se pudo leer la respuesta del Coordinador en este momento.",upstream_error:"La fuente no respondió. Intenta nuevamente en unos minutos.",missing_user_key:"Servicio de datos no disponible temporalmente.",server_misconfigured:"Servicio no disponible temporalmente.",forbidden_origin:"Acceso no autorizado."})[code] || "No se pudo completar la consulta."; }
+  // Clasificación: 1) servicio del SEN  2) respaldo directo (previsualización)  3) clasificador local
   async function classifyAI(text){
-    // 1) backend serverless
     try{
       const r = await fetch("/api/sen-clasifica",{method:"POST",headers:senHeaders(),body:JSON.stringify({text})});
       if(r.ok){ return normalizeCls(await r.json()); }
-      if(r.status===401){ throw new Error("Código de acceso inválido"); }
-      if(r.status===500){ throw new Error("Backend sin claves configuradas"); }
-    }catch(e){ if(e && /Código|Backend/.test(e.message)) throw e; }
-    // 2) llamada directa (funciona dentro del preview de Claude, sin clave)
+    }catch(_){}
     const res = await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:300, messages:[{role:"user",content:aiPrompt(text)}] })
@@ -982,74 +906,36 @@ Responde SOLO con JSON, sin texto adicional ni markdown:
     $("#ai-batch-status").textContent = `Listo: ${done} filas clasificadas${fail?` (${fail} por respaldo local)`:""}.`;
   });
 
-  /* ---------------- Estado de conectores + SIP en vivo ---------------- */
-  function setDot(id, state, msg){ const d=$("#dot-"+id); d.className="conn-dot "+state; $("#st-"+id).textContent=msg; }
-  async function pingConnectors(){
-    setDot("ai","wait","probando…"); setDot("sip","wait","probando…");
-    // IA
-    try{
-      const r = await fetch("/api/sen-clasifica",{method:"GET"});
-      if(r.ok){ const d=await r.json(); setDot("ai","on","activo · modelo "+(d.model||"claude")); }
-      else throw 0;
-    }catch(_){ setDot("ai","off","backend no desplegado — usando modo local / preview"); }
-    // SIP
-    try{
-      const r = await fetch("/api/sen-sip?ping",{method:"GET"});
-      if(r.ok){ setDot("sip","on","activo · clave configurada en el servidor"); }
-      else { const d=await r.json().catch(()=>({})); setDot("sip","off", d.error||"backend sin SIP_USER_KEY"); }
-    }catch(_){ setDot("sip","off","backend no desplegado"); }
-  }
-  $("#pingBtn").addEventListener("click", pingConnectors);
-
-  // toggle de campos según modo
-  $("#sip-mode").addEventListener("change", ()=>{
-    const op = $("#sip-mode").value==="op";
-    $("#sip-public-fields").classList.toggle("hidden", op);
-    $("#sip-op-fields").classList.toggle("hidden", !op);
-  });
-  // preset → llena recurso/versión/método
-  $("#sip-preset").addEventListener("change", ()=>{
-    const v=$("#sip-preset").value; if(!v) return;
-    const [rec,ver,met]=v.split("|");
-    $("#sip-rec").value=rec; $("#sip-ver").value=ver; $("#sip-met").value=met;
-  });
-
+  /* ---------------- Costo marginal del SEN ---------------- */
   $("#sip-go").addEventListener("click", async ()=>{
     const out = $("#sip-out"); out.classList.add("show");
-    const mode = $("#sip-mode").value;
-    let url;
-    if(mode==="op"){
-      const path=$("#sip-path").value.trim();
-      if(!path){ out.innerHTML='<span style="color:var(--desv)">Indica la ruta del servicio operacional.</span>'; return; }
-      url=`/api/sen-sip?mode=op&path=${encodeURIComponent(path)}`;
-    } else {
-      const rec=$("#sip-rec").value.trim(), ver=$("#sip-ver").value.trim(), met=$("#sip-met").value.trim()||"findByDate";
-      const from=$("#sip-from").value, to=$("#sip-to").value;
-      if(!from||!to){ out.innerHTML='<span style="color:var(--desv)">Indica el rango de fechas.</span>'; return; }
-      url=`/api/sen-sip?recurso=${encodeURIComponent(rec)}&version=${encodeURIComponent(ver)}&metodo=${encodeURIComponent(met)}&startDate=${from}&endDate=${to}&page=0`;
-    }
-    out.innerHTML='<span class="spin"></span>Consultando la API del Coordinador…';
+    const barra=($("#sip-barra").value||"").trim().toUpperCase();
+    const from=$("#sip-from").value, to=$("#sip-to").value;
+    if(!from||!to){ out.innerHTML='<span style="color:var(--desv)">Indica el rango de fechas.</span>'; return; }
+    out.innerHTML='<span class="spin"></span>Consultando el costo marginal del SEN…';
     try{
+      const url=`/api/sen-sip?recurso=costo-marginal-real&version=v4&metodo=findByDate&startDate=${from}&endDate=${to}&page=0`;
       const r = await fetch(url,{headers:senHeaders()});
       const d = await r.json();
-      if(!r.ok){ out.innerHTML=`<span style="color:var(--desv)">${friendlyErr(d&&d.error)||("HTTP "+r.status)}</span>${d&&d.hint?`<div style="margin-top:6px;color:var(--fog);font-size:12px">${d.hint}</div>`:""}<div style="margin-top:8px;color:var(--fog);font-size:12px">En el preview (sin backend) verás esto; ya en Vercel con las claves, la consulta es real.</div>`; return; }
-      const results = d.results || d.data || (Array.isArray(d)?d:[]);
-      const count = d.count!=null?d.count:results.length;
-      const rate = d._meta && d._meta.rateRemaining;
-      let avg=null;
-      const vals = results.map(x=> x.cmg_usd_mwh ?? x.costo ?? x.valor ?? x.cmg ?? null).filter(v=>v!=null && !isNaN(+v)).map(Number);
-      if(vals.length) avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+      if(!r.ok){ out.innerHTML=`<span style="color:var(--desv)">${friendlyErr(d&&d.error)}</span>`; return; }
+      let results = d.results || d.data || (Array.isArray(d)?d:[]);
+      if(barra) results = results.filter(x=> String((x.barra_transf||"")+" "+(x.barra_info||"")).toUpperCase().includes(barra));
+      const num = v => (v!=null && !isNaN(+v)) ? Number(v) : null;
+      const valsUsd = results.map(x=> num(x.cmg_usd_mwh_ ?? x.cmg_usd_mwh)).filter(v=>v!=null);
+      const valsClp = results.map(x=> num(x.cmg_clp_kwh_ ?? x.cmg_clp_kwh)).filter(v=>v!=null);
+      const avg = valsUsd.length ? valsUsd.reduce((a,b)=>a+b,0)/valsUsd.length : null;
+      const avgClp = valsClp.length ? valsClp.reduce((a,b)=>a+b,0)/valsClp.length : null;
+      if(avg==null){ out.innerHTML=`<span style="color:var(--desv)">${barra?"No hay registros para esa barra en el rango.":"No hay datos de costo marginal en el rango."}</span>`; return; }
       out.innerHTML = `
         <div style="display:flex;gap:18px;flex-wrap:wrap">
-          <div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--fog)">REGISTROS</div><div style="font-family:Lato;font-size:22px;color:var(--bone)">${fmt(count)}</div></div>
-          ${avg!=null?`<div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--fog)">CMg PROMEDIO</div><div style="font-family:Lato;font-size:22px;color:var(--optimo)">${fmt(avg,1)} <span style="font-size:12px">USD/MWh</span></div></div>`:""}
-          ${rate?`<div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--fog)">RATE LIMIT</div><div style="font-family:Lato;font-size:22px;color:var(--bone)">${rate}</div></div>`:""}
+          <div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--ubi-gray2)">${barra?"BARRA":"PROMEDIO SISTEMA"}</div><div style="font-family:Lato;font-size:14px;color:var(--ubi-navy);font-weight:700">${barra||"Todas las barras"}</div></div>
+          <div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--ubi-gray2)">COSTO MARGINAL</div><div style="font-family:Lato;font-size:22px;color:var(--optimo);font-weight:700">${fmt(avg,1)} <span style="font-size:12px">USD/MWh</span></div></div>
+          ${avgClp!=null?`<div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--ubi-gray2)">≈ CLP/kWh</div><div style="font-family:Lato;font-size:22px;color:var(--ubi-navy);font-weight:700">${fmt(avgClp,1)}</div></div>`:""}
+          <div><div class="k-label" style="font-family:'JetBrains Mono';font-size:10px;color:var(--ubi-gray2)">REGISTROS</div><div style="font-family:Lato;font-size:22px;color:var(--ubi-navy);font-weight:700">${fmt(valsUsd.length)}</div></div>
         </div>
-        ${avg!=null?`<button class="btn sm primary" id="sip-apply" style="margin-top:12px">Usar ${fmt(avg,1)} como costo marginal en Evaluación</button>`:""}
-        <div style="margin-top:10px;font-size:11px;color:var(--fog)">Muestra de la respuesta cruda:</div>
-        <div class="endpoint" style="margin-top:4px;max-height:120px;white-space:pre-wrap">${JSON.stringify(results.slice(0,2),null,1).slice(0,600)||"(sin resultados)"}</div>`;
+        <button class="btn sm primary" id="sip-apply" style="margin-top:12px">Usar ${fmt(avg,1)} USD/MWh en la evaluación</button>`;
       const ap=$("#sip-apply"); if(ap) ap.addEventListener("click", ()=>{ $("#ev-cmg").value=avg.toFixed(1); computeEv(); ap.textContent="✓ Aplicado en Evaluación diaria"; });
-    }catch(e){ out.innerHTML=`<span style="color:var(--desv)">No se pudo consultar: ${e.message}</span>`; }
+    }catch(e){ out.innerHTML=`<span style="color:var(--desv)">No se pudo consultar el costo marginal. Intenta nuevamente.</span>`; }
   });
 
   /* ---------------- Init ---------------- */

@@ -28,7 +28,7 @@ ya sirve para los nuevos `.js`, y el sitio funciona zero-config. No agregues un
 | Variable | Estado | Para qué |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | **ya existe** (resumen-ia / bill) | se reutiliza para `sen-clasifica` |
-| `SEN_ACCESS_CODE` | agregar | gate de los dos conectores SEN |
+| `SEN_ALLOWED_ORIGINS` | agregar | restringe `/api/sen-*` a tu dominio (ej. https://griddata.cl) |
 | `SIP_USER_KEY` | agregar (modo público) | clave user_key de la API del Coordinador |
 | `SIP_CLIENT_ID` / `SIP_CLIENT_SECRET` | agregar (modo operacional) | OAuth client_credentials, si tu recurso requiere aprobación |
 | `SIP_OP_BASE` | agregar (modo operacional) | base del servicio operacional (p.ej. mercados.api.coordinador.cl) |
@@ -45,8 +45,7 @@ ya sirve para los nuevos `.js`, y el sitio funciona zero-config. No agregues un
 
 ## 4. Uso
 
-En la app → pestaña **Datos & conector**: escribe el `SEN_ACCESS_CODE`,
-pulsa **Probar conexión**. Si los puntos quedan verdes, ya puedes clasificar
+En la app → pestaña **Datos & conector**: pulsa **Probar conexión**. Si los puntos quedan verdes, ya puedes clasificar
 motivos con IA y consultar el costo marginal real del SIP.
 
 > Sin claves la app igual funciona: cargas datos a mano / por CSV y clasificas
