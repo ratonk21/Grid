@@ -226,7 +226,7 @@
   // Para el modo rápido por organismo, completá "organismos" con los prefijos
   // del CodigoExterno (los obtenés con «Descubrir organismos»).
   var CIUDADES = {
-    "Catemu":        { comuna:"Catemu",        region:"Región de Valparaíso", organismos:[] },
+    "Catemu":        { comuna:"Catemu",        region:"Región de Valparaíso", rut:"69.050.900-8", compradores:[], organismos:[] },
     "San Felipe":    { comuna:"San Felipe",    region:"Región de Valparaíso", organismos:[] },
     "Los Andes":     { comuna:"Los Andes",     region:"Región de Valparaíso", organismos:[] },
     "Llaillay":      { comuna:"Llaillay",      region:"Región de Valparaíso", organismos:[] },
@@ -242,14 +242,16 @@
   // ====== Helpers ========================================================
   var $ = function(id){ return document.getElementById(id); };
   var totalCalls = 0, current = [], sortKey = "fechaCierre", sortDir = 1;
+  var resolved = {}; // cache en memoria de RUT -> [codigos] resueltos esta sesión
 
   function ciudadActual(){
     var v = $("ciudad").value, c = CIUDADES[v] || {};
     if (c.custom){
       var nombre = ($("comunaCustom").value || "").trim();
-      return { nombre:nombre, comuna:nombre, region:"", organismos:[], custom:true };
+      return { nombre:nombre, comuna:nombre, region:"", rut:"", compradores:[], organismos:[], custom:true };
     }
-    return { nombre:v, comuna:c.comuna, region:c.region, organismos:c.organismos||[] };
+    var comp = (c.compradores && c.compradores.length) ? c.compradores : (resolved[v] || []);
+    return { nombre:v, comuna:c.comuna, region:c.region, rut:c.rut||"", compradores:comp, organismos:c.organismos||[] };
   }
 
   function setBanner(type, html){
@@ -341,8 +343,12 @@
   function buildURL(extra){
     var c = ciudadActual(), estado = $("estado").value, p = new URLSearchParams();
     p.set("estado", estado);
-    var usaOrganismo = c.organismos && c.organismos.length && !extra.forceComuna;
-    if(usaOrganismo){
+    var usaComprador = c.compradores && c.compradores.length && !extra.forceComuna;
+    var usaOrganismo = !usaComprador && c.organismos && c.organismos.length && !extra.forceComuna;
+    if(usaComprador){
+      p.set("modo","comprador"); p.set("organismos", c.compradores.join(","));
+      p.set("dias", extra.dias || $("dias").value);
+    }else if(usaOrganismo){
       p.set("modo","organismo"); p.set("organismos", c.organismos.join(","));
     }else{
       p.set("modo","comuna"); p.set("comuna", c.comuna);
@@ -350,7 +356,21 @@
       p.set("dias", extra.dias || $("dias").value);
     }
     if(extra.max) p.set("max", extra.max);
-    return { url: API_BASE+"?"+p.toString(), modo: usaOrganismo?"organismo":"comuna" };
+    var modo = usaComprador ? "comprador" : (usaOrganismo ? "organismo" : "comuna");
+    return { url: API_BASE+"?"+p.toString(), modo: modo };
+  }
+
+  // Resuelve el CodigoOrganismo de una ciudad a partir de su RUT (1 vez por sesión).
+  async function resolverComprador(c){
+    if(!c.rut || resolved[c.nombre]) return;
+    try{
+      var p = new URLSearchParams({ modo:"resolver", rut:c.rut, nombre:c.comuna });
+      var r = await fetch(API_BASE+"?"+p.toString());
+      var d = await r.json();
+      if(d.ok && d.compradores && d.compradores.length){
+        resolved[c.nombre] = d.compradores.map(function(x){ return x.codigo; });
+      }
+    }catch(e){ /* si falla, se cae a modo comuna */ }
   }
 
   async function consultar(extra){
@@ -360,8 +380,16 @@
       setBanner("warn","Escribí el nombre exacto de la comuna en el campo de la derecha."); return;
     }
     setBanner(null);
+    // Si la ciudad tiene RUT y aún no tiene código, resolverlo una vez.
+    if(!extra.forceComuna && c.rut && !(c.compradores && c.compradores.length)){
+      loading(true, "Resolviendo el organismo de "+escapeHTML(c.nombre)+"…");
+      await resolverComprador(c);
+      c = ciudadActual();
+    }
     var built = buildURL(extra);
-    loading(true, built.modo==="comuna" ? "Consultando y leyendo detalle por comuna…" : "Filtrando activas por organismo…");
+    var msg = built.modo==="comprador" ? "Buscando por organismo en Mercado Público…"
+            : (built.modo==="comuna" ? "Consultando y leyendo detalle por comuna…" : "Filtrando activas por organismo…");
+    loading(true, msg);
     try{
       var r = await fetch(built.url);
       var d = await r.json();
@@ -439,10 +467,17 @@
       var c = ciudadActual();
       $("customWrap").style.display = (CIUDADES[sel.value]||{}).custom ? "flex" : "none";
       $("cityTitle").textContent = c.nombre || "—";
+      var usaComp = c.compradores && c.compradores.length;
       var usaOrg = c.organismos && c.organismos.length;
-      $("modeHint").innerHTML = usaOrg
-        ? "Modo <b>rápido por organismo</b> activo (prefijos: <code>"+c.organismos.join("</code> <code>")+"</code>). Trae todas las activas con 1 llamada."
-        : "Modo <b>por comuna</b>: lee el detalle de cada licitación para filtrar. Usá «Descubrir organismos» una vez para pasar al modo rápido.";
+      if(usaComp){
+        $("modeHint").innerHTML = "Modo <b>por organismo</b> (CodigoOrganismo: <code>"+c.compradores.join("</code> <code>")+"</code>). Búsqueda precisa sobre los días elegidos.";
+      }else if(c.rut){
+        $("modeHint").innerHTML = "RUT del comprador: <code>"+escapeHTML(c.rut)+"</code>. Al buscar, se resuelve su código y se consulta por organismo (preciso).";
+      }else if(usaOrg){
+        $("modeHint").innerHTML = "Modo <b>rápido por organismo</b> (prefijos: <code>"+c.organismos.join("</code> <code>")+"</code>). Trae todas las activas con 1 llamada.";
+      }else{
+        $("modeHint").innerHTML = "Modo <b>por comuna</b>: lee el detalle de cada licitación para filtrar. Usá «Descubrir organismos» una vez para pasar al modo rápido.";
+      }
     }
     sel.addEventListener("change", syncCity);
     $("comunaCustom").addEventListener("input", function(){ $("cityTitle").textContent = $("comunaCustom").value || "—"; });
