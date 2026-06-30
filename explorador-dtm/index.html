@@ -114,6 +114,8 @@ td.ok{color:var(--ubi-darkgreen);font-weight:700}td.bad{color:var(--ubi-orange);
 .fchips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
 .fchip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--ubi-line);border-radius:20px;padding:6px 12px;font-size:12.5px;color:var(--ubi-deep)}
 .fchip b{color:var(--ubi-navy)}
+.fdel{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:3px;border:none;border-radius:50%;background:var(--ubi-line);color:var(--ubi-gray2);font-size:14px;line-height:1;cursor:pointer;padding:0;transition:.15s}
+.fdel:hover{background:var(--ubi-orange);color:#fff}
 .loadactions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 .heat{display:grid;gap:2px}.heatcell{aspect-ratio:1.6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(0,0,0,.45)}
 .heatlabels{display:flex;justify-content:space-between;font-size:10px;color:var(--ubi-gray2);margin-top:4px}
@@ -587,6 +589,35 @@ function buildPrimaryBar(){
   }).join("");
   pb.querySelectorAll(".ritem").forEach(b=>b.onclick=()=>renderTab(b.dataset.id));
 }
+/* ---- disponibilidad de datos por nodo, según la pestaña activa (punto en el selector) ---- */
+function nodeAvailC(name){
+  if(CUR.nodeCacheDs!==CUR.ds){CUR.nodeCache={};CUR.nodeCacheDs=CUR.ds;}
+  if(CUR.nodeCache&&CUR.nodeCache[name])return CUR.nodeCache[name];
+  const saved={freq:saneStats.freq,thd:saneStats.thd,temp:saneStats.temp,total:saneStats.total};
+  let C=null;try{C=computeNode(CUR.ds,name,null);}catch(e){C=null;}
+  saneStats=saved; // las evaluaciones de otros nodos no contaminan el conteo del nodo activo
+  CUR.nodeCache=CUR.nodeCache||{};CUR.nodeCache[name]=C;
+  return C;
+}
+function nodeHasData(C,tab){
+  if(!C)return false;
+  switch(tab){
+    case "itic": return (C.events||[]).filter(e=>e.dur!=null&&e.dur>0).length>0;
+    case "therm": return C.oilT.some(x=>x!=null);
+    case "pq": return C.phases.some(p=>(C.PF[p]||[]).some(x=>x!=null))||C.phases.some(p=>(C.VTHD[p]||[]).some(x=>x!=null))||C.phases.some(p=>(C.ITHD[p]||[]).some(x=>x!=null))||(C.events||[]).length>0||C.phases.length>0;
+    case "load": return C.kva.some(x=>x!=null)||C.phases.length>0;
+    default: return (C.n||0)>0||C.phases.length>0; // syn, integ, prof, cross, daily, nodes
+  }
+}
+function updateNodeAvail(){
+  const sel=document.getElementById("selNode"); if(!sel||!CUR.ds)return;
+  const tab=CUR.tab||"syn";
+  Array.prototype.forEach.call(sel.options,opt=>{
+    const name=opt.value; let has=true;
+    try{has=nodeHasData(nodeAvailC(name),tab);}catch(e){has=true;}
+    opt.textContent=(has?"🟢 ":"⚪ ")+name;
+  });
+}
 function renderTab(id){
   killCharts();
   const ai=areaOf(id);CUR.tab=id;
@@ -596,6 +627,7 @@ function renderTab(id){
   ({integ:tIntg,prof:tProf,load:tLoad,pq:tPQ,itic:tItic,cross:tCross,therm:tTherm,nodes:tNodes,syn:tSyn,daily:tDaily})[id](host,CUR.C);
   const s=GROUPS[ai];
   if(s.g){const t=s.tabs.find(x=>x.id===id)||s.tabs[0];host.insertAdjacentHTML("afterbegin",`<div class="crumb">${L(s.g.es,s.g.en)} <b>\u203a ${tabName(t)}</b></div>`);}
+  updateNodeAvail();
 }
 function box(title,sub,inner){return `<div class="card"><h3>${title}</h3>${sub?`<div class="sub">${sub}</div>`:""}${inner}</div>`;}
 function intro(t){return `<div class="intro">${t}</div>`;}
@@ -653,12 +685,13 @@ function tIntg(host,C){
 /* --- Perfiles 24h --- */
 function tProf(host,C){
   const vars=varsOf(C);
+  const nDays=new Set(C.ts.filter(Boolean).map(t=>t.toDateString())).size||(C.win?C.win.days:"?");
   host.innerHTML=
     ficha(L("¿A qué hora sube la demanda y cuánto?","When does demand rise, and by how much?"),L("Elegir la hora con margen para maniobras y la de riesgo de sobrecarga.","Pick the hour with headroom for switching and the one at overload risk."))
     +`<div class="localsel" id="pchips">${vars.map((v,i)=>`<button class="vchip${i===0?' on':''}" data-k="${v.key}">${v.label}</button>`).join("")}</div>`
     +`<div id="pdesc" class="howto" style="margin-bottom:14px"></div>`
-    +box(L("Perfil 24h","24h profile"),L("Mediana por hora del día. Con varias variables de distinta unidad, la segunda escala va a la derecha (eje secundario).","Median by hour of day. With several variables of different units, the second scale goes on the right (secondary axis)."),cb("c_prof","tall")+cap(L("La línea es la mediana por hora; la banda P10–P90 es la variación típica. Picos repetidos a la misma hora = patrón, no azar.","The line is the hourly median; the P10–P90 band is the typical spread. Peaks repeating at the same hour = a pattern, not chance.")))
-    +box(L("Laboral vs fin de semana","Weekday vs weekend"),L("Compara el patrón entre semana y el fin de semana — útil para saber si el activo descansa o no.","Compares the weekday and weekend pattern — useful to know whether the asset rests or not."),cb("c_lw"))
+    +box(L("Perfil 24h","24h profile"),L(`Perfil de operación: combina los ${nDays} días del periodo en un solo día típico — para cada hora se toma la mediana de todos los días. Con varias variables de distinta unidad, la segunda escala va a la derecha (eje secundario).`,`Operating profile: it combines the ${nDays} days of the period into a single typical day — for each hour it takes the median across all days. With several variables of different units, the second scale goes on the right (secondary axis).`),cb("c_prof","tall")+cap(L("La línea es la mediana por hora a lo largo de todos los días; la banda P10–P90 es la variación típica entre días. Un patrón que se repite a la misma hora no es azar.","The line is the hourly median across all days; the P10–P90 band is the typical day-to-day spread. A pattern that repeats at the same hour is not chance.")))
+    +box(L("Laboral vs fin de semana","Weekday vs weekend"),L("Compara el patrón entre semana y el fin de semana — útil para saber si el activo descansa o no.","Compares the weekday and weekend pattern — useful to know whether the asset rests or not."),cb("c_lw")+cap(L("Dos curvas: días hábiles vs fin de semana. Si el fin de semana baja, la carga sigue la actividad humana; si se mantiene plano, hay un consumo de base constante.","Two curves: weekdays vs weekend. If the weekend drops, load follows human activity; if it stays flat, there is a constant base consumption.")))
     +lagBox(C);
   const sel=()=>[...document.querySelectorAll("#pchips .vchip.on")].map(b=>vars.find(v=>v.key===b.dataset.k));
   const draw=()=>{
@@ -912,7 +945,7 @@ function tTherm(host,C){
     ficha(L("¿Cuánto sufre térmicamente el transformador y cómo evoluciona?","How much does the transformer suffer thermally, and how does it evolve?"),L("Pasar de mantenimiento correctivo a preventivo antes de que escale.","Move from corrective to preventive maintenance before it escalates."))
     +`<div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="num ${k.cls||''}">${k.num}</div><div class="lab">${k.lab}</div><div class="meta">${k.meta||''}</div></div>`).join("")}</div>`
     +box(L("Perfil 24h de temperatura","24h temperature profile"),L("Temperatura mediana con banda P10–P90; si hay presión, se superpone en la escala derecha para ver el ciclo térmico-mecánico diario.","Median temperature with P10–P90 band; if pressure exists, it overlays on the right scale to show the daily thermal-mechanical cycle."),cb("c_t","tall")+cap(L("La banda P10–P90 es la variación del día. Picos sostenidos sobre ~65 °C aceleran el envejecimiento del aislamiento.","The P10–P90 band is the day’s spread. Sustained peaks above ~65 °C accelerate insulation aging.")))
-    +box(L("Temperatura y presión en el tiempo","Temperature and pressure over time"),hasP?L("Ambas en un mismo gráfico (temperatura a la izquierda, presión a la derecha): permite correlacionar calor y presión para detectar anomalías combinadas.","Both on one chart (temperature left, pressure right): lets you correlate heat and pressure to detect combined anomalies."):L("Solo temperatura: la presión es constante o no se sensa en este nodo.","Temperature only: pressure is constant or not sensed on this node."),cb("c_tp"));
+    +box(L("Temperatura y presión en el tiempo","Temperature and pressure over time"),hasP?L("Ambas en un mismo gráfico (temperatura a la izquierda, presión a la derecha): permite correlacionar calor y presión para detectar anomalías combinadas.","Both on one chart (temperature left, pressure right): lets you correlate heat and pressure to detect combined anomalies."):L("Solo temperatura: la presión es constante o no se sensa en este nodo.","Temperature only: pressure is constant or not sensed on this node."),cb("c_tp")+cap(hasP?L("Temperatura (izquierda) y presión (derecha) en el tiempo. Si la presión sube junto con la temperatura, es el ciclo térmico normal; un desfase o un salto aislado merece revisión.","Temperature (left) and pressure (right) over time. If pressure rises together with temperature, it is the normal thermal cycle; a lag or an isolated jump deserves a look."):L("Serie de temperatura del aceite en el tiempo. Vigila tramos sostenidos por encima de lo habitual — son los que envejecen el aislamiento.","Oil temperature series over time. Watch for stretches sustained above the usual level — those are what age the insulation.")));
   const hl24=Array.from({length:24},(_,h)=>h+"h");
   const tprof=hourly(C.ts,C.oilT);
   if(hasP){
@@ -1049,7 +1082,7 @@ function isEventReport(headers){
   return low.some(h=>h.includes("ieee class")||h.includes("clase ieee"))||
          (low.some(h=>h.includes("highest value")||h.includes("valor más alto")||h.includes("lowest value")||h.includes("valor más bajo"))&&low.some(h=>h.includes("duration")||h.includes("duración")));
 }
-function parseEvents(rows,headers){
+function parseEvents(rows,headers,_src){
   const low=headers.map(h=>String(h||"").trim().toLowerCase());
   const col=(...cands)=>{for(const c of cands){const i=low.indexOf(c);if(i>-1)return headers[i];}for(const c of cands){const i=low.findIndex(h=>h.includes(c));if(i>-1)return headers[i];}return null;};
   const cNode=col("node name","nombre del nodo");
@@ -1076,7 +1109,7 @@ function parseEvents(rows,headers){
       if(mag==null)return;
       const magPct=pc.pct?num(row[pc.pct]):null; // % del nominal ya calculado por el DTM (preferido)
       if(ty==="—"){const ref=magPct!=null?magPct:(nom?mag/nom*100:null); ty=ref!=null?(ref>=100?"SWELL":"SAG"):"—";}
-      (EVENTS[node]=EVENTS[node]||[]).push({time,phase:"X"+(i+1),type:ty,mag,dur,nominal:nom,ieee,magPct});
+      (EVENTS[node]=EVENTS[node]||[]).push({time,phase:"X"+(i+1),type:ty,mag,dur,nominal:nom,ieee,magPct,_src});
     });
   }
 }
@@ -1376,7 +1409,7 @@ function tDaily(host,C){
       +box(L("Desbalance diario","Daily imbalance"),L("Desbalance máximo de tensión (izq.) y de corriente (der.) por día; escalas separadas porque sus rangos difieren.","Daily maximum voltage (left) and current (right) imbalance; separate scales because their ranges differ."),cb("d_imb","tall")+cap(L("Desbalance V sobre 2–3% o saltos de corriente marcan días a revisar.","V imbalance above 2–3% or current jumps flag days to review.")))
       +secondBox
     +`</div>`
-    +box(L("Estadísticas diarias","Daily statistics"),L("Promedio, máximo y mínimo por día. La tabla muestra un resumen; el CSV incluye todas las columnas por fase (V/I/FP avg-máx-mín, desbalances, kVA, térmica, %kVA, ΔP).","Average, maximum and minimum per day. The table shows a summary; the CSV includes every per-phase column (V/I/PF avg-max-min, imbalances, kVA, thermal, %kVA, ΔP)."),table+cap(L(`${rows.length} días · FP en valor absoluto · ${C.kvaNom?'%kVA calculado sobre '+C.kvaNom+' kVA de operación':'sin kVA de operación: %kVA no calculado'}.`,`${rows.length} days · PF in absolute value · ${C.kvaNom?'%kVA computed over '+C.kvaNom+' operating kVA':'no operating kVA: %kVA not computed'}.`)));
+    +box(L("Estadísticas diarias","Daily statistics"),L(`Cada fila es un día. Sobre todas las muestras de ese día (cada ~${C.intervalMin||2} min) se calculan el promedio (nivel típico del día), el máximo (el valor más alto del día) y el mínimo (el más bajo). La tabla muestra un resumen; el CSV incluye todas las columnas por fase (V/I/FP avg-máx-mín, desbalances, kVA, térmica, %kVA, ΔP).`,`Each row is one day. Over all that day's samples (every ~${C.intervalMin||2} min) it computes the average (the day's typical level), the maximum (the day's highest value) and the minimum (the lowest). The table shows a summary; the CSV includes every per-phase column (V/I/PF avg-max-min, imbalances, kVA, thermal, %kVA, ΔP).`),table+cap(L(`${rows.length} días analizados. El promedio es el nivel típico del día; máx y mín marcan sus extremos. FP en valor absoluto · ${C.kvaNom?'%kVA calculado sobre '+C.kvaNom+' kVA de operación':'sin kVA de operación: %kVA no calculado'}.`,`${rows.length} days analyzed. The average is the day's typical level; max and min mark its extremes. PF in absolute value · ${C.kvaNom?'%kVA computed over '+C.kvaNom+' operating kVA':'no operating kVA: %kVA not computed'}.`)));
   const b=document.getElementById("dlDaily");
   if(b)b.onclick=()=>downloadFile("estadisticas_diarias_"+C.nodeName+".csv",dailyCSV(C),"text/csv;charset=utf-8");
   const labels=rows.map(o=>o.day);
@@ -1410,6 +1443,7 @@ function tDaily(host,C){
 function tSyn(host,C){
   const HR=healthReport(C);
   const kvaVals=C.kva.filter(x=>x!=null);const nom=C.kvaNom;
+  const nDaysS=new Set(C.ts.filter(Boolean).map(t=>t.toDateString())).size||(C.win?C.win.days:"?");
   let util=null,cls="healthy";
   if(nom&&nom>0){util=Math.max(...kvaVals)/nom*100;cls=util>=100?"overload":util>=80?"tight":"healthy";}
   else cls="unknown";
@@ -1472,6 +1506,7 @@ function tSyn(host,C){
     `<div id="peritoOut"></div>`
     +intro(L("Una sola página que traduce la telemetría en decisiones: <b>capacidad disponible, cumplimiento de la energía, riesgos y dónde priorizar.</b> El detalle técnico está en las pestañas agrupadas que siguen.","A single page that turns telemetry into decisions: <b>available capacity, energy compliance, risks and where to prioritize.</b> The technical detail is in the grouped tabs that follow."))
     +stLegend()
+    +`<div class="note" style="margin:8px 0 14px;display:flex;gap:8px;align-items:flex-start"><span>📄</span><span>${L("El <b>Informe PDF</b> (botón arriba) consolida este resumen ejecutivo y el detalle de <b>todas las familias</b> —integridad, perfiles, cargabilidad, calidad, eventos ITIC, térmica y comparación de nodos— en un solo documento, con la descripción y el «cómo leerlo» de cada gráfico.","The <b>PDF report</b> (button above) consolidates this executive summary and the detail of <b>every family</b> —integrity, profiles, loadability, quality, ITIC events, thermal and node comparison— into a single document, with each chart's description and «how to read it».")}</span></div>`
     +`<div class="exec-screen">${genExecSummary(C,CUR.ds)}</div>`
     +`<div class="duo"><div class="card" style="border-left:5px solid ${clsCol}">
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--ubi-blue);text-transform:uppercase">${L("Resumen ejecutivo · Transformador","Executive summary · Transformer")}</div>
@@ -1484,6 +1519,10 @@ function tSyn(host,C){
     <div class="grid2">`
     +box(L("Perfil de carga 24h","24h load profile"),L("El día típico de demanda — dónde está el margen y dónde el riesgo.","The typical demand day — where the margin and the risk are."),cb("c_exec","tall")+cap(L("La curva es el día típico de carga; el punto más alto es la hora de mayor exigencia. Si toca la línea del kVA de operación, no queda margen a esa hora.","The curve is the typical load day; the highest point is the peak-demand hour. If it touches the operating kVA line, there is no margin at that hour.")))
     +box(L("Perfil de voltaje 24h","24h voltage profile"),L("Tensión entregada por hora; la banda muestra la variación intradía.","Delivered voltage by hour; the band shows intraday spread."),cb("c_execv","tall")+cap(L("La banda verde es el rango normativo ±5%; si la mediana sale de la banda, la tensión entregada no cumple a esa hora.","The green band is the ±5% regulatory range; if the median leaves the band, delivered voltage is out of spec at that hour.")))
+    +`</div>`
+    +`<div class="grid2">`
+    +box(L("Evolución diaria de carga","Daily load trend"),L(`Promedio diario de kVA en los ${nDaysS} días del periodo, con banda mín–máx${nom?" y la línea del kVA de operación":""}. Complementa el perfil 24h: aquí se ve la tendencia real día a día, no el día típico.`,`Daily average kVA across the ${nDaysS} days of the period, with a min–max band${nom?" and the operating kVA line":""}. It complements the 24h profile: here you see the real day-to-day trend, not the typical day.`),cb("c_trendkva","tall")+cap(L("Una pendiente sostenida hacia arriba = demanda creciente (anticipa saturación); plana = operación pareja. Una banda ancha señala días con picos marcados.","A sustained upward slope = growing demand (anticipates saturation); flat = steady operation. A wide band flags days with strong peaks.")))
+    +box(L("Evolución diaria de voltaje","Daily voltage trend"),L(`Tensión promedio por día con banda mín–máx y la línea nominal, sobre los ${nDaysS} días. Muestra si la calidad de entrega se mantiene a lo largo del periodo.`,`Daily average voltage with min–max band and the nominal line, across the ${nDaysS} days. Shows whether delivery quality holds over the period.`),cb("c_trendv","tall")+cap(L("Si la línea o la banda se alejan del nominal en ciertos días, hubo jornadas con tensión fuera de rango — crúzalo con los eventos.","If the line or band drifts from nominal on some days, those days had out-of-range voltage — cross-check with the events.")))
     +`</div>`
     +`<div class="subgrid">`
     +box(L("Estado por parámetro","Per-parameter status"),L("Cada variable del DTM2 con su estado y el hallazgo que sugiere — la base del informe de salud.","Each DTM2 variable with its status and the finding it suggests — the basis of the health report."),`<table class="data"><thead><tr><th>${L("Parámetro","Parameter")}</th><th>${L("Valor","Value")}</th><th>${L("Estado","Status")}</th><th>${L("Hallazgo","Finding")}</th></tr></thead><tbody>${HR.F.map(f=>`<tr><td>${f[0]}</td><td class="mono">${f[1]}</td><td class="${f[2]==="na"?"":f[2]}">${HR.stTxt[f[2]]}</td><td>${f[3]}</td></tr>`).join("")}</tbody></table>`
@@ -1499,6 +1538,27 @@ function tSyn(host,C){
   profileChart(document.getElementById("c_exec"),hL,hourly(C.ts,C.kva),cssv("--ubi-blue"),"kVA", nom?[hline(hL,nom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"))]:null);
   const vband=C.vnom?bandDS(hL,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.12)").concat([hline(hL,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]):null;
   profileChart(document.getElementById("c_execv"),hL,hourly(C.ts,C.V[C.phases[0]]),cssv("--ubi-darkgreen"),"V", vband);
+  /* evolución diaria: tendencia real día a día (complementa los perfiles 24h) */
+  try{
+    const DS=dailyStats(C), dl=DS.rows.map(o=>o.day);
+    if(dl.length){
+      const bandG=(pick,color)=>[
+        {label:"_max",data:DS.rows.map(o=>pick(o)&&pick(o).max),borderColor:"transparent",pointRadius:0,fill:"+1",backgroundColor:color,tension:.25,spanGaps:true},
+        {label:"_min",data:DS.rows.map(o=>pick(o)&&pick(o).min),borderColor:"transparent",pointRadius:0,fill:false,tension:.25,spanGaps:true}
+      ];
+      dailyTrendChart("c_trendkva",dl,
+        bandG(o=>o.kVA,"rgba(34,176,225,.12)")
+        .concat([{label:L("kVA prom","kVA avg"),data:DS.rows.map(o=>o.kVA&&o.kVA.avg),borderColor:cssv("--ubi-blue"),borderWidth:2,pointRadius:2,tension:.25,spanGaps:true}])
+        .concat(nom?[hline(dl,nom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"),[6,4])]:[]),
+        {x:xAxisCfg(),y:yAxisCfg("kVA")});
+      dailyTrendChart("c_trendv",dl,
+        (C.vnom?bandDS(dl,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.10)"):[])
+        .concat(bandG(o=>o.Vavg,"rgba(78,178,112,.14)"))
+        .concat([{label:L("V prom","V avg"),data:DS.rows.map(o=>o.Vavg&&o.Vavg.avg),borderColor:cssv("--ubi-darkgreen"),borderWidth:2,pointRadius:2,tension:.25,spanGaps:true}])
+        .concat(C.vnom?[hline(dl,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]:[]),
+        {x:xAxisCfg(),y:yAxisCfg("V")});
+    }
+  }catch(e){}
 }
 function nodeRows(ds){
   return ds.nodeNames.map(nm=>{
@@ -1572,46 +1632,99 @@ const _stripTags=h=>{const s=String(h==null?"":h).replace(/<[^>]+>/g,"");let out
     else if(c>=0x2190&&c<=0x22FF)out+="-";}
   return out.replace(/\s+/g," ").trim();};
 function chartPNG(id){const c=document.getElementById(id);try{return (c&&c.toDataURL)?c.toDataURL("image/png",1.0):null;}catch(e){return null;}}
+/* overlay de progreso mientras se arma el informe completo */
+function pdfOverlay(show,msg){
+  let o=document.getElementById("pdfOverlay");
+  if(show){
+    if(!o){o=document.createElement("div");o.id="pdfOverlay";o.style.cssText="position:fixed;inset:0;background:rgba(30,36,69,.55);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Lato,system-ui,sans-serif";o.innerHTML='<div id="pdfOverlayBox" style="background:#fff;padding:22px 32px;border-radius:12px;font-size:15px;color:#1E2445;font-weight:700;box-shadow:0 10px 40px rgba(0,0,0,.3)"></div>';document.body.appendChild(o);}
+    o.querySelector("#pdfOverlayBox").textContent="⏳ "+(msg||L("Generando informe…","Generating report…"));
+    o.style.display="flex";
+  } else if(o){o.style.display="none";}
+}
+/* captura genérica de un panel al PDF: fichas, KPIs, títulos, descripciones, gráficos, "cómo leerlo" y tablas */
+function pdfRenderPanel(doc,panel,W,H,M,y){
+  const ensureSpace=h=>{if(y+h>H-40){doc.addPage();y=M+10;}};
+  const para=(html,size,rgb,gap)=>{const t=_stripTags(html);if(!t)return;const lines=doc.splitTextToSize(t,W-M*2);ensureSpace(lines.length*(size+3)+(gap||0));doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(rgb[0],rgb[1],rgb[2]);doc.text(lines,M,y);y+=lines.length*(size+3)+(gap==null?6:gap);};
+  const doImg=png=>{if(!png)return;ensureSpace(160);y=addImageFit(doc,png,M,y,W-M*2,225)+10;};
+  const doKpis=el=>{const ks=Array.prototype.map.call(el.querySelectorAll(".kpi"),k=>{const num=_stripTags((k.querySelector(".num")||{}).textContent||"");const lab=_stripTags((k.querySelector(".lab")||{}).textContent||"");const meta=_stripTags((k.querySelector(".meta")||{}).textContent||"");return [lab,num+(meta?"  ("+meta+")":"")];}).filter(r=>r[0]||r[1]);if(!ks.length)return;ensureSpace(28);doc.autoTable({startY:y,body:ks,theme:"plain",styles:{font:"helvetica",fontSize:8.5,cellPadding:2,textColor:PINK},columnStyles:{0:{textColor:PGRAY,cellWidth:170},1:{fontStyle:"bold"}},margin:{left:M,right:M}});y=doc.lastAutoTable.finalY+10;};
+  const doTable=tb=>{const head=Array.prototype.map.call(tb.querySelectorAll("thead th"),th=>_stripTags(th.textContent));
+    const bodyR=Array.prototype.map.call(tb.querySelectorAll("tbody tr"),tr=>Array.prototype.map.call(tr.querySelectorAll("td"),td=>_stripTags(td.textContent)));
+    if(!bodyR.length)return;ensureSpace(38);
+    doc.autoTable({startY:y,head:head.length?[head]:undefined,body:bodyR,theme:"grid",styles:{font:"helvetica",fontSize:7.5,cellPadding:3,textColor:PINK,lineColor:PLINE},headStyles:{fillColor:PNAVY,textColor:[255,255,255]},margin:{left:M,right:M}});
+    y=doc.lastAutoTable.finalY+12;};
+  panel.querySelectorAll(".ficha .v,.intro").forEach(el=>para(el.innerHTML,9,PGRAY,8));
+  Array.prototype.forEach.call(panel.children,ch=>{if(ch.classList&&ch.classList.contains("kpis"))doKpis(ch);});
+  panel.querySelectorAll(".card").forEach(card=>{
+    const h=card.querySelector("h3"); if(h){ensureSpace(20);doc.setFont("helvetica","bold");doc.setFontSize(11.5);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);const ht=doc.splitTextToSize(_stripTags(h.textContent),W-M*2);doc.text(ht,M,y);y+=ht.length*13+2;}
+    const sub=card.querySelector(":scope > .sub"); if(sub)para(sub.innerHTML,8.5,PGRAY,5);
+    card.querySelectorAll(".kpis").forEach(doKpis);
+    card.querySelectorAll("canvas").forEach(cv=>doImg(chartPNG(cv.id)));
+    card.querySelectorAll(".howto").forEach(c=>para(c.innerHTML,8,[110,110,120],6));
+    card.querySelectorAll("table.data").forEach(doTable);
+  });
+  return y;
+}
 function pdfMeta(C){return [C.nodeName,(C.win?C.win.days+L(" d\u00edas"," days"):"?")+" \u00b7 "+C.n.toLocaleString()+" "+L("reg","rec"),L("nominal","nominal")+" "+(C.vnom||"?")+" V"+(C.kvaNom?" / "+C.kvaNom+" kVA":""),new Date().toLocaleDateString()];}
 function addImageFit(doc,png,x,y,maxW,maxH){if(!png)return y;let p;try{p=doc.getImageProperties(png);}catch(e){return y;}const r=p.width/p.height;let w=maxW,h=w/r;if(h>maxH){h=maxH;w=h*r;}doc.addImage(png,"PNG",x,y,w,h);return y+h;}
+function pdfFullBuild(doc,C,W,H,M){
+  pdfCover(doc,C.nodeName,pdfMeta(C).slice(1));
+  let y=pdfHeader(doc,W,M,L("Resumen ejecutivo","Executive summary"),L("Comportamiento integral del transformador","Overall transformer behavior"),[C.nodeName,new Date().toLocaleDateString()]);
+  const HR=healthReport(C);
+  const rows=execRows(C,CUR.ds);
+  doc.autoTable({startY:y,head:[[L("\u00c1rea","Area"),L("Estado","Status"),L("Hallazgo","Finding")]],
+    body:rows.map(r=>[r[0],_statusWord(r[1]),_stripTags(r[2])]),theme:"grid",
+    styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:PINK,lineColor:PLINE},
+    headStyles:{fillColor:PNAVY,textColor:[255,255,255],fontStyle:"bold"},
+    columnStyles:{0:{cellWidth:96,fontStyle:"bold"},1:{cellWidth:64}},
+    didParseCell:d=>{if(d.section==="body"&&d.column.index===1){d.cell.styles.textColor=_statusRGB(rows[d.row.index][1]);d.cell.styles.fontStyle="bold";}},margin:{left:M,right:M}});
+  y=doc.lastAutoTable.finalY+18;
+  if(y>H-150){doc.addPage();y=M+10;}
+  doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Estado por par\u00e1metro","Per-parameter status"),M,y);y+=6;
+  doc.autoTable({startY:y,head:[[L("Par\u00e1metro","Parameter"),L("Valor","Value"),L("Estado","Status"),L("Hallazgo","Finding")]],
+    body:HR.F.map(f=>[_stripTags(f[0]),f[1],_statusWord(f[2]),_stripTags(f[3])]),theme:"grid",
+    styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:PINK,lineColor:PLINE},
+    headStyles:{fillColor:PNAVY,textColor:[255,255,255],fontStyle:"bold"},
+    columnStyles:{0:{cellWidth:150,fontStyle:"bold"},1:{cellWidth:72},2:{cellWidth:52}},
+    didParseCell:d=>{if(d.section==="body"&&d.column.index===2){d.cell.styles.textColor=_statusRGB(HR.F[d.row.index][2]);d.cell.styles.fontStyle="bold";}},margin:{left:M,right:M}});
+  y=doc.lastAutoTable.finalY+16;
+  const block=(titulo,arr)=>{if(y>H-80){doc.addPage();y=M+10;}
+    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(titulo,M,y);y+=14;
+    doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(PINK[0],PINK[1],PINK[2]);
+    (arr||[]).forEach(it=>{const lines=doc.splitTextToSize("\u2022 "+_stripTags(it),W-M*2);if(y+lines.length*12>H-40){doc.addPage();y=M+10;}doc.text(lines,M,y);y+=lines.length*12+4;});y+=8;};
+  block(L("Conclusiones","Conclusions"),HR.concl);
+  block(L("Recomendaciones","Recommendations"),HR.recs);
+  doc.addPage();let gy=pdfHeader(doc,W,M,L("Perfiles clave 24h","Key 24h profiles"),"",[C.nodeName,new Date().toLocaleDateString()]);
+  const g1=chartPNG("c_exec"),g2=chartPNG("c_execv");
+  if(g1){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Perfil de carga 24h","24h load profile"),M,gy);gy+=8;gy=addImageFit(doc,g1,M,gy,W-M*2,240)+18;}
+  if(g2){if(gy>H-200){doc.addPage();gy=M+10;}doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Perfil de voltaje 24h","24h voltage profile"),M,gy);gy+=8;gy=addImageFit(doc,g2,M,gy,W-M*2,240);}
+  /* ---- Detalle por familia: recorre todas las pestañas y captura su contenido ---- */
+  const order=["integ","prof","load","cross","daily","pq","itic","therm","nodes"];
+  order.forEach(tabId=>{
+    try{renderTab(tabId);}catch(e){return;}
+    const panel=document.getElementById("p_"+tabId); if(!panel)return;
+    doc.addPage();
+    const ai=areaOf(tabId),g=GROUPS[ai].g,tab=GROUPS[ai].tabs.find(t=>t.id===tabId);
+    const title=g?L(g.es,g.en)+" \u203a "+tabName(tab):tabName(tab);
+    let yy=pdfHeader(doc,W,M,title,L("Detalle por familia","Detail by family"),[C.nodeName,new Date().toLocaleDateString()]);
+    pdfRenderPanel(doc,panel,W,H,M,yy);
+  });
+  pdfFooterAll(doc,M,2);
+}
 function pdfFull(){
-  ensurePdfLibs(()=>{ try{
-    if(CUR.tab!=="syn")renderTab("syn");
-    const C=CUR.C;const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"pt",format:"a4"});
-    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
-    pdfCover(doc,C.nodeName,pdfMeta(C).slice(1));
-    let y=pdfHeader(doc,W,M,L("Resumen ejecutivo","Executive summary"),L("Todas las familias","All families"),[C.nodeName,new Date().toLocaleDateString()]);
-    const rows=execRows(C,CUR.ds);
-    doc.autoTable({startY:y,head:[[L("\u00c1rea","Area"),L("Estado","Status"),L("Hallazgo","Finding")]],
-      body:rows.map(r=>[r[0],_statusWord(r[1]),_stripTags(r[2])]),theme:"grid",
-      styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:PINK,lineColor:PLINE},
-      headStyles:{fillColor:PNAVY,textColor:[255,255,255],fontStyle:"bold"},
-      columnStyles:{0:{cellWidth:96,fontStyle:"bold"},1:{cellWidth:64}},
-      didParseCell:d=>{if(d.section==="body"&&d.column.index===1){d.cell.styles.textColor=_statusRGB(rows[d.row.index][1]);d.cell.styles.fontStyle="bold";}},margin:{left:M,right:M}});
-    y=doc.lastAutoTable.finalY+18;
-    const HR=healthReport(C);
-    if(y>H-150){doc.addPage();y=M+10;}
-    doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Estado por par\u00e1metro","Per-parameter status"),M,y);y+=6;
-    doc.autoTable({startY:y,head:[[L("Par\u00e1metro","Parameter"),L("Valor","Value"),L("Estado","Status"),L("Hallazgo","Finding")]],
-      body:HR.F.map(f=>[_stripTags(f[0]),f[1],_statusWord(f[2]),_stripTags(f[3])]),theme:"grid",
-      styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:PINK,lineColor:PLINE},
-      headStyles:{fillColor:PNAVY,textColor:[255,255,255],fontStyle:"bold"},
-      columnStyles:{0:{cellWidth:150,fontStyle:"bold"},1:{cellWidth:72},2:{cellWidth:52}},
-      didParseCell:d=>{if(d.section==="body"&&d.column.index===2){d.cell.styles.textColor=_statusRGB(HR.F[d.row.index][2]);d.cell.styles.fontStyle="bold";}},margin:{left:M,right:M}});
-    y=doc.lastAutoTable.finalY+16;
-    const block=(titulo,arr)=>{if(y>H-80){doc.addPage();y=M+10;}
-      doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(titulo,M,y);y+=14;
-      doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(PINK[0],PINK[1],PINK[2]);
-      (arr||[]).forEach(it=>{const lines=doc.splitTextToSize("\u2022 "+_stripTags(it),W-M*2);if(y+lines.length*12>H-40){doc.addPage();y=M+10;}doc.text(lines,M,y);y+=lines.length*12+4;});y+=8;};
-    block(L("Conclusiones","Conclusions"),HR.concl);
-    block(L("Recomendaciones","Recommendations"),HR.recs);
-    doc.addPage();let gy=pdfHeader(doc,W,M,L("Perfiles clave 24h","Key 24h profiles"),"",[C.nodeName,new Date().toLocaleDateString()]);
-    const g1=chartPNG("c_exec"),g2=chartPNG("c_execv");
-    if(g1){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Perfil de carga 24h","24h load profile"),M,gy);gy+=8;gy=addImageFit(doc,g1,M,gy,W-M*2,240)+18;}
-    if(g2){if(gy>H-200){doc.addPage();gy=M+10;}doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Perfil de voltaje 24h","24h voltage profile"),M,gy);gy+=8;gy=addImageFit(doc,g2,M,gy,W-M*2,240);}
-    pdfFooterAll(doc,M,2);
-    doc.save("informe-dtm-"+C.nodeName+".pdf");
-  }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);} });
+  ensurePdfLibs(()=>{
+    const prevTab=CUR.tab||"syn";
+    pdfOverlay(true,L("Generando informe ejecutivo\u2026","Generating executive report\u2026"));
+    setTimeout(()=>{
+      try{
+        if(CUR.tab!=="syn")renderTab("syn");
+        const C=CUR.C;const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"pt",format:"a4"});
+        const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
+        pdfFullBuild(doc,C,W,H,M);
+        doc.save("informe-ejecutivo-dtm-"+C.nodeName+".pdf");
+      }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);}
+      finally{ try{renderTab(prevTab);}catch(_){} pdfOverlay(false); }
+    },60);
+  });
 }
 function pdfTab(){
   ensurePdfLibs(()=>{ try{
@@ -1621,18 +1734,7 @@ function pdfTab(){
     const ai=areaOf(id),g=GROUPS[ai].g,tab=GROUPS[ai].tabs.find(t=>t.id===id);
     const title=g?L(g.es,g.en)+" \u203a "+tabName(tab):L("Informe","Report");
     let y=pdfHeader(doc,W,M,title,L("Explorador DTM","DTM Explorer"),pdfMeta(C));
-    const ensureSpace=h=>{if(y+h>H-40){doc.addPage();y=M+10;}};
-    const doImg=png=>{if(!png)return;ensureSpace(150);y=addImageFit(doc,png,M,y,W-M*2,240)+14;};
-    const doTable=tb=>{const head=[...tb.querySelectorAll("thead th")].map(th=>_stripTags(th.textContent));
-      const bodyR=[...tb.querySelectorAll("tbody tr")].map(tr=>[...tr.querySelectorAll("td")].map(td=>_stripTags(td.textContent)));
-      if(!bodyR.length)return;ensureSpace(40);
-      doc.autoTable({startY:y,head:head.length?[head]:undefined,body:bodyR,theme:"grid",styles:{font:"helvetica",fontSize:8,cellPadding:3,textColor:PINK,lineColor:PLINE},headStyles:{fillColor:PNAVY,textColor:[255,255,255]},margin:{left:M,right:M}});
-      y=doc.lastAutoTable.finalY+14;};
-    panel.querySelectorAll(".ficha .v,.intro").forEach(el=>{const lines=doc.splitTextToSize(_stripTags(el.innerHTML),W-M*2);ensureSpace(lines.length*11+6);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(PGRAY[0],PGRAY[1],PGRAY[2]);doc.text(lines,M,y);y+=lines.length*11+8;});
-    panel.querySelectorAll(".card").forEach(card=>{const h=card.querySelector("h3");
-      if(h){ensureSpace(22);doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(_stripTags(h.textContent),M,y);y+=14;}
-      card.querySelectorAll("canvas").forEach(cv=>doImg(chartPNG(cv.id)));
-      card.querySelectorAll("table.data").forEach(doTable);});
+    pdfRenderPanel(doc,panel,W,H,M,y);
     pdfFooterAll(doc,M);
     doc.save("dtm-"+id+"-"+C.nodeName+".pdf");
   }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);} });
@@ -1670,7 +1772,7 @@ function reopenLoader(){
 function onDataset(){
   CUR.ds=DATASETS[+document.getElementById("selDataset").value];
   syncLang();
-  document.getElementById("selNode").innerHTML=CUR.ds.nodeNames.map(n=>`<option>${n}</option>`).join("");
+  document.getElementById("selNode").innerHTML=CUR.ds.nodeNames.map(n=>`<option value="${n}">${n}</option>`).join("");
   onNode();
 }
 /* placeholder informativo del kVA de operación: muestra el valor del archivo si existe,
@@ -1712,6 +1814,7 @@ function applyI18n(){
   set("loadNoteB","Según la disponibilidad de cada uno, sus datos se completan automáticamente en las secciones donde se utilizan (telemetría, calidad de energía y eventos).","Depending on the availability of each one, their data is filled automatically into the sections where it is used (telemetry, power quality and events).");
   set("lblDataset","Dataset","Dataset");
   set("lblNode","Nodo","Node");
+  {const sn=document.getElementById("selNode"); if(sn)sn.title=L("🟢 el nodo tiene datos para esta sección · ⚪ sin datos en esta sección","🟢 node has data for this section · ⚪ no data in this section");}
   set("lblKva","kVA de operación","Operating kVA");
   set("reloadTxt","Cargar más archivos","Load more files");
   set("pdfTabTxt","PDF de esta pestaña","This tab as PDF");
@@ -1733,26 +1836,37 @@ function ingest(files){
       const rows=res.data.filter(r=>r&&Object.keys(r).length>3);
       const headers=res.meta.fields||Object.keys(rows[0]||{});
       if(rows.length&&headers.length){
-        if(isEventReport(headers)){const b=evCount();parseEvents(rows,headers);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"ev",n:evCount()-b});}
+        if(isEventReport(headers)){const b=evCount();parseEvents(rows,headers,f.name);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"ev",n:evCount()-b});}
         else {const ds=buildDataset(rows,headers,f.name);DATASETS.push(ds);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"tel",n:ds.nodeNames.length});}
       }
       if(--pending===0)afterIngest();
     }});
   });
 }
-function afterIngest(){ renderLoaded(); if(DATASETS.length) buildUI(); }
+function afterIngest(){ renderLoaded(); }
 function renderLoaded(){
   const el=document.getElementById("loaded"); if(!el)return;
   if(!loadedMeta.length){el.innerHTML="";return;}
   const tel=loadedMeta.filter(m=>m.type==="tel"), ev=loadedMeta.filter(m=>m.type==="ev");
-  const chips=loadedMeta.map(m=>`<span class="fchip">${m.type==="tel"?"📊":"⚡"} ${m.name} <b>${m.type==="tel"?m.n+" "+L("nodo(s)","node(s)"):m.n+" "+L("eventos","events")}</b></span>`).join("");
+  const chips=loadedMeta.map(m=>`<span class="fchip">${m.type==="tel"?"📊":"⚡"} ${m.name} <b>${m.type==="tel"?m.n+" "+L("nodo(s)","node(s)"):m.n+" "+L("eventos","events")}</b> <button class="fdel" data-name="${String(m.name).replace(/"/g,"&quot;")}" title="${L("Quitar","Remove")}" aria-label="${L("Quitar este archivo","Remove this file")}">×</button></span>`).join("");
   const warn=(!tel.length&&ev.length)?`<div class="note">${L("Agregaste eventos pero falta telemetría — carga un CSV de transformador para abrir el análisis.","You added events but telemetry is missing — load a transformer CSV to open the analysis.")}</div>`:"";
+  const review=tel.length?`<div class="note" style="text-align:center">${L("Revisa que estén todos los archivos que querías (puedes quitar con ✕) y pulsa <b>Ir al análisis</b> cuando estés listo.","Check that all the files you wanted are here (remove with ✕), then press <b>Go to analysis</b> when ready.")}</div>`:"";
   const actions=`<div class="loadactions">`
     +(DATASETS.length?`<button class="btn" id="goAnalyze" style="background:var(--ubi-blue);color:#fff;border-color:var(--ubi-blue)">→ ${L("Ir al análisis","Go to analysis")}</button>`:"")
     +`<button class="btn" id="startover">↺ ${L("Empezar de nuevo","Start over")}</button></div>`;
-  el.innerHTML=`<div class="fchips">${chips}</div>${warn}${actions}`;
+  el.innerHTML=`<div class="fchips">${chips}</div>${warn}${review}${actions}`;
   const go=document.getElementById("goAnalyze"); if(go)go.onclick=()=>{if(DATASETS.length)buildUI();};
   const so=document.getElementById("startover"); if(so)so.onclick=clearAll;
+  el.querySelectorAll(".fdel").forEach(b=>b.onclick=ev=>{ev.stopPropagation();removeFile(b.dataset.name);});
+}
+function removeFile(name){
+  if(!name)return;
+  const m=loadedMeta.find(x=>x.name===name); if(!m)return;
+  if(m.type==="tel"){const i=DATASETS.findIndex(d=>d.fname===name); if(i>=0)DATASETS.splice(i,1);}
+  else {for(const k in EVENTS){EVENTS[k]=EVENTS[k].filter(e=>e._src!==name); if(!EVENTS[k].length)delete EVENTS[k];}}
+  LOADED=LOADED.filter(n=>n!==name);
+  loadedMeta=loadedMeta.filter(x=>x.name!==name);
+  renderLoaded();
 }
 function clearAll(){DATASETS=[];EVENTS={};LOADED=[];loadedMeta=[];CUR={};const fi=document.getElementById("file");if(fi)fi.value="";renderLoaded();}
 const drop=document.getElementById("drop"),fileInput=document.getElementById("file");

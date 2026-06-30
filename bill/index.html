@@ -65,6 +65,12 @@ input,select{font-family:inherit}
 .btn.danger{background:#FDECE4;color:#9c3206;border:1px solid #f6c4ab}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap}
 .btn-row .btn{flex:1;min-width:150px}
+/* Fix: base de .btn-ico fuera de cualquier @media. Antes solo existía dentro de
+   @media (max-width:820px), así que en viewports más anchos el SVG caía al
+   fill:black por defecto del navegador y los íconos multi-forma (cámara, clip)
+   se veían como manchas negras sólidas. Los bloques @media de abajo solo
+   ajustan tamaño/grosor por breakpoint; el trazo base queda garantizado siempre. */
+.btn-ico{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 #lock{position:fixed;inset:0;background:var(--ubi-navy);z-index:50;display:flex;align-items:center;
   justify-content:center;padding:24px;flex-direction:column}
