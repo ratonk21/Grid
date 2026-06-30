@@ -137,7 +137,7 @@ tr.rowflag td{background:rgba(234,86,27,.07)}
 .fclear{cursor:pointer;border:1px solid var(--ubi-orange)!important;color:var(--ubi-orange);font-weight:700}
 .fclear:hover{background:var(--ubi-orange);color:#fff}
 .loadactions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
-.heat{display:grid;gap:2px}.heatcell{aspect-ratio:1.6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(0,0,0,.45)}
+.heat{display:grid;gap:2px;max-width:820px}.heatcell{aspect-ratio:2.3;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(0,0,0,.45)}
 .heatlabels{display:flex;justify-content:space-between;font-size:10px;color:var(--ubi-gray2);margin-top:4px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ubi-deep);margin-top:8px}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
@@ -308,6 +308,9 @@ const num=v=>{const n=parseFloat(v);return isFinite(n)?n:null;};
 function pct(a,p){const s=a.filter(x=>x!=null).slice().sort((x,y)=>x-y);if(!s.length)return null;const i=(s.length-1)*p/100,lo=Math.floor(i),hi=Math.ceil(i);return lo===hi?s[lo]:s[lo]+(s[hi]-s[lo])*(i-lo);}
 const mean=a=>{const f=a.filter(x=>x!=null);return f.length?f.reduce((s,x)=>s+x,0)/f.length:null;};
 const median=a=>pct(a,50);
+/* rango del eje ajustado a un set de valores (medianas) con ~18% de holgura — para el toggle
+   "ajustar a la mediana" cuando las bandas P10–P90 dejan la mediana aplastada */
+function medFitRange(meds){const a=meds.filter(x=>x!=null);if(!a.length)return null;let lo=Math.min(...a),hi=Math.max(...a);if(lo===hi){const d=Math.abs(lo)*0.1||1;return{min:lo-d,max:hi+d};}const pad=(hi-lo)*0.18;return{min:lo-pad,max:hi+pad};}
 const r1=x=>x==null?null:Math.round(x*10)/10;
 const r2=x=>x==null?null:Math.round(x*100)/100;
 function parseTS(s){if(!s)return null;s=String(s).trim();
@@ -340,6 +343,7 @@ function resolve(headers){
 /* ---- construir un dataset desde filas+header ---- */
 let DATASETS=[]; // {label, lang, nodes:{name:{rows...}}, nodeNames[]}
 let EVENTS={}; // {nodeName:[{time,phase,type,mag,dur,nominal,ieee}]}
+let PWR={}; // {nodeName:[{time,kind:"LOSS"|"RESTORED",_src}]} — eventos de energía (Power Status)
 let LOADED=[]; let loadedMeta=[]; // archivos cargados (dedupe + resumen)
 function buildDataset(rows,headers,fname){
   const map=resolve(headers);
@@ -413,7 +417,7 @@ function computeNode(ds,nodeName,userKva){
   if(deltas.length){modal=median(deltas);for(const d of deltas){intervals++;if(d>=modal*0.5&&d<=modal*1.5)inRange++;else if(d>modal*3)gaps++;}}
   const win=valid.length?{from:valid[0],to:valid[valid.length-1],days:Math.max(1,Math.round((valid[valid.length-1]-valid[0])/864e5))}:null;
 
-  return {rows,ts,phases,vnom,kvaNom,V,I,PF,FREQ,VTHD,ITHD,ENE,HC,PKW,kva,imb,imbVser,imbIser,oilT,oilP,press,rssi,events:(EVENTS[nodeName]||[]),
+  return {rows,ts,phases,vnom,kvaNom,V,I,PF,FREQ,VTHD,ITHD,ENE,HC,PKW,kva,imb,imbVser,imbIser,oilT,oilP,press,rssi,events:(EVENTS[nodeName]||[]),powerEvents:(PWR[nodeName]||[]),
     tsQuality:intervals?r1(inRange/intervals*100):null,gaps,dups,intervals,intervalMin:modal?r1(modal):null,win,
     nodeName,n:rows.length};
 }
@@ -511,6 +515,16 @@ let CH=[]; // charts vivos
 function killCharts(){CH.forEach(c=>{try{c.destroy();}catch(e){}});CH=[];}
 const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function mkChart(ctx,cfg){const c=new Chart(ctx,cfg);CH.push(c);return c;}
+/* ---- leyenda "solo": clic aísla esa serie (oculta el resto); clic de nuevo
+   sobre la única visible restaura todas. Pensado para gráficos con muchas
+   líneas (p. ej. comparación de nodos) donde el toggle uno-por-uno por defecto
+   de Chart.js es lento para aislar un par de series entre 8-12. ---- */
+function soloLegendClick(e,legendItem,legend){
+  const ci=legend.chart;const idx=legendItem.datasetIndex;const total=ci.data.datasets.length;
+  const visible=[];for(let i=0;i<total;i++)if(ci.isDatasetVisible(i))visible.push(i);
+  const onlyThis=visible.length===1&&visible[0]===idx;
+  for(let i=0;i<total;i++){ if(onlyThis||idx===i) ci.show(i); else ci.hide(i); }
+}
 function baseOpts(extra){
   extra=extra||{};
   const o=Object.assign({responsive:true,maintainAspectRatio:false,animation:false,
@@ -544,7 +558,7 @@ function axisPlan(selVars){
   return buckets;
 }
 
-function profileChart(ctx,labels,prof,color,unit,extras){
+function profileChart(ctx,labels,prof,color,unit,extras,fitMed){
   const ds=[
     {label:"Máx",data:prof.map(p=>p.max),borderWidth:0,pointRadius:0,backgroundColor:"rgba(34,176,225,.08)",fill:"+1",tension:.3},
     {label:"Mín",data:prof.map(p=>p.min),borderWidth:0,pointRadius:0,fill:false,tension:.3},
@@ -554,9 +568,10 @@ function profileChart(ctx,labels,prof,color,unit,extras){
   ];
   if(extras)extras.forEach(e=>ds.push(e));
   const hide=["Máx","Mín","P90","P10","_lo","_hi"];
+  const yax=yAxisCfg(unit); if(fitMed){const r=medFitRange(prof.map(p=>p.med));if(r){yax.min=r.min;yax.max=r.max;}}
   return mkChart(ctx,{type:"line",data:{labels,datasets:ds},options:baseOpts({
     interaction:{mode:"index",intersect:false},
-    scales:{x:xAxisCfg(),y:yAxisCfg(unit)},
+    scales:{x:xAxisCfg(),y:yax},
     plugins:{legend:{labels:{filter:i=>!hide.includes(i.text),font:{family:"Lato",size:11}}},
       tooltip:{filter:i=>!hide.includes(i.dataset.label),
         callbacks:{
@@ -631,7 +646,7 @@ function nodeAvailC(name){
 function nodeHasData(C,tab){
   if(!C)return false;
   switch(tab){
-    case "itic": return (C.events||[]).filter(e=>e.dur!=null&&e.dur>0).length>0;
+    case "itic": return (C.events||[]).filter(e=>e.dur!=null&&e.dur>0).length>0||(C.powerEvents||[]).length>0;
     case "therm": return C.oilT.some(x=>x!=null);
     case "pq": return C.phases.some(p=>(C.PF[p]||[]).some(x=>x!=null))||C.phases.some(p=>(C.VTHD[p]||[]).some(x=>x!=null))||C.phases.some(p=>(C.ITHD[p]||[]).some(x=>x!=null))||(C.events||[]).length>0||C.phases.length>0;
     case "load": return C.kva.some(x=>x!=null)||C.phases.length>0;
@@ -712,12 +727,14 @@ function tIntg(host,C){
 
 /* --- Distribución --- */
 /* --- Perfiles 24h --- */
+let profFitMedian=false; // toggle del usuario: ajustar el eje del Perfil 24h a la mediana
 function tProf(host,C){
   const vars=varsOf(C);
   const nDays=new Set(C.ts.filter(Boolean).map(t=>t.toDateString())).size||(C.win?C.win.days:"?");
   host.innerHTML=
     ficha(L("¿A qué hora sube la demanda y cuánto?","When does demand rise, and by how much?"),L("Elegir la hora con margen para maniobras y la de riesgo de sobrecarga.","Pick the hour with headroom for switching and the one at overload risk."))
     +`<div class="localsel" id="pchips">${vars.map((v,i)=>`<button class="vchip${i===0?' on':''}" data-k="${v.key}">${v.label}</button>`).join("")}</div>`
+    +`<label class="fitmed" style="display:inline-flex;gap:7px;align-items:center;font-size:12px;color:var(--ubi-deep);font-weight:700;cursor:pointer;margin-bottom:12px"><input type="checkbox" id="profFit" ${profFitMedian?"checked":""} style="cursor:pointer">${L("Ajustar eje a la mediana","Fit axis to median")}<span style="font-weight:400;color:var(--ubi-gray2)">${L("(acota la escala cuando las bandas aplastan la línea)","(tightens the scale when the bands flatten the line)")}</span></label>`
     +`<div id="pdesc" class="howto" style="margin-bottom:14px"></div>`
     +box(L("Perfil 24h","24h profile"),L(`Perfil de operación: combina los ${nDays} días del periodo en un solo día típico — para cada hora se toma la mediana de todos los días. Con varias variables de distinta unidad, la segunda escala va a la derecha (eje secundario).`,`Operating profile: it combines the ${nDays} days of the period into a single typical day — for each hour it takes the median across all days. With several variables of different units, the second scale goes on the right (secondary axis).`),cb("c_prof","tall")+cap(L("La línea es la mediana por hora a lo largo de todos los días; la banda P10–P90 es la variación típica entre días. Un patrón que se repite a la misma hora no es azar.","The line is the hourly median across all days; the P10–P90 band is the typical day-to-day spread. A pattern that repeats at the same hour is not chance.")))
     +box(L("Laboral vs fin de semana","Weekday vs weekend"),L("Compara el patrón entre semana y el fin de semana — útil para saber si el activo descansa o no.","Compares the weekday and weekend pattern — useful to know whether the asset rests or not."),cb("c_lw")+cap(L("Dos curvas: días hábiles vs fin de semana. Si el fin de semana baja, la carga sigue la actividad humana; si se mantiene plano, hay un consumo de base constante.","Two curves: weekdays vs weekend. If the weekend drops, load follows human activity; if it stays flat, there is a constant base consumption.")))
@@ -734,20 +751,35 @@ function tProf(host,C){
       const v0=S[0];let extras=null;
       if(v0.key==="kva"&&C.kvaNom)extras=[hline(labels,C.kvaNom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"))];
       else if(v0.key.charAt(0)==="V"&&v0.key.charAt(1)!=="T"&&C.vnom)extras=bandDS(labels,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.12)").concat([hline(labels,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]);
-      profileChart(document.getElementById("c_prof"),labels,hourly(C.ts,v0.data),cssv("--ubi-blue"),v0.unit,extras);
+      profileChart(document.getElementById("c_prof"),labels,hourly(C.ts,v0.data),cssv("--ubi-blue"),v0.unit,extras,profFitMedian);
     }
     else{
       const buckets=axisPlan(S);
       const PRIM=buckets[0], SEC=buckets.slice(1);
       const inPrim=v=>PRIM.vars.indexOf(v)>=0;
       const titleOf=bk=> bk.vars.length===1 ? (bk.vars[0].label+(bk.unit?" ("+bk.unit+")":"")) : (bk.unit|| bk.vars.map(v=>v.label).join(" / "));
-      const dsets=S.map((v,k)=>({label:v.label+(v.unit?" ("+v.unit+")":""),data:hourly(C.ts,v.data).map(p=>p.med),borderColor:PAL[k%PAL.length],borderWidth:2,pointRadius:0,tension:.3,yAxisID:inPrim(v)?"y":"y1"}));
+      // perfil por serie (una sola vez): mediana + P10/P90 por hora
+      const series=S.map((v,k)=>({v,k,color:PAL[k%PAL.length],axis:inPrim(v)?"y":"y1",prof:hourly(C.ts,v.data)}));
+      const dsets=[];
+      // bandas P10–P90 primero (debajo), tenues, en el color de cada serie — anclan la escala
+      // a la variación real y evitan que el eje colapse cuando la mediana es baja (p. ej. corriente
+      // típica ~1 A con picos altos), que antes magnificaba diferencias de medio ampere
+      series.forEach(s=>{const hi=dsets.length;
+        dsets.push({label:"_hi"+s.k,data:s.prof.map(p=>p.p90),borderWidth:0,pointRadius:0,backgroundColor:hexA(s.color,0.10),fill:hi+1,tension:.3,yAxisID:s.axis});
+        dsets.push({label:"_lo"+s.k,data:s.prof.map(p=>p.p10),borderWidth:0,pointRadius:0,fill:false,tension:.3,yAxisID:s.axis});
+      });
+      // medianas encima
+      series.forEach(s=>dsets.push({label:s.v.label+(s.v.unit?" ("+s.v.unit+")":""),data:s.prof.map(p=>p.med),borderColor:s.color,borderWidth:2,pointRadius:0,tension:.3,yAxisID:s.axis,unit:s.v.unit||""}));
       const sc={x:xAxisCfg(),y:yAxisCfg(titleOf(PRIM),"left")};
       if(SEC.length){
         const secTitle = SEC.length===1?titleOf(SEC[0]):[...new Set(SEC.map(b=>b.unit||b.vars.map(v=>v.label).join("/")))].join(" · ");
         sc.y1=yAxisCfg(secTitle,"right");
       }
-      mkChart(document.getElementById("c_prof"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({interaction:{mode:"index",intersect:false},scales:sc,plugins:{legend:{labels:{font:{size:10}}},tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>{const u=(S[i.datasetIndex]&&S[i.datasetIndex].unit)||"";return `${i.dataset.label}: ${r1(i.parsed.y)}${u?" "+u:""}`;}}}}})});
+      if(profFitMedian){
+        const rp=medFitRange(series.filter(s=>s.axis==="y").flatMap(s=>s.prof.map(p=>p.med)));if(rp){sc.y.min=rp.min;sc.y.max=rp.max;}
+        if(sc.y1){const rs=medFitRange(series.filter(s=>s.axis==="y1").flatMap(s=>s.prof.map(p=>p.med)));if(rs){sc.y1.min=rs.min;sc.y1.max=rs.max;}}
+      }
+      mkChart(document.getElementById("c_prof"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({interaction:{mode:"index",intersect:false},scales:sc,plugins:{legend:{labels:{font:{size:10},filter:i=>!String(i.text).startsWith("_")}},tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>{const u=i.dataset.unit||"";return `${i.dataset.label}: ${r1(i.parsed.y)}${u?" "+u:""}`;}}}}})});
     }
     const v=S[0];const wk=Array.from({length:24},()=>[]),we=Array.from({length:24},()=>[]);
     for(let i=0;i<C.ts.length;i++){const t=C.ts[i];if(!t||v.data[i]==null)continue;(t.getDay()===0||t.getDay()===6?we:wk)[t.getHours()].push(v.data[i]);}
@@ -757,6 +789,7 @@ function tProf(host,C){
     ]},options:baseOpts({interaction:{mode:"index",intersect:false},plugins:{tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>`${i.dataset.label}: ${r1(i.parsed.y)}${v.unit?" "+v.unit:""}`}}}})});
   };
   document.querySelectorAll("#pchips .vchip").forEach(b=>b.onclick=()=>{b.classList.toggle("on");draw();});
+  {const pf=document.getElementById("profFit");if(pf)pf.onchange=e=>{profFitMedian=e.target.checked;draw();};}
   draw();
 }
 
@@ -1030,7 +1063,7 @@ function tNodes(host,C){
   host.innerHTML=
     ficha(L("Entre todos los transformadores del dataset, ¿cuál reviso primero?","Among all transformers in the dataset, which one do I review first?"),L("Priorizar dónde intervenir primero, de un vistazo, en vez de nodo por nodo.","Prioritize where to act first, at a glance, instead of node by node."))
     +box(L("Comparación de nodos · ","Node comparison · ")+dsLabel(ds),L("Todos los nodos del dataset, lado a lado — registros, calidad de datos, carga, cargabilidad y desbalance. Ingresa el kVA de operación de cada nodo aquí mismo para comparar cargabilidad real entre todos. 🔴 marca y sube los nodos con estampas poco confiables (<80% OK) o desbalance >5%; entre el resto, ordena de mayor a menor cargabilidad.","All dataset nodes, side by side — records, data quality, load, loading % and imbalance. Enter each node's operating kVA right here to compare real loading across all of them. 🔴 flags and ranks up nodes with unreliable timestamps (<80% OK) or imbalance >5%; among the rest, sorts by highest loading first."),`<div style="overflow:auto"><table class="data"><thead><tr><th>${L("Nodo","Node")}</th><th>${L("Registros","Records")}</th><th>${L("Estampas OK","Timestamps OK")}</th><th>kVA ${L("máx","max")}</th><th>kVA ${L("oper.","oper.")}</th><th>${L("Cargabilidad","Loading")}</th><th>${L("Desbalance V","V imbalance")}</th><th>${L("Fases","Phases")}</th></tr></thead><tbody>${rows}</tbody></table></div>`)
-    +box(L("Perfil de carga por nodo","Load profile per node"),L("kVA mediano por hora del día — small multiples. Permite comparar el patrón de consumo de cada transformador de un vistazo.","Median kVA by hour of day — small multiples. Compares each transformer's consumption pattern at a glance."),cb("c_sm","tall")+cap(L("Cada línea es un transformador; las que se despegan hacia arriba son las más cargadas — revísalas primero.","Each line is a transformer; those rising above the rest are the most loaded — review them first.")));
+    +box(L("Perfil de carga por nodo","Load profile per node"),L("kVA mediano por hora del día — small multiples. Permite comparar el patrón de consumo de cada transformador de un vistazo.","Median kVA by hour of day — small multiples. Compares each transformer's consumption pattern at a glance."),cb("c_sm","tall")+cap(L("Cada línea es un transformador; las que se despegan hacia arriba son las más cargadas — revísalas primero. Haz clic en un nodo de la leyenda para aislarlo entre las demás; vuelve a hacer clic para mostrar todos otra vez.","Each line is a transformer; those rising above the rest are the most loaded — review them first. Click a node in the legend to isolate it from the rest; click it again to show all once more.")));
   host.querySelectorAll(".nodeKva").forEach(inp=>{
     inp.onchange=()=>{
       const nm=inp.dataset.node,v=inp.value;
@@ -1044,7 +1077,7 @@ function tNodes(host,C){
   const labels=Array.from({length:24},(_,h)=>h+"h");
   const palette=[cssv("--x1"),cssv("--x2"),cssv("--x3"),cssv("--ubi-gold"),cssv("--ubi-violet")||"#59509D",cssv("--ubi-darkgreen"),cssv("--ubi-orange"),cssv("--ubi-royal")||"#3466AF"];
   const dsets=names.slice(0,12).map((nm,k)=>{const cc=computeNode(ds,nm,num(manualKva[nm]));return {label:nm,data:hourly(cc.ts,cc.kva).map(p=>p.med),borderColor:palette[k%palette.length],borderWidth:1.6,pointRadius:0,tension:.3};});
-  mkChart(document.getElementById("c_sm"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({plugins:{legend:{labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${r1(i.parsed.y)} kVA`}}}})});
+  mkChart(document.getElementById("c_sm"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({plugins:{legend:{labels:{font:{size:10},boxWidth:10},onClick:soloLegendClick},tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${r1(i.parsed.y)} kVA`}}}})});
 }
 
 /* --- 9 Red --- */
@@ -1185,7 +1218,40 @@ function parseEvents(rows,headers,_src){
     });
   }
 }
-/* envolventes ITIC/CBEMA reales (duración en s, magnitud en % nominal) */
+/* ===== Eventos de energía (Power Status: Loss / Restored) ===== */
+function isPowerReport(headers,rows){
+  const low=headers.map(h=>String(h||"").toLowerCase());
+  const hasTmpl=low.some(h=>h.includes("template name")||h.includes("nombre de plantilla")||h.includes("plantilla"));
+  const hasVal=low.some(h=>h==="value"||h==="valor");
+  if(!(hasTmpl||hasVal))return false;
+  // confirmar por contenido: alguna fila con template "Power Status" o valor Loss/Restored
+  const idxT=low.findIndex(h=>h.includes("template name")||h.includes("plantilla"));
+  const idxV=low.findIndex(h=>h==="value"||h==="valor");
+  const tn=idxT>-1?headers[idxT]:null, vn=idxV>-1?headers[idxV]:null;
+  return (rows||[]).slice(0,20).some(r=>{
+    const tv=tn?String(r[tn]||"").toLowerCase():"";
+    const vv=vn?String(r[vn]||"").toLowerCase():"";
+    return tv.includes("power status")||tv.includes("estado de energía")||["loss","restored","pérdida","restaurado","restaurada"].includes(vv);
+  });
+}
+function parsePower(rows,headers,_src){
+  const low=headers.map(h=>String(h||"").trim().toLowerCase());
+  const col=(...cands)=>{for(const c of cands){const i=low.indexOf(c);if(i>-1)return headers[i];}for(const c of cands){const i=low.findIndex(h=>h.includes(c));if(i>-1)return headers[i];}return null;};
+  const cNode=col("node name","nombre del nodo");
+  const cTime=col("subpanel time","fecha","date","utc time");
+  const cVal=col("value","valor");
+  for(const row of rows){
+    const node=cNode?String(row[cNode]||"—"):"—";
+    const v=(cVal?String(row[cVal]||""):"").toLowerCase();
+    let kind=null;
+    if(v.includes("restored")||v.includes("restaur"))kind="RESTORED";
+    else if(v.includes("loss")||v.includes("pérdida")||v.includes("perdida"))kind="LOSS";
+    if(!kind)continue;
+    const time=cTime?parseTS(row[cTime]):null;
+    (PWR[node]=PWR[node]||[]).push({time,kind,_src});
+  }
+}
+
 const ITIC_PROH={x:[1e-6,1e-3,1e-3,3e-3,3e-3,20e-3,20e-3,0.5,0.5,10,10,100,1000],y:[500,500,200,200,140,140,120,120,110,110,110,110,110]};
 const ITIC_FREE={x:[20e-3,20e-3,0.5,0.5,10,10,100,1000],y:[0,70,70,80,80,90,90,90]};
 let iticUnit="s", iticFreq=60;
@@ -1204,7 +1270,8 @@ function wireIticDrag(){
 function tItic(host,C){
   wireIticDrag();
   const raw=(C.events||[]).filter(e=>e.dur!=null&&e.dur>0);
-  if(!raw.length){host.innerHTML=intro(L("Los eventos reales de calidad (sag/swell) se cargan desde el CSV de <b>reporte de eventos</b> del DTM, no desde la telemetría.","Real power-quality events (sag/swell) load from the DTM <b>event report</b> CSV, not from telemetry."))+emptyState(L("Carga el CSV de eventos (reporte) para ubicarlos sobre la curva ITIC/CBEMA. Este nodo no tiene eventos registrados.","Load the event report CSV to plot events on the ITIC/CBEMA curve. This node has no recorded events."));return;}
+  const pwr=(C.powerEvents||[]);
+  if(!raw.length&&!pwr.length){host.innerHTML=intro(L("Los eventos reales de calidad (sag/swell) y de energía (corte/restauración) se cargan desde los CSV de <b>reporte de eventos</b> del DTM, no desde la telemetría.","Real power-quality (sag/swell) and power (loss/restored) events load from the DTM <b>event report</b> CSVs, not from telemetry."))+emptyState(L("Carga los CSV de eventos (reporte) para ubicarlos sobre la curva ITIC/CBEMA. Este nodo no tiene eventos registrados.","Load the event report CSVs to plot events on the ITIC/CBEMA curve. This node has no recorded events."));return;}
   const pts=raw.map(e=>{const nom=e.nominal||C.vnom||120;const magPct=e.magPct!=null?e.magPct:e.mag/nom*100;const durS=toSec(e.dur,iticUnit,iticFreq);let type=e.type;if(type==="—")type=magPct>=100?"SWELL":"SAG";return {x:durS,y:r1(magPct),zone:iticClass(durS,magPct),type,phase:e.phase,time:e.time,ieee:e.ieee};});
   const shown=pts.filter(inSel);           // conjunto seleccionado en el mapa (o todo)
   const D=shown.length?shown:(iticSel?[]:pts);
@@ -1215,10 +1282,11 @@ function tItic(host,C){
   const ztd={prohibited:"bad",normal:"mid",free:"ok"};
   const kpis=[
     {num:pts.length,lab:L("Eventos","Events"),meta:L("sag + swell","sag + swell")},
-    {num:Zf.prohibited,lab:zname.prohibited,cls:Zf.prohibited>0?"warn":"ok",meta:r1(Zf.prohibited/pts.length*100)+"% "+L("del total","of total")},
+    {num:Zf.prohibited,lab:zname.prohibited,cls:Zf.prohibited>0?"warn":"ok",meta:r1(Zf.prohibited/Math.max(pts.length,1)*100)+"% "+L("del total","of total")},
     {num:swellF,lab:"Swell △",cls:swellF>0?"mid":"ok",meta:L("sobre-tensión","over-voltage")},
     {num:sagF,lab:"Sag ▽",cls:sagF>0?"mid":"ok",meta:L("hueco de tensión","voltage dip")}
   ];
+  if(pwr.length){const nL=pwr.filter(e=>e.kind==="LOSS").length,nR=pwr.filter(e=>e.kind==="RESTORED").length;kpis.push({num:nL+nR,lab:L("Eventos de energía","Power events"),cls:nL>0?"warn":"ok",meta:nL+" "+L("corte","loss")+" · "+nR+" "+L("restaur.","restored")});}
   const unitSel=`<div class="card"><div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
     <div class="sel"><label>${L("Unidad de duración","Duration unit")}</label><br><select id="iticUnit" class="mono" style="padding:6px 10px">${[["s",L("Segundos","Seconds")],["ms",L("Milisegundos","Milliseconds")],["us",L("Microsegundos","Microseconds")],["cycles",L("Ciclos","Cycles")],["auto",L("Auto","Auto")]].map(([v,t])=>`<option value="${v}" ${v===iticUnit?"selected":""}>${t}</option>`).join("")}</select></div>
     <div class="sel"><label>${L("Frecuencia de red","Grid frequency")}</label><br><select id="iticFreq" class="mono" style="padding:6px 10px">${[50,60].map(f=>`<option value="${f}" ${f===iticFreq?"selected":""}>${f} Hz</option>`).join("")}</select></div>
@@ -1228,9 +1296,15 @@ function tItic(host,C){
   const H=Array.from({length:24},()=>({sag:0,swell:0}));
   D.forEach(p=>{if(p.time){const h=p.time.getHours();if(p.type==="SAG")H[h].sag++;else H[h].swell++;}});
   const totSag=H.reduce((a,h)=>a+h.sag,0),totSwell=H.reduce((a,h)=>a+h.swell,0);
-  const h24Table=`<div style="overflow:auto;max-height:360px"><table class="data"><thead><tr><th>${L("Hora","Hour")}</th><th>Sag ▽</th><th>Swell △</th><th>${L("Total","Total")}</th></tr></thead><tbody>`+
-    H.map((h,k)=>`<tr><td>${String(k).padStart(2,"0")}:00</td><td>${h.sag}</td><td>${h.swell}</td><td>${h.sag+h.swell}</td></tr>`).join("")
-    +`<tr style="font-weight:700;border-top:2px solid var(--ubi-line)"><td>${L("Total","Total")}</td><td>${totSag}</td><td>${totSwell}</td><td>${totSag+totSwell}</td></tr></tbody></table></div>`;
+  // ---- eventos de energía (Loss/Restored) por hora — del reporte Power Status, no del mapa ITIC ----
+  const PE=Array.from({length:24},()=>({loss:0,rest:0}));
+  pwr.forEach(e=>{if(e.time){const h=e.time.getHours();if(e.kind==="LOSS")PE[h].loss++;else if(e.kind==="RESTORED")PE[h].rest++;}});
+  const totLoss=PE.reduce((a,h)=>a+h.loss,0),totRest=PE.reduce((a,h)=>a+h.rest,0);
+  const hasPwr=totLoss+totRest>0;
+  const h24Table=`<div style="overflow:auto;max-height:360px"><table class="data"><thead><tr><th>${L("Hora","Hour")}</th><th>Sag ▽</th><th>Swell △</th>${hasPwr?`<th>${L("Corte","Loss")} ⚡</th><th>${L("Restaur.","Restored")} 🔌</th>`:""}<th>${L("Total","Total")}</th></tr></thead><tbody>`+
+    H.map((h,k)=>`<tr><td>${String(k).padStart(2,"0")}:00</td><td>${h.sag}</td><td>${h.swell}</td>${hasPwr?`<td>${PE[k].loss||""}</td><td>${PE[k].rest||""}</td>`:""}<td>${h.sag+h.swell+(hasPwr?PE[k].loss+PE[k].rest:0)}</td></tr>`).join("")
+    +`<tr style="font-weight:700;border-top:2px solid var(--ubi-line)"><td>${L("Total","Total")}</td><td>${totSag}</td><td>${totSwell}</td>${hasPwr?`<td>${totLoss}</td><td>${totRest}</td>`:""}<td>${totSag+totSwell+totLoss+totRest}</td></tr></tbody></table></div>`
+    +(hasPwr?`<div class="howto"><b>${L("Corte / Restauración","Loss / Restored")}:</b> ${L("del reporte Power Status del DTM (no se filtran con la selección del mapa, porque no tienen duración ni magnitud para la curva ITIC).","from the DTM Power Status report (not filtered by the map selection, since they have no duration or magnitude for the ITIC curve).")}</div>`:"");
   const Zs={prohibited:D.filter(p=>p.zone==="prohibited").length,normal:D.filter(p=>p.zone==="normal").length,free:D.filter(p=>p.zone==="free").length};
   const zoneCard=box(L("Eventos por criticidad","Events by criticality"),L("Cuántos eventos caen en cada zona ITIC — la zona Prohibida es la que daña los equipos conectados.","How many events fall in each ITIC zone — the Prohibited zone is the one that damages connected equipment."),
     `<table class="data"><thead><tr><th>${L("Zona","Zone")}</th><th>${L("Eventos","Events")}</th><th>%</th></tr></thead><tbody>`+
@@ -1852,9 +1926,123 @@ function pdfFull(){
     },60);
   });
 }
+/* ===== PDF estilo plantilla DTM2 (desde la pestaña Perfiles 24h) ===== */
+/* renderiza un Chart fuera de pantalla y devuelve su PNG; limpia siempre el nodo */
+function offscreenChart(buildCfg,w,h){
+  const wrap=document.createElement("div");
+  wrap.style.cssText="position:fixed;left:-10000px;top:0;width:"+w+"px;height:"+h+"px;background:#fff";
+  const cv=document.createElement("canvas");cv.width=w;cv.height=h;wrap.appendChild(cv);
+  document.body.appendChild(wrap);
+  let png=null,chart=null;
+  try{chart=new Chart(cv,buildCfg());png=cv.toDataURL("image/png",1.0);}catch(e){png=null;}
+  finally{if(chart){try{chart.destroy();}catch(_){}}try{document.body.removeChild(wrap);}catch(_){}}
+  return png;
+}
+/* perfil 24h de una familia (1+ fases): mediana + banda P10–P90 + banda mín–máx, como la plantilla */
+function famProfilePNG(famSeries,unit,refLine){
+  const labels=Array.from({length:24},(_,h)=>h+"h");
+  return offscreenChart(()=>{
+    const dsets=[];
+    famSeries.forEach(s=>{
+      dsets.push({label:"_mx"+s.k,data:s.prof.map(p=>p.max),borderWidth:0,pointRadius:0,backgroundColor:hexA(s.color,0.06),fill:"+1",tension:.3});
+      dsets.push({label:"_mn"+s.k,data:s.prof.map(p=>p.min),borderWidth:0,pointRadius:0,fill:false,tension:.3});
+      dsets.push({label:"_hi"+s.k,data:s.prof.map(p=>p.p90),borderWidth:0,pointRadius:0,backgroundColor:hexA(s.color,0.16),fill:"+1",tension:.3});
+      dsets.push({label:"_lo"+s.k,data:s.prof.map(p=>p.p10),borderWidth:0,pointRadius:0,fill:false,tension:.3});
+    });
+    famSeries.forEach(s=>dsets.push({label:s.label,data:s.prof.map(p=>p.med),borderColor:s.color,borderWidth:2.4,pointRadius:0,tension:.3}));
+    if(refLine&&refLine.val!=null)dsets.push({label:refLine.label||"ref",data:labels.map(()=>refLine.val),borderColor:refLine.color||"#EA561B",borderWidth:1.6,borderDash:[6,4],pointRadius:0,fill:false,tension:0});
+    return {type:"line",data:{labels,datasets:dsets},options:{responsive:false,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:(famSeries.length>1||!!refLine),labels:{font:{family:"Lato",size:11},color:"#464D63",filter:i=>!String(i.text).startsWith("_")}}},
+      scales:{x:{ticks:{font:{family:"JetBrains Mono",size:9},color:"#99A0B4",maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{color:"rgba(0,0,0,.04)"}},
+              y:{title:{display:!!(unit&&unit.trim()),text:unit||"",font:{family:"Lato",size:11},color:"#464D63"},ticks:{font:{family:"JetBrains Mono",size:10},color:"#99A0B4"},grid:{color:"rgba(0,0,0,.06)"}}}}};
+  },700,300);
+}
+/* serie de periodo completo (kVA con línea de referencia), como la página 3 de la plantilla */
+function fullSeriesPNG(ts,vals,unit,color,refVal,refLabel){
+  const s=seriesXY(ts,vals,700);
+  return offscreenChart(()=>{
+    const dsets=[{label:unit||"",data:s.values,borderColor:color,borderWidth:1.1,pointRadius:0,tension:.15,spanGaps:true}];
+    if(refVal!=null)dsets.push({label:refLabel||"ref",data:s.labels.map(()=>refVal),borderColor:"#EA561B",borderWidth:1.4,borderDash:[6,4],pointRadius:0,fill:false,tension:0});
+    return {type:"line",data:{labels:s.labels,datasets:dsets},options:{responsive:false,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:refVal!=null,labels:{font:{family:"Lato",size:11},color:"#464D63",filter:i=>i.text!==(unit||"")}}},
+      scales:{x:{ticks:{font:{family:"JetBrains Mono",size:8},color:"#99A0B4",maxRotation:0,autoSkip:true,maxTicksLimit:10},grid:{display:false}},
+              y:{title:{display:!!(unit&&unit.trim()),text:unit||"",font:{family:"Lato",size:11},color:"#464D63"},ticks:{font:{family:"JetBrains Mono",size:10},color:"#99A0B4"},grid:{color:"rgba(0,0,0,.06)"}}}}};
+  },700,250);
+}
+function pdfProfiles24(doc,C,W,H,M){
+  pdfCover(doc,C.nodeName,pdfMeta(C).slice(1));
+  let y=pdfHeader(doc,W,M,L("Informe de perfiles 24h","24h profiles report"),L("Análisis por variable · mediana, P10–P90 y mín–máx","Per-variable analysis · median, P10–P90 and min–max"),[C.nodeName,new Date().toLocaleDateString()]);
+  const nom=C.kvaNom,kvaVals=C.kva.filter(x=>x!=null);
+  // ---- resumen ejecutivo (KPIs) ----
+  const kpiRows=[];
+  if(nom&&nom>0&&kvaVals.length){
+    kpiRows.push([L("Cargabilidad máx","Peak loading"),r1(Math.max(...kvaVals)/nom*100)+"%"]);
+    kpiRows.push([L("P90 utilización","P90 loading"),r1(pct(C.kva,90)/nom*100)+"%"]);
+    kpiRows.push([L("Carga promedio","Avg load"),r1(mean(C.kva)/nom*100)+"%"]);
+    kpiRows.push([L("% en sobrecarga","% in overload"),r1(kvaVals.filter(x=>x>nom).length/kvaVals.length*100)+"%"]);
+  } else if(kvaVals.length){
+    kpiRows.push([L("kVA máximo","Peak kVA"),r1(Math.max(...kvaVals))]);
+    kpiRows.push([L("kVA P90","kVA P90"),r1(pct(C.kva,90))]);
+  }
+  kpiRows.push([L("Registros · periodo","Records · period"),C.n.toLocaleString()+(C.win?" · "+C.win.days+L(" días"," days"):"")]);
+  const oilv=C.oilT.filter(x=>x!=null);if(oilv.length)kpiRows.push([L("Temp. máx. aceite","Peak oil temp"),r1(Math.max(...oilv))+" °C"]);
+  if(kpiRows.length){doc.autoTable({startY:y,body:kpiRows,theme:"plain",styles:{font:"helvetica",fontSize:9,cellPadding:3,textColor:PINK},columnStyles:{0:{textColor:PGRAY,cellWidth:210},1:{fontStyle:"bold"}},margin:{left:M,right:M}});y=doc.lastAutoTable.finalY+14;}
+  // ---- helpers de familia ----
+  const mkSeries=arrs=>arrs.filter(a=>a.data&&a.data.some(x=>x!=null)).map((a,i)=>({k:i,label:a.label,color:a.color||PAL[i%PAL.length],data:a.data,prof:hourly(C.ts,a.data)}));
+  const phaseArrs=(getArr,base)=>C.phases.map(p=>({label:base+" X"+(p+1),data:getArr(p)}));
+  const statLine=(series,u)=>series.map(s=>{const d=s.data.filter(x=>x!=null);return `${s.label}: ${L("prom","avg")} ${r1(mean(s.data))}${u} · P90 ${r1(pct(s.data,90))}${u} · ${L("máx","max")} ${d.length?r1(Math.max(...d)):"–"}${u}`;}).join("    ");
+  const addFam=(title,series,unit,refLine,fullPng)=>{
+    if(!series.length)return;
+    const png=famProfilePNG(series,unit,refLine);if(!png&&!fullPng)return;
+    if(y>H-250){doc.addPage();y=M+10;}
+    doc.setFont("helvetica","bold");doc.setFontSize(11.5);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(title,M,y);y+=12;
+    const sl=statLine(series,unit?(" "+unit):"");if(sl){doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(PGRAY[0],PGRAY[1],PGRAY[2]);const ls=doc.splitTextToSize(sl,W-M*2);doc.text(ls,M,y);y+=ls.length*10+4;}
+    if(fullPng){y=addImageFit(doc,fullPng,M,y,W-M*2,168)+8;if(y>H-250){doc.addPage();y=M+10;}}
+    if(png)y=addImageFit(doc,png,M,y,W-M*2,232)+16;
+  };
+  // ---- familias (orden de la plantilla) ----
+  const kvaFull=kvaVals.length?fullSeriesPNG(C.ts,C.kva,"kVA",PAL[0],nom||null,nom?L("kVA operación","Operating kVA"):null):null;
+  addFam(L("Carga (kVA)","Load (kVA)"),mkSeries([{label:"kVA",color:PAL[0],data:C.kva}]),"kVA",nom?{val:nom,color:"#EA561B",label:L("kVA operación","Operating kVA")}:null,kvaFull);
+  addFam(L("Voltaje","Voltage"),mkSeries(phaseArrs(p=>C.V[p],"V")),"V",C.vnom?{val:C.vnom,color:"#99A0B4",label:L("Nominal","Nominal")}:null);
+  addFam(L("Corriente","Current"),mkSeries(phaseArrs(p=>C.I[p],"I")),"A");
+  addFam(L("Factor de potencia","Power factor"),mkSeries(phaseArrs(p=>C.PF[p],"FP")),"");
+  addFam(L("THD de voltaje","Voltage THD"),mkSeries(phaseArrs(p=>C.VTHD[p],"THD V")),"%");
+  addFam(L("THD de corriente","Current THD"),mkSeries(phaseArrs(p=>C.ITHD[p],"THD I")),"%");
+  addFam(L("Presión","Pressure"),mkSeries([{label:L("Presión","Pressure"),color:PAL[5],data:C.press}]),"psi");
+  addFam(L("Temperatura de aceite","Oil temperature"),mkSeries([{label:L("Temp.","Temp."),color:PAL[1],data:C.oilT}]),"°C");
+  // ---- eventos ----
+  const ev=C.events||[],pw=C.powerEvents||[];
+  const sagN=ev.filter(e=>String(e.type).toUpperCase()==="SAG").length;
+  const swN=ev.filter(e=>String(e.type).toUpperCase()==="SWELL").length;
+  const lossN=pw.filter(e=>e.kind==="LOSS").length,restN=pw.filter(e=>e.kind==="RESTORED").length;
+  const overN=(nom&&kvaVals.length)?kvaVals.filter(x=>x>nom).length:null;
+  if(y>H-170){doc.addPage();y=M+10;}
+  doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(PNAVY[0],PNAVY[1],PNAVY[2]);doc.text(L("Eventos detectados","Detected events"),M,y);y+=8;
+  const evBody=[[L("Caída de tensión (Vsag)","Voltage sag"),String(sagN)],[L("Aumento de tensión (Vswell)","Voltage swell"),String(swN)],[L("Pérdida de energía","Power loss"),String(lossN)],[L("Restauración de energía","Power restored"),String(restN)]];
+  if(overN!=null)evBody.push([L("Registros en sobrecarga","Records in overload"),String(overN)]);
+  doc.autoTable({startY:y,head:[[L("Tipo","Type"),L("Conteo","Count")]],body:evBody,theme:"grid",styles:{font:"helvetica",fontSize:9,cellPadding:4,textColor:PINK,lineColor:PLINE},headStyles:{fillColor:PNAVY,textColor:[255,255,255]},columnStyles:{1:{cellWidth:90,halign:"right",fontStyle:"bold"}},margin:{left:M,right:M}});
+  pdfFooterAll(doc,M,2);
+}
 function pdfTab(){
+  const id=CUR.tab||"syn";
+  // en Perfiles 24h, el PDF de la pestaña es el informe por variable estilo plantilla DTM2
+  if(id==="prof"){
+    ensurePdfLibs(()=>{
+      pdfOverlay(true,L("Generando informe de perfiles…","Generating profiles report…"));
+      setTimeout(()=>{
+        try{
+          const C=CUR.C;const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"pt",format:"a4"});
+          const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
+          pdfProfiles24(doc,C,W,H,M);
+          doc.save("informe-perfiles-24h-"+C.nodeName+".pdf");
+        }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);}
+        finally{pdfOverlay(false);}
+      },60);
+    });
+    return;
+  }
   ensurePdfLibs(()=>{ try{
-    const id=CUR.tab||"syn";const C=CUR.C;const panel=document.getElementById("p_"+id);
+    const C=CUR.C;const panel=document.getElementById("p_"+id);
     const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"pt",format:"a4"});
     const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
     const ai=areaOf(id),g=GROUPS[ai].g,tab=GROUPS[ai].tabs.find(t=>t.id===id);
@@ -1993,7 +2181,7 @@ function applyI18n(){
 function setLang(l){LANG=l;langUserSet=true;syncLang();if(DATASETS.length)onNode();}
 
 /* ---- carga de archivos ---- */
-function evCount(){let n=0;for(const k in EVENTS)n+=EVENTS[k].length;return n;}
+function evCount(){let n=0;for(const k in EVENTS)n+=EVENTS[k].length;for(const k in PWR)n+=PWR[k].length;return n;}
 function ingest(files){
   let pending=files.length; if(!pending)return;
   Array.from(files).forEach(f=>{
@@ -2002,7 +2190,8 @@ function ingest(files){
       const rows=res.data.filter(r=>r&&Object.keys(r).length>3);
       const headers=res.meta.fields||Object.keys(rows[0]||{});
       if(rows.length&&headers.length){
-        if(isEventReport(headers)){const b=evCount();parseEvents(rows,headers,f.name);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"ev",n:evCount()-b});}
+        if(isPowerReport(headers,rows)){const b=evCount();parsePower(rows,headers,f.name);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"ev",n:evCount()-b});}
+        else if(isEventReport(headers)){const b=evCount();parseEvents(rows,headers,f.name);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"ev",n:evCount()-b});}
         else {const ds=buildDataset(rows,headers,f.name);DATASETS.push(ds);LOADED.push(f.name);loadedMeta.push({name:f.name,type:"tel",n:ds.nodeNames.length});}
       }
       if(--pending===0)afterIngest();
@@ -2028,12 +2217,13 @@ function removeFile(name){
   if(!name)return;
   const m=loadedMeta.find(x=>x.name===name); if(!m)return;
   if(m.type==="tel"){const i=DATASETS.findIndex(d=>d.fname===name); if(i>=0)DATASETS.splice(i,1);}
-  else {for(const k in EVENTS){EVENTS[k]=EVENTS[k].filter(e=>e._src!==name); if(!EVENTS[k].length)delete EVENTS[k];}}
+  else {for(const k in EVENTS){EVENTS[k]=EVENTS[k].filter(e=>e._src!==name); if(!EVENTS[k].length)delete EVENTS[k];}
+        for(const k in PWR){PWR[k]=PWR[k].filter(e=>e._src!==name); if(!PWR[k].length)delete PWR[k];}}
   LOADED=LOADED.filter(n=>n!==name);
   loadedMeta=loadedMeta.filter(x=>x.name!==name);
   renderLoaded();
 }
-function clearAll(){DATASETS=[];EVENTS={};LOADED=[];loadedMeta=[];CUR={};manualKva={};const fi=document.getElementById("file");if(fi)fi.value="";renderLoaded();}
+function clearAll(){DATASETS=[];EVENTS={};PWR={};LOADED=[];loadedMeta=[];CUR={};manualKva={};const fi=document.getElementById("file");if(fi)fi.value="";renderLoaded();}
 const drop=document.getElementById("drop"),fileInput=document.getElementById("file");
 drop.onclick=()=>fileInput.click();
 drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fileInput.click();}};
