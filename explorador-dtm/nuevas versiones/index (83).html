@@ -1002,48 +1002,28 @@ function tNodes(host,C){
   const ds=CUR.ds;const names=ds.nodeNames;
   let rows="";const summ=[];
   const evald=names.map(nm=>{
-    const cc=computeNode(ds,nm,num(manualKva[nm]));
+    const cc=computeNode(ds,nm,null);
     const kvaMax=cc.kva.filter(x=>x!=null).length?Math.max(...cc.kva.filter(x=>x!=null)):null;
     const meds=cc.phases.map(p=>median(cc.V[p])).filter(x=>x!=null);
     const imbV=meds.length>=2?r1((Math.max(...meds)-Math.min(...meds))/mean(meds)*100):null;
     const flagged=(cc.tsQuality!=null&&cc.tsQuality<80)||(imbV!=null&&imbV>5);
-    const isManual=manualKva[nm]!=null&&String(manualKva[nm]).trim()!=="";
-    let util=null,cls="na";
-    if(cc.kvaNom&&kvaMax!=null){util=kvaMax/cc.kvaNom*100;cls=util>=100?"overload":util>=80?"tight":"healthy";}
-    return {nm,cc,kvaMax,imbV,flagged,isManual,util,cls};
+    return {nm,cc,kvaMax,imbV,flagged};
   });
-  // prioriza arriba: 1) datos poco confiables o desbalance alto (no se puede confiar en nada más),
-  // 2) entre el resto, la cargabilidad más alta primero — ahora que cada nodo puede tener su propio
-  // kVA de operación (manual, recordado por nodo), la cargabilidad real es comparable entre nodos.
-  const prio=e=>(e.flagged?2:0)+(e.cls==="overload"?1.5:e.cls==="tight"?0.5:0);
-  evald.sort((a,b)=>prio(b)-prio(a)||(b.util??-1)-(a.util??-1));
-  const clsCol={overload:"var(--ubi-orange)",tight:"var(--ubi-gold)",healthy:"var(--ubi-darkgreen)",na:"var(--ubi-gray2)"};
-  evald.forEach(({nm,cc,kvaMax,imbV,flagged,isManual,util,cls})=>{
-    summ.push({nm,kvaMax,imbV,tsq:cc.tsQuality,n:cc.n,util});
-    const kvaInput=`<div class="mono" style="font-weight:700">${cc.kvaNom!=null?r1(cc.kvaNom):'–'}</div>`
-      +`<input type="number" inputmode="decimal" class="nodeKva" data-node="${nm}" value="${isManual?manualKva[nm]:''}" placeholder="${L('editar','edit')}" style="width:64px;font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 5px;border:1px solid var(--ubi-line);border-radius:6px;margin-top:2px">`
-      +`<div class="kvasrc${isManual?' manual':''}">${isManual?L("✎ manual","✎ manual"):(cc.kvaNom?L("del archivo","from file"):L("sin dato","no data"))}</div>`;
-    const utilCell=util!=null?`<span style="color:${clsCol[cls]};font-weight:700">${r1(util)}%</span>`:`<span style="color:var(--ubi-gray2)">${L("sin kVA","no kVA")}</span>`;
-    rows+=`<tr class="${flagged?'rowflag':''}"><td>${flagged?'🔴 ':''}${nm}</td><td>${cc.n}</td><td class="${cc.tsQuality<80?'bad':'ok'}">${cc.tsQuality??'–'}%</td><td>${kvaMax!=null?r1(kvaMax):'–'}</td><td>${kvaInput}</td><td>${utilCell}</td><td class="${imbV>5?'bad':'ok'}">${imbV!=null?imbV+'%':'–'}</td><td>${cc.phases.map(p=>'X'+(p+1)).join('/')}</td></tr>`;
+  // prioriza arriba los nodos con datos poco confiables o desbalance alto — el único criterio
+  // comparable entre todos los nodos aquí, porque tNodes no tiene el kVA de operación por nodo
+  evald.sort((a,b)=>(b.flagged?1:0)-(a.flagged?1:0));
+  evald.forEach(({nm,cc,kvaMax,imbV,flagged})=>{
+    summ.push({nm,kvaMax,imbV,tsq:cc.tsQuality,n:cc.n});
+    rows+=`<tr class="${flagged?'rowflag':''}"><td>${flagged?'🔴 ':''}${nm}</td><td>${cc.n}</td><td class="${cc.tsQuality<80?'bad':'ok'}">${cc.tsQuality??'–'}%</td><td>${kvaMax!=null?r1(kvaMax):'–'}</td><td class="${imbV>5?'bad':'ok'}">${imbV!=null?imbV+'%':'–'}</td><td>${cc.phases.map(p=>'X'+(p+1)).join('/')}</td></tr>`;
   });
   // small multiples: perfil kVA mediano por hora, por nodo
   host.innerHTML=
     ficha(L("Entre todos los transformadores del dataset, ¿cuál reviso primero?","Among all transformers in the dataset, which one do I review first?"),L("Priorizar dónde intervenir primero, de un vistazo, en vez de nodo por nodo.","Prioritize where to act first, at a glance, instead of node by node."))
-    +box(L("Comparación de nodos · ","Node comparison · ")+dsLabel(ds),L("Todos los nodos del dataset, lado a lado — registros, calidad de datos, carga, cargabilidad y desbalance. Ingresa el kVA de operación de cada nodo aquí mismo para comparar cargabilidad real entre todos. 🔴 marca y sube los nodos con estampas poco confiables (<80% OK) o desbalance >5%; entre el resto, ordena de mayor a menor cargabilidad.","All dataset nodes, side by side — records, data quality, load, loading % and imbalance. Enter each node's operating kVA right here to compare real loading across all of them. 🔴 flags and ranks up nodes with unreliable timestamps (<80% OK) or imbalance >5%; among the rest, sorts by highest loading first."),`<div style="overflow:auto"><table class="data"><thead><tr><th>${L("Nodo","Node")}</th><th>${L("Registros","Records")}</th><th>${L("Estampas OK","Timestamps OK")}</th><th>kVA ${L("máx","max")}</th><th>kVA ${L("oper.","oper.")}</th><th>${L("Cargabilidad","Loading")}</th><th>${L("Desbalance V","V imbalance")}</th><th>${L("Fases","Phases")}</th></tr></thead><tbody>${rows}</tbody></table></div>`)
+    +box(L("Comparación de nodos · ","Node comparison · ")+dsLabel(ds),L("Todos los nodos del dataset, lado a lado — registros, calidad de datos, carga y desbalance. 🔴 marca y sube los nodos con estampas poco confiables (<80% OK) o desbalance >5%; el resto queda en su orden original.","All dataset nodes, side by side — records, data quality, load and imbalance. 🔴 flags and ranks up nodes with unreliable timestamps (<80% OK) or imbalance >5%; the rest keep their original order."),`<div style="overflow:auto"><table class="data"><thead><tr><th>${L("Nodo","Node")}</th><th>${L("Registros","Records")}</th><th>${L("Estampas OK","Timestamps OK")}</th><th>kVA ${L("máx","max")}</th><th>${L("Desbalance V","V imbalance")}</th><th>${L("Fases","Phases")}</th></tr></thead><tbody>${rows}</tbody></table></div>`)
     +box(L("Perfil de carga por nodo","Load profile per node"),L("kVA mediano por hora del día — small multiples. Permite comparar el patrón de consumo de cada transformador de un vistazo.","Median kVA by hour of day — small multiples. Compares each transformer's consumption pattern at a glance."),cb("c_sm","tall")+cap(L("Cada línea es un transformador; las que se despegan hacia arriba son las más cargadas — revísalas primero.","Each line is a transformer; those rising above the rest are the most loaded — review them first.")));
-  host.querySelectorAll(".nodeKva").forEach(inp=>{
-    inp.onchange=()=>{
-      const nm=inp.dataset.node,v=inp.value;
-      if(v!=null&&String(v).trim()!=="")manualKva[nm]=v;else delete manualKva[nm];
-      // si el nodo editado es el nodo activo en la barra de control, refleja el mismo valor ahí
-      const selN=document.getElementById("selNode");
-      if(selN&&selN.value===nm){const ik=document.getElementById("inKva");if(ik)ik.value=manualKva[nm]!=null?manualKva[nm]:"";}
-      renderTab("nodes");
-    };
-  });
   const labels=Array.from({length:24},(_,h)=>h+"h");
   const palette=[cssv("--x1"),cssv("--x2"),cssv("--x3"),cssv("--ubi-gold"),cssv("--ubi-violet")||"#59509D",cssv("--ubi-darkgreen"),cssv("--ubi-orange"),cssv("--ubi-royal")||"#3466AF"];
-  const dsets=names.slice(0,12).map((nm,k)=>{const cc=computeNode(ds,nm,num(manualKva[nm]));return {label:nm,data:hourly(cc.ts,cc.kva).map(p=>p.med),borderColor:palette[k%palette.length],borderWidth:1.6,pointRadius:0,tension:.3};});
+  const dsets=names.slice(0,12).map((nm,k)=>{const cc=computeNode(ds,nm,null);return {label:nm,data:hourly(cc.ts,cc.kva).map(p=>p.med),borderColor:palette[k%palette.length],borderWidth:1.6,pointRadius:0,tension:.3};});
   mkChart(document.getElementById("c_sm"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({plugins:{legend:{labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${r1(i.parsed.y)} kVA`}}}})});
 }
 
@@ -2033,7 +2013,7 @@ function removeFile(name){
   loadedMeta=loadedMeta.filter(x=>x.name!==name);
   renderLoaded();
 }
-function clearAll(){DATASETS=[];EVENTS={};LOADED=[];loadedMeta=[];CUR={};manualKva={};const fi=document.getElementById("file");if(fi)fi.value="";renderLoaded();}
+function clearAll(){DATASETS=[];EVENTS={};LOADED=[];loadedMeta=[];CUR={};const fi=document.getElementById("file");if(fi)fi.value="";renderLoaded();}
 const drop=document.getElementById("drop"),fileInput=document.getElementById("file");
 drop.onclick=()=>fileInput.click();
 drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fileInput.click();}};
