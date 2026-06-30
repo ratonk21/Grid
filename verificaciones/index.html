@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Prioridades — Generadores</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#0E1116; --panel:#161B22; --panel-2:#1C232C; --border:#2A323D;
+    --ink:#E8EAED; --ink-dim:#9AA4B2; --ink-faint:#5C6573;
+    --critica:#E5484D; --media:#F2B94B; --baja:#37C2A0;
+    --cubierto:#37C2A0; --proceso:#5AA9F0; --pendiente:#5C6573;
+    --accent:#5AA9F0;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);}
+  body{display:flex;flex-direction:column;}
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--border);
+    flex-wrap:wrap;gap:10px;
+  }
+  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px;}
+  header h1 span{color:var(--ink-dim);font-weight:400;}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .controls input[type=text]{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--ink);
+    padding:7px 10px;border-radius:6px;font-size:12.5px;width:340px;max-width:50vw;
+  }
+  .controls button{
+    background:var(--accent);color:#0E1116;border:none;padding:7px 14px;border-radius:6px;
+    font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .controls button.secondary{background:var(--panel-2);color:var(--ink);border:1px solid var(--border);}
+  #status{font-size:11.5px;color:var(--ink-faint);}
+
+  .layout{flex:1;display:flex;min-height:0;}
+  #map{flex:1;background:#0a0d12;}
+
+  aside{
+    width:320px;background:var(--panel);border-left:1px solid var(--border);
+    padding:16px;overflow-y:auto;flex-shrink:0;
+  }
+  .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .kpi{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+  .kpi .n{font-size:22px;font-weight:700;line-height:1;}
+  .kpi .l{font-size:10.5px;color:var(--ink-dim);margin-top:4px;text-transform:uppercase;letter-spacing:.4px;}
+  .kpi.full{grid-column:1/3;}
+
+  .progress-wrap{margin-bottom:16px;}
+  .progress-bar{height:8px;border-radius:4px;background:var(--panel-2);overflow:hidden;display:flex;}
+  .progress-bar div{height:100%;}
+  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-dim);margin-top:6px;}
+
+  h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-dim);margin:18px 0 8px;}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px;}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+  .tech-row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--border);}
+  .tech-row:last-child{border-bottom:none;}
+  .tech-row .name{color:var(--ink);}
+  .tech-row .count{color:var(--ink-dim);}
+
+  .popup-card{font-size:12.5px;line-height:1.5;min-width:260px;}
+  .popup-card .job{font-weight:700;font-size:13.5px;margin-bottom:2px;}
+  .popup-card .badge{
+    display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;
+    margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px;
+  }
+  .popup-card table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  .popup-card table td{padding:2px 0;vertical-align:top;}
+  .popup-card table td:first-child{color:#666;width:70px;font-size:11px;}
+  .popup-card .problema{background:#f4f4f4;padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px;}
+  .popup-card select, .popup-card input{
+    width:100%;padding:5px;border-radius:5px;border:1px solid #ccc;font-size:12px;margin-bottom:6px;
+  }
+  .popup-card .sheet-note{font-size:10.5px;color:#999;margin-top:4px;}
+
+  #loadOverlay{
+    position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:10px;z-index:9999;
+  }
+  #loadOverlay.hidden{display:none;}
+  .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #configBox{
+    position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9998;
+  }
+  #configBox.hidden{display:none;}
+  .configCard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;width:520px;max-width:90vw;}
+  .configCard h2{font-size:15px;margin:0 0 6px;}
+  .configCard p{font-size:12.5px;color:var(--ink-dim);line-height:1.6;margin:0 0 14px;}
+  .configCard ol{font-size:12px;color:var(--ink-dim);line-height:1.8;padding-left:18px;margin:0 0 14px;}
+  .configCard input{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);
+    padding:9px 10px;border-radius:6px;font-size:12.5px;margin-bottom:10px;
+  }
+  .configCard .row{display:flex;gap:8px;}
+  .configCard button{flex:1;padding:9px;border-radius:6px;border:none;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .configCard button.primary{background:var(--accent);color:#0E1116;}
+  .configCard button.ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<div id="configBox">
+  <div class="configCard">
+    <h2>Conectar Google Sheet</h2>
+    <p>Pega el link de tu hoja "publicada en la web como CSV". Así el mapa se actualiza solo cuando alguien edita la planilla — sin tocar este archivo de nuevo.</p>
+    <ol>
+      <li>En Google Sheets: <b>Archivo → Compartir → Publicar en la web</b></li>
+      <li>Elige la pestaña con los datos, formato <b>CSV</b>, clic en Publicar</li>
+      <li>Copia el link que te da Google y pégalo abajo</li>
+    </ol>
+    <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+    <div class="row">
+      <button class="ghost" id="useDemoBtn">Usar datos de ejemplo</button>
+      <button class="primary" id="connectBtn">Conectar</button>
+    </div>
+  </div>
+</div>
+
+<div id="loadOverlay" class="hidden">
+  <div class="spinner"></div>
+  <div style="font-size:12px;color:#9AA4B2;">Cargando datos de la planilla…</div>
+</div>
+
+<header>
+  <h1>Mapa de Prioridades <span>· Generadores</span></h1>
+  <div class="controls">
+    <input type="text" id="searchBox" placeholder="Buscar por Job#, generador o problema…">
+    <button class="secondary" id="reloadBtn">Recargar planilla</button>
+    <button class="secondary" id="changeSheetBtn">Cambiar hoja</button>
+    <span id="status">Sin conectar</span>
+  </div>
+</header>
+
+<div class="layout">
+  <div id="map"></div>
+  <aside>
+    <h3>Cobertura</h3>
+    <div class="kpi-row">
+      <div class="kpi"><div class="n" id="kpiTotal">0</div><div class="l">Puntos totales</div></div>
+      <div class="kpi"><div class="n" id="kpiCubiertos" style="color:var(--cubierto)">0</div><div class="l">Cubiertos</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-label"><span id="progressPct">0%</span><span id="progressTxt">0 de 0 cubiertos</span></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="n" id="kpiProceso" style="color:var(--proceso)">0</div><div class="l">En proceso</div></div>
+      <div class="kpi"><div class="n" id="kpiPendientes" style="color:var(--pendiente)">0</div><div class="l">Pendientes</div></div>
+    </div>
+
+    <h3>Prioridad</h3>
+    <div id="legendPrioridad"></div>
+
+    <h3>Por técnico</h3>
+    <div id="tecnicoList" style="font-size:12px;color:var(--ink-faint);">Sin asignaciones aún.</div>
+
+    <h3>Exportar</h3>
+    <button class="secondary" id="exportBtn" style="width:100%;">Descargar informe (CSV)</button>
+  </aside>
+</div>
+
+<script>
+const DEMO_CSV = `ID,React_Job,Generador,Motor,PM_WO,Filtros,Aceite,Latitud,Longitud,Prioridad,Problema,Estado,Tecnico_Asignado,Fecha_Visita,Notas_Tecnico,Foto_Link
+1,M233071227,GENERAC - SD0096,JOHN DEERE 4045HF285 DIESEL,384597,WIX 57750S + WIX 33808 + WIX 33977,15W-40 = 12 Qts,38.87464,-76.60935,Critica,"Los contactores del ATS de ASCO se han atascado, lo que impide que el sistema envie la senal de parada al generador. Blass recomienda sustituir completamente el ATS.",Pendiente,,,,
+2,M233168082,KOHLER - 50ROZJ,JOHN DEERE 4039TF004 DIESEL,N/A,N/A,N/A,39.20982,-76.62136,Critica,"Los registros confirman que el tecnico de RLI desmonto la placa controladora del ATS en noviembre de 2025 e intento repararla pero fracaso. Se detecto humo. Es necesario sustituir el ATS por completo.",Cubierto,Juan Perez,2026-06-15,ATS reemplazado y probado OK,
+3,M233208605,GENERAC - SD0030,KUKJE A2400T-GEN1 DIESEL,384660,WIX 51334 + WIX 33394,15W-40 = 7 Qts,39.21063,-76.17688,Critica,"Controlador ATS mal configurado. Detecta el generador portatil pero no la unidad fija. Se recomienda sustituir el controlador.",Pendiente,,,,
+4,M233238499,GENERAC - SD0050,KUKJE D3400T-GEN1 DIESEL,384574,WIX 51334 + WIX 33394,15W-40 = 7 Qts,39.14111,-77.22405,Critica,"Indicador de combustible muestra 28% cuando el deposito fisico esta al 60-70%.",En Proceso,Maria Lopez,2026-06-20,Esperando respuesta de fabricante,
+5,M233273832,GENERAC - SD030,PERKINS 404D-22 DIESEL,386441,WIX 51348 + WIX 33166,15W-40 = 10 Qts,39.80162,-75.60134,Critica,"Un nuevo cable para las alarmas debe ser instalado desde el generador hasta el block 66",Pendiente,,,,
+6,M233031744,KATOLIGHT - UNDETERMINED,JOHN DEERE 4045TF150 DIESEL,384562,WIX 57243 + WIX 33531,15W-40 = 12 Qts,38.94598,-76.86459,Critica,"Un nuevo cable para las alarmas debe ser instalado desde el generador hasta el block 66",Cubierto,Juan Perez,2026-06-18,Cable instalado,
+7,M233306411,GENERAC - SD0096,JOHN DEERE 4045TF285 DIESEL,N/A,N/A,N/A,39.07512778,-76.62807778,Critica,"IoT no transmite datos, piden que el Panel sea enviado a Flight Systems.",Pendiente,,,,
+8,M233142074,GENERAC - SD0100,JOHN DEERE 4045HF285 DIESEL,,,,39.01527,-77.15006,Media,"Alarma de ECU Com que no ha logrado ser eliminada. Sensor despegado en el filtro de combustible.",Pendiente,,,,
+`;
+
+let map, markersLayer, allRows = [];
+const DEFAULT_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1_zGL63yUQrMjGrzF8B2RsQXASOTVjrGpMlrKTl_vK-g/export?format=csv&gid=0';
+let sheetUrl = DEFAULT_SHEET_CSV_URL || null; // se mantiene en memoria, sin localStorage
+
+function initMap(){
+  map = L.map('map', {zoomControl:true}).setView([39.0, -76.6], 8);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+
+function priorityColor(p){
+  p = (p||'').toLowerCase();
+  if(p.startsWith('crit')) return getCss('--critica');
+  if(p.startsWith('med')) return getCss('--media');
+  return getCss('--baja');
+}
+function statusColor(s){
+  s = (s||'').toLowerCase();
+  if(s.startsWith('cubi')) return getCss('--cubierto');
+  if(s.startsWith('proc')) return getCss('--proceso');
+  return getCss('--pendiente');
+}
+function getCss(varName){
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function makeIcon(row){
+  const color = statusColor(row.Estado);
+  const ring = priorityColor(row.Prioridad);
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:3px solid ${ring};box-shadow:0 0 0 2px rgba(0,0,0,.4);"></div>`,
+    iconSize:[18,18], iconAnchor:[9,9]
+  });
+}
+
+function popupHtml(row){
+  const badgeColor = priorityColor(row.Prioridad);
+  return `
+  <div class="popup-card">
+    <div class="job">${row.React_Job || row.ID}</div>
+    <span class="badge" style="background:${badgeColor}22;color:${badgeColor};">${row.Prioridad||'—'}</span>
+    <table>
+      <tr><td>Generador</td><td>${row.Generador||'—'}</td></tr>
+      <tr><td>Motor</td><td>${row.Motor||'—'}</td></tr>
+      <tr><td>PM WO#</td><td>${row.PM_WO||'—'}</td></tr>
+      <tr><td>Filtros</td><td>${row.Filtros||'—'}</td></tr>
+      <tr><td>Aceite</td><td>${row.Aceite||'—'}</td></tr>
+    </table>
+    <div class="problema">${row.Problema||''}</div>
+    <table>
+      <tr><td>Estado</td><td><b>${row.Estado||'Pendiente'}</b></td></tr>
+      <tr><td>Técnico</td><td>${row.Tecnico_Asignado||'— sin asignar —'}</td></tr>
+      <tr><td>Fecha</td><td>${row.Fecha_Visita||'—'}</td></tr>
+      <tr><td>Notas</td><td>${row.Notas_Tecnico||'—'}</td></tr>
+    </table>
+    <div class="sheet-note">Para actualizar Estado/Técnico/Notas, edítalo directo en el Google Sheet — el mapa se refresca solo.</div>
+  </div>`;
+}
+
+function renderMarkers(rows){
+  markersLayer.clearLayers();
+  const bounds = [];
+  rows.forEach(row => {
+    const lat = parseFloat(row.Latitud), lng = parseFloat(row.Longitud);
+    if(isNaN(lat) || isNaN(lng)) return;
+    const marker = L.marker([lat,lng], {icon: makeIcon(row)});
+    marker.bindPopup(popupHtml(row));
+    marker.addTo(markersLayer);
+    bounds.push([lat,lng]);
+  });
+  if(bounds.length) map.fitBounds(bounds, {padding:[40,40]});
+}
+
+function renderDashboard(rows){
+  const total = rows.length;
+  const norm = s => (s||'pendiente').toLowerCase();
+  const cubiertos = rows.filter(r => norm(r.Estado).startsWith('cubi')).length;
+  const proceso = rows.filter(r => norm(r.Estado).startsWith('proc')).length;
+  const pendientes = total - cubiertos - proceso;
+
+  document.getElementById('kpiTotal').textContent = total;
+  document.getElementById('kpiCubiertos').textContent = cubiertos;
+  document.getElementById('kpiProceso').textContent = proceso;
+  document.getElementById('kpiPendientes').textContent = pendientes;
+
+  const pct = total ? Math.round((cubiertos/total)*100) : 0;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressTxt').textContent = `${cubiertos} de ${total} cubiertos`;
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = `<div style="width:${pct}%;background:${getCss('--cubierto')}"></div>` +
+                   `<div style="width:${total?Math.round((proceso/total)*100):0}%;background:${getCss('--proceso')}"></div>`;
+
+  // legend prioridad
+  const prios = {};
+  rows.forEach(r => { const p = r.Prioridad || 'Sin definir'; prios[p] = (prios[p]||0)+1; });
+  document.getElementById('legendPrioridad').innerHTML = Object.entries(prios).map(([p,n]) =>
+    `<div class="legend-item"><span class="dot" style="background:${priorityColor(p)}"></span>${p} <span style="margin-left:auto;color:var(--ink-faint)">${n}</span></div>`
+  ).join('') || '<div style="color:var(--ink-faint);font-size:12px;">Sin datos</div>';
+
+  // por técnico
+  const techs = {};
+  rows.forEach(r => {
+    const t = (r.Tecnico_Asignado||'').trim();
+    if(!t) return;
+    techs[t] = techs[t] || {cubiertos:0, total:0};
+    techs[t].total++;
+    if(norm(r.Estado).startsWith('cubi')) techs[t].cubiertos++;
+  });
+  const techHtml = Object.entries(techs).map(([t,d]) =>
+    `<div class="tech-row"><span class="name">${t}</span><span class="count">${d.cubiertos}/${d.total}</span></div>`
+  ).join('');
+  document.getElementById('tecnicoList').innerHTML = techHtml || 'Sin asignaciones aún.';
+}
+
+function applyData(rows){
+  allRows = rows;
+  renderMarkers(rows);
+  renderDashboard(rows);
+}
+
+function filterAndRender(){
+  const q = document.getElementById('searchBox').value.toLowerCase().trim();
+  if(!q){ renderMarkers(allRows); return; }
+  const filtered = allRows.filter(r =>
+    (r.React_Job||'').toLowerCase().includes(q) ||
+    (r.Generador||'').toLowerCase().includes(q) ||
+    (r.Problema||'').toLowerCase().includes(q) ||
+    (r.Tecnico_Asignado||'').toLowerCase().includes(q)
+  );
+  renderMarkers(filtered);
+}
+
+function loadFromCsvText(text){
+  const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+  applyData(parsed.data);
+  document.getElementById('loadOverlay').classList.add('hidden');
+}
+
+function loadFromUrl(url){
+  document.getElementById('loadOverlay').classList.remove('hidden');
+  document.getElementById('status').textContent = 'Cargando…';
+  fetch(url)
+    .then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(text => {
+      loadFromCsvText(text);
+      document.getElementById('status').textContent = 'Conectado · ' + new Date().toLocaleTimeString();
+    })
+    .catch(err => {
+      document.getElementById('loadOverlay').classList.add('hidden');
+      document.getElementById('status').textContent = 'Error al cargar: ' + err.message + ' (revisa que el Sheet esté publicado y el link sea el de output=csv)';
+    });
+}
+
+function exportReportCsv(){
+  const norm = s => (s||'pendiente').toLowerCase();
+  const total = allRows.length;
+  const cubiertos = allRows.filter(r => norm(r.Estado).startsWith('cubi')).length;
+  const proceso = allRows.filter(r => norm(r.Estado).startsWith('proc')).length;
+  const pendientes = total - cubiertos - proceso;
+  const lines = [
+    'Informe de cobertura - Mapa de Prioridades',
+    'Generado,' + new Date().toLocaleString(),
+    '',
+    'Total puntos,' + total,
+    'Cubiertos,' + cubiertos,
+    'En proceso,' + proceso,
+    'Pendientes,' + pendientes,
+    'Porcentaje cubierto,' + (total ? Math.round((cubiertos/total)*100) : 0) + '%',
+    '',
+    'Detalle',
+    'Job#,Generador,Prioridad,Estado,Tecnico,Fecha'
+  ];
+  allRows.forEach(r => {
+    lines.push([r.React_Job, r.Generador, r.Prioridad, r.Estado, r.Tecnico_Asignado, r.Fecha_Visita]
+      .map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'informe_cobertura_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// --- wiring ---
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+
+  if (DEFAULT_SHEET_CSV_URL) {
+    document.getElementById('configBox').classList.add('hidden');
+    loadFromUrl(DEFAULT_SHEET_CSV_URL);
+  }
+
+  document.getElementById('connectBtn').addEventListener('click', () => {
+    const url = document.getElementById('sheetUrlInput').value.trim();
+    if(!url){ alert('Pega el link primero.'); return; }
+    document.getElementById('configBox').classList.add('hidden');
+    sheetUrl = url;
+    loadFromUrl(url);
+  });
+
+  document.getElementById('useDemoBtn').addEventListener('click', () => {
+    document.getElementById('configBox').classList.add('hidden');
+    loadFromCsvText(DEMO_CSV);
+    document.getElementById('status').textContent = 'Datos de ejemplo (sin conectar a Sheet)';
+  });
+
+  document.getElementById('reloadBtn').addEventListener('click', () => {
+    if(sheetUrl) loadFromUrl(sheetUrl);
+    else { loadFromCsvText(DEMO_CSV); document.getElementById('status').textContent = 'Datos de ejemplo recargados'; }
+  });
+
+  document.getElementById('changeSheetBtn').addEventListener('click', () => {
+    document.getElementById('configBox').classList.remove('hidden');
+  });
+
+  document.getElementById('searchBox').addEventListener('input', filterAndRender);
+  document.getElementById('exportBtn').addEventListener('click', exportReportCsv);
+});
+</script>
+</body>
+</html>
