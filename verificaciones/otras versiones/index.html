@@ -46,20 +46,6 @@
     width:320px;background:var(--panel);border-left:1px solid var(--border);
     padding:16px;overflow-y:auto;flex-shrink:0;
   }
-
-  @media (max-width: 720px){
-    header{padding:10px 14px;}
-    header h1{width:100%;}
-    .controls{width:100%;}
-    .controls input[type=text]{width:100%;max-width:none;flex:1;}
-    #status{width:100%;text-align:right;}
-    .layout{flex-direction:column;}
-    #map{height:48vh;flex:none;}
-    aside{
-      width:100%;border-left:none;border-top:1px solid var(--border);
-      max-height:46vh;
-    }
-  }
   .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
   .kpi{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
   .kpi .n{font-size:22px;font-weight:700;line-height:1;}
@@ -94,11 +80,6 @@
     width:100%;padding:5px;border-radius:5px;border:1px solid #ccc;font-size:12px;margin-bottom:6px;
   }
   .popup-card .sheet-note{font-size:10.5px;color:#999;margin-top:4px;}
-  .popup-card .directions-btn{
-    display:block;text-align:center;background:#1A73E8;color:#fff;text-decoration:none;
-    padding:8px;border-radius:6px;font-size:12.5px;font-weight:600;margin-bottom:8px;
-  }
-  .popup-card .directions-btn:hover{background:#1558B0;}
 
   #loadOverlay{
     position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;
@@ -241,8 +222,6 @@ function makeIcon(row){
 
 function popupHtml(row){
   const badgeColor = priorityColor(row.Prioridad);
-  const lat = row.Latitud, lng = row.Longitud;
-  const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   return `
   <div class="popup-card">
     <div class="job">${row.React_Job || row.ID}</div>
@@ -261,7 +240,6 @@ function popupHtml(row){
       <tr><td>Fecha</td><td>${row.Fecha_Visita||'—'}</td></tr>
       <tr><td>Notas</td><td>${row.Notas_Tecnico||'—'}</td></tr>
     </table>
-    <a href="${dirUrl}" target="_blank" rel="noopener" class="directions-btn">Cómo llegar (Google Maps)</a>
     <div class="sheet-note">Para actualizar Estado/Técnico/Notas, edítalo directo en el Google Sheet — el mapa se refresca solo.</div>
   </div>`;
 }
