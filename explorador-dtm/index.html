@@ -1235,6 +1235,7 @@ function pdfFull(){
 
     /* 01 Resumen ejecutivo */
     sec(L("Resumen ejecutivo","Executive summary"));
+    para(L("Una vista de una página: el estado de cada área y el hallazgo que lo sustenta, para decidir dónde mirar primero.","A one-page view: the status of each area and the finding behind it, to decide where to look first."));
     const rows=execRows(C,ds);
     stTable([L("\u00c1rea","Area"),L("Estado","Status"),L("Hallazgo","Finding")],
       rows.map(r=>[r[0],_statusWord(r[1]),_stripTags(r[2])]), i=>rows[i][1],1,{0:{cellWidth:92,fontStyle:"bold"},1:{cellWidth:62}});
@@ -1243,6 +1244,7 @@ function pdfFull(){
 
     /* 03 Operación — carga */
     sec(L("Operaci\u00f3n \u2014 perfil de carga","Operation \u2014 load profile"),320);
+    para(L("El día típico de demanda hora a hora. Muestra cuándo el transformador trabaja más exigido, útil para planificar mantenimientos y nuevas conexiones.","The typical demand day, hour by hour. It shows when the transformer is most stressed, useful to plan maintenance and new connections."));
     img("c_exec",L("Perfil de carga 24h","24h load profile"));
     const hl=hourly(C.ts,C.kva); let ph=null,pv=-Infinity; hl.forEach((p,i)=>{if(p.med!=null&&p.med>pv){pv=p.med;ph=i;}});
     figTable([
@@ -1253,6 +1255,7 @@ function pdfFull(){
 
     /* 05 Día × hora */
     sec(L("Mapa d\u00eda \u00d7 hora","Day \u00d7 hour map"));
+    para(L("La carga media por hora y día de la semana. Revela los patrones que se repiten: qué días y horas concentran la mayor demanda.","Average load by hour and weekday. It reveals the repeating patterns: which days and hours concentrate the highest demand."));
     const cellsD=Array.from({length:7},()=>Array.from({length:24},()=>[]));
     for(let i=0;i<C.ts.length;i++){const t=C.ts[i];if(t&&C.kva[i]!=null)cellsD[t.getDay()][t.getHours()].push(C.kva[i]);}
     const medD=cellsD.map(r=>r.map(a=>median(a)));
@@ -1264,6 +1267,7 @@ function pdfFull(){
 
     /* 06 Calidad de energía */
     sec(L("Calidad de energ\u00eda","Power quality"),320);
+    para(L("La 'presión eléctrica' (voltaje) entregada por hora frente a la banda normativa ±5%. Indica si el suministro cumple y a qué horas se aleja.","Delivered 'electrical pressure' (voltage) by hour against the ±5% regulatory band. It shows whether supply complies and at which hours it drifts."));
     img("c_execv",L("Perfil de voltaje 24h","24h voltage profile"));
     const band=C.vnom?{lo:C.vnom*0.95,hi:C.vnom*1.05}:null; let vo=0,vt=0;
     if(band)C.phases.forEach(p=>C.V[p].forEach(x=>{if(x==null)return;vt++;if(x<band.lo||x>band.hi)vo++;}));
@@ -1281,6 +1285,7 @@ function pdfFull(){
 
     /* 07 ITIC */
     sec(L("Eventos ITIC","ITIC events"));
+    para(L("Las caídas y subidas de tensión ubicadas sobre la curva ITIC, que define qué perturbaciones toleran los equipos. Sirve para respaldar reclamos o priorizar revisiones.","Voltage sags and swells placed on the ITIC curve, which defines what disturbances equipment tolerates. It helps back up claims or prioritize reviews."));
     const ev=C.events||[];
     if(ev.length){ let sev=0; ev.forEach(e=>{const mp=e.magPct!=null?e.magPct:(e.nominal&&e.mag?e.mag/e.nominal*100:null);if(mp!=null&&(mp>=120||mp<=70))sev++;});
       para(ev.length+" "+L("eventos de tensi\u00f3n","voltage events")+(sev?" \u00b7 "+sev+" "+L("de magnitud severa","severe"):"")+".");
@@ -1291,6 +1296,7 @@ function pdfFull(){
 
     /* 08 Térmico */
     sec(L("T\u00e9rmico","Thermal"));
+    para(L("La temperatura del aceite a lo largo del periodo. Muestra cómo responde el equipo al esfuerzo eléctrico y si hay picos que conviene vigilar.","Oil temperature across the period. It shows how the unit responds to electrical stress and whether there are peaks worth watching."));
     if(oilv.length){ const pr=C.press.filter(x=>x!=null);
       figTable([
         [L("Aceite P90","Oil P90"), r1(p90o)+"\u00b0"],
@@ -1303,6 +1309,7 @@ function pdfFull(){
 
     /* 09 Estado por parámetro */
     sec(L("Estado por par\u00e1metro","Per-parameter status"));
+    para(L("El detalle de cada variable del DTM2 con su estado (en rango, vigilar o revisar) y el hallazgo que sugiere — la base técnica del informe.","The detail of each DTM2 variable with its status (in range, watch or review) and the finding it suggests — the technical basis of the report."));
     stTable([L("Par\u00e1metro","Parameter"),L("Valor","Value"),L("Estado","Status"),L("Hallazgo","Finding")],
       HR.F.map(f=>[_stripTags(f[0]),f[1],_statusWord(f[2]),_stripTags(f[3])]), i=>HR.F[i][2],2,
       {0:{cellWidth:150,fontStyle:"bold"},1:{cellWidth:72},2:{cellWidth:52}});
