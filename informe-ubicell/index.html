@@ -1,21 +1,22 @@
-<head>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-K73HD7MSR4');
-  </script>
-  <!-- Resto de tu head... -->
-</head>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Executive Report · Smart Public Lighting — Ubicquia®</title>
+<meta name="description" content="Informe ejecutivo y técnico de alumbrado público inteligente sobre la red de sensores UbiCell® de Ubicquia. Procesamiento 100% local en el navegador.">
+<meta property="og:title" content="Informe Ejecutivo · Alumbrado Público Inteligente — Ubicquia®">
+<meta property="og:description" content="Consolida las alertas semanales de la red UbiCell®, prioriza intervenciones y genera el plan de cuadrillas. Todo el procesamiento es local.">
+<meta property="og:type" content="website">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-K73HD7MSR4');
+</script>
+<!-- Librerías (solo CDN) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -23,63 +24,65 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400;1,700&display=swap');
   :root{
-    /* Paleta y tipografía Ubicquia® — según la Guía de Marca y Estilo (9101 v2) */
-    /* Tipografía: Lato (web/títulos/destacados) + Helvetica Neue (textos) */
-    --font:'Helvetica Neue',Helvetica,Arial,system-ui,sans-serif;
+    /* Paleta y tipografía Ubicquia® — Guía de Marca y Estilo 9101 v2 */
+    /* Tipografía: Lato para web/títulos/cuerpo; mono propio para datos */
+    --font:'Lato','Helvetica Neue',Arial,system-ui,sans-serif;
     --head:'Lato','Helvetica Neue',Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;
-    /* Azules de marca */
-    --epm-blue:#1E2445; --epm-blue-d:#141A33; --epm-blue-faint:#E7EAF2;
-    /* Acentos (paleta principal y extendida Ubicquia) */
-    --epm-orange:#EA561B; --epm-orange-faint:#FBE7DD;
-    --epm-magenta:#22B0E1; --epm-magenta-faint:#E0F4FD;
-    --epm-green:#4EB270; --epm-green-d:#2F8C57; --epm-green-faint:#E4F4EA;
-    --epm-cyan:#22B0E1; --epm-cyan-faint:#E0F4FD;
-    --epm-yellow:#FAB512;
-    --red:#DC2626; --red-faint:#FCE4E4;
-    --amber:#EA561B; --amber-faint:#FBE7DD;
-    /* Neutros de marca */
+    /* Principal */
+    --ubi-navy:#1E2445; --ubi-navy-d:#141A33; --ubi-navy-faint:#E7EAF2;
+    --ubi-blue:#22B0E1; --ubi-blue-faint:#E0F4FD;
+    --ubi-gray:#EEF0F5;
+    /* Verde (sostenibilidad) */
+    --ubi-lime:#AECC53; --ubi-green:#4EB270; --ubi-green-d:#2F8C57; --ubi-green-faint:#E4F4EA;
+    /* Extendida (estados en producto digital) */
+    --ubi-orange:#EA561B; --ubi-orange-faint:#FBE7DD; --ubi-gold:#FAB512;
+    /* Semánticos */
+    --red:#DC2626; --red-faint:#FCE4E4; --amber:#EA561B; --amber-faint:#FBE7DD;
+    /* Neutros */
     --bg:#EEF0F5; --surface:#fff; --surface2:#E8ECF4;
     --border:#DCE1EA; --text:#1E2445; --muted:#464D63; --faint:#99A0B4;
+    /* Forma + layout */
     --r:12px; --sh:0 1px 3px rgba(30,36,69,.08),0 1px 2px rgba(30,36,69,.05);
     --sh2:0 6px 18px rgba(30,36,69,.12);
+    --ubi-maxw:1180px; --ubi-pad:clamp(16px,4vw,32px);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5}
 
-  /* ── BRAND STRIPE (multicolor EPM) ── */
-  .brand-stripe{height:6px;background:linear-gradient(90deg,var(--epm-blue) 0%,var(--epm-cyan) 45%,#AECC53 100%)}
+  /* ── BRAND STRIPE (Ubicquia: navy → azul → lima) ── */
+  .brand-stripe{height:6px;background:linear-gradient(90deg,var(--ubi-navy) 0%,var(--ubi-blue) 45%,var(--ubi-lime) 100%)}
 
   /* ── HEADER ── */
   header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
   .hleft{display:flex;align-items:center;gap:20px}
   .logo-slot{width:96px;height:96px;border-radius:12px;background:var(--surface2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0;transition:.2s}
-  .logo-slot:hover{border-color:var(--epm-blue);background:var(--epm-blue-faint)}
+  .logo-slot:hover{border-color:var(--ubi-navy);background:var(--ubi-navy-faint)}
   .logo-slot img{width:100%;height:100%;object-fit:contain;background:#fff}
   .logo-hint{font-size:10px;text-align:center;color:var(--faint);line-height:1.3;padding:6px}
-  .htitle{font-family:var(--head);font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--epm-blue)}
+  .htitle{font-family:var(--head);font-size:22px;font-weight:700;letter-spacing:-.01em;color:var(--ubi-navy)}
   .hsub{font-size:13px;color:var(--muted);margin-top:3px}
-  .hclaim{font-size:11px;color:var(--epm-magenta);font-weight:600;margin-top:2px;letter-spacing:.02em}
+  .hclaim{font-size:11px;color:var(--ubi-blue);font-weight:600;margin-top:2px;letter-spacing:.02em}
   .hright{text-align:right;font-size:12px;color:var(--muted);font-family:var(--mono)}
   #logo-input{display:none}
   .hbtns{display:flex;gap:8px;margin-top:10px;justify-content:flex-end;flex-wrap:wrap}
-  .btn{border:1px solid var(--border);background:var(--surface);color:var(--epm-blue);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:var(--font);transition:.15s;display:none}
-  .btn:hover{background:var(--epm-blue-faint);border-color:var(--epm-blue)}
-  .btn.primary{background:var(--epm-blue);color:#fff;border-color:var(--epm-blue)}
-  .btn.primary:hover{background:var(--epm-blue-d)}
+  .btn{border:1px solid var(--border);background:var(--surface);color:var(--ubi-navy);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:var(--font);transition:.15s;display:none}
+  .btn:hover{background:var(--ubi-navy-faint);border-color:var(--ubi-navy)}
+  .btn.primary{background:var(--ubi-navy);color:#fff;border-color:var(--ubi-navy)}
+  .btn.primary:hover{background:var(--ubi-navy-d)}
 
   /* ── TABS ── */
   .tabs{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;gap:4px}
   .tabs.show{display:flex}
   .tab{padding:13px 22px;font-size:13.5px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;font-family:var(--font);transition:.15s}
-  .tab:hover{color:var(--epm-blue)}
-  .tab.active{color:var(--epm-blue);border-bottom-color:var(--epm-cyan)}
+  .tab:hover{color:var(--ubi-navy)}
+  .tab.active{color:var(--ubi-navy);border-bottom-color:var(--ubi-blue)}
 
-  main{max-width:1180px;margin:0 auto;padding:28px 24px 56px}
+  main{max-width:var(--ubi-maxw);margin:0 auto;padding:24px var(--ubi-pad) 56px}
 
   /* ── UPLOAD ── */
   #upload-zone{background:var(--surface);border:2px dashed var(--border);border-radius:var(--r);padding:56px 32px;text-align:center;cursor:pointer;transition:.2s}
-  #upload-zone:hover,#upload-zone.drag{border-color:var(--epm-blue);background:var(--epm-blue-faint)}
+  #upload-zone:hover,#upload-zone.drag{border-color:var(--ubi-navy);background:var(--ubi-navy-faint)}
   .up-icon{font-size:42px;display:block;margin-bottom:12px;opacity:.75}
   .up-lbl{font-family:var(--head);font-size:16px;font-weight:600;margin-bottom:6px}
   .up-hint{font-size:13px;color:var(--faint);max-width:560px;margin:0 auto}
@@ -88,28 +91,28 @@
   #view-exec,#view-tech{display:none}
 
   /* ── SECTION TITLES ── */
-  .sec-title{font-family:var(--head);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--epm-blue);margin:30px 0 14px;display:flex;align-items:center;gap:10px}
+  .sec-title{font-family:var(--head);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ubi-navy);margin:30px 0 14px;display:flex;align-items:center;gap:10px}
   .sec-title::after{content:"";flex:1;height:1px;background:var(--border)}
   .sec-title:first-child{margin-top:0}
 
   /* ── SUMMARY NOTES (after each block) ── */
-  .note{background:var(--surface);border-left:4px solid var(--epm-cyan);border-radius:8px;padding:13px 18px;font-size:13px;color:var(--text);margin-top:14px;line-height:1.65;box-shadow:var(--sh)}
-  .note strong{color:var(--epm-blue)}
-  .note .note-lbl{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--epm-cyan);margin-bottom:4px}
+  .note{background:var(--surface);border-left:4px solid var(--ubi-blue);border-radius:8px;padding:13px 18px;font-size:13px;color:var(--text);margin-top:14px;line-height:1.65;box-shadow:var(--sh)}
+  .note strong{color:var(--ubi-navy)}
+  .note .note-lbl{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ubi-blue);margin-bottom:4px}
 
   /* ── EXEC CARDS ── */
   .exec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
   .exec-card{background:var(--surface);border-radius:var(--r);padding:22px 24px;box-shadow:var(--sh);position:relative;overflow:hidden}
   .exec-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px}
   .exec-card.crit::before{background:var(--red)}
-  .exec-card.warn::before{background:var(--epm-orange)}
-  .exec-card.ok::before{background:var(--epm-green)}
-  .exec-card.info::before{background:var(--epm-cyan)}
+  .exec-card.warn::before{background:var(--ubi-orange)}
+  .exec-card.ok::before{background:var(--ubi-green)}
+  .exec-card.info::before{background:var(--ubi-blue)}
   .exec-n{font-size:36px;font-weight:700;font-family:var(--head);line-height:1.05}
   .exec-card.crit .exec-n{color:var(--red)}
-  .exec-card.warn .exec-n{color:var(--epm-orange)}
-  .exec-card.ok .exec-n{color:var(--epm-green-d)}
-  .exec-card.info .exec-n{color:var(--epm-blue)}
+  .exec-card.warn .exec-n{color:var(--ubi-orange)}
+  .exec-card.ok .exec-n{color:var(--ubi-green-d)}
+  .exec-card.info .exec-n{color:var(--ubi-navy)}
   .exec-lbl{font-size:13px;font-weight:600;margin-top:6px}
   .exec-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
 
@@ -118,21 +121,21 @@
   .sem-card{background:var(--surface);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);display:flex;align-items:center;gap:14px}
   .sem-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
   .dot-red{background:var(--red);box-shadow:0 0 0 4px var(--red-faint)}
-  .dot-amber{background:var(--epm-orange);box-shadow:0 0 0 4px var(--epm-orange-faint)}
-  .dot-green{background:var(--epm-green);box-shadow:0 0 0 4px var(--epm-green-faint)}
+  .dot-amber{background:var(--ubi-orange);box-shadow:0 0 0 4px var(--ubi-orange-faint)}
+  .dot-green{background:var(--ubi-green);box-shadow:0 0 0 4px var(--ubi-green-faint)}
   .sem-info{flex:1;min-width:0}
   .sem-name{font-size:13px;font-weight:600;line-height:1.3}
   .sem-desc{font-size:11px;color:var(--muted);margin-top:1px}
   .sem-count{font-size:24px;font-weight:700;font-family:var(--head);flex-shrink:0}
-  .sem-count.r{color:var(--red)} .sem-count.a{color:var(--epm-orange)} .sem-count.g{color:var(--epm-green-d)}
+  .sem-count.r{color:var(--red)} .sem-count.a{color:var(--ubi-orange)} .sem-count.g{color:var(--ubi-green-d)}
 
   /* ── ZONES ── */
   .zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:720px){.zone-grid{grid-template-columns:1fr}}
   .zone-card{background:var(--surface);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh)}
   .zone-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
-  .zone-name{font-family:var(--head);font-size:15px;font-weight:700;color:var(--epm-blue)}
-  .zone-total{font-size:26px;font-weight:700;font-family:var(--head);color:var(--epm-blue)}
+  .zone-name{font-family:var(--head);font-size:15px;font-weight:700;color:var(--ubi-navy)}
+  .zone-total{font-size:26px;font-weight:700;font-family:var(--head);color:var(--ubi-navy)}
   .zone-sub{font-size:11px;color:var(--faint);font-family:var(--mono);margin-bottom:14px}
   .zone-bar-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px}
   .zb-lbl{width:140px;flex-shrink:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -149,34 +152,34 @@
   /* ── PRIORITY TABLE / GENERIC TABLE ── */
   .tbl-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:16px}
   .tbl-hdr{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .tbl-ttl{font-family:var(--head);font-size:14px;font-weight:700;color:var(--epm-blue)}
+  .tbl-ttl{font-family:var(--head);font-size:14px;font-weight:700;color:var(--ubi-navy)}
   .badge{font-size:11px;padding:3px 11px;border-radius:20px;font-weight:600;font-family:var(--mono)}
   .b-red{background:var(--red-faint);color:var(--red)}
-  .b-amber{background:var(--epm-orange-faint);color:var(--epm-orange)}
+  .b-amber{background:var(--ubi-orange-faint);color:var(--ubi-orange)}
   .b-gray{background:var(--surface2);color:var(--faint)}
   .tbl-wrap{overflow-x:auto;max-height:340px;overflow-y:auto}
   table{width:100%;border-collapse:collapse;font-size:12.5px}
   th{text-align:left;padding:9px 14px;background:var(--surface2);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);position:sticky;top:0;white-space:nowrap;z-index:1}
   td{padding:8px 14px;border-bottom:1px solid var(--surface2);white-space:nowrap}
   tr:last-child td{border-bottom:none}
-  tr:hover td{background:var(--epm-blue-faint)}
+  tr:hover td{background:var(--ubi-navy-faint)}
   td.mono{font-family:var(--mono);font-size:12px}
   .pill{font-size:10.5px;padding:2px 9px;border-radius:20px;font-weight:600}
   .pill-red{background:var(--red-faint);color:var(--red)}
-  .pill-amber{background:var(--epm-orange-faint);color:var(--epm-orange)}
+  .pill-amber{background:var(--ubi-orange-faint);color:var(--ubi-orange)}
   .hi-red{color:var(--red);font-weight:600}
-  .hi-amber{color:var(--epm-orange);font-weight:600}
-  .maps-link{color:var(--epm-cyan);text-decoration:none;font-weight:600;font-size:11.5px}
+  .hi-amber{color:var(--ubi-orange);font-weight:600}
+  .maps-link{color:var(--ubi-blue);text-decoration:none;font-weight:600;font-size:11.5px}
   .maps-link:hover{text-decoration:underline}
   .empty{padding:26px;text-align:center;color:var(--faint);font-size:13px}
 
   /* ── TECH STATS ── */
   .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
   .stat{background:var(--surface);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh)}
-  .stat-n{font-size:24px;font-weight:700;font-family:var(--head);color:var(--epm-blue)}
+  .stat-n{font-size:24px;font-weight:700;font-family:var(--head);color:var(--ubi-navy)}
   .stat-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:3px}
 
-  .footnote{background:var(--epm-blue-faint);border-left:4px solid var(--epm-blue);border-radius:8px;padding:14px 18px;font-size:12.5px;color:var(--epm-blue-d);margin-top:26px;line-height:1.65}
+  .footnote{background:var(--ubi-navy-faint);border-left:4px solid var(--ubi-navy);border-radius:8px;padding:14px 18px;font-size:12.5px;color:var(--ubi-navy-d);margin-top:26px;line-height:1.65}
 
   ::-webkit-scrollbar{width:5px;height:5px}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -184,22 +187,80 @@
   /* ── LANG TOGGLE ── */
   .lang-toggle{display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:8px;padding:4px;border:1px solid var(--border)}
   .lang-btn{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-family:var(--font);letter-spacing:.05em;transition:.15s;background:transparent;color:var(--faint)}
-  .lang-btn.active{background:var(--epm-blue);color:#fff}
-  .lang-btn:not(.active):hover{color:var(--epm-magenta)}
+  .lang-btn.active{background:var(--ubi-navy);color:#fff}
+  .lang-btn:not(.active):hover{color:var(--ubi-blue)}
+
+  /* ── BRAND WORDMARK (ubicquia split-color) ── */
+  .ubi-wordmark{font-family:var(--head);font-weight:900;font-size:23px;letter-spacing:-.02em;line-height:1;white-space:nowrap}
+  .ubi-wordmark .u-ubi{color:var(--ubi-blue)}
+  .ubi-wordmark .u-cquia{color:var(--ubi-navy)}
+  .ubi-wordmark sup{font-size:.46em;font-weight:700;color:var(--ubi-blue);vertical-align:super;margin-left:1px}
+  .ubi-wordmark--inv .u-cquia{color:#fff}
+  .hbrand{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px}
+  .hbrand-by{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);font-weight:700}
+
+  /* ── BANDS (color full-bleed, content in centered container) ── */
+  .band{width:100%}
+  .band--navy{background:var(--ubi-navy);color:#fff}
+  .band--filter{background:var(--ubi-navy-faint);border-bottom:1px solid var(--border)}
+  .band .container{width:100%;max-width:var(--ubi-maxw);margin-inline:auto;padding-inline:var(--ubi-pad)}
+
+  /* ── REPORT IDENTITY BAND (global snapshot) ── */
+  .report-band .container{padding-block:14px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .rb-kicker{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ubi-blue);font-weight:700}
+  .rb-title{font-family:var(--head);font-size:18px;font-weight:700;color:#fff;margin-top:2px}
+  .rb-file{font-size:11px;color:#aeb6cf;margin-top:2px}
+  .rb-stats{display:flex;gap:10px;flex-wrap:wrap}
+  .rb-stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:8px 14px;min-width:92px}
+  .rb-stat .rb-n{font-family:var(--head);font-size:20px;font-weight:700;line-height:1;color:#fff}
+  .rb-stat .rb-l{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:#aeb6cf;margin-top:4px;font-weight:600}
+  .rb-stat.health.ok .rb-n{color:var(--ubi-lime)} .rb-stat.health.warn .rb-n{color:var(--ubi-gold)} .rb-stat.health.crit .rb-n{color:#ff8c6b}
+
+  /* ── FILTER BAR (synchronized filtering) ── */
+  .fb-inner{padding-block:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .fb-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ubi-navy)}
+  .fb-chips{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+  .fb-chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--ubi-blue);color:var(--ubi-navy);border-radius:20px;padding:4px 5px 4px 12px;font-size:12px;font-weight:600;box-shadow:var(--sh)}
+  .fb-chip .fc-dim{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700}
+  .fb-chip .fc-x{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--ubi-navy-faint);color:var(--ubi-navy);cursor:pointer;font-size:11px;border:none;font-weight:700;font-family:var(--font);line-height:1}
+  .fb-chip .fc-x:hover{background:var(--red-faint);color:var(--red)}
+  .fb-clear{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font)}
+  .fb-clear:hover{border-color:var(--red);color:var(--red)}
+
+  /* ── SITE FOOTER ── */
+  .site-footer .container{padding-block:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .ft-brand{display:flex;align-items:baseline;gap:12px}
+  .ft-claim{font-size:12px;color:#aeb6cf;font-style:italic}
+  .ft-note{font-size:11px;color:#8b93ad;max-width:520px;text-align:right}
+
+  /* ── HOW-TO (filtering hint) ── */
+  .howto{display:flex;align-items:center;gap:9px;background:var(--ubi-blue-faint);border:1px dashed var(--ubi-blue);border-radius:10px;padding:9px 14px;font-size:12px;color:var(--ubi-navy);margin-bottom:18px;line-height:1.45}
+  .howto b{font-weight:700} .howto .hk{font-size:15px;flex-shrink:0}
+
+  /* ── CLICKABLE NUMBERS / ACTIVE STATE ── */
+  .clickable{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,outline-color .12s ease;outline:2px solid transparent;outline-offset:2px}
+  .clickable:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+  .clickable:focus-visible{outline-color:var(--ubi-blue)}
+  .is-active{outline-color:var(--ubi-blue)!important;box-shadow:0 0 0 3px var(--ubi-blue-faint),var(--sh)!important}
+  .is-dim{opacity:.42;pointer-events:none;filter:grayscale(.35)}
+  @media(prefers-reduced-motion:reduce){.clickable{transition:none}.clickable:hover{transform:none}}
+
 
   /* ── PRINT (PDF) ── */
   @media print{
     @page{margin:12mm}
     body{background:#fff}
-    .brand-stripe{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    header,.exec-card,.sem-card,.zone-card,.chart-card,.tbl-card,.note,.footnote,.stat{box-shadow:none;border:1px solid var(--border);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .tabs,#upload-zone,.btn,.logo-hint{display:none!important}
+    .brand-stripe,.band--navy,.report-band,.site-footer{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    header,.exec-card,.sem-card,.zone-card,.chart-card,.tbl-card,.note,.footnote,.stat,.rb-stat,.fb-chip{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .exec-card,.sem-card,.zone-card,.chart-card,.tbl-card,.note,.footnote,.stat{border:1px solid var(--border)}
+    .tabs,#upload-zone,.btn,.logo-hint,.howto,.fb-clear,.fc-x,.hbrand-by{display:none!important}
+    .clickable{outline:none!important;box-shadow:none!important;transform:none!important}
+    .is-active{outline:1.5px solid var(--ubi-blue)!important}
     .logo-slot{border:none;background:none}
     .tbl-wrap{max-height:none;overflow:visible}
-    .exec-card::before,.sem-dot,.zb-fill,.pill,.badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .exec-card::before,.sem-dot,.zb-fill,.pill,.badge,.rb-stat{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .sec-title{break-after:avoid}
     .tbl-card,.zone-card,.exec-card{break-inside:avoid}
-    /* print only the active view */
     body.print-exec #view-tech{display:none!important}
     body.print-tech #view-exec{display:none!important}
   }
@@ -221,6 +282,10 @@
     </div>
   </div>
   <div class="hright">
+    <div class="hbrand">
+      <span class="hbrand-by" data-en="Powered by" data-es="Tecnología">Powered by</span>
+      <span class="ubi-wordmark"><span class="u-ubi">ubi</span><span class="u-cquia">cquia</span><sup>®</sup></span>
+    </div>
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-bottom:6px">
       <div class="lang-toggle" id="lang-toggle">
         <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
@@ -230,15 +295,35 @@
     <div id="h-date" data-en="— Load a report to begin —" data-es="— Cargue un informe para comenzar —">— Load a report to begin —</div>
     <div class="hbtns">
       <button class="btn primary" id="btn-pdf" onclick="downloadPDF()" data-en="⬇ Download PDF" data-es="⬇ Descargar PDF">⬇ Download PDF</button>
+      <button class="btn" id="btn-xlsx" onclick="downloadExcel()" data-en="⬇ Export Excel" data-es="⬇ Exportar Excel">⬇ Export Excel</button>
       <button class="btn" id="btn-reset" onclick="resetAll()" data-en="↩ New report" data-es="↩ Otro informe">↩ New report</button>
     </div>
   </div>
 </header>
 
+<section class="band band--navy report-band" id="report-band" style="display:none">
+  <div class="container rb-inner">
+    <div class="rb-id">
+      <div class="rb-kicker" data-en="UbiCell® weekly fault report" data-es="Informe semanal de fallas UbiCell®">UbiCell® weekly fault report</div>
+      <div class="rb-title" id="rb-title">—</div>
+      <div class="rb-file mono" id="rb-file"></div>
+    </div>
+    <div class="rb-stats" id="rb-stats"></div>
+  </div>
+</section>
+
 <nav class="tabs" id="tabs">
   <button class="tab active" id="tab-exec" onclick="switchTab('exec')" data-en="📋 Executive Report" data-es="📋 Informe Ejecutivo">📋 Executive Report</button>
   <button class="tab" id="tab-tech" onclick="switchTab('tech')" data-en="🔧 Technical · Maintenance" data-es="🔧 Aspectos Técnicos · Mantenimiento">🔧 Technical · Maintenance</button>
 </nav>
+
+<section class="band band--filter" id="filter-bar" style="display:none">
+  <div class="container fb-inner">
+    <span class="fb-lbl" data-en="Active filter:" data-es="Filtro activo:">Active filter:</span>
+    <div class="fb-chips" id="fb-chips"></div>
+    <button class="fb-clear" id="fb-clear" onclick="clearFilters()" data-en="Clear all ✕" data-es="Limpiar todo ✕">Clear all ✕</button>
+  </div>
+</section>
 
 <main>
   <div id="upload-zone" onclick="document.getElementById('file-input').click()">
@@ -254,6 +339,7 @@
 
   <!-- ════════ VISTA EJECUTIVA ════════ -->
   <div id="view-exec">
+    <div class="howto"><span class="hk">💡</span><span data-en="<b>Tip:</b> the numbers are interactive — click any KPI, category or zone to filter the whole report in sync. Click it again, or “Clear all”, to reset." data-es="<b>Tip:</b> los números son interactivos — haz clic en cualquier KPI, categoría o zona para filtrar todo el informe de forma sincronizada. Vuelve a hacer clic, o «Limpiar todo», para reiniciar."><b>Tip:</b> the numbers are interactive — click any KPI, category or zone to filter the whole report in sync. Click it again, or “Clear all”, to reset.</span></div>
     <div class="sec-title" data-en="1 · Executive summary" data-es="1 · Resumen ejecutivo">1 · Executive summary</div>
     <div class="exec-grid" id="exec-grid"></div>
     <div class="note" id="note-exec"></div>
@@ -312,6 +398,16 @@
   </div>
 </main>
 
+<footer class="band band--navy site-footer">
+  <div class="container ft-inner">
+    <div class="ft-brand">
+      <span class="ubi-wordmark ubi-wordmark--inv"><span class="u-ubi">ubi</span><span class="u-cquia">cquia</span><sup>®</sup></span>
+      <span class="ft-claim">simply connected, simply smart.</span>
+    </div>
+    <div class="ft-note" id="ft-note" data-en="All processing runs locally in your browser — no telemetry leaves this device." data-es="Todo el procesamiento ocurre localmente en tu navegador — ningún dato sale de este dispositivo.">All processing runs locally in your browser — no telemetry leaves this device.</div>
+  </div>
+</footer>
+
 <script>
 // ════════ HELPERS ════════
 function showError(msg){
@@ -321,21 +417,29 @@ function showError(msg){
     document.querySelector('main').prepend(b);}
   b.textContent='⚠️ '+msg;
 }
-const fmt = n => n.toLocaleString('es-CO');
+const fmt = n => Number(n||0).toLocaleString(currentLang==='en'?'en-US':'es-CO');
+
+// ════════ STATE ════════
+let currentLang = 'en';
+let RAW = null;                                   // {data:{sheet:rows}, meta:{...}}
+let activeFilters = {severity:null, category:null, zone:null};
+let charts = [];
+let activeTab = 'exec';
 
 // ════════ LANGUAGE ════════
-let currentLang = 'en';
+function applyStaticI18n(){
+  document.querySelectorAll('[data-en]').forEach(el=>{
+    const val = currentLang==='en' ? el.dataset.en : el.dataset.es;
+    if(val !== undefined) el.innerHTML = val;
+  });
+}
 function setLang(lang){
   currentLang = lang;
   document.getElementById('lang-en').classList.toggle('active', lang==='en');
   document.getElementById('lang-es').classList.toggle('active', lang==='es');
-  // Update all elements with data-en / data-es attributes
-  document.querySelectorAll('[data-en]').forEach(el=>{
-    const val = lang==='en' ? el.dataset.en : el.dataset.es;
-    if(val !== undefined) el.innerHTML = val;
-  });
-  // Re-render dynamic content if report is loaded
-  if(window._lastBuildData) build(window._lastBuildData.wb, window._lastBuildData.filename, true);
+  applyStaticI18n();
+  if(RAW) render();
+  else document.getElementById('h-date').textContent=t('— Load a report to begin —','— Cargue un informe para comenzar —');
 }
 function t(en, es){ return currentLang==='en' ? en : es; }
 
@@ -348,13 +452,12 @@ document.getElementById('logo-input').addEventListener('change',e=>{
 });
 
 // ════════ TABS ════════
-let activeTab='exec';
-function switchTab(t){
-  activeTab=t;
-  document.getElementById('tab-exec').classList.toggle('active',t==='exec');
-  document.getElementById('tab-tech').classList.toggle('active',t==='tech');
-  document.getElementById('view-exec').style.display = t==='exec' ? 'block':'none';
-  document.getElementById('view-tech').style.display = t==='tech' ? 'block':'none';
+function switchTab(tab){
+  activeTab=tab;
+  document.getElementById('tab-exec').classList.toggle('active',tab==='exec');
+  document.getElementById('tab-tech').classList.toggle('active',tab==='tech');
+  document.getElementById('view-exec').style.display = tab==='exec' ? 'block':'none';
+  document.getElementById('view-tech').style.display = tab==='tech' ? 'block':'none';
 }
 
 // ════════ PDF (print) ════════
@@ -371,24 +474,27 @@ zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));
 zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)loadFile(f);});
 document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
 
-let charts=[];
 function resetAll(){
-  window._lastBuildData = null;
+  RAW=null; activeFilters={severity:null,category:null,zone:null};
   document.getElementById('upload-zone').style.display='block';
+  document.getElementById('report-band').style.display='none';
+  document.getElementById('filter-bar').style.display='none';
   document.getElementById('view-exec').style.display='none';
   document.getElementById('view-tech').style.display='none';
   document.getElementById('tabs').classList.remove('show');
   document.getElementById('btn-pdf').style.display='none';
+  document.getElementById('btn-xlsx').style.display='none';
   document.getElementById('btn-reset').style.display='none';
   document.getElementById('file-input').value='';
   document.getElementById('h-date').textContent=t('— Load a report to begin —','— Cargue un informe para comenzar —');
   const b=document.getElementById('err-banner'); if(b)b.remove();
-  charts.forEach(c=>c.destroy());charts=[];
+  charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];
 }
 
 async function loadFile(file){
   try{
     if(file.name.toLowerCase().endsWith('.zip')){
+      if(typeof JSZip==='undefined'){showError(t('ZIP reader failed to load (check your connection).','No cargó el lector de ZIP (revisa la conexión).'));return;}
       const zip=await JSZip.loadAsync(file);
       let xlsxEntry=null,pdfEntry=null;
       zip.forEach((path,entry)=>{
@@ -408,16 +514,18 @@ async function loadFile(file){
             const page=await pdf.getPage(pg);
             const tc=await page.getTextContent();
             const toks=tc.items.map(i=>i.str.trim()).filter(s=>s.length);
-            const idx=toks.findIndex(t=>/actively\s+monitored/i.test(t));
+            const idx=toks.findIndex(s=>/actively\s+monitored/i.test(s));
             if(idx>=0){for(let j=idx+1;j<toks.length;j++){if(/^\d{2,6}$/.test(toks[j])){found=parseInt(toks[j]);break;}}}
           }
           if(found)document.getElementById('fleet-total').value=found;
         }catch(err){console.warn('PDF no legible:',err);}
       }
+      if(typeof XLSX==='undefined'){showError(t('Excel reader failed to load (check your connection).','No cargó el lector de Excel (revisa la conexión).'));return;}
       const xlsxData=await xlsxEntry.async('arraybuffer');
       const wb=XLSX.read(xlsxData,{type:'array'});
       try{build(wb,xlsxEntry.name.split('/').pop());}catch(e){showError(t('Error generating the report: ','Error al generar el informe: ')+e.message);}
     }else{
+      if(typeof XLSX==='undefined'){showError(t('Excel reader failed to load (check your connection).','No cargó el lector de Excel (revisa la conexión).'));return;}
       const buf=await file.arrayBuffer();
       const wb=XLSX.read(buf,{type:'array'});
       try{build(wb,file.name);}catch(e){showError(t('Error generating the report: ','Error al generar el informe: ')+e.message);}
@@ -439,108 +547,237 @@ const SHEETS={
   "Overvoltage":{lbl:{en:"High voltage",es:"Voltaje alto"},desc:{en:"Risk of accelerated equipment damage",es:"Riesgo de daño acelerado a equipos"},crit:"amber",icon:"⬆️",action:{en:"Transformer tap adjustment / regulation",es:"Ajuste de tap del transformador / regulación"},crew:{en:"MV/LV grid crew",es:"Cuadrilla de redes MT/BT"}},
 };
 const CRIT_COLOR={red:"#DC2626",amber:"#EA561B",green:"#4EB270"};
-// Helper to get localized string from SHEETS config
 function cfgLbl(cfg){ return cfg.lbl[currentLang]||cfg.lbl.en; }
 function cfgDesc(cfg){ return cfg.desc[currentLang]||cfg.desc.en; }
 function cfgAction(cfg){ return cfg.action[currentLang]||cfg.action.en; }
 function cfgCrew(cfg){ return cfg.crew[currentLang]||cfg.crew.en; }
-function detectZone(lat){
-  if(lat===null||lat===undefined||isNaN(lat))return t("No geolocation","Sin georreferencia");
-  return lat>8?t("North Zone","Zona Norte"):t("South Zone","Zona Sur");
+
+// Zona: clave ESTABLE (independiente del idioma) + etiqueta localizada
+function zoneKey(lat){
+  const v=parseFloat(lat);
+  if(v===null||v===undefined||isNaN(v))return 'none';
+  return v>8?'north':'south';
+}
+function zoneLabel(key){
+  if(key==='north')return t('North Zone','Zona Norte');
+  if(key==='south')return t('South Zone','Zona Sur');
+  return t('No geolocation','Sin georreferencia');
 }
 
-// ════════ BUILD ════════
-function build(wb,filename,isRebuild){
-  window._lastBuildData = {wb, filename};
-  if(!isRebuild){
+// ════════ FILTER ENGINE (synchronized) ════════
+function passes(sheet,row,ignore){
+  ignore=ignore||{};
+  const f=activeFilters;
+  if(!ignore.severity && f.severity && SHEETS[sheet].crit!==f.severity)return false;
+  if(!ignore.category && f.category && sheet!==f.category)return false;
+  if(!ignore.zone && f.zone && zoneKey(row['Latitude'])!==f.zone)return false;
+  return true;
+}
+function viewData(ignore){
+  const out={};
+  for(const s of Object.keys(SHEETS)) out[s]=(RAW.data[s]||[]).filter(r=>passes(s,r,ignore));
+  return out;
+}
+function anyFilter(){ return !!(activeFilters.severity||activeFilters.category||activeFilters.zone); }
+function toggleFilter(dim,val){
+  if(!val)return;
+  activeFilters[dim] = (activeFilters[dim]===val) ? null : val;
+  render();
+}
+function removeFilter(dim){ activeFilters[dim]=null; render(); }
+function clearFilters(){ activeFilters={severity:null,category:null,zone:null}; render(); }
+function dimLabel(dim){ return dim==='severity'?t('Severity','Criticidad'):dim==='category'?t('Category','Categoría'):t('Zone','Zona'); }
+function filterValLabel(dim,val){
+  if(dim==='severity')return val==='red'?t('Critical','Críticas'):t('Operational','Operativas');
+  if(dim==='category'){const c=SHEETS[val];return c?cfgLbl(c):val;}
+  if(dim==='zone')return zoneLabel(val);
+  return val;
+}
+function activeFilterText(){
+  return ['severity','category','zone'].filter(d=>activeFilters[d])
+    .map(d=>dimLabel(d)+': '+filterValLabel(d,activeFilters[d])).join(' · ');
+}
+function renderFilterBar(){
+  const bar=document.getElementById('filter-bar'),chips=document.getElementById('fb-chips');
+  chips.innerHTML='';
+  const dims=['severity','category','zone'].filter(d=>activeFilters[d]);
+  if(!dims.length){bar.style.display='none';return;}
+  bar.style.display='block';
+  dims.forEach(d=>{
+    const chip=document.createElement('span');chip.className='fb-chip';
+    chip.innerHTML=`<span class="fc-dim">${dimLabel(d)}</span> ${filterValLabel(d,activeFilters[d])} <button class="fc-x" title="${t('Remove','Quitar')}" aria-label="${t('Remove filter','Quitar filtro')}" data-rm="${d}">✕</button>`;
+    chips.appendChild(chip);
+  });
+}
+
+// ════════ BUILD (parse once) ════════
+function build(wb,filename){
   document.getElementById('upload-zone').style.display='none';
   document.getElementById('tabs').classList.add('show');
+  document.getElementById('report-band').style.display='block';
   document.getElementById('btn-pdf').style.display='inline-block';
+  document.getElementById('btn-xlsx').style.display='inline-block';
   document.getElementById('btn-reset').style.display='inline-block';
   switchTab('exec');
-  }
 
-  const dateMatch=filename.match(/(\d{4}-\d{2}-\d{2})/);
-  const repDate=dateMatch?dateMatch[1]:new Date().toISOString().slice(0,10);
-  document.getElementById('h-date').textContent=t('Report: ','Informe: ')+repDate;
-
-  // Parse
   const data={};let totalFaults=0,redCount=0,amberCount=0;
-  const zoneCounts={},zoneTotals={};
   for(const[sheet,cfg]of Object.entries(SHEETS)){
     const ws=wb.Sheets[sheet];
     const rows=ws?XLSX.utils.sheet_to_json(ws,{defval:null}):[];
     data[sheet]=rows;totalFaults+=rows.length;
     if(cfg.crit==='red')redCount+=rows.length;else amberCount+=rows.length;
-    rows.forEach(r=>{
-      const z=detectZone(parseFloat(r['Latitude']));
-      zoneCounts[z]=zoneCounts[z]||{};
-      zoneCounts[z][cfgLbl(cfg)]=(zoneCounts[z][cfgLbl(cfg)]||0)+1;
-      zoneTotals[z]=(zoneTotals[z]||0)+1;
-    });
   }
-
   const fleetTotal=parseInt(document.getElementById('fleet-total').value)||0;
   const affected=new Set();
-  for(const sheet of Object.keys(SHEETS))(data[sheet]||[]).forEach(r=>{if(r['Serial Number'])affected.add(r['Serial Number']);});
+  for(const s of Object.keys(SHEETS))(data[s]||[]).forEach(r=>{if(r['Serial Number'])affected.add(r['Serial Number']);});
   const healthPct=fleetTotal>0?((1-affected.size/fleetTotal)*100):null;
+  const dateMatch=filename.match(/(\d{4}-\d{2}-\d{2})/);
+  const repDate=dateMatch?dateMatch[1]:new Date().toISOString().slice(0,10);
 
-  // ── 1. EXEC CARDS ──
-  const lampOff=(data["Lamp Off At Night"]||[]).length;
-  const tiltAll=data["Tilt - Sudden Tilt Shifts"]||[];
-  const tiltCrit=tiltAll.filter(r=>parseFloat(r["Ending Tilt"])>45).length;
-  const exec=document.getElementById('exec-grid');exec.innerHTML='';
-  const cards=[
-    ...(healthPct!==null?[{cls:healthPct>=90?'ok':(healthPct>=75?'warn':'crit'),n:healthPct.toFixed(1)+'%',lbl:t('Fleet health','Salud de la flota'),desc:t(`${affected.size} of ${fmt(fleetTotal)} luminaires have a fault. The rest operate normally.`,`${affected.size} de ${fmt(fleetTotal)} luminarias presentan alguna falla. El resto opera con normalidad.`)}]:[]),
-    {cls:'crit',n:redCount,lbl:t('Critical faults','Fallas críticas'),desc:t('Affect public safety or service continuity: dark roads, tilted poles, broken lamps.','Afectan la seguridad ciudadana o el servicio: vías a oscuras, postes inclinados, lámparas dañadas.')},
-    {cls:'warn',n:amberCount,lbl:t('Operational faults','Fallas operativas'),desc:t('Degrade service or accelerate wear: voltage issues, flickering, daytime consumption.','Degradan el servicio o aceleran el desgaste: voltaje, parpadeo, consumo diurno.')},
-    {cls:'info',n:lampOff,lbl:t('Roads dark at night','Vías sin luz nocturna'),desc:t('Luminaires off during nighttime hours. Direct impact on safety perception.','Luminarias apagadas en horario nocturno. Impacto directo en percepción de seguridad.')},
-    {cls:tiltCrit>0?'crit':'ok',n:tiltCrit,lbl:t('Poles at physical risk','Postes en riesgo físico'),desc:tiltCrit>0?t('Tilt >45°: immediate on-site inspection due to possible collision.','Inclinación >45°: inspección en sitio inmediata por posible colisión.'):t('No poles with critical tilt this week.','Ningún poste con inclinación crítica esta semana.')},
+  RAW={data,meta:{filename,repDate,fleetTotal,totalFaults,redCount,amberCount,affectedGlobal:affected.size,healthPct}};
+  activeFilters={severity:null,category:null,zone:null};
+  render();
+}
+
+// ════════ RENDER (re-runs on filter / language change) ════════
+function render(){
+  if(!RAW)return;
+  try{
+    renderReportBand();
+    renderFilterBar();
+    const fd=viewData();
+    buildExec(fd);
+    buildSemaforo();
+    buildZones();
+    buildCharts();
+    buildPriority(fd);
+    buildFootnote();
+    buildTech(fd);
+  }catch(e){ showError(t('Render error: ','Error al renderizar: ')+e.message); console.error(e); }
+}
+
+// ── Report identity band (GLOBAL snapshot, never filtered) ──
+function renderReportBand(){
+  const m=RAW.meta;
+  document.getElementById('rb-title').textContent=t('Report','Informe')+': '+m.repDate;
+  document.getElementById('rb-file').textContent=m.filename||'';
+  document.getElementById('h-date').textContent=t('Report: ','Informe: ')+m.repDate;
+  const wrap=document.getElementById('rb-stats');wrap.innerHTML='';
+  const healthCls=m.healthPct===null?'':(m.healthPct>=90?'ok':(m.healthPct>=75?'warn':'crit'));
+  const chips=[
+    {n:fmt(m.fleetTotal),l:t('Monitored fleet','Flota monitoreada')},
+    {n:fmt(m.totalFaults),l:t('Total alerts','Alertas totales')},
+    {n:fmt(m.affectedGlobal),l:t('Affected points','Puntos afectados')},
   ];
-  cards.forEach(c=>{const d=document.createElement('div');d.className='exec-card '+c.cls;
-    d.innerHTML=`<div class="exec-n">${c.n}</div><div class="exec-lbl">${c.lbl}</div><div class="exec-desc">${c.desc}</div>`;exec.appendChild(d);});
+  if(m.healthPct!==null)chips.push({n:m.healthPct.toFixed(1)+'%',l:t('Fleet health','Salud de flota'),cls:'health '+healthCls});
+  chips.forEach(c=>{const d=document.createElement('div');d.className='rb-stat'+(c.cls?' '+c.cls:'');
+    d.innerHTML=`<div class="rb-n">${c.n}</div><div class="rb-l">${c.l}</div>`;wrap.appendChild(d);});
+}
 
+// ── 1. EXEC CARDS (clickable severity + category facets) ──
+function buildExec(fd){
+  const dSev=viewData({severity:true});   // category+zone applied (ignore severity)
+  const dCat=viewData({category:true});   // severity+zone applied (ignore category)
+  let red=0,amber=0;
+  for(const[s,cfg]of Object.entries(SHEETS)){const n=dSev[s].length; if(cfg.crit==='red')red+=n; else amber+=n;}
+  const lampOff=(dCat['Lamp Off At Night']||[]).length;
+  const tiltCrit=(fd['Tilt - Sudden Tilt Shifts']||[]).filter(r=>parseFloat(r['Ending Tilt'])>45).length;
+  const m=RAW.meta, af=anyFilter();
+
+  const exec=document.getElementById('exec-grid');exec.innerHTML='';
+  const cards=[];
+  if(m.healthPct!==null) cards.push({cls:m.healthPct>=90?'ok':(m.healthPct>=75?'warn':'crit'),n:m.healthPct.toFixed(1)+'%',lbl:t('Fleet health','Salud de la flota'),desc:t(`${m.affectedGlobal} of ${fmt(m.fleetTotal)} luminaires have a fault. The rest operate normally.`,`${m.affectedGlobal} de ${fmt(m.fleetTotal)} luminarias presentan alguna falla. El resto opera con normalidad.`)});
+  cards.push({cls:'crit',n:red,lbl:t('Critical faults','Fallas críticas'),desc:t('Affect public safety or service continuity: dark roads, tilted poles, broken lamps.','Afectan la seguridad ciudadana o el servicio: vías a oscuras, postes inclinados, lámparas dañadas.'),fdim:'severity',fval:'red'});
+  cards.push({cls:'warn',n:amber,lbl:t('Operational faults','Fallas operativas'),desc:t('Degrade service or accelerate wear: voltage issues, flickering, daytime consumption.','Degradan el servicio o aceleran el desgaste: voltaje, parpadeo, consumo diurno.'),fdim:'severity',fval:'amber'});
+  cards.push({cls:'info',n:lampOff,lbl:t('Roads dark at night','Vías sin luz nocturna'),desc:t('Luminaires off during nighttime hours. Direct impact on safety perception.','Luminarias apagadas en horario nocturno. Impacto directo en percepción de seguridad.'),fdim:'category',fval:'Lamp Off At Night'});
+  cards.push({cls:tiltCrit>0?'crit':'ok',n:tiltCrit,lbl:t('Poles at physical risk','Postes en riesgo físico'),desc:tiltCrit>0?t('Tilt >45°: immediate on-site inspection due to possible collision.','Inclinación >45°: inspección en sitio inmediata por posible colisión.'):t('No poles with critical tilt in this view.','Ningún poste con inclinación crítica en esta vista.')});
+
+  cards.forEach(c=>{
+    const d=document.createElement('div');d.className='exec-card '+c.cls;
+    if(c.fdim){
+      d.dataset.fdim=c.fdim;d.dataset.fval=c.fval;
+      d.classList.add('clickable');d.tabIndex=0;d.setAttribute('role','button');
+      const active=activeFilters[c.fdim]===c.fval;
+      if(active){d.classList.add('is-active');d.setAttribute('aria-pressed','true');}
+      else{d.setAttribute('aria-pressed','false'); if(af&&c.n===0)d.classList.add('is-dim');}
+      d.title=t('Click to filter the report','Clic para filtrar el informe');
+    }
+    d.innerHTML=`<div class="exec-n">${c.n}</div><div class="exec-lbl">${c.lbl}</div><div class="exec-desc">${c.desc}</div>`;
+    exec.appendChild(d);
+  });
+
+  // view-level numbers for the prose
+  let redV=0,amberV=0; for(const[s,cfg]of Object.entries(SHEETS)){const n=fd[s].length; if(cfg.crit==='red')redV+=n; else amberV+=n;}
+  const totalView=redV+amberV;
+  const affV=new Set(); for(const s of Object.keys(SHEETS))fd[s].forEach(r=>{if(r['Serial Number'])affV.add(r['Serial Number']);});
+  const lead = af ? t('<strong>Filtered view.</strong> ','<strong>Vista filtrada.</strong> ') : '';
   document.getElementById('note-exec').innerHTML=
-    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+ lead +
     (currentLang==='en'
-      ? `During the week, <strong>${totalFaults} alerts</strong> were recorded across a fleet of <strong>${fmt(fleetTotal)} luminaires</strong> under continuous digital monitoring, affecting <strong>${affected.size} unique light points</strong> with at least one issue. `
-        +(healthPct!==null?`<strong>${healthPct.toFixed(1)}%</strong> of the infrastructure operates normally. `:'')
-        +`The <strong>${redCount} critical faults</strong> are this week's top priority due to their impact on public safety and service continuity.`
-      : `Durante la semana se registraron <strong>${totalFaults} alertas</strong> sobre una flota de <strong>${fmt(fleetTotal)} luminarias</strong> bajo inspección digital continua, equivalentes a <strong>${affected.size} puntos luminosos únicos</strong> con al menos una novedad. `
-        +(healthPct!==null?`El <strong>${healthPct.toFixed(1)}%</strong> de la infraestructura opera con normalidad. `:'')
-        +`Las <strong>${redCount} fallas críticas</strong> concentran la prioridad de esta semana por su impacto en seguridad ciudadana y continuidad del servicio.`);
+      ? `<strong>${totalView} alerts</strong> are shown across a fleet of <strong>${fmt(m.fleetTotal)} luminaires</strong> under continuous digital monitoring, affecting <strong>${affV.size} unique light points</strong>. `
+        +(m.healthPct!==null?`<strong>${m.healthPct.toFixed(1)}%</strong> of the infrastructure operates normally. `:'')
+        +`The <strong>${redV} critical faults</strong> concentrate priority due to their impact on public safety and service continuity.`
+      : `Se muestran <strong>${totalView} alertas</strong> sobre una flota de <strong>${fmt(m.fleetTotal)} luminarias</strong> bajo inspección digital continua, equivalentes a <strong>${affV.size} puntos luminosos únicos</strong>. `
+        +(m.healthPct!==null?`El <strong>${m.healthPct.toFixed(1)}%</strong> de la infraestructura opera con normalidad. `:'')
+        +`Las <strong>${redV} fallas críticas</strong> concentran la prioridad por su impacto en seguridad ciudadana y continuidad del servicio.`);
+}
 
-  // ── 2. SEMAFORO ──
+// ── 2. SEMAFORO (category facet selector: always shows all 10) ──
+function buildSemaforo(){
+  const dCat=viewData({category:true}); // severity+zone applied
   const sem=document.getElementById('sem-grid');sem.innerHTML='';
-  let worstCat=null,worstN=0;
+  const af=anyFilter();
+  let worstCat=null,worstN=-1;
   for(const[sheet,cfg]of Object.entries(SHEETS)){
-    const n=data[sheet].length;
+    const n=dCat[sheet].length;
     if(n>worstN){worstN=n;worstCat=cfgLbl(cfg);}
     const dotCls=n===0?'dot-green':(cfg.crit==='red'?'dot-red':'dot-amber');
     const cntCls=n===0?'g':(cfg.crit==='red'?'r':'a');
-    const card=document.createElement('div');card.className='sem-card';
+    const card=document.createElement('div');card.className='sem-card clickable';
+    card.dataset.fdim='category';card.dataset.fval=sheet;card.tabIndex=0;card.setAttribute('role','button');
+    const active=activeFilters.category===sheet;
+    if(active){card.classList.add('is-active');card.setAttribute('aria-pressed','true');}
+    else{card.setAttribute('aria-pressed','false'); if(af&&n===0)card.classList.add('is-dim');}
+    card.title=t('Click to filter by this category','Clic para filtrar por esta categoría');
     card.innerHTML=`<div class="sem-dot ${dotCls}"></div><div class="sem-info"><div class="sem-name">${cfg.icon} ${cfgLbl(cfg)}</div><div class="sem-desc">${cfgDesc(cfg)}</div></div><div class="sem-count ${cntCls}">${n}</div>`;
     sem.appendChild(card);
   }
-  const cleanCats=Object.entries(SHEETS).filter(([s])=>data[s].length===0).map(([,c])=>cfgLbl(c));
+  const cleanCats=Object.entries(SHEETS).filter(([s])=>dCat[s].length===0).map(([,c])=>cfgLbl(c));
+  const head = (worstN>0)
+    ? (currentLang==='en'
+        ? `The highest-incidence category is <strong>${worstCat}</strong> with <strong>${worstN} cases</strong>. `
+        : `La categoría con mayor incidencia es <strong>${worstCat}</strong> con <strong>${worstN} casos</strong>. `)
+    : t('No incidences in the current view. ','Sin incidencias en la vista actual. ');
   document.getElementById('note-sem').innerHTML=
-    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
+    `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+ head +
     (currentLang==='en'
-      ? `The highest-incidence category is <strong>${worstCat}</strong> with <strong>${worstN} cases</strong>. `
-        +(cleanCats.length?`Categories <strong>${cleanCats.join(', ')}</strong> closed the week with no issues. `:'')
-        +`The traffic light distinguishes critical faults (red) from operational ones (orange) to guide resource allocation.`
-      : `La categoría con mayor incidencia es <strong>${worstCat}</strong> con <strong>${worstN} casos</strong>. `
-        +(cleanCats.length?`Las categorías <strong>${cleanCats.join(', ')}</strong> cerraron la semana sin novedades. `:'')
-        +`El semáforo distingue fallas críticas (rojo) de operativas (naranja) para orientar la asignación de recursos.`);
+      ? (cleanCats.length?`Categories <strong>${cleanCats.join(', ')}</strong> show no issues here. `:'')
+        +`The traffic light separates critical faults (red) from operational ones (orange) to guide resource allocation. Click a category to filter the whole report.`
+      : (cleanCats.length?`Las categorías <strong>${cleanCats.join(', ')}</strong> no presentan novedades aquí. `:'')
+        +`El semáforo distingue fallas críticas (rojo) de operativas (naranja) para orientar la asignación de recursos. Haz clic en una categoría para filtrar todo el informe.`);
+}
 
-  // ── 3. ZONES ──
+// ── 3. ZONES (zone facet selector) ──
+function buildZones(){
+  const dZone=viewData({zone:true}); // severity+category applied
+  const zc={},zt={};
+  for(const[s,cfg]of Object.entries(SHEETS)){
+    const lbl=cfgLbl(cfg);
+    dZone[s].forEach(r=>{const zk=zoneKey(r['Latitude']);zc[zk]=zc[zk]||{};zc[zk][lbl]=(zc[zk][lbl]||0)+1;zt[zk]=(zt[zk]||0)+1;});
+  }
   const zg=document.getElementById('zone-grid');zg.innerHTML='';
-  const zoneNames=Object.keys(zoneTotals).sort((a,b)=>zoneTotals[b]-zoneTotals[a]);
-  zoneNames.forEach(z=>{
-    const card=document.createElement('div');card.className='zone-card';
-    const entries=Object.entries(zoneCounts[z]).sort((a,b)=>b[1]-a[1]);
+  const zkeys=Object.keys(zt).sort((a,b)=>zt[b]-zt[a]);
+  if(!zkeys.length){zg.innerHTML=`<div class="empty" style="grid-column:1/-1">${t('No alerts in the current view.','Sin alertas en la vista actual.')}</div>`;}
+  zkeys.forEach(zk=>{
+    const card=document.createElement('div');card.className='zone-card clickable';
+    card.dataset.fdim='zone';card.dataset.fval=zk;card.tabIndex=0;card.setAttribute('role','button');
+    const active=activeFilters.zone===zk;
+    if(active){card.classList.add('is-active');card.setAttribute('aria-pressed','true');}
+    else card.setAttribute('aria-pressed','false');
+    card.title=t('Click to filter by this zone','Clic para filtrar por esta zona');
+    const entries=Object.entries(zc[zk]).sort((a,b)=>b[1]-a[1]);
     const maxV=entries.length?entries[0][1]:1;
-    card.innerHTML=`<div class="zone-hdr"><span class="zone-name">📍 ${z}</span><span class="zone-total">${zoneTotals[z]}</span></div><div class="zone-sub">${t('luminaires with a reported fault','luminarias con alguna falla reportada')}</div>`;
+    card.innerHTML=`<div class="zone-hdr"><span class="zone-name">📍 ${zoneLabel(zk)}</span><span class="zone-total">${zt[zk]}</span></div><div class="zone-sub">${t('luminaires with a reported fault','luminarias con alguna falla reportada')}</div>`;
     entries.forEach(([lbl,n])=>{
       let color='#EA561B';
       for(const cfg of Object.values(SHEETS))if(cfgLbl(cfg)===lbl){color=CRIT_COLOR[cfg.crit];break;}
@@ -550,87 +787,124 @@ function build(wb,filename,isRebuild){
     });
     zg.appendChild(card);
   });
-  const topZone=zoneNames[0];
+  const topZk=zkeys[0];
+  const totalView=zkeys.reduce((s,k)=>s+zt[k],0);
   document.getElementById('note-zone').innerHTML=
     `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
     (currentLang==='en'
-      ? (topZone?`<strong>${topZone}</strong> concentrates <strong>${zoneTotals[topZone]} of ${totalFaults} alerts (${(zoneTotals[topZone]/totalFaults*100).toFixed(0)}%)</strong>, suggesting crew deployment should be prioritized in that sector. `:'')
-        +`Zone assignment is calculated automatically from each luminaire's geolocation, enabling efficient intervention routing.`
-      : (topZone?`La <strong>${topZone}</strong> concentra <strong>${zoneTotals[topZone]} de ${totalFaults} alertas (${(zoneTotals[topZone]/totalFaults*100).toFixed(0)}%)</strong>, lo que sugiere priorizar el despliegue de cuadrillas en ese sector. `:'')
-        +`La asignación zonal se calcula automáticamente a partir de la georreferencia de cada luminaria, permitiendo planear rutas de intervención eficientes.`);
+      ? (topZk&&totalView?`<strong>${zoneLabel(topZk)}</strong> concentrates <strong>${zt[topZk]} of ${totalView} alerts (${(zt[topZk]/totalView*100).toFixed(0)}%)</strong>, suggesting crews be prioritized there. `:'')
+        +`Zone is computed automatically from each luminaire's geolocation. Click a zone to filter the report.`
+      : (topZk&&totalView?`La <strong>${zoneLabel(topZk)}</strong> concentra <strong>${zt[topZk]} de ${totalView} alertas (${(zt[topZk]/totalView*100).toFixed(0)}%)</strong>, lo que sugiere priorizar cuadrillas en ese sector. `:'')
+        +`La zona se calcula automáticamente desde la georreferencia de cada luminaria. Haz clic en una zona para filtrar el informe.`);
+}
 
-  // ── 4. CHARTS ──
-  charts.forEach(c=>c.destroy());charts=[];
+// ── 4. CHARTS (bar=category facet, donut=severity facet; clickable) ──
+function buildCharts(){
+  charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];
+  const dCat=viewData({category:true}), dSev=viewData({severity:true});
+  let redS=0,amberS=0; for(const[s,cfg]of Object.entries(SHEETS)){const n=dSev[s].length; if(cfg.crit==='red')redS+=n; else amberS+=n;}
+  const totalV=redS+amberS;
+
   if(typeof Chart==='undefined'){
     document.querySelectorAll('.chart-card canvas').forEach(cv=>{cv.outerHTML=`<div style="padding:20px;color:var(--faint);font-size:12px">⚠️ ${t('Charts unavailable offline. Numeric data is unaffected.','Gráficas no disponibles sin conexión. Los datos numéricos no se ven afectados.')}</div>`;});
-  }
-  const labels=[],vals=[],cols=[];
-  for(const[sheet,cfg]of Object.entries(SHEETS)){
-    if(data[sheet].length===0)continue;
-    labels.push(cfgLbl(cfg));vals.push(data[sheet].length);cols.push(CRIT_COLOR[cfg.crit]);
-  }
-  if(typeof Chart!=='undefined'){
-    charts.push(new Chart(document.getElementById('chart-bar').getContext('2d'),{
-      type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cols.map(c=>c+'BB'),borderColor:cols,borderWidth:1.5,borderRadius:5}]},
-      options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
-        scales:{x:{grid:{color:'#DCE1EA'},ticks:{font:{family:'Helvetica Neue',size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
-    }));
-    charts.push(new Chart(document.getElementById('chart-donut').getContext('2d'),{
-      type:'doughnut',data:{labels:[t('Critical (safety/service)','Críticas (seguridad/servicio)'),t('Operational (quality/wear)','Operativas (calidad/desgaste)')],
-        datasets:[{data:[redCount,amberCount],backgroundColor:['#DC2626BB','#EA561BBB'],borderColor:'#fff',borderWidth:2}]},
-      options:{responsive:true,cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}}}
-    }));
+  } else {
+    const barCats=[],labels=[],vals=[],cols=[];
+    for(const[s,cfg]of Object.entries(SHEETS)){ if(dCat[s].length===0)continue; barCats.push(s);labels.push(cfgLbl(cfg));vals.push(dCat[s].length);cols.push(CRIT_COLOR[cfg.crit]); }
+    const barCanvas=document.getElementById('chart-bar');
+    if(barCanvas){
+      charts.push(new Chart(barCanvas.getContext('2d'),{
+        type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cols.map(c=>c+'BB'),borderColor:cols,borderWidth:1.5,borderRadius:5}]},
+        options:{indexAxis:'y',responsive:true,onClick:(e,els)=>{if(els.length)toggleFilter('category',barCats[els[0].index]);},
+          plugins:{legend:{display:false}},scales:{x:{grid:{color:'#DCE1EA'},ticks:{font:{family:'Lato',size:11}}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+      }));
+    }
+    const donutCanvas=document.getElementById('chart-donut');
+    if(donutCanvas){
+      charts.push(new Chart(donutCanvas.getContext('2d'),{
+        type:'doughnut',data:{labels:[t('Critical (safety/service)','Críticas (seguridad/servicio)'),t('Operational (quality/wear)','Operativas (calidad/desgaste)')],
+          datasets:[{data:[redS,amberS],backgroundColor:['#DC2626BB','#EA561BBB'],borderColor:'#fff',borderWidth:2}]},
+        options:{responsive:true,cutout:'58%',onClick:(e,els)=>{if(els.length)toggleFilter('severity',els[0].index===0?'red':'amber');},
+          plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}}}
+      }));
+    }
   }
   document.getElementById('note-charts').innerHTML=
     `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
     (currentLang==='en'
-      ? `Of total alerts, <strong>${(redCount/Math.max(totalFaults,1)*100).toFixed(0)}% are critical</strong> and <strong>${(amberCount/Math.max(totalFaults,1)*100).toFixed(0)}% operational</strong>. A low critical proportion indicates most issues are preventive maintenance and do not immediately compromise service.`
-      : `Del total de alertas, el <strong>${(redCount/Math.max(totalFaults,1)*100).toFixed(0)}% son críticas</strong> y el <strong>${(amberCount/Math.max(totalFaults,1)*100).toFixed(0)}% operativas</strong>. Una proporción crítica baja indica que la mayoría de novedades son de mantenimiento preventivo y no comprometen el servicio de forma inmediata.`);
+      ? `Of alerts in view, <strong>${(redS/Math.max(totalV,1)*100).toFixed(0)}% are critical</strong> and <strong>${(amberS/Math.max(totalV,1)*100).toFixed(0)}% operational</strong>. A low critical share indicates most issues are preventive maintenance. Click a bar or slice to filter.`
+      : `De las alertas en vista, el <strong>${(redS/Math.max(totalV,1)*100).toFixed(0)}% son críticas</strong> y el <strong>${(amberS/Math.max(totalV,1)*100).toFixed(0)}% operativas</strong>. Una proporción crítica baja indica mantenimiento mayormente preventivo. Haz clic en una barra o porción para filtrar.`);
+}
 
-  // ── 5. PRIORITIES ──
+// ── 5. PRIORITIES ──
+function computePriorities(fd){
   const prio=[];
-  tiltAll.forEach(r=>{
-    const a=parseFloat(r["Ending Tilt"])||0;
-    if(a>45)prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Tilted pole","Poste inclinado"),d:t(`Tilt of ${a.toFixed(0)}° — possible collision`,`Inclinación de ${a.toFixed(0)}° — posible colisión`),p:"red",plbl:t("IMMEDIATE","INMEDIATA")});
-    else prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Tilted pole","Poste inclinado"),d:t(`Sudden shift to ${a.toFixed(0)}°`,`Cambio súbito a ${a.toFixed(0)}°`),p:"amber",plbl:t("HIGH","ALTA")});
+  (fd["Tilt - Sudden Tilt Shifts"]||[]).forEach(r=>{
+    const a=parseFloat(r["Ending Tilt"])||0, zKey=zoneKey(r["Latitude"]);
+    if(a>45)prio.push({s:r["Serial Number"],zKey,ft:t("Tilted pole","Poste inclinado"),d:t(`Tilt of ${a.toFixed(0)}° — possible collision`,`Inclinación de ${a.toFixed(0)}° — posible colisión`),p:"red",plbl:t("IMMEDIATE","INMEDIATA")});
+    else prio.push({s:r["Serial Number"],zKey,ft:t("Tilted pole","Poste inclinado"),d:t(`Sudden shift to ${a.toFixed(0)}°`,`Cambio súbito a ${a.toFixed(0)}°`),p:"amber",plbl:t("HIGH","ALTA")});
   });
-  (data["Weekly Power Losses > 24 Hours"]||[]).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("No power >24h","Sin energía >24h"),d:t("No supply for more than a day","Sin suministro desde hace más de un día"),p:"red",plbl:t("IMMEDIATE","INMEDIATA")});});
-  (data["Broken Lamp"]||[]).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Broken lamp","Lámpara dañada"),d:t("Consuming energy without illuminating","Consume energía sin iluminar"),p:"amber",plbl:t("HIGH","ALTA")});});
-  (data["Overvoltage"]||[]).filter(r=>parseFloat(r["Average Voltage"])>165).forEach(r=>{prio.push({s:r["Serial Number"],z:detectZone(parseFloat(r["Latitude"])),ft:t("Severe overvoltage","Sobrevoltaje severo"),d:t(`${parseFloat(r["Average Voltage"]).toFixed(0)} V avg — accelerated damage`,`${parseFloat(r["Average Voltage"]).toFixed(0)} V promedio — daño acelerado`),p:"amber",plbl:t("HIGH","ALTA")});});
+  (fd["Weekly Power Losses > 24 Hours"]||[]).forEach(r=>prio.push({s:r["Serial Number"],zKey:zoneKey(r["Latitude"]),ft:t("No power >24h","Sin energía >24h"),d:t("No supply for more than a day","Sin suministro desde hace más de un día"),p:"red",plbl:t("IMMEDIATE","INMEDIATA")}));
+  (fd["Broken Lamp"]||[]).forEach(r=>prio.push({s:r["Serial Number"],zKey:zoneKey(r["Latitude"]),ft:t("Broken lamp","Lámpara dañada"),d:t("Consuming energy without illuminating","Consume energía sin iluminar"),p:"amber",plbl:t("HIGH","ALTA")}));
+  (fd["Overvoltage"]||[]).filter(r=>parseFloat(r["Average Voltage"])>165).forEach(r=>prio.push({s:r["Serial Number"],zKey:zoneKey(r["Latitude"]),ft:t("Severe overvoltage","Sobrevoltaje severo"),d:t(`${parseFloat(r["Average Voltage"]).toFixed(0)} V avg — accelerated damage`,`${parseFloat(r["Average Voltage"]).toFixed(0)} V promedio — daño acelerado`),p:"amber",plbl:t("HIGH","ALTA")}));
   prio.sort((a,b)=>(a.p==='red'?0:1)-(b.p==='red'?0:1));
-  document.getElementById('prio-count').textContent=prio.length+' '+(t('luminaires','luminarias'));
+  return prio;
+}
+function buildPriority(fd){
+  const prio=computePriorities(fd);
+  document.getElementById('prio-count').textContent=prio.length+' '+t('luminaires','luminarias');
   const body=document.getElementById('prio-body');body.innerHTML='';
+  if(!prio.length){body.innerHTML=`<tr><td colspan="5" class="empty">✅ ${t('No priority interventions in this view.','Sin intervenciones prioritarias en esta vista.')}</td></tr>`;}
   prio.forEach(p=>{const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="mono">${p.s||'—'}</td><td>${p.z}</td><td>${p.ft}</td><td>${p.d}</td><td><span class="pill pill-${p.p}">${p.plbl}</span></td>`;
+    tr.innerHTML=`<td class="mono">${p.s||'—'}</td><td>${zoneLabel(p.zKey)}</td><td>${p.ft}</td><td>${p.d}</td><td><span class="pill pill-${p.p}">${p.plbl}</span></td>`;
     body.appendChild(tr);});
   const inmediatas=prio.filter(p=>p.p==='red').length;
   document.getElementById('note-prio').innerHTML=
     `<span class="note-lbl">${t('Executive summary','Lectura ejecutiva')}</span>`+
     (currentLang==='en'
-      ? `<strong>${prio.length} luminaires requiring priority intervention</strong> were identified, of which <strong>${inmediatas} require immediate attention</strong> due to physical risk or total service loss. It is recommended to schedule these interventions within the next 48 hours and document each case closure for the next report.`
-      : `Se identifican <strong>${prio.length} luminarias con intervención prioritaria</strong>, de las cuales <strong>${inmediatas} requieren atención inmediata</strong> por riesgo físico o pérdida total de servicio. Se recomienda programar estas intervenciones dentro de las próximas 48 horas y documentar el cierre de cada caso para el siguiente reporte.`);
-
-  // ── FOOTNOTE ──
-  document.getElementById('footnote').innerHTML=
-    (currentLang==='en'
-      ? `<strong>Methodological note:</strong> this report consolidates ${totalFaults} alerts automatically detected by the UbiCell® sensor network during the week, across a fleet of <strong>${fmt(fleetTotal)} actively monitored luminaires</strong>. <strong>Critical</strong> faults directly affect public safety or service delivery; <strong>operational</strong> ones degrade quality or accelerate infrastructure wear. Zones are assigned automatically by geolocation. For full technical detail, see the Technical tab.`
-      : `<strong>Nota metodológica:</strong> este informe consolida ${totalFaults} alertas detectadas automáticamente por la red de sensores UbiCell® durante la semana, sobre una flota de <strong>${fmt(fleetTotal)} luminarias monitoreadas activamente</strong>. Las fallas <strong>críticas</strong> afectan directamente la seguridad ciudadana o la prestación del servicio; las <strong>operativas</strong> degradan la calidad o aceleran el desgaste de la infraestructura. Las zonas se asignan automáticamente por georreferencia. Para el detalle técnico completo, consulte la pestaña «Aspectos Técnicos».`);
-
-  // ════════ VISTA TÉCNICA ════════
-  buildTech(data,zoneNames,zoneCounts,zoneTotals);
+      ? `<strong>${prio.length} luminaires requiring priority intervention</strong> were identified, of which <strong>${inmediatas} require immediate attention</strong> due to physical risk or total service loss. Schedule these within the next 48 hours and document each case closure for the next report.`
+      : `Se identifican <strong>${prio.length} luminarias con intervención prioritaria</strong>, de las cuales <strong>${inmediatas} requieren atención inmediata</strong> por riesgo físico o pérdida total de servicio. Prográmalas dentro de las próximas 48 horas y documenta el cierre de cada caso para el siguiente reporte.`);
 }
 
-function buildTech(data,zoneNames,zoneCounts,zoneTotals){
-  // ── Stats ──
-  const uv=data["Undervoltage"]||[],ov=data["Overvoltage"]||[];
-  const uvVals=uv.map(r=>parseFloat(r["Average Voltage"])||0);
-  const ovVals=ov.map(r=>parseFloat(r["Average Voltage"])||0);
-  const dayBurn=data["Day Burning"]||[];
-  const wasteW=dayBurn.reduce((s,r)=>s+(parseFloat(r["Daytime Power Consumption"])||0),0);
-  const flicker=data["Light Flickering - VSags"]||[];
-  const flickerEvents=flicker.reduce((s,r)=>s+(parseInt(r["Event Count"])||0),0);
-  const tiltMax=Math.max(0,...(data["Tilt - Sudden Tilt Shifts"]||[]).map(r=>parseFloat(r["Ending Tilt"])||0));
+// ── FOOTNOTE (global method note) ──
+function buildFootnote(){
+  const m=RAW.meta;
+  document.getElementById('footnote').innerHTML=
+    (currentLang==='en'
+      ? `<strong>Methodological note:</strong> this report consolidates ${m.totalFaults} alerts automatically detected by the UbiCell® sensor network during the week, across a fleet of <strong>${fmt(m.fleetTotal)} actively monitored luminaires</strong>. <strong>Critical</strong> faults directly affect public safety or service delivery; <strong>operational</strong> ones degrade quality or accelerate infrastructure wear. Zones are assigned automatically by geolocation. The numbers above are interactive: click any KPI, category or zone to filter every section in sync. For full technical detail, see the Technical tab.`
+      : `<strong>Nota metodológica:</strong> este informe consolida ${m.totalFaults} alertas detectadas automáticamente por la red de sensores UbiCell® durante la semana, sobre una flota de <strong>${fmt(m.fleetTotal)} luminarias monitoreadas activamente</strong>. Las fallas <strong>críticas</strong> afectan directamente la seguridad ciudadana o la prestación del servicio; las <strong>operativas</strong> degradan la calidad o aceleran el desgaste de la infraestructura. Las zonas se asignan automáticamente por georreferencia. Los números de arriba son interactivos: haz clic en cualquier KPI, categoría o zona para filtrar todas las secciones de forma sincronizada. Para el detalle técnico completo, consulte la pestaña «Aspectos Técnicos».`);
+}
 
+// ════════ TECHNICAL VIEW ════════
+function computeWorkOrders(fd){
+  const zc={};
+  for(const[s,cfg]of Object.entries(SHEETS)){
+    fd[s].forEach(r=>{const zk=zoneKey(r["Latitude"]);zc[zk]=zc[zk]||{};zc[zk][s]=(zc[zk][s]||0)+1;});
+  }
+  const zkeys=Object.keys(zc).sort((a,b)=>{
+    const ta=Object.values(zc[a]).reduce((x,y)=>x+y,0), tb=Object.values(zc[b]).reduce((x,y)=>x+y,0);
+    return tb-ta;
+  });
+  const rows=[];
+  zkeys.forEach(zk=>{
+    for(const[s,cfg]of Object.entries(SHEETS)){
+      const n=zc[zk][s]||0;
+      if(n>0)rows.push({zKey:zk,zoneLabel:zoneLabel(zk),action:cfgAction(cfg),n,crew:cfgCrew(cfg),crit:cfg.crit});
+    }
+  });
+  rows.sort((a,b)=>(a.crit==='red'?0:1)-(b.crit==='red'?0:1)||b.n-a.n);
+  rows.forEach((r,i)=>r.id='WO-'+String(i+1).padStart(3,'0'));
+  return rows;
+}
+function buildTech(fd){
+  // ── Stats ──
+  const uv=fd["Undervoltage"]||[],ov=fd["Overvoltage"]||[];
+  const uvVals=uv.map(r=>parseFloat(r["Average Voltage"])).filter(v=>!isNaN(v));
+  const ovVals=ov.map(r=>parseFloat(r["Average Voltage"])).filter(v=>!isNaN(v));
+  const dayBurn=fd["Day Burning"]||[];
+  const wasteW=dayBurn.reduce((s,r)=>s+(parseFloat(r["Daytime Power Consumption"])||0),0);
+  const flicker=fd["Light Flickering - VSags"]||[];
+  const flickerEvents=flicker.reduce((s,r)=>s+(parseInt(r["Event Count"])||0),0);
+  const tiltMax=Math.max(0,...(fd["Tilt - Sudden Tilt Shifts"]||[]).map(r=>parseFloat(r["Ending Tilt"])||0));
   const stats=[
     {n:uvVals.length?Math.min(...uvVals).toFixed(1)+' V':'—',l:t('Min. voltage recorded','Voltaje mínimo registrado')},
     {n:ovVals.length?Math.max(...ovVals).toFixed(1)+' V':'—',l:t('Max. voltage recorded','Voltaje máximo registrado')},
@@ -645,28 +919,21 @@ function buildTech(data,zoneNames,zoneCounts,zoneTotals){
 
   // ── Work orders ──
   const wb2=document.getElementById('work-body');wb2.innerHTML='';
-  let wo=1;
-  const rows=[];
-  zoneNames.forEach(z=>{
-    for(const[sheet,cfg]of Object.entries(SHEETS)){
-      const n=(zoneCounts[z]&&zoneCounts[z][cfgLbl(cfg)])||0;
-      if(n>0)rows.push({z,action:cfgAction(cfg),n,crew:cfgCrew(cfg),crit:cfg.crit});
-    }
-  });
-  rows.sort((a,b)=>(a.crit==='red'?0:1)-(b.crit==='red'?0:1)||b.n-a.n);
-  rows.forEach(r=>{const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="mono">WO-${String(wo++).padStart(3,'0')}</td><td>${r.z}</td><td>${r.crit==='red'?'<span class="hi-red">●</span> ':''}${r.action}</td><td class="mono" style="text-align:center">${r.n}</td><td style="white-space:normal;font-size:12px;color:var(--muted)">${r.crew}</td>`;
+  const wos=computeWorkOrders(fd);
+  if(!wos.length){wb2.innerHTML=`<tr><td colspan="5" class="empty">${t('No work orders in this view.','Sin órdenes de trabajo en esta vista.')}</td></tr>`;}
+  wos.forEach(r=>{const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono">${r.id}</td><td>${r.zoneLabel}</td><td>${r.crit==='red'?'<span class="hi-red">●</span> ':''}${r.action}</td><td class="mono" style="text-align:center">${r.n}</td><td style="white-space:normal;font-size:12px;color:var(--muted)">${r.crew}</td>`;
     wb2.appendChild(tr);});
   document.getElementById('note-work').innerHTML=
     `<span class="note-lbl">${t('Planning note','Nota de planeación')}</span>`+
     (currentLang==='en'
-      ? `<strong>${rows.length} suggested work orders</strong> are generated, grouped by zone and intervention type, ordered by criticality (● = critical). Each order groups nearby luminaires with the same fault to optimize crew routing. Serials and coordinates for each point are in the detail tables below.`
-      : `Se generan <strong>${rows.length} órdenes de trabajo sugeridas</strong> agrupadas por zona y tipo de intervención, ordenadas por criticidad (● = crítica). Cada orden agrupa luminarias cercanas con la misma falla para optimizar el desplazamiento de cuadrillas. Los seriales y coordenadas de cada punto están en las tablas de detalle a continuación.`);
+      ? `<strong>${wos.length} suggested work orders</strong> are generated, grouped by zone and intervention type, ordered by criticality (● = critical). Each order groups nearby luminaires with the same fault to optimize crew routing. Serials and coordinates for each point are in the detail tables below.`
+      : `Se generan <strong>${wos.length} órdenes de trabajo sugeridas</strong> agrupadas por zona y tipo de intervención, ordenadas por criticidad (● = crítica). Cada orden agrupa luminarias cercanas con la misma falla para optimizar el desplazamiento de cuadrillas. Los seriales y coordenadas de cada punto están en las tablas de detalle a continuación.`);
 
   // ── Detail tables with maps links ──
   const td=document.getElementById('tech-tables');td.innerHTML='';
   for(const[sheet,cfg]of Object.entries(SHEETS)){
-    const rows=data[sheet]||[];
+    const rows=fd[sheet]||[];
     const card=document.createElement('div');card.className='tbl-card';
     const cnt=rows.length?`<span class="badge ${cfg.crit==='red'?'b-red':'b-amber'}">${rows.length} ${t('node','nodo')}${rows.length!==1?'s':''}</span>`:`<span class="badge b-gray">${t('No alerts','Sin alertas')}</span>`;
     card.innerHTML=`<div class="tbl-hdr"><span class="tbl-ttl">${cfg.icon} ${cfgLbl(cfg)} <span style="font-weight:400;color:var(--faint);font-size:12px">— ${cfgAction(cfg)}</span></span>${cnt}</div>`;
@@ -703,6 +970,60 @@ function buildTech(data,zoneNames,zoneCounts,zoneTotals){
     wrap.appendChild(tbl);card.appendChild(wrap);td.appendChild(card);
   }
 }
+
+// ════════ EXPORT EXCEL (current view) ════════
+function downloadExcel(){
+  if(!RAW){showError(t('Load a report first.','Cargue un informe primero.'));return;}
+  if(typeof XLSX==='undefined'){showError(t('Excel writer is unavailable.','El generador de Excel no está disponible.'));return;}
+  try{
+    const fd=viewData(), filtered=anyFilter(), m=RAW.meta, wbOut=XLSX.utils.book_new();
+    // Summary
+    const sum=[];
+    sum.push([t('UbiCell® weekly fault report','Informe semanal de fallas UbiCell®')]);
+    sum.push([t('Report date','Fecha del informe'),m.repDate]);
+    sum.push([t('Source file','Archivo fuente'),m.filename]);
+    sum.push([t('Generated','Generado'),new Date().toLocaleString(currentLang==='en'?'en-US':'es-CO')]);
+    sum.push([t('Monitored fleet','Flota monitoreada'),m.fleetTotal]);
+    sum.push([t('Total alerts (report)','Alertas totales (informe)'),m.totalFaults]);
+    sum.push([t('Affected light points','Puntos luminosos afectados'),m.affectedGlobal]);
+    if(m.healthPct!==null)sum.push([t('Fleet health %','Salud de la flota %'),Number(m.healthPct.toFixed(1))]);
+    sum.push([]);
+    sum.push([t('Active filter','Filtro activo'), filtered?activeFilterText():t('None (full report)','Ninguno (informe completo)')]);
+    sum.push([]);
+    sum.push([t('Category','Categoría'),t('Criticality','Criticidad'),t('Alerts in view','Alertas en vista')]);
+    for(const[s,cfg]of Object.entries(SHEETS)) sum.push([cfgLbl(cfg), cfg.crit==='red'?t('Critical','Crítica'):t('Operational','Operativa'), fd[s].length]);
+    XLSX.utils.book_append_sheet(wbOut, XLSX.utils.aoa_to_sheet(sum), t('Summary','Resumen').slice(0,31));
+    // Priorities
+    const pr=computePriorities(fd);
+    const pa=[[t('Serial','Serial'),t('Zone','Zona'),t('Fault type','Tipo de falla'),t('Detail','Detalle'),t('Priority','Prioridad')]];
+    pr.forEach(p=>pa.push([p.s||'',zoneLabel(p.zKey),p.ft,p.d,p.plbl]));
+    XLSX.utils.book_append_sheet(wbOut, XLSX.utils.aoa_to_sheet(pa), t('Priorities','Prioridades').slice(0,31));
+    // Work orders
+    const wo=computeWorkOrders(fd);
+    const wa=[['#',t('Zone','Zona'),t('Intervention','Intervención'),t('Luminaires','Luminarias'),t('Suggested resources','Recursos sugeridos'),t('Criticality','Criticidad')]];
+    wo.forEach(w=>wa.push([w.id,w.zoneLabel,w.action,w.n,w.crew,w.crit==='red'?t('Critical','Crítica'):t('Operational','Operativa')]));
+    XLSX.utils.book_append_sheet(wbOut, XLSX.utils.aoa_to_sheet(wa), t('WorkOrders','OrdenesTrabajo').slice(0,31));
+    // Detail
+    const da=[[t('Category','Categoría'),t('Serial','Serial'),t('Zone','Zona'),'Latitude','Longitude','Average Voltage','Ending Tilt','Event Count','Daytime Power Consumption']];
+    for(const[s,cfg]of Object.entries(SHEETS)){
+      fd[s].forEach(r=>da.push([cfgLbl(cfg), r['Serial Number']||'', zoneLabel(zoneKey(r['Latitude'])), r['Latitude']==null?'':r['Latitude'], r['Longitude']==null?'':r['Longitude'], r['Average Voltage']==null?'':r['Average Voltage'], r['Ending Tilt']==null?'':r['Ending Tilt'], r['Event Count']==null?'':r['Event Count'], r['Daytime Power Consumption']==null?'':r['Daytime Power Consumption']]));
+    }
+    XLSX.utils.book_append_sheet(wbOut, XLSX.utils.aoa_to_sheet(da), t('Detail','Detalle').slice(0,31));
+    XLSX.writeFile(wbOut, `UbiCell_${m.repDate}${filtered?'_filtered':''}.xlsx`);
+  }catch(e){ showError(t('Could not export Excel: ','No se pudo exportar a Excel: ')+e.message); }
+}
+
+// ════════ DELEGATED EVENTS (work after every re-render) ════════
+document.addEventListener('click',e=>{
+  const rm=e.target.closest('[data-rm]'); if(rm){removeFilter(rm.dataset.rm);return;}
+  const el=e.target.closest('[data-fdim]'); if(el&&!el.classList.contains('is-dim'))toggleFilter(el.dataset.fdim,el.dataset.fval);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const el=e.target.closest&&e.target.closest('[data-fdim]');
+  if(el&&!el.classList.contains('is-dim')){e.preventDefault();toggleFilter(el.dataset.fdim,el.dataset.fval);}
+});
+
 </script>
 </body>
 </html>

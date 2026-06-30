@@ -37,6 +37,9 @@ body{margin:0;background:var(--ubi-gray);color:var(--ubi-navy);font-family:"Lato
 .drop{margin:20px 0 0;border:2px dashed rgba(255,255,255,.3);border-radius:var(--radio);padding:26px;text-align:center;cursor:pointer;transition:.15s;background:rgba(255,255,255,.04)}
 .drop.drag{border-color:var(--ubi-blue);background:rgba(34,176,225,.12)}
 .drop .big{font-weight:700;font-size:15px}.drop .sm{color:#aab2cb;font-size:13px;margin-top:6px}
+.loadnote{margin-top:16px;background:rgba(34,176,225,.08);border:1px solid rgba(34,176,225,.28);border-radius:10px;padding:13px 16px;font-size:13px;color:#cdd5ea;line-height:1.55;text-align:left}
+.loadnote .reps{margin:9px 0;display:flex;flex-wrap:wrap;gap:7px}
+.loadnote .rep{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:2px 9px;color:#eaf6ff;white-space:nowrap}
 .loaded{margin-top:12px;font-size:13px;color:var(--ubi-lime);font-weight:700}
 
 /* control bar */
@@ -76,7 +79,7 @@ main#main.on{display:block;flex:1 1 auto;min-height:0;overflow:auto;padding:18px
 .panel{display:none}.panel.active{display:block}
 .shell.on ~ footer{display:none}
 #p_syn.active{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;align-items:start}
-#p_syn.active>.barbtns,#p_syn.active>#peritoOut,#p_syn.active>.intro,#p_syn.active>.kpis,#p_syn.active>.grid2{grid-column:1/-1;margin-bottom:0}
+#p_syn.active>.barbtns,#p_syn.active>#peritoOut,#p_syn.active>.intro,#p_syn.active>.stleg,#p_syn.active>.kpis,#p_syn.active>.grid2{grid-column:1/-1;margin-bottom:0}
 #p_syn.active>.card{margin-bottom:0}
 .duo{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;align-items:stretch}
 .duo>.card{margin-bottom:0}
@@ -129,8 +132,8 @@ td.ok{color:var(--ubi-darkgreen);font-weight:700}td.bad{color:var(--ubi-orange);
 .ficha .f .v{font-size:13.5px;color:var(--ubi-deep);line-height:1.45}.ficha .f .v b{color:var(--ubi-navy)}
 .howto{font-size:12.5px;color:var(--ubi-deep);background:var(--ubi-gray);border-left:3px solid var(--ubi-lime);border-radius:8px;padding:9px 12px;margin-top:11px;line-height:1.5}
 .howto b{color:var(--ubi-darkgreen)}
-.stleg{display:flex;flex-wrap:wrap;gap:14px 18px;font-size:12.5px;color:var(--ubi-deep);background:#fff;border:1px solid var(--ubi-line);border-radius:10px;padding:11px 15px;margin-bottom:18px}
-.stleg span{display:inline-flex;align-items:center;gap:7px}
+.stleg{display:flex;flex-wrap:wrap;gap:14px 22px;font-size:12.5px;color:var(--ubi-deep);background:#fff;border:1px solid var(--ubi-line);border-radius:10px;padding:11px 15px;margin-bottom:18px}
+.stleg span{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
 .stleg i{width:11px;height:11px;border-radius:3px;display:inline-block;flex:0 0 auto}
 /* (subnav retirado: la navegación de familias vive en el rail izquierdo) */
 .crumb{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ubi-gray2);margin-bottom:12px}
@@ -186,6 +189,11 @@ footer b{color:#fff}
       <div class="sm" id="loadSm">varios a la vez · telemetría + reporte de eventos · EN/ES</div>
     </div>
     <input type="file" id="file" accept=".csv,text/csv" multiple style="display:none">
+    <div class="loadnote" id="loadNote">
+      <div id="loadNoteA">Puedes subir directamente, en el mismo paso, los reportes exportados desde UbiVu:</div>
+      <div class="reps"><span class="rep">Transformer Details</span><span class="rep">Voltage Sag</span><span class="rep">Voltage Swell</span><span class="rep">Power Status</span></div>
+      <div id="loadNoteB">Según la disponibilidad de cada uno, sus datos se completan automáticamente en las secciones donde se utilizan (telemetría, calidad de energía y eventos).</div>
+    </div>
     <div class="loaded" id="loaded"></div>
   </div>
 </section>
@@ -208,7 +216,8 @@ footer b{color:#fff}
         <div class="sel"><label id="lblNode">Nodo</label><select id="selNode"></select></div>
         <div class="sel"><label id="lblKva">kVA de operación</label><input type="number" id="inKva" inputmode="decimal" placeholder=""></div>
         <button class="btn" id="pdfTab" style="margin-left:auto;font-size:12px;padding:7px 13px">⤓ <span id="pdfTabTxt">PDF de esta pestaña</span></button>
-        <button class="btn" id="pdfAll" style="font-size:12px;padding:7px 13px;background:var(--ubi-blue);color:#fff;border-color:var(--ubi-blue)">⤓ <span id="pdfAllTxt">Informe PDF</span></button>
+        <button class="btn" id="pdfAll" style="font-size:12px;padding:7px 13px">⤓ <span id="pdfAllTxt">Informe PDF</span></button>
+        <button class="btn" id="genDiag" style="font-size:12px;padding:7px 13px;background:var(--ubi-blue);color:#fff;border-color:var(--ubi-blue)">✦ Generar diagnóstico IA</button>
         <button class="btn" id="reload" style="font-size:12px;padding:7px 13px">⤓ <span id="reloadTxt">Load another file</span></button>
       </div>
     </div>
@@ -456,18 +465,18 @@ const L=(es,en)=>LANG==="ES"?es:en;
 function varsOf(C){
   const list=[];
   const phLabel=(base,p)=>base+" X"+(p+1);
-  C.phases.forEach(p=>list.push({key:"V"+p,label:phLabel(L("Voltaje","Voltage"),p),data:C.V[p],unit:"V"}));
-  C.phases.forEach(p=>list.push({key:"I"+p,label:phLabel(L("Corriente","Current"),p),data:C.I[p],unit:"A"}));
-  list.push({key:"kva",label:"kVA",data:C.kva,unit:"kVA"});
-  C.phases.forEach(p=>{if(C.PF[p].some(x=>x!=null))list.push({key:"PF"+p,label:phLabel(L("FP","PF"),p),data:C.PF[p],unit:""});});
-  C.phases.forEach(p=>{if(C.FREQ[p].some(x=>x!=null))list.push({key:"F"+p,label:phLabel(L("Frecuencia","Frequency"),p),data:C.FREQ[p],unit:"Hz"});});
-  C.phases.forEach(p=>{if(C.VTHD[p].some(x=>x!=null))list.push({key:"VT"+p,label:phLabel(L("THD V","V THD"),p),data:C.VTHD[p],unit:"%"});});
-  C.phases.forEach(p=>{if(C.ITHD[p].some(x=>x!=null))list.push({key:"IT"+p,label:phLabel(L("THD I","I THD"),p),data:C.ITHD[p],unit:"%"});});
-  if(C.oilT.some(x=>x!=null))list.push({key:"oilT",label:L("Temp. aceite","Oil temp"),data:C.oilT,unit:"°C"});
-  if(C.press.some(x=>x!=null)&&new Set(C.press.filter(x=>x!=null)).size>1)list.push({key:"press",label:L("Presión","Pressure"),data:C.press,unit:"psi"});
-  if(C.imbVser&&C.imbVser.some(x=>x!=null))list.push({key:"imbV",label:L("Desbalance V","V imbalance"),data:C.imbVser,unit:"%"});
-  if(C.imbIser&&C.imbIser.some(x=>x!=null))list.push({key:"imbI",label:L("Desbalance I","I imbalance"),data:C.imbIser,unit:"%"});
-  if(C.rssi.some(x=>x!=null))list.push({key:"rssi",label:"RSSI",data:C.rssi,unit:"dBm"});
+  C.phases.forEach(p=>list.push({key:"V"+p,label:phLabel(L("Voltaje","Voltage"),p),data:C.V[p],unit:"V",desc:L("Tensión entregada por la fase; debe mantenerse dentro de ±5% del nominal.","Voltage delivered on this phase; should stay within ±5% of nominal.")}));
+  C.phases.forEach(p=>list.push({key:"I"+p,label:phLabel(L("Corriente","Current"),p),data:C.I[p],unit:"A",desc:L("Corriente por la fase; refleja la demanda. Picos sostenidos estresan el conductor.","Current on this phase; reflects demand. Sustained peaks stress the conductor.")}));
+  list.push({key:"kva",label:"kVA",data:C.kva,unit:"kVA",desc:L("Potencia aparente total; comparada con el kVA de operación entrega la cargabilidad.","Total apparent power; compared to the operating kVA it gives loading.")});
+  C.phases.forEach(p=>{if(C.PF[p].some(x=>x!=null))list.push({key:"PF"+p,label:phLabel(L("FP","PF"),p),data:C.PF[p],unit:"",desc:L("Factor de potencia (valor absoluto). Bajo 0,9 indica carga reactiva o ineficiencia.","Power factor (absolute value). Below 0.9 indicates reactive load or inefficiency.")});});
+  C.phases.forEach(p=>{if(C.FREQ[p].some(x=>x!=null))list.push({key:"F"+p,label:phLabel(L("Frecuencia","Frequency"),p),data:C.FREQ[p],unit:"Hz",desc:L("Frecuencia de la red; debe mantenerse cerca del nominal (50/60 Hz).","Grid frequency; should stay close to nominal (50/60 Hz).")});});
+  C.phases.forEach(p=>{if(C.VTHD[p].some(x=>x!=null))list.push({key:"VT"+p,label:phLabel(L("THD V","V THD"),p),data:C.VTHD[p],unit:"%",desc:L("Distorsión armónica de tensión; THD alta degrada la calidad de la onda.","Voltage harmonic distortion; high THD degrades waveform quality.")});});
+  C.phases.forEach(p=>{if(C.ITHD[p].some(x=>x!=null))list.push({key:"IT"+p,label:phLabel(L("THD I","I THD"),p),data:C.ITHD[p],unit:"%",desc:L("Distorsión armónica de corriente; revela cargas no lineales aguas abajo.","Current harmonic distortion; reveals non-linear loads downstream.")});});
+  if(C.oilT.some(x=>x!=null))list.push({key:"oilT",label:L("Temp. aceite","Oil temp"),data:C.oilT,unit:"°C",desc:L("Temperatura del aceite; sobre ~65 °C sostenido acelera el envejecimiento del aislamiento.","Oil temperature; sustained above ~65 °C accelerates insulation aging.")});
+  if(C.press.some(x=>x!=null)&&new Set(C.press.filter(x=>x!=null)).size>1)list.push({key:"press",label:L("Presión","Pressure"),data:C.press,unit:"psi",desc:L("Presión interna del aceite; su oscilación acompaña el ciclo térmico-mecánico diario.","Internal oil pressure; its swing follows the daily thermal-mechanical cycle.")});
+  if(C.imbVser&&C.imbVser.some(x=>x!=null))list.push({key:"imbV",label:L("Desbalance V","V imbalance"),data:C.imbVser,unit:"%",desc:L("Desequilibrio de tensión entre fases; sobre 2–3% estresa equipos trifásicos.","Voltage imbalance between phases; above 2–3% stresses three-phase equipment.")});
+  if(C.imbIser&&C.imbIser.some(x=>x!=null))list.push({key:"imbI",label:L("Desbalance I","I imbalance"),data:C.imbIser,unit:"%",desc:L("Desequilibrio de corriente entre fases; un desbalance alto sobrecarga una fase.","Current imbalance between phases; a high imbalance overloads one phase.")});
+  if(C.rssi.some(x=>x!=null))list.push({key:"rssi",label:"RSSI",data:C.rssi,unit:"dBm",desc:L("Intensidad de señal del nodo; valores muy bajos arriesgan pérdida de datos.","Node signal strength; very low values risk data loss.")});
   return list;
 }
 
@@ -476,10 +485,19 @@ let CH=[]; // charts vivos
 function killCharts(){CH.forEach(c=>{try{c.destroy();}catch(e){}});CH=[];}
 const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function mkChart(ctx,cfg){const c=new Chart(ctx,cfg);CH.push(c);return c;}
-const baseOpts=extra=>Object.assign({responsive:true,maintainAspectRatio:false,animation:false,
-  plugins:{legend:{labels:{font:{family:"Lato",size:11},color:cssv("--ubi-deep")}}},
-  scales:{x:{ticks:{font:{family:"JetBrains Mono",size:9},color:cssv("--ubi-gray2"),maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{color:"rgba(0,0,0,.04)"}},
-          y:{ticks:{font:{family:"JetBrains Mono",size:10},color:cssv("--ubi-gray2")},grid:{color:"rgba(0,0,0,.06)"}}}},extra);
+function baseOpts(extra){
+  extra=extra||{};
+  const o=Object.assign({responsive:true,maintainAspectRatio:false,animation:false,
+    interaction:{mode:"index",intersect:false},
+    scales:{x:{ticks:{font:{family:"JetBrains Mono",size:9},color:cssv("--ubi-gray2"),maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{color:"rgba(0,0,0,.04)"}},
+            y:{ticks:{font:{family:"JetBrains Mono",size:10},color:cssv("--ubi-gray2")},grid:{color:"rgba(0,0,0,.06)"}}}},extra);
+  o.plugins=o.plugins||{};
+  if(!o.plugins.legend)o.plugins.legend={labels:{font:{family:"Lato",size:11},color:cssv("--ubi-deep")}};
+  o.plugins.tooltip=o.plugins.tooltip||{};
+  const prev=o.plugins.tooltip.filter;
+  o.plugins.tooltip.filter=(it,...a)=>{ if(String((it&&it.dataset&&it.dataset.label)||"").startsWith("_"))return false; return prev?prev(it,...a):true; };
+  return o;
+}
 /* eje X estándar (reutilizable para no perder estilo al sobreescribir scales) */
 function xAxisCfg(){return {ticks:{font:{family:"JetBrains Mono",size:9},color:cssv("--ubi-gray2"),maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{color:"rgba(0,0,0,.04)"}};}
 /* eje Y con título de unidad; pos "left" (primario) o "right" (secundario) */
@@ -544,7 +562,7 @@ function barChart(ctx,labels,data,color,unit,highlightMax){
 }
 function scatterChart(ctx,points,xl,yl,color){
   return mkChart(ctx,{type:"scatter",data:{datasets:[{data:points,backgroundColor:color+"77",pointRadius:2}]},
-    options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>`${xl}:${r1(i.parsed.x)} · ${yl}:${r1(i.parsed.y)}`}}},
+    options:baseOpts({interaction:{mode:"nearest",intersect:true},plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>`${xl}:${r1(i.parsed.x)} · ${yl}:${r1(i.parsed.y)}`}}},
       scales:{x:{title:{display:true,text:xl,font:{size:10}},ticks:{color:cssv("--ubi-gray2")}},y:{title:{display:true,text:yl,font:{size:10}},ticks:{color:cssv("--ubi-gray2")}}}})});
 }
 
@@ -638,13 +656,17 @@ function tProf(host,C){
   host.innerHTML=
     ficha(L("¿A qué hora sube la demanda y cuánto?","When does demand rise, and by how much?"),L("Elegir la hora con margen para maniobras y la de riesgo de sobrecarga.","Pick the hour with headroom for switching and the one at overload risk."))
     +`<div class="localsel" id="pchips">${vars.map((v,i)=>`<button class="vchip${i===0?' on':''}" data-k="${v.key}">${v.label}</button>`).join("")}</div>`
+    +`<div id="pdesc" class="howto" style="margin-bottom:14px"></div>`
     +box(L("Perfil 24h","24h profile"),L("Mediana por hora del día. Con varias variables de distinta unidad, la segunda escala va a la derecha (eje secundario).","Median by hour of day. With several variables of different units, the second scale goes on the right (secondary axis)."),cb("c_prof","tall")+cap(L("La línea es la mediana por hora; la banda P10–P90 es la variación típica. Picos repetidos a la misma hora = patrón, no azar.","The line is the hourly median; the P10–P90 band is the typical spread. Peaks repeating at the same hour = a pattern, not chance.")))
     +box(L("Laboral vs fin de semana","Weekday vs weekend"),L("Compara el patrón entre semana y el fin de semana — útil para saber si el activo descansa o no.","Compares the weekday and weekend pattern — useful to know whether the asset rests or not."),cb("c_lw"))
     +lagBox(C);
   const sel=()=>[...document.querySelectorAll("#pchips .vchip.on")].map(b=>vars.find(v=>v.key===b.dataset.k));
   const draw=()=>{
     killCharts();
-    const S=sel();if(!S.length)return;
+    const S=sel();
+    const pd=document.getElementById("pdesc");
+    if(pd)pd.innerHTML = S.length ? S.map(v=>`<b>${v.label}${v.unit?" ("+v.unit+")":""}</b> — ${v.desc||""}`).join("<br>") : L("Selecciona una o más variables.","Select one or more variables.");
+    if(!S.length)return;
     const labels=Array.from({length:24},(_,h)=>h+"h");
     if(S.length===1){
       const v0=S[0];let extras=null;
@@ -861,7 +883,7 @@ function tCross(host,C){
     // límites normativos de voltaje según el eje (color del eje)
     if(isV(vx)&&C.vnom){[0.95,1.05].forEach(f=>dsets.push({type:"line",label:f<1?"_xl":L("V ±5% (X)","V ±5% (X)"),data:[{x:C.vnom*f,y:ymin},{x:C.vnom*f,y:ymax}],borderColor:CX,borderWidth:1.4,borderDash:[4,3],pointRadius:0}));}
     if(isV(vy)&&C.vnom){[0.95,1.05].forEach(f=>dsets.push({type:"line",label:f<1?"_yl":L("V ±5% (Y)","V ±5% (Y)"),data:[{x:xmin,y:C.vnom*f},{x:xmax,y:C.vnom*f}],borderColor:CY,borderWidth:1.4,borderDash:[4,3],pointRadius:0}));}
-    mkChart(document.getElementById("c_xy"),{data:{datasets:dsets},options:baseOpts({plugins:{legend:{labels:{filter:i=>i.text&&!i.text.startsWith("_"),font:{size:10}}},tooltip:{filter:i=>i.dataset.type==="scatter",callbacks:{label:i=>`${r1(i.parsed.x)} · ${r1(i.parsed.y)} · ${dec[i.dataIndex]?dec[i.dataIndex].h+"h":""}`}}},
+    mkChart(document.getElementById("c_xy"),{data:{datasets:dsets},options:baseOpts({interaction:{mode:"nearest",intersect:true},plugins:{legend:{labels:{filter:i=>i.text&&!i.text.startsWith("_"),font:{size:10}}},tooltip:{filter:i=>i.dataset.type==="scatter",callbacks:{label:i=>`${r1(i.parsed.x)} · ${r1(i.parsed.y)} · ${dec[i.dataIndex]?dec[i.dataIndex].h+"h":""}`}}},
       scales:{x:{type:"linear",title:{display:true,text:xl,color:CX,font:{size:11,weight:"bold"}},ticks:{color:CX}},y:{title:{display:true,text:yl,color:CY,font:{size:11,weight:"bold"}},ticks:{color:CY}}}})});
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y),mxx=mean(xs),myy=mean(ys);
     let nu=0,dx=0,dy2=0;for(let i=0;i<pts.length;i++){nu+=(xs[i]-mxx)*(ys[i]-myy);dx+=(xs[i]-mxx)**2;dy2+=(ys[i]-myy)**2;}
@@ -1128,7 +1150,7 @@ function tItic(host,C){
   const proh={type:"line",label:L("Límite superior ITIC","ITIC upper limit"),data:ITIC_PROH.x.map((x,k)=>({x,y:ITIC_PROH.y[k]})),borderColor:cssv("--ubi-orange"),borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false};
   const free={type:"line",label:L("Límite inferior ITIC","ITIC lower limit"),data:ITIC_FREE.x.map((x,k)=>({x,y:ITIC_FREE.y[k]})),borderColor:(cssv("--ubi-gold")||"#FAB512"),borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false};
   const evDs={type:"scatter",label:L("Eventos","Events"),data:pts.map(p=>({x:Math.min(Math.max(p.x,1e-4),1e3),y:p.y})),pointStyle:pts.map(()=>"triangle"),rotation:pts.map(p=>p.type==="SAG"?180:0),backgroundColor:pts.map(p=>inSel(p)?zc[p.zone]:hexA(zc[p.zone],.12)),pointRadius:pts.map(p=>inSel(p)?5:2.5),borderColor:"#fff",borderWidth:.5};
-  _iticChart=mkChart(document.getElementById("c_itic"),{data:{datasets:[proh,free,evDs]},options:baseOpts({parsing:true,plugins:{legend:{labels:{font:{size:10},usePointStyle:true}},tooltip:{filter:it=>it.dataset.type==="scatter",callbacks:{label:it=>`${r1(it.parsed.y)}% · ${r2(it.parsed.x)}s`}}},scales:{x:{type:"logarithmic",min:1e-4,max:1e3,title:{display:true,text:L("Duración (s)","Duration (s)"),font:{size:10}},ticks:{color:cssv("--ubi-gray2")}},y:{min:0,title:{display:true,text:L("Magnitud (% nominal)","Magnitude (% nominal)"),font:{size:10}},ticks:{color:cssv("--ubi-gray2")}}}})});
+  _iticChart=mkChart(document.getElementById("c_itic"),{data:{datasets:[proh,free,evDs]},options:baseOpts({interaction:{mode:"nearest",intersect:true},parsing:true,plugins:{legend:{labels:{font:{size:10},usePointStyle:true}},tooltip:{filter:it=>it.dataset.type==="scatter",callbacks:{label:it=>`${r1(it.parsed.y)}% · ${r2(it.parsed.x)}s`}}},scales:{x:{type:"logarithmic",min:1e-4,max:1e3,title:{display:true,text:L("Duración (s)","Duration (s)"),font:{size:10}},ticks:{color:cssv("--ubi-gray2")}},y:{min:0,title:{display:true,text:L("Magnitud (% nominal)","Magnitude (% nominal)"),font:{size:10}},ticks:{color:cssv("--ubi-gray2")}}}})});
   mkChart(document.getElementById("c_itic24"),{type:"bar",data:{labels:H.map((_,k)=>k+"h"),datasets:[{label:"Swell △",data:H.map(h=>h.swell),backgroundColor:cssv("--ubi-orange")},{label:"Sag ▽",data:H.map(h=>h.sag),backgroundColor:cssv("--ubi-blue")}]},options:baseOpts({plugins:{legend:{display:true,labels:{font:{size:10}}}},scales:{x:{ticks:{color:cssv("--ubi-gray2"),font:{size:9}}},y:{beginAtZero:true,ticks:{color:cssv("--ubi-gray2")}}}})});
   const canvas=document.getElementById("c_itic");
   if(canvas&&canvas.addEventListener)canvas.addEventListener("mousedown",e=>{const parent=canvas.parentNode;if(parent&&parent.style)parent.style.position="relative";const r=canvas.getBoundingClientRect();const boxEl=document.createElement("div");boxEl.style.cssText="position:absolute;border:1.5px dashed #22B0E1;background:rgba(34,176,225,.10);pointer-events:none;z-index:5;left:0;top:0;width:0;height:0";if(parent&&parent.appendChild)parent.appendChild(boxEl);_iticDrag={canvas,sx:e.clientX-r.left,sy:e.clientY-r.top,boxEl};});
@@ -1318,6 +1340,10 @@ function dailyCSV(C){
   });
   return "\ufeff"+lines.join("\r\n");
 }
+function dailyTrendChart(id,labels,datasets,sc){
+  const el=document.getElementById(id); if(!el)return;
+  mkChart(el,{type:"line",data:{labels,datasets},options:baseOpts({scales:sc||{x:xAxisCfg(),y:yAxisCfg("")},plugins:{legend:{labels:{filter:i=>!String(i.text||"").startsWith("_"),font:{size:10}}},tooltip:{callbacks:{title:items=>items.length?String(items[0].label):""}}}})});
+}
 function tDaily(host,C){
   const {rows,hasT,hasP}=dailyStats(C);
   if(!rows.length){host.innerHTML=ficha(L("¿Cómo evoluciona el activo día a día?","How does the asset evolve day by day?"),L("Resumen diario para tendencia y respaldo.","Daily summary for trend and evidence."))+emptyState(L("No hay registros con fecha válida para agrupar por día.","No records with valid date to group by day."));return;}
@@ -1336,12 +1362,50 @@ function tDaily(host,C){
     return "<tr>"+td.map((x,i)=>`<td${i===0?'':' style="text-align:right"'}>${x}</td>`).join("")+"</tr>";
   }).join("");
   const table=`<div style="overflow:auto;max-height:60vh"><table class="data"><thead><tr>${th.map((h,i)=>`<th${i===0?'':' style="text-align:right"'}>${h}</th>`).join("")}</tr></thead><tbody>${trs}</tbody></table></div>`;
+  const secondBox = hasT
+    ? box(L("Temperatura diaria","Daily temperature"),L("Aceite: promedio diario con banda mín–máx. Picos sostenidos sobre ~65 °C aceleran el envejecimiento del aislamiento.","Oil: daily average with min–max band. Sustained peaks above ~65 °C accelerate insulation aging."),cb("d_t","tall")+cap(L("La banda es el rango del día; vigila la tendencia del máximo.","The band is the day's range; watch the trend of the maximum.")))
+    : (hasP? box(L("Presión diaria","Daily pressure"),L("Presión del aceite: promedio diario con banda mín–máx.","Oil pressure: daily average with min–max band."),cb("d_p","tall")+cap(L("Oscilaciones crecientes pueden señalar actividad térmica o fugas.","Growing swings can signal thermal activity or leaks."))) : "");
   host.innerHTML=
     ficha(L("¿Cómo evoluciona el activo día a día?","How does the asset evolve day by day?"),L("Resumen diario para tendencia y respaldo — exportable a CSV para tu pipeline.","Daily summary for trend and evidence — exportable to CSV for your pipeline."))
     +`<div class="barbtns" style="margin-bottom:12px"><button class="btn" id="dlDaily" style="background:var(--ubi-blue);color:#fff;border-color:var(--ubi-blue)">⬇ ${L("Exportar CSV (completo)","Export CSV (full)")}</button></div>`
+    +`<div class="grid2">`
+      +box(L("Voltaje diario","Daily voltage"),L("Tensión promedio por día con banda mín–máx y la línea nominal; muestra si la entrega se mantiene en rango día a día.","Daily average voltage with min–max band and the nominal line; shows whether delivery stays in range day by day."),cb("d_v","tall")+cap(L("Si la banda se aleja del nominal, hubo días con tensión fuera de rango.","If the band drifts from nominal, there were days with out-of-range voltage.")))
+      +box(L("Carga (kVA) diaria","Daily load (kVA)"),L("kVA promedio por día con banda mín–máx"+(C.kvaNom?" y la línea del kVA de operación":"")+"; revela la tendencia de demanda.","Daily average kVA with min–max band"+(C.kvaNom?" and the operating kVA line":"")+"; reveals the demand trend."),cb("d_kva","tall")+cap(C.kvaNom?L("Cada cruce de la línea naranja es un día con sobrecarga.","Each crossing of the orange line is a day with overload."):L("Ingresa el kVA de operación arriba para ver la línea de referencia.","Enter the operating kVA above to see the reference line.")))
+    +`</div>`
+    +`<div class="grid2">`
+      +box(L("Desbalance diario","Daily imbalance"),L("Desbalance máximo de tensión (izq.) y de corriente (der.) por día; escalas separadas porque sus rangos difieren.","Daily maximum voltage (left) and current (right) imbalance; separate scales because their ranges differ."),cb("d_imb","tall")+cap(L("Desbalance V sobre 2–3% o saltos de corriente marcan días a revisar.","V imbalance above 2–3% or current jumps flag days to review.")))
+      +secondBox
+    +`</div>`
     +box(L("Estadísticas diarias","Daily statistics"),L("Promedio, máximo y mínimo por día. La tabla muestra un resumen; el CSV incluye todas las columnas por fase (V/I/FP avg-máx-mín, desbalances, kVA, térmica, %kVA, ΔP).","Average, maximum and minimum per day. The table shows a summary; the CSV includes every per-phase column (V/I/PF avg-max-min, imbalances, kVA, thermal, %kVA, ΔP)."),table+cap(L(`${rows.length} días · FP en valor absoluto · ${C.kvaNom?'%kVA calculado sobre '+C.kvaNom+' kVA de operación':'sin kVA de operación: %kVA no calculado'}.`,`${rows.length} days · PF in absolute value · ${C.kvaNom?'%kVA computed over '+C.kvaNom+' operating kVA':'no operating kVA: %kVA not computed'}.`)));
   const b=document.getElementById("dlDaily");
   if(b)b.onclick=()=>downloadFile("estadisticas_diarias_"+C.nodeName+".csv",dailyCSV(C),"text/csv;charset=utf-8");
+  const labels=rows.map(o=>o.day);
+  const band=(gMax,gMin,color)=>[
+    {label:"_max",data:rows.map(gMax),borderColor:"transparent",pointRadius:0,fill:"+1",backgroundColor:color,tension:.2},
+    {label:"_min",data:rows.map(gMin),borderColor:"transparent",pointRadius:0,fill:false,tension:.2}
+  ];
+  dailyTrendChart("d_v",labels,
+    band(o=>o.Vavg.max,o=>o.Vavg.min,"rgba(78,178,112,.12)")
+    .concat([{label:L("V prom","V avg"),data:rows.map(o=>o.Vavg.avg),borderColor:cssv("--ubi-darkgreen"),borderWidth:2,pointRadius:2,tension:.2}])
+    .concat(C.vnom?[hline(labels,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[4,3])]:[]),
+    {x:xAxisCfg(),y:yAxisCfg("V")});
+  dailyTrendChart("d_kva",labels,
+    band(o=>o.kVA.max,o=>o.kVA.min,"rgba(34,176,225,.12)")
+    .concat([{label:L("kVA prom","kVA avg"),data:rows.map(o=>o.kVA.avg),borderColor:cssv("--ubi-blue"),borderWidth:2,pointRadius:2,tension:.2}])
+    .concat(C.kvaNom?[hline(labels,C.kvaNom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"),[6,4])]:[]),
+    {x:xAxisCfg(),y:yAxisCfg("kVA")});
+  dailyTrendChart("d_imb",labels,[
+    {label:L("Desbalance V máx","V imbalance max"),data:rows.map(o=>o.Vdesb.max),borderColor:cssv("--ubi-darkgreen"),borderWidth:2,pointRadius:2,tension:.2,yAxisID:"y"},
+    {label:L("Desbalance I máx","I imbalance max"),data:rows.map(o=>o.Idesb.max),borderColor:cssv("--ubi-orange"),borderWidth:2,pointRadius:2,tension:.2,yAxisID:"y1"}
+  ],{x:xAxisCfg(),y:yAxisCfg(L("Desbalance V (%)","V imbalance (%)"),"left"),y1:yAxisCfg(L("Desbalance I (%)","I imbalance (%)"),"right")});
+  if(hasT)dailyTrendChart("d_t",labels,
+    band(o=>o.T.max,o=>o.T.min,"rgba(234,86,27,.10)")
+    .concat([{label:L("T prom","T avg"),data:rows.map(o=>o.T.avg),borderColor:cssv("--ubi-orange"),borderWidth:2,pointRadius:2,tension:.2}]),
+    {x:xAxisCfg(),y:yAxisCfg("°C")});
+  else if(hasP)dailyTrendChart("d_p",labels,
+    band(o=>o.P.max,o=>o.P.min,"rgba(70,77,99,.12)")
+    .concat([{label:L("P prom","P avg"),data:rows.map(o=>o.P.avg),borderColor:cssv("--ubi-darkgreen"),borderWidth:2,pointRadius:2,tension:.2}]),
+    {x:xAxisCfg(),y:yAxisCfg("psi")});
 }
 function tSyn(host,C){
   const HR=healthReport(C);
@@ -1405,12 +1469,7 @@ function tSyn(host,C){
   const guide=box(L("Qué encontrará en este informe","What you'll find in this report"),L("Los grupos de análisis y la decisión que habilita cada uno.","The analysis groups and the decision each one enables."),`<table class="data"><thead><tr><th>${L("Grupo","Group")}</th><th>${L("Qué decisión habilita","Decision it enables")}</th></tr></thead><tbody>${fam.map(([t,d])=>`<tr><td><b>${t}</b></td><td>${d}</td></tr>`).join("")}</tbody></table>`);
 
   host.innerHTML=
-    `<div class="barbtns" style="display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:0">
-      <button class="btn" id="genDiag" style="background:var(--ubi-blue);color:#fff;border-color:var(--ubi-blue)">✦ ${L("Generar diagnóstico IA","Generate AI diagnosis")}</button>
-      <button class="btn" id="expPDF">⤓ ${L("Informe PDF","Report PDF")}</button>
-      <button class="btn" id="expSyn">⤓ ${L("Exportar resumen JSON","Export summary JSON")}</button>
-    </div>`
-    +`<div id="peritoOut"></div>`
+    `<div id="peritoOut"></div>`
     +intro(L("Una sola página que traduce la telemetría en decisiones: <b>capacidad disponible, cumplimiento de la energía, riesgos y dónde priorizar.</b> El detalle técnico está en las pestañas agrupadas que siguen.","A single page that turns telemetry into decisions: <b>available capacity, energy compliance, risks and where to prioritize.</b> The technical detail is in the grouped tabs that follow."))
     +stLegend()
     +`<div class="exec-screen">${genExecSummary(C,CUR.ds)}</div>`
@@ -1440,13 +1499,6 @@ function tSyn(host,C){
   profileChart(document.getElementById("c_exec"),hL,hourly(C.ts,C.kva),cssv("--ubi-blue"),"kVA", nom?[hline(hL,nom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"))]:null);
   const vband=C.vnom?bandDS(hL,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.12)").concat([hline(hL,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]):null;
   profileChart(document.getElementById("c_execv"),hL,hourly(C.ts,C.V[C.phases[0]]),cssv("--ubi-darkgreen"),"V", vband);
-
-  document.getElementById("genDiag").onclick=runPerito;
-  {const pp=document.getElementById("expPDF");if(pp)pp.onclick=pdfFull;}
-  document.getElementById("expSyn").onclick=()=>{
-    const out={node:C.nodeName,class:cls,loadingMaxPct:util?r1(util):null,voltageOutOfBandPct:vtot?r1((sag+swell)/vtot*100):null,voltageImbalancePct:imbV,pfBelow09Pct:pfTot?r1(pfBad/pfTot*100):null,timestampQualityPct:C.tsQuality,intervalMin:C.intervalMin,records:C.n,window:C.win?{from:C.win.from.toISOString().slice(0,10),to:C.win.to.toISOString().slice(0,10),days:C.win.days}:null};
-    const b=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="resumen_"+C.nodeName+".json";a.click();URL.revokeObjectURL(a.href);
-  };
 }
 function nodeRows(ds){
   return ds.nodeNames.map(nm=>{
@@ -1602,6 +1654,7 @@ function buildUI(){
   document.getElementById("inKva").onchange=onNode;
   document.getElementById("pdfTab").onclick=pdfTab;
   document.getElementById("pdfAll").onclick=pdfFull;
+  {const gd=document.getElementById("genDiag");if(gd)gd.onclick=()=>{if(!CUR.C)return;if(CUR.tab!=="syn")renderTab("syn");runPerito();};}
   onDataset();
 }
 function reopenLoader(){
@@ -1655,12 +1708,15 @@ function applyI18n(){
   set("loadDesc","Carga uno o más CSV exportados del DTM (inglés o español). Detecto idioma, nodos y variables automáticamente, saneo lecturas erróneas y abro 10 familias de análisis. Todo se procesa en tu navegador — nada se sube.","Load one or more DTM CSV exports (English or Spanish). I auto-detect language, nodes and variables, sanitize faulty readings and open 10 analysis families. Everything runs in your browser — nothing is uploaded.");
   set("loadBig","⬇ Arrastra los CSV aquí o haz clic para elegir","⬇ Drag CSVs here or click to choose");
   set("loadSm","varios a la vez · telemetría + reporte de eventos · EN/ES","several at once · telemetry + event report · EN/ES");
+  set("loadNoteA","Puedes subir directamente, en el mismo paso, los reportes exportados desde UbiVu:","You can upload the reports exported from UbiVu directly, in the same step:");
+  set("loadNoteB","Según la disponibilidad de cada uno, sus datos se completan automáticamente en las secciones donde se utilizan (telemetría, calidad de energía y eventos).","Depending on the availability of each one, their data is filled automatically into the sections where it is used (telemetry, power quality and events).");
   set("lblDataset","Dataset","Dataset");
   set("lblNode","Nodo","Node");
   set("lblKva","kVA de operación","Operating kVA");
   set("reloadTxt","Cargar más archivos","Load more files");
   set("pdfTabTxt","PDF de esta pestaña","This tab as PDF");
   set("pdfAllTxt","Informe PDF","Report PDF");
+  set("genDiag","✦ Generar diagnóstico IA","✦ Generate AI diagnosis");
   if(DATASETS.length&&document.getElementById("primaryBar"))buildPrimaryBar();
   updateKvaPlaceholder();
   const sd=document.getElementById("selDataset");if(sd&&DATASETS.length){const cur=sd.value;sd.innerHTML=DATASETS.map((d,i)=>`<option value="${i}">${dsLabel(d)}</option>`).join("");sd.value=cur;}
