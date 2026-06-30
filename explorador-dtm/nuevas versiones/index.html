@@ -511,16 +511,6 @@ let CH=[]; // charts vivos
 function killCharts(){CH.forEach(c=>{try{c.destroy();}catch(e){}});CH=[];}
 const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function mkChart(ctx,cfg){const c=new Chart(ctx,cfg);CH.push(c);return c;}
-/* ---- leyenda "solo": clic aísla esa serie (oculta el resto); clic de nuevo
-   sobre la única visible restaura todas. Pensado para gráficos con muchas
-   líneas (p. ej. comparación de nodos) donde el toggle uno-por-uno por defecto
-   de Chart.js es lento para aislar un par de series entre 8-12. ---- */
-function soloLegendClick(e,legendItem,legend){
-  const ci=legend.chart;const idx=legendItem.datasetIndex;const total=ci.data.datasets.length;
-  const visible=[];for(let i=0;i<total;i++)if(ci.isDatasetVisible(i))visible.push(i);
-  const onlyThis=visible.length===1&&visible[0]===idx;
-  for(let i=0;i<total;i++){ if(onlyThis||idx===i) ci.show(i); else ci.hide(i); }
-}
 function baseOpts(extra){
   extra=extra||{};
   const o=Object.assign({responsive:true,maintainAspectRatio:false,animation:false,
@@ -751,24 +741,13 @@ function tProf(host,C){
       const PRIM=buckets[0], SEC=buckets.slice(1);
       const inPrim=v=>PRIM.vars.indexOf(v)>=0;
       const titleOf=bk=> bk.vars.length===1 ? (bk.vars[0].label+(bk.unit?" ("+bk.unit+")":"")) : (bk.unit|| bk.vars.map(v=>v.label).join(" / "));
-      // perfil por serie (una sola vez): mediana + P10/P90 por hora
-      const series=S.map((v,k)=>({v,k,color:PAL[k%PAL.length],axis:inPrim(v)?"y":"y1",prof:hourly(C.ts,v.data)}));
-      const dsets=[];
-      // bandas P10–P90 primero (debajo), tenues, en el color de cada serie — anclan la escala
-      // a la variación real y evitan que el eje colapse cuando la mediana es baja (p. ej. corriente
-      // típica ~1 A con picos altos), que antes magnificaba diferencias de medio ampere
-      series.forEach(s=>{const hi=dsets.length;
-        dsets.push({label:"_hi"+s.k,data:s.prof.map(p=>p.p90),borderWidth:0,pointRadius:0,backgroundColor:hexA(s.color,0.10),fill:hi+1,tension:.3,yAxisID:s.axis});
-        dsets.push({label:"_lo"+s.k,data:s.prof.map(p=>p.p10),borderWidth:0,pointRadius:0,fill:false,tension:.3,yAxisID:s.axis});
-      });
-      // medianas encima
-      series.forEach(s=>dsets.push({label:s.v.label+(s.v.unit?" ("+s.v.unit+")":""),data:s.prof.map(p=>p.med),borderColor:s.color,borderWidth:2,pointRadius:0,tension:.3,yAxisID:s.axis,unit:s.v.unit||""}));
+      const dsets=S.map((v,k)=>({label:v.label+(v.unit?" ("+v.unit+")":""),data:hourly(C.ts,v.data).map(p=>p.med),borderColor:PAL[k%PAL.length],borderWidth:2,pointRadius:0,tension:.3,yAxisID:inPrim(v)?"y":"y1"}));
       const sc={x:xAxisCfg(),y:yAxisCfg(titleOf(PRIM),"left")};
       if(SEC.length){
         const secTitle = SEC.length===1?titleOf(SEC[0]):[...new Set(SEC.map(b=>b.unit||b.vars.map(v=>v.label).join("/")))].join(" · ");
         sc.y1=yAxisCfg(secTitle,"right");
       }
-      mkChart(document.getElementById("c_prof"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({interaction:{mode:"index",intersect:false},scales:sc,plugins:{legend:{labels:{font:{size:10},filter:i=>!String(i.text).startsWith("_")}},tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>{const u=i.dataset.unit||"";return `${i.dataset.label}: ${r1(i.parsed.y)}${u?" "+u:""}`;}}}}})});
+      mkChart(document.getElementById("c_prof"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({interaction:{mode:"index",intersect:false},scales:sc,plugins:{legend:{labels:{font:{size:10}}},tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>{const u=(S[i.datasetIndex]&&S[i.datasetIndex].unit)||"";return `${i.dataset.label}: ${r1(i.parsed.y)}${u?" "+u:""}`;}}}}})});
     }
     const v=S[0];const wk=Array.from({length:24},()=>[]),we=Array.from({length:24},()=>[]);
     for(let i=0;i<C.ts.length;i++){const t=C.ts[i];if(!t||v.data[i]==null)continue;(t.getDay()===0||t.getDay()===6?we:wk)[t.getHours()].push(v.data[i]);}
@@ -1051,7 +1030,7 @@ function tNodes(host,C){
   host.innerHTML=
     ficha(L("Entre todos los transformadores del dataset, ¿cuál reviso primero?","Among all transformers in the dataset, which one do I review first?"),L("Priorizar dónde intervenir primero, de un vistazo, en vez de nodo por nodo.","Prioritize where to act first, at a glance, instead of node by node."))
     +box(L("Comparación de nodos · ","Node comparison · ")+dsLabel(ds),L("Todos los nodos del dataset, lado a lado — registros, calidad de datos, carga, cargabilidad y desbalance. Ingresa el kVA de operación de cada nodo aquí mismo para comparar cargabilidad real entre todos. 🔴 marca y sube los nodos con estampas poco confiables (<80% OK) o desbalance >5%; entre el resto, ordena de mayor a menor cargabilidad.","All dataset nodes, side by side — records, data quality, load, loading % and imbalance. Enter each node's operating kVA right here to compare real loading across all of them. 🔴 flags and ranks up nodes with unreliable timestamps (<80% OK) or imbalance >5%; among the rest, sorts by highest loading first."),`<div style="overflow:auto"><table class="data"><thead><tr><th>${L("Nodo","Node")}</th><th>${L("Registros","Records")}</th><th>${L("Estampas OK","Timestamps OK")}</th><th>kVA ${L("máx","max")}</th><th>kVA ${L("oper.","oper.")}</th><th>${L("Cargabilidad","Loading")}</th><th>${L("Desbalance V","V imbalance")}</th><th>${L("Fases","Phases")}</th></tr></thead><tbody>${rows}</tbody></table></div>`)
-    +box(L("Perfil de carga por nodo","Load profile per node"),L("kVA mediano por hora del día — small multiples. Permite comparar el patrón de consumo de cada transformador de un vistazo.","Median kVA by hour of day — small multiples. Compares each transformer's consumption pattern at a glance."),cb("c_sm","tall")+cap(L("Cada línea es un transformador; las que se despegan hacia arriba son las más cargadas — revísalas primero. Haz clic en un nodo de la leyenda para aislarlo entre las demás; vuelve a hacer clic para mostrar todos otra vez.","Each line is a transformer; those rising above the rest are the most loaded — review them first. Click a node in the legend to isolate it from the rest; click it again to show all once more.")));
+    +box(L("Perfil de carga por nodo","Load profile per node"),L("kVA mediano por hora del día — small multiples. Permite comparar el patrón de consumo de cada transformador de un vistazo.","Median kVA by hour of day — small multiples. Compares each transformer's consumption pattern at a glance."),cb("c_sm","tall")+cap(L("Cada línea es un transformador; las que se despegan hacia arriba son las más cargadas — revísalas primero.","Each line is a transformer; those rising above the rest are the most loaded — review them first.")));
   host.querySelectorAll(".nodeKva").forEach(inp=>{
     inp.onchange=()=>{
       const nm=inp.dataset.node,v=inp.value;
@@ -1065,7 +1044,7 @@ function tNodes(host,C){
   const labels=Array.from({length:24},(_,h)=>h+"h");
   const palette=[cssv("--x1"),cssv("--x2"),cssv("--x3"),cssv("--ubi-gold"),cssv("--ubi-violet")||"#59509D",cssv("--ubi-darkgreen"),cssv("--ubi-orange"),cssv("--ubi-royal")||"#3466AF"];
   const dsets=names.slice(0,12).map((nm,k)=>{const cc=computeNode(ds,nm,num(manualKva[nm]));return {label:nm,data:hourly(cc.ts,cc.kva).map(p=>p.med),borderColor:palette[k%palette.length],borderWidth:1.6,pointRadius:0,tension:.3};});
-  mkChart(document.getElementById("c_sm"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({plugins:{legend:{labels:{font:{size:10},boxWidth:10},onClick:soloLegendClick},tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${r1(i.parsed.y)} kVA`}}}})});
+  mkChart(document.getElementById("c_sm"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({plugins:{legend:{labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:i=>`${i.dataset.label}: ${r1(i.parsed.y)} kVA`}}}})});
 }
 
 /* --- 9 Red --- */
