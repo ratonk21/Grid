@@ -2187,7 +2187,8 @@ async function loadDemo(){
   try{
     for(const f of DEMO_FILES){
       if(LOADED.includes(f.name))continue;
-      const res=await fetch(f.url);
+      const base=location.href.replace(/\/?(?:[?#].*)?$/,"/"); // asegura que la página se trate como carpeta, no como archivo
+      const res=await fetch(new URL(f.url,base));
       if(!res.ok)throw new Error(f.url+" → HTTP "+res.status);
       const text=await res.text();
       const parsed=Papa.parse(text,{header:true,skipEmptyLines:true});
