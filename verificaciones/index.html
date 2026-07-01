@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mapa de Prioridades — Generadores</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root{
-    --bg:#F5F6F8; --panel:#FFFFFF; --panel-2:#F0F2F5; --border:#DDE1E6;
-    --ink:#1A1D21; --ink-dim:#5B6470; --ink-faint:#8B93A0;
-    --critica:#D33A3A; --media:#C9790C; --baja:#19926E;
-    --cubierto:#19926E; --proceso:#2E7BC4; --pendiente:#8B93A0;
-    --accent:#2E7BC4;
+    --bg:#F5EFE2; --panel:#ECF2F3; --panel-2:color-mix(in srgb, #E6CDA3 30%, #F5EFE2); --border:#C7D2C8;
+    --ink:#211E19; --ink-dim:#2D6A4F; --ink-faint:#7C8B80;
+    --critica:#D02E2E; --media:#C9852A; --baja:#2D6A4F;
+    --cubierto:#2D6A4F; --proceso:#2C4A9A; --pendiente:#7C8B80;
+    --accent:#2C4A9A;
     font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   }
   *{box-sizing:border-box;}
@@ -25,8 +26,8 @@
     padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--border);
     flex-wrap:wrap;gap:10px;
   }
-  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px;}
-  header h1 span{color:var(--ink-dim);font-weight:400;}
+  header h1{font-family:'Fraunces',serif;font-size:18px;margin:0;font-weight:600;letter-spacing:.2px;}
+  header h1 span{color:var(--ink-dim);font-weight:400;font-family:'Inter',sans-serif;}
   .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .controls input[type=text]{
     background:var(--panel-2);border:1px solid var(--border);color:var(--ink);
@@ -40,7 +41,7 @@
   #status{font-size:11.5px;color:var(--ink-faint);}
 
   .layout{flex:1;display:flex;min-height:0;}
-  #map{flex:1;background:#E8EAED;}
+  #map{flex:1;background:#DCE6E0;}
 
   aside{
     width:320px;background:var(--panel);border-left:1px solid var(--border);
@@ -54,15 +55,18 @@
     .controls input[type=text]{width:100%;max-width:none;flex:1;}
     #status{width:100%;text-align:right;}
     .layout{flex-direction:column;}
-    #map{height:48vh;flex:none;}
+    #map{height:56vh;flex:none;}
     aside{
       width:100%;border-left:none;border-top:1px solid var(--border);
-      max-height:46vh;
+      max-height:40vh;
     }
+    .leaflet-popup-content-wrapper{max-width:78vw;}
+    .popup-card{max-height:44vh;}
+    .leaflet-control-zoom{margin-top:8px !important;}
   }
   .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
   .kpi{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
-  .kpi .n{font-size:22px;font-weight:700;line-height:1;}
+  .kpi .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;line-height:1;}
   .kpi .l{font-size:10.5px;color:var(--ink-dim);margin-top:4px;text-transform:uppercase;letter-spacing:.4px;}
   .kpi.full{grid-column:1/3;}
 
@@ -80,7 +84,7 @@
   .tech-row .name{color:var(--ink);}
   .tech-row .count{color:var(--ink-dim);}
 
-  .popup-card{font-size:12.5px;line-height:1.5;min-width:260px;}
+  .popup-card{font-size:12.5px;line-height:1.5;min-width:240px;max-width:100%;max-height:60vh;overflow-y:auto;}
   .popup-card .job{font-weight:700;font-size:13.5px;margin-bottom:2px;}
   .popup-card .badge{
     display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;
@@ -273,7 +277,11 @@ function renderMarkers(rows){
     const lat = parseFloat(row.Latitud), lng = parseFloat(row.Longitud);
     if(isNaN(lat) || isNaN(lng)) return;
     const marker = L.marker([lat,lng], {icon: makeIcon(row)});
-    marker.bindPopup(popupHtml(row));
+    marker.bindPopup(popupHtml(row), {
+      maxWidth: 300,
+      autoPanPadding: L.point(16, 70),
+      keepInView: true
+    });
     marker.addTo(markersLayer);
     bounds.push([lat,lng]);
   });
