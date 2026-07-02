@@ -372,50 +372,20 @@ function resolve(headers){
 let DATASETS=[]; // {label, lang, nodes:{name:{rows...}}, nodeNames[]}
 let EVENTS={}; // {nodeName:[{time,phase,type,mag,dur,nominal,ieee}]}
 let LOADED=[]; let loadedMeta=[]; // archivos cargados (dedupe + resumen)
-/* firma de esquema: mismo set de columnas ⇒ archivos combinables (multi-mes del mismo export UbiVu) */
-function schemaSig(headers){return headers.map(h=>String(h||"").trim().toLowerCase()).sort().join("|");}
 function buildDataset(rows,headers,fname){
   const map=resolve(headers);
   const lang=headers.some(h=>/voltaje|corriente|tensión/i.test(h))?"ES":"EN";
   const byNode={};
   for(const row of rows){
-    row.__src=fname; // origen por fila: permite quitar un archivo de un conjunto combinado
     const nm=map.node?String(row[map.node]||"—"):"—";
     (byNode[nm]=byNode[nm]||[]).push(row);
   }
   const tx=map.txType?(rows[0]||{})[map.txType]:"";
   const vnom0=map.vnom?num((rows[0]||{})[map.vnom]):null;
-  return {lang,map,byNode,nodeNames:Object.keys(byNode),tx,vnom0,fname,fnames:[fname],sig:schemaSig(headers)};
-}
-/* fusiona un dataset entrante en uno existente del mismo esquema y mismo(s) nodo(s):
-   concatena filas por nodo descartando duplicados exactos de estampa de tiempo
-   (los rangos de exportación suelen solaparse en los bordes). El motor de cálculo
-   no cambia: computeNode ya ordena cronológicamente al analizar. */
-function mergeTelemetry(target,incoming,fname){
-  const dcol=target.map.date; let added=0,dups=0;
-  for(const nm of incoming.nodeNames){
-    const cur=target.byNode[nm]=target.byNode[nm]||[];
-    // dedupe SOLO entre archivos (solapes de exportación / re-subidas): las estampas
-    // duplicadas dentro de un mismo archivo se conservan, igual que al cargarlo solo,
-    // para que la métrica de calidad de estampas del motor vea exactamente lo mismo.
-    const seen=new Set(); if(dcol)for(const r of cur){const t=r[dcol];if(t!=null&&t!=="")seen.add(String(t));}
-    for(const r of incoming.byNode[nm]){
-      const t=dcol?r[dcol]:null; const key=(t!=null&&t!=="")?String(t):null;
-      if(key&&seen.has(key)){dups++;continue;}
-      cur.push(r);added++;
-    }
-  }
-  target.nodeNames=Object.keys(target.byNode);
-  target.fnames.push(fname);
-  return {added,dups};
-}
-/* busca un dataset ya cargado con el que el entrante forma conjunto:
-   mismo esquema de columnas y al menos un nodo (DTM) en común */
-function findMergeTarget(ds){
-  return DATASETS.find(e=>e.sig===ds.sig&&e.nodeNames.some(n=>ds.nodeNames.includes(n)))||null;
+  return {lang,map,byNode,nodeNames:Object.keys(byNode),tx,vnom0,fname};
 }
 /* label del dataset traducido según el idioma seleccionado (no según el archivo) */
-function dsLabel(ds){const nf=(ds.fnames||[]).length;return `${ds.tx||"DTM"} ${ds.vnom0?ds.vnom0+"V":""} · ${ds.nodeNames.length} ${L("nodo(s)","node(s)")}${nf>1?` · ${nf} ${L("archivos","files")}`:""}`;}
+function dsLabel(ds){return `${ds.tx||"DTM"} ${ds.vnom0?ds.vnom0+"V":""} · ${ds.nodeNames.length} ${L("nodo(s)","node(s)")}`;}
 
 /* ---- calcular series + stats de un nodo ---- */
 function computeNode(ds,nodeName,userKva){
@@ -2228,16 +2198,7 @@ function evCount(){let n=0;for(const k in EVENTS)n+=EVENTS[k].length;return n;}
 function ingestParsed(name,rows,headers){
   if(!rows.length||!headers.length)return;
   if(isEventReport(headers,rows)){const b=evCount();parseEvents(rows,headers,name);LOADED.push(name);loadedMeta.push({name,type:"ev",n:evCount()-b});}
-  else {
-    const ds=buildDataset(rows,headers,name);
-    const target=findMergeTarget(ds);
-    if(target){ // mismo esquema + mismo DTM ⇒ un solo conjunto de análisis
-      const m=mergeTelemetry(target,ds,name);
-      LOADED.push(name);loadedMeta.push({name,type:"tel",n:target.nodeNames.length,merged:true,added:m.added,dups:m.dups});
-    } else {
-      DATASETS.push(ds);LOADED.push(name);loadedMeta.push({name,type:"tel",n:ds.nodeNames.length});
-    }
-  }
+  else {const ds=buildDataset(rows,headers,name);DATASETS.push(ds);LOADED.push(name);loadedMeta.push({name,type:"tel",n:ds.nodeNames.length});}
 }
 function ingest(files){
   let pending=files.length; if(!pending)return;
@@ -2293,32 +2254,12 @@ function renderLoaded(){
   const el=document.getElementById("loaded"); if(!el)return;
   if(!loadedMeta.length){el.innerHTML="";return;}
   const tel=loadedMeta.filter(m=>m.type==="tel"), ev=loadedMeta.filter(m=>m.type==="ev");
-  const chips=loadedMeta.map(m=>{
-    const info=m.type==="ev"?m.n+" "+L("eventos","events")
-      :m.merged?"+"+m.added.toLocaleString()+" "+L("registros","records")+(m.dups?` (${m.dups} ${L("dup.","dup.")})`:"")
-      :m.n+" "+L("nodo(s)","node(s)");
-    return `<span class="fchip">${m.type==="tel"?"📊":"⚡"} ${m.name} <b>${info}</b> <button class="fdel" data-name="${String(m.name).replace(/"/g,"&quot;")}" title="${L("Quitar","Remove")}" aria-label="${L("Quitar este archivo","Remove this file")}">×</button></span>`;
-  }).join("");
-  /* resumen de conjuntos combinados (varios CSV del mismo DTM tratados como uno) */
-  let mergeNote="";
-  try{
-    for(const ds of DATASETS){
-      if(!(ds.fnames&&ds.fnames.length>1))continue;
-      let n=0,tMin=null,tMax=null; const dcol=ds.map.date;
-      for(const nm of ds.nodeNames)for(const r of ds.byNode[nm]){
-        n++;
-        if(dcol){const t=parseTS(r[dcol]);if(t){if(!tMin||t<tMin)tMin=t;if(!tMax||t>tMax)tMax=t;}}
-      }
-      const fmt=d=>d?d.toLocaleDateString(LANG==="ES"?"es-CL":"en-US",{day:"2-digit",month:"short",year:"numeric"}):"—";
-      const who=ds.nodeNames.length===1?ds.nodeNames[0]:ds.nodeNames.length+" "+L("nodos","nodes");
-      mergeNote+=`<div class="note" style="text-align:center">🔗 <b>${L("Conjunto combinado","Combined set")}</b> · ${who} · ${ds.fnames.length} ${L("archivos","files")} · ${fmt(tMin)} → ${fmt(tMax)} · ${n.toLocaleString()} ${L("registros","records")}</div>`;
-    }
-  }catch(_e){/* el resumen es informativo: nunca debe bloquear la carga */}
+  const chips=loadedMeta.map(m=>`<span class="fchip">${m.type==="tel"?"📊":"⚡"} ${m.name} <b>${m.type==="tel"?m.n+" "+L("nodo(s)","node(s)"):m.n+" "+L("eventos","events")}</b> <button class="fdel" data-name="${String(m.name).replace(/"/g,"&quot;")}" title="${L("Quitar","Remove")}" aria-label="${L("Quitar este archivo","Remove this file")}">×</button></span>`).join("");
   const clearChip=loadedMeta.length>1?`<button class="fchip fclear" id="clearAll" title="${L("Quitar todos los archivos","Remove all files")}">✕ ${L("Limpiar todo","Clear all")}</button>`:"";
   const warn=(!tel.length&&ev.length)?`<div class="note">${L("Agregaste eventos pero falta telemetría — carga un CSV de transformador para abrir el análisis.","You added events but telemetry is missing — load a transformer CSV to open the analysis.")}</div>`:"";
   const review=tel.length?`<div class="note" style="text-align:center">${L("Revisa que estén todos los archivos que querías (puedes quitar con ✕) y pulsa <b>Ir al análisis</b> cuando estés listo.","Check that all the files you wanted are here (remove with ✕), then press <b>Go to analysis</b> when ready.")}</div>`:"";
   const actions=DATASETS.length?`<div class="loadactions"><button class="btn" id="goAnalyze" style="background:var(--ubi-blue);color:#fff;border-color:var(--ubi-blue)">→ ${L("Ir al análisis","Go to analysis")}</button></div>`:"";
-  el.innerHTML=`<div class="fchips">${chips}${clearChip}</div>${mergeNote}${warn}${review}${actions}`;
+  el.innerHTML=`<div class="fchips">${chips}${clearChip}</div>${warn}${review}${actions}`;
   const go=document.getElementById("goAnalyze"); if(go)go.onclick=()=>{if(DATASETS.length)buildUI();};
   const ca=document.getElementById("clearAll"); if(ca)ca.onclick=clearAll;
   el.querySelectorAll(".fdel").forEach(b=>b.onclick=ev=>{ev.stopPropagation();removeFile(b.dataset.name);});
@@ -2326,22 +2267,7 @@ function renderLoaded(){
 function removeFile(name){
   if(!name)return;
   const m=loadedMeta.find(x=>x.name===name); if(!m)return;
-  if(m.type==="tel"){
-    const i=DATASETS.findIndex(d=>(d.fnames||[d.fname]).includes(name));
-    if(i>=0){
-      const ds=DATASETS[i];
-      if((ds.fnames||[]).length>1){ // conjunto combinado: quitar solo las filas de ese archivo
-        for(const nm of Object.keys(ds.byNode)){
-          ds.byNode[nm]=ds.byNode[nm].filter(r=>r.__src!==name);
-          if(!ds.byNode[nm].length)delete ds.byNode[nm];
-        }
-        ds.nodeNames=Object.keys(ds.byNode);
-        ds.fnames=ds.fnames.filter(f=>f!==name);
-        if(ds.fname===name)ds.fname=ds.fnames[0];
-        if(!ds.nodeNames.length)DATASETS.splice(i,1);
-      } else DATASETS.splice(i,1);
-    }
-  }
+  if(m.type==="tel"){const i=DATASETS.findIndex(d=>d.fname===name); if(i>=0)DATASETS.splice(i,1);}
   else {for(const k in EVENTS){EVENTS[k]=EVENTS[k].filter(e=>e._src!==name); if(!EVENTS[k].length)delete EVENTS[k];}}
   LOADED=LOADED.filter(n=>n!==name);
   loadedMeta=loadedMeta.filter(x=>x.name!==name);
@@ -2358,7 +2284,7 @@ drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fileInput
 ["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag");}));
 ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag");}));
 drop.addEventListener("drop",e=>{if(e.dataTransfer.files.length)ingest(e.dataTransfer.files);});
-fileInput.onchange=e=>{if(e.target.files.length)ingest(e.target.files);e.target.value="";};
+fileInput.onchange=e=>{if(e.target.files.length)ingest(e.target.files);};
 document.querySelectorAll("#langGlobal button").forEach(b=>b.onclick=()=>setLang(b.dataset.l));
 document.getElementById("reload").onclick=reopenLoader;
 {const db=document.getElementById("demoBtn");if(db)db.onclick=loadDemo;}
