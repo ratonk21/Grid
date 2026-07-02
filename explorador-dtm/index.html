@@ -1336,13 +1336,39 @@ function isEventReport(headers,rows){
   if(low.some(h=>h.includes("ieee class")||h.includes("clase ieee")))return true;
   if(low.some(h=>h.includes("highest value")||h.includes("valor más alto")||h.includes("lowest value")||h.includes("valor más bajo"))&&low.some(h=>h.includes("duration")||h.includes("duración")))return true;
   if(!rows||!rows.length)return false;
-  const sample=rows.slice(0,50);
-  // Power Status real de UbiVu: columna "Template Name" = "Power Status" (el "Value" trae Loss/Restored).
-  const ct=low.findIndex(h=>h.includes("template name")||h.includes("nombre de plantilla")||h.includes("nombre de la plantilla"));
-  if(ct>-1){const key=headers[ct];if(sample.some(r=>String(r[key]||"").toLowerCase().includes("power status")))return true;}
-  // variante hipotética: una sola columna "Event Type"/"Power State" que ya trae "Loss"/"Restored" en el texto.
-  const ci=low.findIndex(h=>h.includes("event type")||h.includes("tipo de evento")||h.includes("power state")||h.includes("estado de energía")||h.includes("estado de la red"));
+  const sample=rows.slice(0,80);
+  // plantillas reales de notificación UbiVu vistas en terreno (EN y ES, con y sin tilde):
+  // "Power Status", "Perdida Energia", "Vsag", "Vswell"
+  const EVTPL=/power status|p[eé]rdida\s*(de\s*)?energ|^vsag$|^vswell$|voltage sag|voltage swell/i;
+  // Power Status real de UbiVu: columna de plantilla ("Template Name" / "Template" / variantes ES)
+  // cuyo valor es una plantilla de eventos conocida (el "Value" trae Loss/Restored).
+  const ct=low.findIndex(h=>h.includes("template")||h.includes("plantilla"));
+  if(ct>-1){const key=headers[ct];if(sample.some(r=>EVTPL.test(String(r[key]||"").trim())))return true;}
+  // clave estable independiente del nombre de columna: en un reporte, el valor de plantilla
+  // se repite en cada fila — si alguna columna repite una plantilla de eventos en la mayoría de la muestra, es evento.
+  for(const key of headers){
+    let hit=0,tot=0;
+    for(const r of sample){const v=String(r[key]||"").trim();if(!v)continue;tot++;if(EVTPL.test(v))hit++;}
+    if(hit>=3&&hit>=tot*0.5)return true;
+  }
+  // variante: una columna "Event Type"/"Power State"/"Network Status" que ya trae "Loss"/"Restored" en el texto.
+  const ci=low.findIndex(h=>h.includes("event type")||h.includes("tipo de evento")||h.includes("power state")||h.includes("network status")||h.includes("estado de energía")||h.includes("estado de la red"));
   if(ci>-1){const key=headers[ci];if(sample.some(r=>{const v=String(r[key]||"").toLowerCase();return v.includes("loss")||v.includes("restored")||v.includes("pérdid")||v.includes("perdid")||v.includes("restablec");}))return true;}
+  return false;
+}
+/* red de seguridad (2ª pasada, solo para archivos SIN variables de telemetría):
+   busca señales de evento/corte en cualquier columna, exigiendo que se repitan en
+   ≥50% de la muestra (≥3 filas) — un reporte repite su plantilla en cada fila,
+   un texto suelto no. Así un Power Status con encabezados nuevos no nace como
+   dataset fantasma, y un CSV basura tampoco se cuela como eventos. */
+function looksLikeEventValues(rows,headers){
+  const sample=rows.slice(0,80);
+  const RX=/power status|power loss|power restored|restablec|p[eé]rdida\s*(de\s*)?energ|pérdid|perdid|corte de energ|voltage sag|voltage swell/i;
+  for(const key of headers){
+    let hit=0,tot=0;
+    for(const r of sample){const v=String(r[key]||"").trim();if(!v)continue;tot++;if(RX.test(v))hit++;}
+    if(hit>=3&&hit>=tot*0.5)return true;
+  }
   return false;
 }
 function parseEvents(rows,headers,_src){
@@ -1427,6 +1453,8 @@ function tItic(host,C){
     {num:swellF,lab:"Swell △",cls:swellF>0?"mid":"ok",meta:L("sobre-tensión","over-voltage")},
     {num:sagF,lab:"Sag ▽",cls:sagF>0?"mid":"ok",meta:L("hueco de tensión","voltage dip")}
   ];
+  {const lossK=(C.events||[]).filter(e=>e.type==="LOSS").length,restK=(C.events||[]).filter(e=>e.type==="RESTORED").length;
+   if(lossK||restK)kpis.push({num:lossK+" / "+restK,lab:L("Cortes ⏻ / Restab. ↺","Losses ⏻ / Restored ↺"),cls:lossK>0?"warn":"ok",meta:L("Power Status del periodo","Power Status in the period")});}
   const unitSel=`<div class="card"><div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
     <div class="sel"><label>${L("Unidad de duración","Duration unit")}</label><br><select id="iticUnit" class="mono" style="padding:6px 10px">${[["s",L("Segundos","Seconds")],["ms",L("Milisegundos","Milliseconds")],["us",L("Microsegundos","Microseconds")],["cycles",L("Ciclos","Cycles")],["auto",L("Auto","Auto")]].map(([v,t])=>`<option value="${v}" ${v===iticUnit?"selected":""}>${t}</option>`).join("")}</select></div>
     <div class="sel"><label>${L("Frecuencia de red","Grid frequency")}</label><br><select id="iticFreq" class="mono" style="padding:6px 10px">${[50,60].map(f=>`<option value="${f}" ${f===iticFreq?"selected":""}>${f} Hz</option>`).join("")}</select></div>
@@ -1436,9 +1464,15 @@ function tItic(host,C){
   const H=Array.from({length:24},()=>({sag:0,swell:0}));
   D.forEach(p=>{if(p.time){const h=p.time.getHours();if(p.type==="SAG")H[h].sag++;else H[h].swell++;}});
   const totSag=H.reduce((a,h)=>a+h.sag,0),totSwell=H.reduce((a,h)=>a+h.swell,0);
-  const h24Table=`<div style="overflow:auto;max-height:360px"><table class="data"><thead><tr><th>${L("Hora","Hour")}</th><th>Sag ▽</th><th>Swell △</th><th>${L("Total","Total")}</th></tr></thead><tbody>`+
-    H.map((h,k)=>`<tr><td>${String(k).padStart(2,"0")}:00</td><td>${h.sag}</td><td>${h.swell}</td><td>${h.sag+h.swell}</td></tr>`).join("")
-    +`<tr style="font-weight:700;border-top:2px solid var(--ubi-line)"><td>${L("Total","Total")}</td><td>${totSag}</td><td>${totSwell}</td><td>${totSag+totSwell}</td></tr></tbody></table></div>`;
+  /* power status (cortes/restablecimientos) en el mismo perfil 24h — capa visual sobre C.events.
+     No se filtran con la selección del mapa ITIC porque no tienen duración ni magnitud. */
+  const PS=(C.events||[]).filter(e=>(e.type==="LOSS"||e.type==="RESTORED")&&e.time);
+  const HP=Array.from({length:24},()=>({loss:0,rest:0}));
+  PS.forEach(e=>{const h=e.time.getHours();if(e.type==="LOSS")HP[h].loss++;else HP[h].rest++;});
+  const totLoss=HP.reduce((a,h)=>a+h.loss,0),totRest=HP.reduce((a,h)=>a+h.rest,0),hasPS=PS.length>0;
+  const h24Table=`<div style="overflow:auto;max-height:360px"><table class="data"><thead><tr><th>${L("Hora","Hour")}</th><th>Sag ▽</th><th>Swell △</th>${hasPS?`<th>${L("Corte","Loss")} ⏻</th><th>${L("Restab.","Restored")} ↺</th>`:""}<th>${L("Total","Total")}</th></tr></thead><tbody>`+
+    H.map((h,k)=>`<tr><td>${String(k).padStart(2,"0")}:00</td><td>${h.sag}</td><td>${h.swell}</td>${hasPS?`<td>${HP[k].loss}</td><td>${HP[k].rest}</td>`:""}<td>${h.sag+h.swell+(hasPS?HP[k].loss+HP[k].rest:0)}</td></tr>`).join("")
+    +`<tr style="font-weight:700;border-top:2px solid var(--ubi-line)"><td>${L("Total","Total")}</td><td>${totSag}</td><td>${totSwell}</td>${hasPS?`<td>${totLoss}</td><td>${totRest}</td>`:""}<td>${totSag+totSwell+(hasPS?totLoss+totRest:0)}</td></tr></tbody></table></div>`;
   const Zs={prohibited:D.filter(p=>p.zone==="prohibited").length,normal:D.filter(p=>p.zone==="normal").length,free:D.filter(p=>p.zone==="free").length};
   const zoneCard=box(L("Eventos por criticidad","Events by criticality"),L("Cuántos eventos caen en cada zona ITIC — la zona Prohibida es la que daña los equipos conectados.","How many events fall in each ITIC zone — the Prohibited zone is the one that damages connected equipment."),
     `<table class="data"><thead><tr><th>${L("Zona","Zone")}</th><th>${L("Eventos","Events")}</th><th>%</th></tr></thead><tbody>`+
@@ -1453,7 +1487,7 @@ function tItic(host,C){
     +`<div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="num ${k.cls||''}">${k.num}</div><div class="lab">${k.lab}</div><div class="meta">${k.meta||''}</div></div>`).join("")}</div>`
     +selBanner
     +box(L("Sag y swell vs curva ITIC / CBEMA","Sag and swell vs ITIC / CBEMA curve"),L("Eje X: duración (s, escala log, 0,1 ms–1000 s). Eje Y: magnitud como % del nominal. △ swell · ▽ sag. Color por zona: verde libre de daño, ámbar normal, rojo Prohibida. Arrastra para seleccionar un rango.","X: duration (s, log scale, 0.1 ms–1000 s). Y: magnitude as % of nominal. △ swell · ▽ sag. Color by zone: green no-damage, amber normal, red Prohibited. Drag to select a range."),cb("c_itic","xtall")+cap(L("Cada punto es un evento. Cuanto más lejos del centro (100%) y más a la derecha (más duración), peor. Los puntos <b>rojos</b> (zona Prohibida) son los que dañan equipos — el respaldo de un evento crítico.","Each point is an event. The farther from center (100%) and the farther right (longer), the worse. <b>Red</b> points (Prohibited zone) are the ones that damage equipment — the basis to document a critical event.")))
-    +box(L("Conteo de eventos por hora (perfil 24 h)","Event counts by hour (24h profile)"),L("Sag y swell sumados por hora del reloj — revela patrones horarios (p. ej. swells al subir la carga). Se filtra a tu selección del mapa.","Sag and swell summed by clock hour — reveals hourly patterns (e.g. swells as load rises). Filters to your selection on the map."),cb("c_itic24")+cap(L("Suma de eventos por hora del reloj; un pico repetido a la misma hora revela un patrón (p. ej. swells al subir la carga).","Sum of events by clock hour; a peak repeating at the same hour reveals a pattern (e.g. swells as load rises).") )+h24Table)
+    +box(L("Conteo de eventos por hora (perfil 24 h)","Event counts by hour (24h profile)"),L("Sag, swell"+(hasPS?", cortes y restablecimientos":"")+" sumados por hora del reloj — revela patrones horarios (p. ej. swells al subir la carga). Sag/swell se filtran a tu selección del mapa; los cortes no (no tienen duración ni magnitud).","Sag, swell"+(hasPS?", power losses and restorations":"")+" summed by clock hour — reveals hourly patterns (e.g. swells as load rises). Sag/swell filter to your map selection; power-status events do not (they have no duration or magnitude)."),cb("c_itic24")+cap(L("Suma de eventos por hora del reloj; un pico repetido a la misma hora revela un patrón. Si un corte ⏻ coincide en hora con sags severos, probablemente son el mismo incidente visto por dos reportes.","Sum of events by clock hour; a peak repeating at the same hour reveals a pattern. If a power loss ⏻ shares the hour with severe sags, they are likely the same incident seen by two reports.") )+h24Table)
     +zoneCard
     +box(L("Eventos más relevantes (por criticidad)","Most relevant events (by criticality)"),L("Primero la zona Prohibida; son los que respaldan una protección o un evento documentado.","Prohibited zone first; these are the ones that back a protection or a documented event."),evTable);
   const us=document.getElementById("iticUnit");if(us)us.onchange=e=>{iticUnit=e.target.value;iticSel=null;renderTab("itic");};
@@ -1464,7 +1498,7 @@ function tItic(host,C){
   const free={type:"line",label:L("Límite inferior ITIC","ITIC lower limit"),data:ITIC_FREE.x.map((x,k)=>({x,y:ITIC_FREE.y[k]})),borderColor:(cssv("--ubi-gold")||"#FAB512"),borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false};
   const evDs={type:"scatter",label:L("Eventos","Events"),data:pts.map(p=>({x:Math.min(Math.max(p.x,1e-4),1e3),y:p.y})),pointStyle:pts.map(()=>"triangle"),rotation:pts.map(p=>p.type==="SAG"?180:0),backgroundColor:pts.map(p=>inSel(p)?zc[p.zone]:hexA(zc[p.zone],.12)),pointRadius:pts.map(p=>inSel(p)?5:2.5),borderColor:"#fff",borderWidth:.5};
   _iticChart=mkChart(document.getElementById("c_itic"),{data:{datasets:[proh,free,evDs]},options:baseOpts({interaction:{mode:"nearest",intersect:true},parsing:true,plugins:{legend:{labels:{font:{size:12},usePointStyle:true}},tooltip:{filter:it=>it.dataset.type==="scatter",callbacks:{label:it=>`${r1(it.parsed.y)}% · ${r2(it.parsed.x)}s`}}},scales:{x:{type:"logarithmic",min:1e-4,max:1e3,title:{display:true,text:L("Duración (s)","Duration (s)"),font:{size:12}},ticks:{color:cssv("--ubi-gray2")}},y:{min:0,title:{display:true,text:L("Magnitud (% nominal)","Magnitude (% nominal)"),font:{size:12}},ticks:{color:cssv("--ubi-gray2")}}}})});
-  mkChart(document.getElementById("c_itic24"),{type:"bar",data:{labels:H.map((_,k)=>k+"h"),datasets:[{label:"Swell △",data:H.map(h=>h.swell),backgroundColor:cssv("--ubi-orange")},{label:"Sag ▽",data:H.map(h=>h.sag),backgroundColor:cssv("--ubi-blue")}]},options:baseOpts({plugins:{legend:{display:true,labels:{font:{size:12}}}},scales:{x:{ticks:{color:cssv("--ubi-gray2"),font:{size:12}}},y:{beginAtZero:true,ticks:{color:cssv("--ubi-gray2")}}}})});
+  mkChart(document.getElementById("c_itic24"),{type:"bar",data:{labels:H.map((_,k)=>k+"h"),datasets:[{label:"Swell △",data:H.map(h=>h.swell),backgroundColor:cssv("--ubi-orange")},{label:"Sag ▽",data:H.map(h=>h.sag),backgroundColor:cssv("--ubi-blue")}].concat(hasPS?[{label:L("Corte","Loss")+" ⏻",data:HP.map(h=>h.loss),backgroundColor:cssv("--ubi-navy")},{label:L("Restab.","Restored")+" ↺",data:HP.map(h=>h.rest),backgroundColor:cssv("--ubi-green")}]:[])},options:baseOpts({plugins:{legend:{display:true,labels:{font:{size:12}}}},scales:{x:{ticks:{color:cssv("--ubi-gray2"),font:{size:12}}},y:{beginAtZero:true,ticks:{color:cssv("--ubi-gray2")}}}})});
   const canvas=document.getElementById("c_itic");
   if(canvas&&canvas.addEventListener)canvas.addEventListener("mousedown",e=>{const parent=canvas.parentNode;if(parent&&parent.style)parent.style.position="relative";const r=canvas.getBoundingClientRect();const boxEl=document.createElement("div");boxEl.style.cssText="position:absolute;border:1.5px dashed #22B0E1;background:rgba(34,176,225,.10);pointer-events:none;z-index:5;left:0;top:0;width:0;height:0";if(parent&&parent.appendChild)parent.appendChild(boxEl);_iticDrag={canvas,sx:e.clientX-r.left,sy:e.clientY-r.top,boxEl};});
 }
@@ -2283,6 +2317,21 @@ function ingestParsed(name,rows,headers){
   if(isEventReport(headers,rows)){const b=evCount();parseEvents(rows,headers,name);LOADED.push(name);loadedMeta.push({name,type:"ev",n:evCount()-b});}
   else {
     const ds=buildDataset(rows,headers,name);
+    /* compuerta de clasificación: un archivo sin NINGUNA variable de telemetría
+       (V/I/kVA/FP/desbalance/térmica) no es analizable como dataset — antes se
+       colaba como "dataset fantasma" (p. ej. un Power Status con encabezados
+       nuevos). Segunda pasada por valores; si tampoco es evento, se avisa visible. */
+    const M=ds.map;
+    /* kVA/presión por match EXACTO de encabezado: "Operating KVA" (metadato de placa,
+       presente en reportes de notificación) matchea "kva" por includes y colaba
+       Power Status como telemetría. Las variables por fase no tienen ese riesgo. */
+    const lowH=headers.map(h=>String(h||"").trim().toLowerCase());
+    const hasTel=(M.v||[]).some(Boolean)||(M.i||[]).some(Boolean)||lowH.includes("kva")||(M.pf||[]).some(Boolean)||!!M.imb||!!M.oilTemp||lowH.includes("pressure")||lowH.includes("presión");
+    if(!hasTel){
+      if(looksLikeEventValues(rows,headers)){const b=evCount();parseEvents(rows,headers,name);LOADED.push(name);loadedMeta.push({name,type:"ev",n:evCount()-b});}
+      else {LOADED.push(name);loadedMeta.push({name,type:"warn"});}
+      return;
+    }
     const target=findMergeTarget(ds);
     if(target){ // mismo esquema + mismo DTM ⇒ un solo conjunto de análisis
       const m=mergeTelemetry(target,ds,name);
@@ -2362,6 +2411,7 @@ function renderLoaded(){
   const tel=loadedMeta.filter(m=>m.type==="tel"), ev=loadedMeta.filter(m=>m.type==="ev");
   const chips=loadedMeta.map(m=>{
     if(m.type==="err")return `<span class="fchip" style="border-color:var(--ubi-orange)">⚠️ ${escHTML(m.name)} <b>${L("no se pudo leer","could not be read")}</b> <button class="fdel" data-name="${escHTML(m.name)}" title="${L("Quitar","Remove")}" aria-label="${L("Quitar este archivo","Remove this file")}">×</button></span>`;
+    if(m.type==="warn")return `<span class="fchip" style="border-color:var(--ubi-gold)">⚠️ ${escHTML(m.name)} <b>${L("sin telemetría ni eventos reconocidos — no se agregó","no recognized telemetry or events — not added")}</b> <button class="fdel" data-name="${escHTML(m.name)}" title="${L("Quitar","Remove")}" aria-label="${L("Quitar este archivo","Remove this file")}">×</button></span>`;
     const info=m.type==="ev"?m.n+" "+L("eventos","events")
       :m.merged?"+"+m.added.toLocaleString()+" "+L("registros","records")+(m.dups?` (${m.dups} ${L("dup.","dup.")})`:"")
       :m.n+" "+L("nodo(s)","node(s)");
