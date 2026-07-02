@@ -519,13 +519,6 @@ let langUserSet=false;
 const L=(es,en)=>LANG==="ES"?es:en;
 
 /* ---- variables disponibles para selectores ---- */
-/* líneas/bandas de referencia según la variable (kVA de operación, banda ±5% nominal);
-   compartida entre el chart en pantalla (tProf) y el export PDF por variable */
-function profExtras(v,C,labels){
-  if(v.key==="kva"&&C.kvaNom)return[hline(labels,C.kvaNom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"))];
-  if(v.key.charAt(0)==="V"&&v.key.charAt(1)!=="T"&&C.vnom)return bandDS(labels,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.12)").concat([hline(labels,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]);
-  return null;
-}
 function varsOf(C){
   const list=[];
   const phLabel=(base,p)=>base+" X"+(p+1);
@@ -546,7 +539,6 @@ function varsOf(C){
 
 /* ===================== CHART HELPERS ===================== */
 let CH=[]; // charts vivos
-let profRedraw=null; // referencia al draw() de tProf, para restaurar la vista tras exportar el PDF por variable
 function killCharts(){CH.forEach(c=>{try{c.destroy();}catch(e){}});CH=[];}
 const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function mkChart(ctx,cfg){const c=new Chart(ctx,cfg);CH.push(c);return c;}
@@ -838,7 +830,9 @@ function tProf(host,C){
     if(!S.length)return;
     const labels=Array.from({length:24},(_,h)=>h+"h");
     if(S.length===1){
-      const v0=S[0];const extras=profExtras(v0,C,labels);
+      const v0=S[0];let extras=null;
+      if(v0.key==="kva"&&C.kvaNom)extras=[hline(labels,C.kvaNom,cssv("--ubi-orange"),L("kVA de operación","Operating kVA"))];
+      else if(v0.key.charAt(0)==="V"&&v0.key.charAt(1)!=="T"&&C.vnom)extras=bandDS(labels,C.vnom*0.95,C.vnom*1.05,"rgba(78,178,112,.12)").concat([hline(labels,C.vnom,cssv("--ubi-gray2"),L("Nominal","Nominal"),[3,3])]);
       profileChart(document.getElementById("c_prof"),labels,hourly(C.ts,v0.data),cssv("--ubi-blue"),v0.unit,extras);
     }
     else{
@@ -862,7 +856,6 @@ function tProf(host,C){
     ]},options:baseOpts({interaction:{mode:"index",intersect:false},plugins:{tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>`${i.dataset.label}: ${r1(i.parsed.y)}${v.unit?" "+v.unit:""}`}}}})});
   };
   document.querySelectorAll("#pchips .vchip").forEach(b=>b.onclick=()=>{b.classList.toggle("on");draw();});
-  profRedraw=draw;
   draw();
 }
 
@@ -1967,55 +1960,18 @@ function pdfFull(){
     },60);
   });
 }
-/* recorre TODAS las variables disponibles (no solo la seleccionada en pantalla) y agrega
-   una página por FAMILIA de variable con su perfil 24h — para que "PDF de esta pestaña" en
-   Perfiles 24h cubra cada variable sin repetir página por fase: Voltaje X1/X2/X3 (o las que
-   existan) comparten una sola página con las fases superpuestas, igual que al seleccionar
-   varias fases a la vez en pantalla. Variables sin fases (kVA, Temp. aceite, RSSI, etc.)
-   siguen con su propia página, como antes. */
-function pdfProfileByVar(doc,C,W,H,M){
-  const vars=varsOf(C);
-  const labels=Array.from({length:24},(_,h)=>h+"h");
-  const groups=[];
-  vars.forEach(v=>{
-    const gk=/\d$/.test(v.key)?v.key.replace(/\d+$/,""):v.key; // "V0","V1","V2" -> "V"; "kva" queda igual
-    let g=groups.find(x=>x.key===gk); if(!g){g={key:gk,vars:[]};groups.push(g);}
-    g.vars.push(v);
-  });
-  groups.forEach(g=>{
-    doc.addPage();
-    const vs=g.vars;
-    const baseLabel=vs[0].label.replace(/\s*X\d+$/,"");
-    let y=pdfHeader(doc,W,M,baseLabel+(vs[0].unit?" ("+vs[0].unit+")":""),L("Perfiles 24h · por variable","24h profiles · by variable"),pdfMeta(C));
-    killCharts();
-    if(vs.length===1){
-      profileChart(document.getElementById("c_prof"),labels,hourly(C.ts,vs[0].data),cssv("--ubi-blue"),vs[0].unit,profExtras(vs[0],C,labels));
-    } else {
-      const dsets=vs.map((v,k)=>({label:v.label,data:hourly(C.ts,v.data).map(p=>p.med),borderColor:PAL[k%PAL.length],borderWidth:2,pointRadius:0,tension:.3}));
-      mkChart(document.getElementById("c_prof"),{type:"line",data:{labels,datasets:dsets},options:baseOpts({interaction:{mode:"index",intersect:false},scales:{x:xAxisCfg(),y:yAxisCfg(vs[0].unit)},plugins:{legend:{labels:{font:{size:12}}},tooltip:{callbacks:{title:items=>{if(!items.length)return"";const h=parseInt(items[0].label,10);return isNaN(h)?String(items[0].label):(String(h).padStart(2,"0")+":00");},label:i=>`${i.dataset.label}: ${r1(i.parsed.y)}${vs[0].unit?" "+vs[0].unit:""}`}}}})});
-    }
-    const png=chartPNG("c_prof");
-    if(png)y=addImageFit(doc,png,M,y,W-M*2,255)+10;
-    if(vs[0].desc){doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(110,110,120);const lines=doc.splitTextToSize(_stripTags(vs[0].desc),W-M*2);doc.text(lines,M,y);}
-  });
-}
 function pdfTab(){
-  ensurePdfLibs(()=>{
-    const id=CUR.tab||"syn";const C=CUR.C;
-    try{
-      const panel=document.getElementById("p_"+id);
-      const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"pt",format:"a4"});
-      const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
-      const ai=areaOf(id),g=GROUPS[ai].g,tab=GROUPS[ai].tabs.find(t=>t.id===id);
-      const title=g?L(g.es,g.en)+" \u203a "+tabName(tab):L("Informe","Report");
-      let y=pdfHeader(doc,W,M,title,L("Explorador DTM","DTM Explorer"),pdfMeta(C));
-      pdfRenderPanel(doc,panel,W,H,M,y);
-      if(id==="prof")pdfProfileByVar(doc,C,W,H,M);
-      pdfFooterAll(doc,M);
-      doc.save("dtm-"+id+"-"+C.nodeName+".pdf");
-    }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);}
-    finally{ if(id==="prof"&&profRedraw){try{profRedraw();}catch(_){}} }
-  });
+  ensurePdfLibs(()=>{ try{
+    const id=CUR.tab||"syn";const C=CUR.C;const panel=document.getElementById("p_"+id);
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"pt",format:"a4"});
+    const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=40;
+    const ai=areaOf(id),g=GROUPS[ai].g,tab=GROUPS[ai].tabs.find(t=>t.id===id);
+    const title=g?L(g.es,g.en)+" \u203a "+tabName(tab):L("Informe","Report");
+    let y=pdfHeader(doc,W,M,title,L("Explorador DTM","DTM Explorer"),pdfMeta(C));
+    pdfRenderPanel(doc,panel,W,H,M,y);
+    pdfFooterAll(doc,M);
+    doc.save("dtm-"+id+"-"+C.nodeName+".pdf");
+  }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);} });
 }
 function buildUI(){
   // tabs
