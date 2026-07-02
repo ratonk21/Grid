@@ -2085,8 +2085,7 @@ function pdfFullBuild(doc,C,W,H,M,opts){
   });
   pdfFooterAll(doc,M,S.cover?2:1);
 }
-/* ===== v101 — Selector de contenido antes de exportar el Informe PDF =====
-   ===== v102 — El mismo selector aplica tambi\u00e9n al "PDF de esta pesta\u00f1a" (modo pesta\u00f1a: solo Contenido) ===== */
+/* ===== v101 — Selector de contenido antes de exportar el Informe PDF ===== */
 const PDF_FAMS=["prof","load","cross","daily","pq","itic","therm","nodes","integ"];
 /* estado en memoria: persiste durante la sesión (sin localStorage, regla de la suite) */
 let _pdfOpts={
@@ -2106,11 +2105,7 @@ function _ppInjectCSS(){
   #pdfPicker h2{margin:0;font-size:19px;color:var(--ubi-navy);font-weight:800}
   #pdfPicker .pp-desc{margin:5px 0 0;font-size:12.5px;color:var(--ubi-deep)}
   #pdfPicker .pp-body{padding:18px 24px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:24px}
-  #pdfPicker .pp-body.pp-solo{grid-template-columns:1fr;max-width:420px}
   @media(max-width:560px){#pdfPicker .pp-body{grid-template-columns:1fr;gap:14px}}
-  #pdfPicker .pp-scope{display:flex;align-items:center;gap:9px;background:var(--ubi-gray);border-radius:9px;padding:10px 13px;margin-bottom:14px;font-size:12.5px;color:var(--ubi-navy)}
-  #pdfPicker .pp-scope b{color:var(--ubi-navy)}
-  #pdfPicker .pp-scope .pp-dot{width:8px;height:8px;border-radius:50%;background:var(--ubi-blue);flex:0 0 auto}
   #pdfPicker .pp-colhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
   #pdfPicker .pp-col h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ubi-navy);font-weight:800}
   #pdfPicker .pp-toggle{background:none;border:0;color:var(--ubi-blue);font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;padding:0}
@@ -2130,8 +2125,7 @@ function _ppInjectCSS(){
   `;
   document.head.appendChild(st);
 }
-function openPdfPicker(mode){
-  mode = mode==="tab" ? "tab" : "full";
+function openPdfPicker(){
   if(!CUR||!CUR.C){ alert(L("Primero carga datos.","Load data first.")); return; }
   _ppInjectCSS();
   const old=document.getElementById("pdfPicker");if(old)old.remove();
@@ -2150,42 +2144,25 @@ function openPdfPicker(mode){
   const rowSec=(k,txt)=>`<label class="pp-row"><input type="checkbox" data-k="sec" data-id="${k}" ${O.sec[k]?"checked":""}><span>${txt}</span></label>`;
   const rowFam=(k,txt)=>`<label class="pp-row"><input type="checkbox" data-k="fam" data-id="${k}" ${O.sec.fam[k]!==false?"checked":""}><span>${txt}</span></label>`;
   const rowEl=(k,txt)=>`<label class="pp-row"><input type="checkbox" data-k="el" data-id="${k}" ${O.el[k]?"checked":""}><span>${txt}</span></label>`;
-  /* nombre de la pestaña activa (mismo título que usa el PDF de pestaña) */
-  const tabId=CUR.tab||"syn";
-  let tabTitle;
-  try{const ai=areaOf(tabId),g=GROUPS[ai].g,tb=GROUPS[ai].tabs.find(t=>t.id===tabId);tabTitle=g?L(g.es,g.en)+" \u203a "+tabName(tb):tabName(tb);}
-  catch(_){tabTitle=_famLabel(tabId);}
-  /* cabecera: distinta según el botón que abrió el selector */
-  const head = mode==="tab"
-    ? `<div class="pp-eyebrow">${L("PDF de esta pesta\u00f1a","This tab's PDF")}</div>
-       <h2>${L("\u00bfQu\u00e9 incluir?","What to include?")}</h2>
-       <p class="pp-desc">${L("Elige el tipo de contenido de esta pesta\u00f1a. Se recuerda durante esta sesi\u00f3n.","Pick the content type for this tab. Remembered for this session.")}</p>`
-    : `<div class="pp-eyebrow">${L("Informe PDF","Report PDF")}</div>
-       <h2>${L("\u00bfQu\u00e9 incluir en el PDF?","What to include in the PDF?")}</h2>
-       <p class="pp-desc">${L("Marca las secciones y el tipo de contenido. Se recuerda durante esta sesi\u00f3n.","Pick the sections and the content type. Remembered for this session.")}</p>`;
-  /* columna de secciones: solo en el Informe completo (en pesta\u00f1a la secci\u00f3n ya es fija) */
-  const secCol = mode==="tab" ? "" : `
+  const box=document.createElement("div");box.id="pdfPicker";
+  box.innerHTML=`
+  <div class="pp-box" role="dialog" aria-modal="true" aria-label="${L("Opciones del informe PDF","PDF report options")}">
+    <div class="pp-head">
+      <div class="pp-eyebrow">${L("Informe PDF","Report PDF")}</div>
+      <h2>${L("\u00bfQu\u00e9 incluir en el PDF?","What to include in the PDF?")}</h2>
+      <p class="pp-desc">${L("Marca las secciones y el tipo de contenido. Se recuerda durante esta sesi\u00f3n.","Pick the sections and the content type. Remembered for this session.")}</p>
+    </div>
+    <div class="pp-body">
       <div class="pp-col">
         <div class="pp-colhead"><h3>${L("Secciones","Sections")}</h3><button class="pp-toggle" data-all="sec">${L("Todas / ninguna","All / none")}</button></div>
         ${secItems.map(([k,t])=>rowSec(k,t)).join("")}
         <div class="pp-note">${L("Detalle por familia","Detail by family")}</div>
         ${PDF_FAMS.map(id=>rowFam(id,_famLabel(id))).join("")}
-      </div>`;
-  /* aviso del alcance: solo en modo pesta\u00f1a, dice qu\u00e9 se exporta */
-  const scope = mode==="tab" ? `<div class="pp-scope"><span class="pp-dot"></span><span>${L("Se exporta","Exporting")}: <b>${tabTitle}</b></span></div>` : "";
-  const box=document.createElement("div");box.id="pdfPicker";
-  box.innerHTML=`
-  <div class="pp-box" role="dialog" aria-modal="true" aria-label="${mode==="tab"?L("Opciones del PDF de la pesta\u00f1a","Tab PDF options"):L("Opciones del informe PDF","PDF report options")}">
-    <div class="pp-head">
-      ${head}
-    </div>
-    <div class="pp-body${mode==="tab"?" pp-solo":""}">
-      ${secCol}
+      </div>
       <div class="pp-col">
-        ${scope}
         <div class="pp-colhead"><h3>${L("Contenido","Content")}</h3><button class="pp-toggle" data-all="el">${L("Todo / nada","All / none")}</button></div>
         ${elItems.map(([k,t])=>rowEl(k,t)).join("")}
-        <div class="pp-hint">${L("\u00abComentarios y notas\u00bb agrupa las descripciones, el \u00abc\u00f3mo leerlo\u00bb, y las conclusiones y recomendaciones.","\u00abComments & notes\u00bb bundles descriptions, the \u00abhow to read it\u00bb, and conclusions and recommendations.")}${mode==="tab"?"":L(" Aplica a todas las secciones marcadas."," Applies to every selected section.")}</div>
+        <div class="pp-hint">${L("\u00abComentarios y notas\u00bb agrupa las descripciones, el \u00abc\u00f3mo leerlo\u00bb, y las conclusiones y recomendaciones. Aplica a todas las secciones marcadas.","\u00abComments & notes\u00bb bundles descriptions, the \u00abhow to read it\u00bb, and conclusions and recommendations. Applies to every selected section.")}</div>
       </div>
     </div>
     <div class="pp-foot">
@@ -2208,7 +2185,7 @@ function openPdfPicker(mode){
     const anyEl=O.el.graficos||O.el.tablas||O.el.comentarios||O.el.kpis;
     const go=box.querySelector("#ppGo"),warn=box.querySelector("#ppWarn");
     let msg="";
-    if(mode!=="tab" && !anyContentSec)msg=L("Marca al menos una secci\u00f3n con contenido.","Select at least one content section.");
+    if(!anyContentSec)msg=L("Marca al menos una secci\u00f3n con contenido.","Select at least one content section.");
     else if(!anyEl)msg=L("Marca al menos un tipo de contenido.","Select at least one content type.");
     warn.textContent=msg;go.disabled=!!msg;
   };
@@ -2224,11 +2201,11 @@ function openPdfPicker(mode){
   document.addEventListener("keydown",onKey);
   box.querySelector("#ppCancel").onclick=close;
   box.addEventListener("mousedown",e=>{if(e.target===box)close();});
-  box.querySelector("#ppGo").onclick=()=>{readState();close();if(mode==="tab")pdfTabRun(_pdfOpts.el);else pdfFullRun(_pdfOpts);};
+  box.querySelector("#ppGo").onclick=()=>{readState();close();pdfFullRun(_pdfOpts);};
   validate();
 }
 /* Abrir el selector es el nuevo paso previo a descargar el Informe PDF */
-function pdfFull(){ openPdfPicker("full"); }
+function pdfFull(){ openPdfPicker(); }
 /* Genera el informe con las opciones elegidas (cuerpo original, ahora parametrizado) */
 function pdfFullRun(opts){
   ensurePdfLibs(()=>{
@@ -2278,13 +2255,7 @@ function pdfProfileByVar(doc,C,W,H,M){
     if(vs[0].desc){doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(110,110,120);const lines=doc.splitTextToSize(_stripTags(vs[0].desc),W-M*2);doc.text(lines,M,y);}
   });
 }
-/* El bot\u00f3n "PDF de esta pesta\u00f1a" ahora abre el selector de contenido (modo pesta\u00f1a).
-   La secci\u00f3n es fija (la pesta\u00f1a activa); solo se elige qu\u00e9 elementos entran. */
-function pdfTab(){ openPdfPicker("tab"); }
-/* Genera el PDF de la pesta\u00f1a activa aplicando el filtro de contenido elegido.
-   Si no se pasa filtro, incluye todo (comportamiento hist\u00f3rico). */
-function pdfTabRun(el){
-  el = el || {graficos:true,tablas:true,comentarios:true,kpis:true};
+function pdfTab(){
   ensurePdfLibs(()=>{
     const id=CUR.tab||"syn";const C=CUR.C;
     try{
@@ -2294,8 +2265,8 @@ function pdfTabRun(el){
       const ai=areaOf(id),g=GROUPS[ai].g,tab=GROUPS[ai].tabs.find(t=>t.id===id);
       const title=g?L(g.es,g.en)+" \u203a "+tabName(tab):L("Informe","Report");
       let y=pdfHeader(doc,W,M,title,L("Explorador DTM","DTM Explorer"),pdfMeta(C));
-      pdfRenderPanel(doc,panel,W,H,M,y,el);
-      if(id==="prof"&&el.graficos)pdfProfileByVar(doc,C,W,H,M);
+      pdfRenderPanel(doc,panel,W,H,M,y);
+      if(id==="prof")pdfProfileByVar(doc,C,W,H,M);
       pdfFooterAll(doc,M);
       doc.save("dtm-"+id+"-"+C.nodeName+(C.win?"_"+C.win.from.toISOString().slice(0,10)+"_"+C.win.to.toISOString().slice(0,10):"")+".pdf");
     }catch(e){alert(L("No se pudo generar el PDF: ","Could not generate the PDF: ")+e.message);}
@@ -2475,7 +2446,7 @@ function applyI18n(){
   set("pdfTabTxt","PDF de esta pestaña","This tab as PDF");
   set("pdfAllTxt","Informe PDF","Report PDF");
   {const pa=document.getElementById("pdfAll");if(pa)pa.title=L("Abre un selector para elegir qué secciones y qué contenido (gráficos, tablas, comentarios, KPIs) incluir, y luego consolida el resumen ejecutivo y las familias en un solo PDF.","Opens a picker to choose which sections and content (charts, tables, comments, KPIs) to include, then consolidates the executive summary and families into a single PDF.");}
-  {const pt=document.getElementById("pdfTab");if(pt)pt.title=L("Abre un selector para elegir qué contenido (gráficos, tablas, comentarios, KPIs) incluir y exporta la pestaña actual a PDF.","Opens a picker to choose which content (charts, tables, comments, KPIs) to include, then exports the current tab to PDF.");}
+  {const pt=document.getElementById("pdfTab");if(pt)pt.title=L("Exporta la pestaña actual a PDF, con sus gráficos, descripciones y «cómo leerlo».","Exports the current tab to PDF, with its charts, descriptions and «how to read it».");}
   set("genDiag","✦ Generar diagnóstico IA","✦ Generate AI diagnosis");
   if(DATASETS.length&&document.getElementById("primaryBar"))buildPrimaryBar();
   updateKvaPlaceholder();
