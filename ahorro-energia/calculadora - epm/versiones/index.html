@@ -1,10 +1,9 @@
 <!doctype html>
 <!-- ═══ ESTADO ═══
 herramienta : Calculadora de ahorro — edición Medellín
-version     : v4 (anterior: v3 · fork de index.html calculadora LATAM)
+version     : v3 (anterior: v2 · fork de index.html calculadora LATAM)
 motor       : INTOCABLE — sunTimes/buildSun (NOAA), dayProfile, computeScn, savings, payback
-ultima      : 2026-07-07 · v4: nota comercial de supuestos iniciales en la pestaña 1.
-              v3: perfil DIM 100% por defecto (Restablecer = 100%).
+ultima      : 2026-07-07 · v3: perfil DIM 100% por defecto (Restablecer = 100%).
               v2: tarifa 0,27 US$/kWh y escenario Convencional OFF por defecto
               (tarjeta Ahorro-dim parte oculta). v1: solo CO, inventario 160k,
               defaults A(+15/−15) B(18–06) nodo US$100 rango dim 00:00–23:59,
@@ -92,14 +91,6 @@ pendientes  : tarifa COP real EPM · perfil dim sugerido Medellín · logo clien
   .btn.primary:hover{background:#1C9BC7; border-color:#1C9BC7}
   .btn.savecase{background:var(--amber); border-color:var(--amber); color:var(--ink); font-weight:900; font-size:14px; padding:11px 20px; border-radius:11px; box-shadow:0 4px 16px rgba(250,181,18,.45)}
   .btn.savecase:hover{background:var(--amber-hi); border-color:var(--amber-hi); color:var(--ink); transform:translateY(-1px)}
-  .intro-note{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--indigo); border-radius:16px; padding:18px 20px; margin-bottom:16px; box-shadow:var(--shadow)}
-  .intro-note .eyebrow{font-family:var(--mono); font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--indigo)}
-  .intro-note h3{font-size:17px; margin:4px 0 6px}
-  .intro-note .lede{color:var(--muted); font-size:13px; margin:0 0 12px; max-width:860px}
-  .intro-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px 18px}
-  .intro-grid .it{font-size:12.5px; color:var(--muted); line-height:1.45; padding:8px 10px; background:var(--surface2); border-radius:10px}
-  .intro-grid .it b{display:block; color:var(--ink); font-size:12px; margin-bottom:2px}
-  .intro-note .edit{margin:12px 0 0; font-size:11.5px; color:var(--faint); font-style:italic}
   .btnrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
 
   .ptabs{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap}
@@ -511,21 +502,6 @@ pendientes  : tarifa COP real EPM · perfil dim sugerido Medellín · logo clien
       <!-- PASO 1 · Ubicación y tarifa -->
       <section class="view active" id="view-config">
         <div class="sec-help" data-help="config"></div>
-        <div class="intro-note">
-          <div class="eyebrow" data-i18n="intro_eyebrow">Supuestos iniciales</div>
-          <h3 data-i18n="intro_t">Análisis precargado para Medellín</h3>
-          <p class="lede" data-i18n="intro_lede">La calculadora parte con el parque de alumbrado público de Medellín ya configurado, para ver resultados desde el primer clic. Estos son los supuestos de arranque:</p>
-          <div class="intro-grid">
-            <div class="it"><b data-i18n="intro_i1_k">Ubicación</b><span data-i18n="intro_i1_v">Medellín, Colombia (6,25 N · 75,57 O · UTC−5). Amanecer y atardecer reales calculados día a día con modelo astronómico NOAA.</span></div>
-            <div class="it"><b data-i18n="intro_i2_k">Parque lumínico</b><span data-i18n="intro_i2_v">160.000 luminarias LED en 4 grupos: 50 W, 70 W, 80–100 W y 100–150 W (rangos modelados a 90 W y 125 W). ≈11,1 MW instalados, 100% dimerizable.</span></div>
-            <div class="it"><b data-i18n="intro_i3_k">Tarifa de energía</b><span data-i18n="intro_i3_v">0,27 US$/kWh como referencia comercial.</span></div>
-            <div class="it"><b data-i18n="intro_i4_k">Telegestión Ubicquia</b><span data-i18n="intro_i4_v">Encendido 15 min después del atardecer y apagado 15 min antes del amanecer, siguiendo el sol de cada día.</span></div>
-            <div class="it"><b data-i18n="intro_i5_k">Base de comparación</b><span data-i18n="intro_i5_v">Horario fijo 18:00–06:00 (12 h por noche), la operación típica sin telegestión.</span></div>
-            <div class="it"><b data-i18n="intro_i6_k">Dimerización</b><span data-i18n="intro_i6_v">Parte al 100% (sin regulación): el ahorro adicional aparece cuando defines tu perfil por franjas de 30 min.</span></div>
-            <div class="it"><b data-i18n="intro_i7_k">Inversión</b><span data-i18n="intro_i7_v">US$100 por nodo inteligente para estimar el retorno (payback) sobre las 160.000 luminarias.</span></div>
-          </div>
-          <p class="edit" data-i18n="intro_edit">Todos los valores son editables en las pestañas siguientes. Cifras referenciales para evaluación comercial; valídalas contra inventario y tarifa reales.</p>
-        </div>
         <div class="cfg-grid">
       <div class="panel">
         <h2 data-i18n="loc_time">Ubicación y tiempo</h2>
@@ -973,16 +949,6 @@ const DICT={
   eyebrow:"Alumbrado público · energía y costo", title:"Calculadora de consumo anual",
   city:"Ciudad", year:"Año", loc_time:"Ubicación y tiempo",
   loc_hint:"El amanecer/atardecer se recalcula (NOAA) con estas coordenadas.",
-  intro_eyebrow:"Supuestos iniciales", intro_t:"Análisis precargado para Medellín",
-  intro_lede:"La calculadora parte con el parque de alumbrado público de Medellín ya configurado, para ver resultados desde el primer clic. Estos son los supuestos de arranque:",
-  intro_i1_k:"Ubicación", intro_i1_v:"Medellín, Colombia (6,25 N · 75,57 O · UTC−5). Amanecer y atardecer reales calculados día a día con modelo astronómico NOAA.",
-  intro_i2_k:"Parque lumínico", intro_i2_v:"160.000 luminarias LED en 4 grupos: 50 W, 70 W, 80–100 W y 100–150 W (rangos modelados a 90 W y 125 W). ≈11,1 MW instalados, 100% dimerizable.",
-  intro_i3_k:"Tarifa de energía", intro_i3_v:"0,27 US$/kWh como referencia comercial.",
-  intro_i4_k:"Telegestión Ubicquia", intro_i4_v:"Encendido 15 min después del atardecer y apagado 15 min antes del amanecer, siguiendo el sol de cada día.",
-  intro_i5_k:"Base de comparación", intro_i5_v:"Horario fijo 18:00–06:00 (12 h por noche), la operación típica sin telegestión.",
-  intro_i6_k:"Dimerización", intro_i6_v:"Parte al 100% (sin regulación): el ahorro adicional aparece cuando defines tu perfil por franjas de 30 min.",
-  intro_i7_k:"Inversión", intro_i7_v:"US$100 por nodo inteligente para estimar el retorno (payback) sobre las 160.000 luminarias.",
-  intro_edit:"Todos los valores son editables en las pestañas siguientes. Cifras referenciales para evaluación comercial; valídalas contra inventario y tarifa reales.",
   country_note:"Calculadora configurada para Medellín, Colombia (lat 6,25 · lon −75,57 · UTC−5, sin cambio de horario). Todos los cálculos astronómicos usan esa ubicación.",
   country:"País / ciudad", lat:"Latitud", lon:"Longitud", tz:"Zona horaria", dst:"Cambio de horario",
   dst_none:"Ninguno", dst_eu:"Unión Europea", dst_us:"Norteamérica / Caribe", dst_chile:"Chile", dst_py:"Paraguay",
@@ -1048,16 +1014,6 @@ const DICT={
   eyebrow:"Street lighting · energy & cost", title:"Annual consumption calculator",
   city:"City", year:"Year", loc_time:"Location & time",
   loc_hint:"Sunrise/sunset is recomputed (NOAA) from these coordinates.",
-  intro_eyebrow:"Initial assumptions", intro_t:"Analysis preloaded for Medellín",
-  intro_lede:"The calculator starts with Medellín's public lighting fleet already configured, so you see results from the first click. These are the starting assumptions:",
-  intro_i1_k:"Location", intro_i1_v:"Medellín, Colombia (6.25 N · 75.57 W · UTC−5). Real sunrise and sunset computed day by day with the NOAA astronomical model.",
-  intro_i2_k:"Lighting fleet", intro_i2_v:"160,000 LED luminaires in 4 groups: 50 W, 70 W, 80–100 W and 100–150 W (ranges modeled at 90 W and 125 W). ≈11.1 MW installed, 100% dimmable.",
-  intro_i3_k:"Energy tariff", intro_i3_v:"US$0.27/kWh as commercial reference.",
-  intro_i4_k:"Ubicquia telemanagement", intro_i4_v:"Switch-on 15 min after sunset and switch-off 15 min before sunrise, tracking the sun every day.",
-  intro_i5_k:"Comparison base", intro_i5_v:"Fixed schedule 18:00–06:00 (12 h per night), the typical operation without telemanagement.",
-  intro_i6_k:"Dimming", intro_i6_v:"Starts at 100% (no regulation): additional savings appear once you define your profile in 30-min slots.",
-  intro_i7_k:"Investment", intro_i7_v:"US$100 per smart node to estimate payback across the 160,000 luminaires.",
-  intro_edit:"All values are editable in the following tabs. Reference figures for commercial evaluation; validate against your real inventory and tariff.",
   country_note:"Calculator preset for Medellín, Colombia (lat 6.25 · lon −75.57 · UTC−5, no DST). All astronomical calculations use that location.",
   country:"Country / city", lat:"Latitude", lon:"Longitude", tz:"Time zone", dst:"Daylight saving",
   dst_none:"None", dst_eu:"European Union", dst_us:"North America / Caribbean", dst_chile:"Chile", dst_py:"Paraguay",
