@@ -1,0 +1,501 @@
+<!doctype html>
+<!-- ═══ ESTADO ═══
+herramienta : Procedimiento dimerización · doc cliente PROC-LUM-01
+version     : v3 (anterior: v2)
+motor       : datos estáticos caso 110 W (curva 11 pts, base informe interno del caso) — no alterar cifras
+ultima      : 2026-07-06 · anonimización de cliente (caso genérico, plantilla «Dim Circuito Piloto 01») + sección 03 estrategias 1-2-3 con figuras SVG del circuito + «80 %» declarado como comando de ejemplo desde el inicio
+arquitectura: single-file · band+container · Chart.js 4.4.1 CDN · sin localStorage
+marca       : Ubicquia (--ubi-*)
+verificacion: hopper — node --check del script + reconciliación de cifras contra el informe de origen
+no_tocar    : cifras medidas · frase de alcance lumínico (cierre obligatorio)
+pendientes  : toggle ES/EN · segundo caso (luminaria 150 W) · export PPTX del caso · fotos reales del circuito si el cliente autoriza
+═══ -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Procedimiento · Caracterización de dimerización por potencia medida · Ubicquia</title>
+<meta name="description" content="Procedimiento Ubicquia para caracterizar el comportamiento real del driver de una luminaria mediante potencia medida, transparentar el ahorro real frente al ahorro percibido y entregar la decisión del punto de operación al cliente. Caso medido real con tabla de equivalencias y perfil nocturno ajustado.">
+<meta property="og:title" content="Procedimiento Ubicquia · Dimerización y ahorro real">
+<meta property="og:description" content="Mismo comando que cualquier telegestión; la diferencia es involucrarse en los datos. Caracterización descriptiva del driver por potencia medida. No certifica nivel lumínico.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;--ubi-black:#000;
+  --ubi-deep:#464D63;--ubi-gray2:#99A0B4;
+  --ubi-lime:#AECC53;--ubi-darkgreen:#005B59;
+  --ubi-orange:#EA561B;--ubi-gold:#FAB512;
+  --ubi-surface:#fff;--ubi-line:rgba(30,36,69,.10);
+  --ubi-maxw:1200px;--ubi-maxw-read:880px;--ubi-maxw-wide:1440px;
+  --ubi-pad:clamp(16px,5vw,48px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Lato,system-ui,Arial,sans-serif;color:var(--ubi-deep);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
+.band{width:100%}
+.band--navy{background:var(--ubi-navy);color:#fff}
+.band--gray{background:var(--ubi-gray)}
+.container,.container--read,.container--wide{width:100%;margin-inline:auto;padding-inline:var(--ubi-pad)}
+.container{max-width:var(--ubi-maxw)}
+.container--read{max-width:var(--ubi-maxw-read)}
+.container--wide{max-width:var(--ubi-maxw-wide)}
+h1,h2,h3{font-family:Lato;color:var(--ubi-navy);line-height:1.2;margin:0 0 .4em}
+.band--navy h1,.band--navy h2,.band--navy h3{color:#fff}
+h1{font-weight:900;font-size:clamp(1.5rem,3.6vw,2.3rem)}
+h2{font-weight:900;font-size:clamp(1.2rem,2.4vw,1.55rem);margin-top:0}
+h3{font-weight:700;font-size:1.05rem;color:var(--ubi-navy)}
+p{margin:0 0 1em}
+a{color:var(--ubi-blue);text-decoration:none}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px;flex-wrap:wrap}
+.logo{font-family:Lato;font-weight:900;font-size:1.25rem;letter-spacing:-.01em}
+.logo .a{color:var(--ubi-blue)}.logo .b{color:#fff}.logo .dot{color:var(--ubi-blue)}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#cfe8f7;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 12px}
+.pill .dt{width:7px;height:7px;border-radius:50%;background:var(--ubi-blue)}
+
+/* hero */
+.hero{padding-block:clamp(20px,4vh,34px)}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ubi-blue);margin:0 0 10px}
+.hero h1{max-width:26ch}
+.hero .tagline{color:#cdd5ea;font-size:.98rem;max-width:64ch;margin:.4em 0 0}
+.meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:14px;font-size:.82rem;color:#aeb6cf}
+.meta b{color:#fff;font-weight:700}
+
+/* sections */
+section{padding-block:clamp(30px,5vh,52px)}
+.sec-num{font-family:'JetBrains Mono',monospace;font-size:.78rem;letter-spacing:.12em;color:var(--ubi-blue);font-weight:700;display:block;margin-bottom:4px}
+.lead{font-size:1.06rem;color:var(--ubi-navy)}
+
+/* callouts */
+.callout{border-radius:12px;padding:18px 20px;margin:18px 0;background:#fff;border:1px solid var(--ubi-line);border-left:4px solid var(--ubi-blue)}
+.callout--scope{border-left-color:var(--ubi-navy);background:#fbfcfe}
+.callout--warn{border-left-color:var(--ubi-orange);background:#fff8f4}
+.callout--ok{border-left-color:var(--ubi-lime);background:#fafdf2}
+.callout h3{margin:0 0 6px;font-size:.96rem}
+.callout p:last-child{margin-bottom:0}
+.callout .tag{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ubi-deep)}
+
+/* kpi strip (diferenciador) */
+.kpis{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin:18px 0}
+.kpi{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:18px 20px}
+.kpi .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.7rem;color:var(--ubi-navy);line-height:1.1}
+.kpi .v small{font-size:.9rem;color:var(--ubi-gray2);font-weight:400}
+.kpi .l{font-size:.84rem;color:var(--ubi-deep);margin-top:6px}
+
+/* cards */
+.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:18px}
+.card{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:20px}
+.card h3{margin-top:0;display:flex;align-items:baseline;gap:8px}
+.card h3 .n{font-family:'JetBrains Mono',monospace;color:var(--ubi-blue);font-size:.9rem}
+.card p{font-size:.92rem;margin-bottom:0}
+
+/* steps */
+.steps{counter-reset:s;list-style:none;padding:0;margin:18px 0 0;display:grid;gap:14px}
+.steps li{counter-increment:s;background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:18px 20px 18px 60px;position:relative}
+.steps li::before{content:counter(s);position:absolute;left:16px;top:16px;width:30px;height:30px;border-radius:8px;background:var(--ubi-navy);color:#fff;font-family:'JetBrains Mono',monospace;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+.steps li b{color:var(--ubi-navy)}
+.steps li p{margin:.3em 0 0;font-size:.92rem}
+
+/* table */
+.tablewrap{overflow-x:auto;margin:18px 0;border:1px solid var(--ubi-line);border-radius:12px}
+table.data{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+table.data th,table.data td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--ubi-line)}
+table.data thead th{background:var(--ubi-navy);color:#fff;font-weight:700;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+table.data tbody tr:nth-child(even){background:#F5F8F9}
+table.data td.num{font-family:'JetBrains Mono',monospace;text-align:right}
+table.data .hl{background:#eef9ff!important}
+table.data .hl td{font-weight:700;color:var(--ubi-navy)}
+.cap{font-size:.8rem;color:var(--ubi-gray2);margin-top:8px}
+
+/* timeline (plantilla nocturna) */
+.tl{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:0;border:1px solid var(--ubi-line);border-radius:12px;background:#fff;overflow:hidden}
+.tl li{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--ubi-line)}
+.tl li:last-child{border-bottom:none}
+.tl .hh{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ubi-navy);font-size:.88rem}
+.tl .ev{font-size:.9rem}
+.tl .cmd{font-family:'JetBrains Mono',monospace;font-size:.84rem;white-space:nowrap}
+.tl .cmd .old{color:var(--ubi-gray2);text-decoration:line-through}
+.tl .cmd .new{color:var(--ubi-navy);font-weight:700;background:#eef9ff;border-radius:6px;padding:2px 8px;margin-left:6px}
+@media (max-width:560px){.tl li{grid-template-columns:1fr;gap:4px}}
+
+/* figuras estrategia */
+.figcard{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:20px;margin:18px 0}
+.fighead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.fighead .ctitle{margin:0}
+
+/* chart */
+.chartcard{background:#fff;border:1px solid var(--ubi-line);border-radius:12px;padding:20px;margin:18px 0}
+.chartcard .ctitle{font-weight:700;color:var(--ubi-navy);margin:0 0 2px}
+.chartcard .csub{font-size:.82rem;color:var(--ubi-gray2);margin:0 0 14px}
+.chartbox{position:relative;height:360px;width:100%}
+.chart-fallback{display:none;font-size:.85rem;color:var(--ubi-orange);padding:10px 0}
+
+/* delta chips */
+.delta{display:inline-block;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.8rem;padding:2px 8px;border-radius:6px}
+.delta--gap{background:#fff1ea;color:var(--ubi-orange)}
+.delta--real{background:#eef9ff;color:var(--ubi-navy)}
+
+/* btn */
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--ubi-blue);color:#fff;border:none;border-radius:8px;padding:11px 18px;font-family:Lato;font-weight:700;font-size:.9rem;cursor:pointer}
+.btn:hover{background:#1a9bc7}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+
+/* footer */
+footer .container{padding-block:30px}
+.fgrid{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-end}
+.fnote{font-size:.78rem;color:#aeb6cf;max-width:60ch}
+@media (max-width:560px){.chartbox{height:300px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff}
+  .toolbar,.btn{display:none!important}
+  .band--navy{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  section,.card,.steps li,.callout,.chartcard,.tablewrap,.kpi,.tl,.figcard{break-inside:avoid}
+  .hero{padding-block:24px}
+}
+</style>
+</head>
+<body>
+
+<header class="band band--navy">
+  <div class="container topbar">
+    <div class="logo"><span class="a">ubi</span><span class="b">cquia</span><span class="dot">.</span></div>
+    <span class="pill"><span class="dt"></span>Procedimiento técnico · Soporte</span>
+  </div>
+</header>
+
+<section class="band band--navy hero">
+  <div class="container--read">
+    <p class="kicker">PROC-LUM-01 · Telegestión de alumbrado</p>
+    <h1>Caracterización de dimerización por potencia medida</h1>
+    <p class="tagline">Escrito para leerse fácil: qué medimos, por qué un comando de ejemplo como el «80&nbsp;%» no ahorra lo que parece, y cómo con la curva real el ahorro se vuelve real. Con caso medido incluido.</p>
+    <div class="meta">
+      <span>Tipo: <b>Descriptivo</b></span>
+      <span>Alcance: <b>Comportamiento eléctrico real del driver</b></span>
+      <span>No incluye: <b>Certificación de nivel lumínico</b></span>
+      <span>Rev.: <b>2.0</b></span>
+    </div>
+    <div class="toolbar"><button class="btn" onclick="window.print()">⤓ Exportar PDF</button></div>
+  </div>
+</section>
+
+<main>
+
+<div class="band">
+  <section class="container--read" id="objetivo">
+    <span class="sec-num">01</span>
+    <h2>Objetivo y alcance</h2>
+    <p class="lead">Este procedimiento caracteriza el comportamiento eléctrico real del conjunto luminaria&nbsp;+&nbsp;driver bajo dimerización, y transparenta la diferencia entre el ahorro que el cliente cree obtener y el ahorro que realmente ocurre.</p>
+    <p>Casi todos asumen que dimerizar una luminaria de 100&nbsp;W al 80&nbsp;% entrega 80&nbsp;W. En la práctica, la mayoría de las veces no es así: el driver entrega más potencia que esa recta teórica, de modo que el ahorro configurado es menor al esperado. Este procedimiento mide esa realidad y se la muestra al cliente sin maquillarla.</p>
+    <p>El «80&nbsp;%» que se repite en todo el documento es solo un <b>comando de ejemplo</b>: sale del caso medido de la sección 07 y de lo que típicamente se configura en terreno. La misma lógica aplica a cualquier escalón (40, 60 o 90&nbsp;%).</p>
+    <div class="callout callout--scope">
+      <span class="tag">Declaración de alcance</span>
+      <h3>Qué entrega y qué NO entrega este procedimiento</h3>
+      <p><b>Entrega:</b> la potencia activa real medida en cada nivel de comando, el factor de potencia, y el ahorro real frente al consumo a plena carga. Estas son magnitudes eléctricas medidas, no estimadas.</p>
+      <p><b>No entrega:</b> la adecuación del nivel de iluminación resultante a la normativa vial. Este procedimiento no mide iluminancia ni luminancia en terreno y, por lo tanto, <b>no certifica cumplimiento lumínico</b>. La elección del punto de operación y la verificación de su cumplimiento normativo son decisión y responsabilidad del cliente.</p>
+    </div>
+  </section>
+</div>
+
+<div class="band band--gray">
+  <section class="container--read" id="diferencia">
+    <span class="sec-num">02</span>
+    <h2>La diferencia está en los datos</h2>
+    <p class="lead">Cualquier telegestión moderna envía el mismo comando: un porcentaje de dimerización. En eso no hay diferencia entre sistemas. La diferencia aparece después — cuando alguien se pregunta cuántos watts entregó realmente el driver con ese comando, y se queda mirando los datos hasta entenderlo.</p>
+    <p>Eso es lo que hacemos: medir escalón por escalón, levantar la curva real del modelo y ajustar el perfil con esa curva. Hacemos lo mismo que los demás — dimerizar — pero involucrados en los datos. Por eso el ahorro aparece en la boleta y no solo en la planilla de supuestos. Los tres números del caso real de este documento lo resumen:</p>
+    <div class="kpis">
+      <div class="kpi"><div class="v">4,4&nbsp;<small>%</small></div><div class="l">Ahorro real del comando de ejemplo «80&nbsp;%» configurado sin caracterizar (medido en el caso de la sección 07). El cliente esperaba 20&nbsp;%.</div></div>
+      <div class="kpi"><div class="v">≈67&nbsp;<small>%</small></div><div class="l">El comando que sí entrega ese 20&nbsp;% real — sale de la curva medida, no de la intuición.</div></div>
+      <div class="kpi"><div class="v">≥0,95</div><div class="l">Factor de potencia incluso en el escalón más bajo medido: dimerizar bien no degrada la calidad de energía.</div></div>
+    </div>
+    <div class="callout callout--ok">
+      <span class="tag">La idea en una línea</span>
+      <p>El hardware manda el comando; los datos dicen cuánto ahorró. Trabajar con la curva real convierte un ahorro de papel en un ahorro medido y defendible.</p>
+    </div>
+  </section>
+</div>
+
+<div class="band">
+  <section class="container--read" id="estrategias">
+    <span class="sec-num">03</span>
+    <h2>Cómo se ahorra: tres estrategias sobre el mismo circuito</h2>
+    <p class="lead">Mismo circuito, misma noche, tres formas de dimerizar. Las figuras muestran el circuito en el tramo de madrugada y, abajo, el perfil de comando durante la noche.</p>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <g id="mast">
+        <rect x="-3" y="-100" width="6" height="100" rx="2" fill="var(--ubi-navy)"/>
+        <rect x="-3" y="-100" width="34" height="5" rx="2.5" fill="var(--ubi-navy)"/>
+        <ellipse cx="34" cy="-93" rx="9" ry="4.5" fill="var(--ubi-navy)"/>
+      </g>
+    </defs></svg>
+    <div class="figcard">
+      <div class="fighead"><p class="ctitle">Estrategia 1 — dim fijo toda la noche</p><span class="delta delta--real">Ahorro real ≈18&nbsp;%</span></div>
+      <svg viewBox="0 0 680 235" role="img" aria-label="Estrategia 1: circuito de alumbrado y perfil nocturno" style="width:100%;height:auto;display:block">
+        <rect x="0" y="105" width="680" height="4" fill="var(--ubi-gray2)" opacity=".5"/>
+        <g transform="translate(50,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.57"/></g><g transform="translate(175,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.57"/></g><g transform="translate(300,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.57"/></g><g transform="translate(425,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.57"/></g><g transform="translate(550,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.57"/></g>
+        <text x="668" y="122" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">circuito a la 01:30</text>
+        <path d="M40,210 L40,168.0 L640,168.0 L640,210 Z" fill="rgba(34,176,225,.12)" stroke="none"/>
+        <path d="M40,168.0 L640,168.0 " stroke="var(--ubi-blue)" stroke-width="2.5" fill="none"/>
+        
+        <line x1="40" y1="210" x2="640" y2="210" stroke="var(--ubi-line)" stroke-width="1"/>
+        <text x="40"  y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">19:00</text>
+        <text x="190" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">22:00</text>
+        <text x="340" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">01:00</text>
+        <text x="540" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">05:00</text>
+        <text x="622" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">07:00</text>
+        <text x="34" y="152" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">100%</text>
+        <text x="34" y="213" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">0%</text>
+      </svg>
+      <p class="csub" style="margin:10px 0 0">Un solo comando (70&nbsp;%) desde el encendido al apagado. Simple de operar; se asume 30&nbsp;% de ahorro y la curva real entrega ≈18&nbsp;%. Deja luz de más en la madrugada.</p>
+    </div>
+    <div class="figcard">
+      <div class="fighead"><p class="ctitle">Estrategia 2 — perfil escalonado por horario</p><span class="delta delta--real">Ahorro real ≈24&nbsp;%</span></div>
+      <svg viewBox="0 0 680 235" role="img" aria-label="Estrategia 2: circuito de alumbrado y perfil nocturno" style="width:100%;height:auto;display:block">
+        <rect x="0" y="105" width="680" height="4" fill="var(--ubi-gray2)" opacity=".5"/>
+        <g transform="translate(50,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.39"/></g><g transform="translate(175,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.39"/></g><g transform="translate(300,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.39"/></g><g transform="translate(425,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.39"/></g><g transform="translate(550,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.39"/></g>
+        <text x="668" y="122" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">circuito a la 01:30</text>
+        <path d="M40,210 L40,156.0 L190,156.0 L190,168.0 L340,168.0 L340,186.0 L540,186.0 L540,162.0 L640,162.0 L640,210 Z" fill="rgba(34,176,225,.12)" stroke="none"/>
+        <path d="M40,156.0 L190,156.0 M190,168.0 L340,168.0 M340,186.0 L540,186.0 M540,162.0 L640,162.0 " stroke="var(--ubi-blue)" stroke-width="2.5" fill="none"/>
+        
+        <line x1="40" y1="210" x2="640" y2="210" stroke="var(--ubi-line)" stroke-width="1"/>
+        <text x="40"  y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">19:00</text>
+        <text x="190" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">22:00</text>
+        <text x="340" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">01:00</text>
+        <text x="540" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">05:00</text>
+        <text x="622" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">07:00</text>
+        <text x="34" y="152" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">100%</text>
+        <text x="34" y="213" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">0%</text>
+      </svg>
+      <p class="csub" style="margin:10px 0 0">La plantilla adapta el nivel al tránsito (90/70/40/80&nbsp;%). Mejor que el dim fijo; se asume 33&nbsp;% y la curva real entrega ≈24&nbsp;%: el driver «devuelve» parte del ahorro.</p>
+    </div>
+    <div class="figcard">
+      <div class="fighead"><p class="ctitle">Estrategia 3 — escalonado + curva real (equivalencias)</p><span class="delta delta--real">Ahorro real ≈34&nbsp;%</span></div>
+      <svg viewBox="0 0 680 235" role="img" aria-label="Estrategia 3: circuito de alumbrado y perfil nocturno" style="width:100%;height:auto;display:block">
+        <rect x="0" y="105" width="680" height="4" fill="var(--ubi-gray2)" opacity=".5"/>
+        <g transform="translate(50,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.36"/></g><g transform="translate(175,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.36"/></g><g transform="translate(300,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.36"/></g><g transform="translate(425,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.36"/></g><g transform="translate(550,105)"><use href="#mast"/><polygon points="34,-91 6,0 62,0" fill="var(--ubi-gold)" opacity="0.36"/></g>
+        <text x="668" y="122" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">circuito a la 01:30</text>
+        <path d="M40,210 L40,165.0 L190,165.0 L190,174.0 L340,174.0 L340,189.0 L540,189.0 L540,169.8 L640,169.8 L640,210 Z" fill="rgba(34,176,225,.12)" stroke="none"/>
+        <path d="M40,165.0 L190,165.0 M190,174.0 L340,174.0 M340,189.0 L540,189.0 M540,169.8 L640,169.8 " stroke="var(--ubi-blue)" stroke-width="2.5" fill="none"/>
+        <path d="M40,156.0 L190,156.0 M190,168.0 L340,168.0 M340,186.0 L540,186.0 M540,162.0 L640,162.0 " stroke="#99A0B4" stroke-width="2" stroke-dasharray="6 5" fill="none"/>
+        <line x1="40" y1="210" x2="640" y2="210" stroke="var(--ubi-line)" stroke-width="1"/>
+        <text x="40"  y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">19:00</text>
+        <text x="190" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">22:00</text>
+        <text x="340" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">01:00</text>
+        <text x="540" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">05:00</text>
+        <text x="622" y="228" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">07:00</text>
+        <text x="34" y="152" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">100%</text>
+        <text x="34" y="213" text-anchor="end" font-family="JetBrains Mono,monospace" font-size="10" fill="var(--ubi-gray2)">0%</text>
+      </svg>
+      <p class="csub" style="margin:10px 0 0">Mismo perfil, comandos ajustados con la curva medida (75/60/35/67&nbsp;% — línea azul) en vez del comando nominal (gris punteada). El consumo por tramo coincide con lo prometido: ≈34&nbsp;% de ahorro real. Es la estrategia de este procedimiento.</p>
+    </div>
+    <p class="cap">Ilustraciones esquemáticas del circuito (no fotografías del sitio). Cifras calculadas con la curva real del caso de 110&nbsp;W (sección 07) sobre una noche tipo de 12&nbsp;h (19:00–07:00), redondeadas. El «se asume» corresponde a la recta %&nbsp;×&nbsp;nominal.</p>
+  </section>
+</div>
+
+<div class="band">
+  <section class="container--read" id="fundamento">
+    <span class="sec-num">04</span>
+    <h2>Fundamento técnico: por qué «80&nbsp;%» no son «80&nbsp;W»</h2>
+    <p class="lead">El comando de dimerización (0–10&nbsp;V, PWM o DALI) no controla los watts. Controla la corriente o el flujo luminoso de la luminaria. La potencia es la consecuencia de ese comando, no la variable comandada.</p>
+    <p>Por eso comparar la potencia real contra la recta <b>%&nbsp;×&nbsp;potencia nominal</b> compara dos cosas distintas, y la «desviación» que aparece no es una falla: es el comportamiento normal del driver frente a una referencia teórica arbitraria. Cuatro elementos del driver explican la curva real:</p>
+    <div class="cards">
+      <div class="card"><h3><span class="n">A</span>Curva logarítmica del driver</h3><p>La curva por defecto en drivers comerciales (estándar para DALI según IEC&nbsp;62386-102) es logarítmica: concentra los pasos finos en la zona baja para igualar la percepción del ojo. En esa curva el valor de comando <b>no es proporcional a la potencia</b>; estimar consumo desde el comando puede errar hasta ~15&nbsp;%, justo el rango observado en la zona alta (70–90&nbsp;%).</p></div>
+      <div class="card"><h3><span class="n">B</span>Piso mínimo de dimerización</h3><p>Todo driver tiene un output mínimo configurable bajo el cual no regula (típico desde 0,1&nbsp;% hasta valores como 10&nbsp;%). Por eso al comandar 5&nbsp;% la potencia no baja a su recta teórica: queda «saturada» en el piso del driver.</p></div>
+      <div class="card"><h3><span class="n">C</span>Eficiencia a carga parcial</h3><p>El driver es más eficiente cerca de plena carga y pierde eficiencia a baja carga. Esto suma watts respecto a la extrapolación lineal, sobre todo en la zona media de la curva.</p></div>
+      <div class="card"><h3><span class="n">D</span>Protocolo de control no normado</h3><p>En 0–10&nbsp;V la curva no está estandarizada y depende del cruce atenuador↔driver. Sin conocer el protocolo y la curva configurada, cualquier «corrección» de comando se hace a ciegas. Identificar el protocolo es el primer dato del procedimiento.</p></div>
+    </div>
+  </section>
+</div>
+
+<div class="band band--gray">
+  <section class="container--read" id="procedimiento">
+    <span class="sec-num">05</span>
+    <h2>Procedimiento de medición</h2>
+    <p class="lead">Siete pasos, en orden. Ninguno se omite: la trazabilidad es lo que vuelve el dato defendible ante el cliente.</p>
+    <ol class="steps">
+      <li><b>Identificación del equipo.</b><p>Modelo de luminaria y de driver, potencia nominal, protocolo de control (0–10&nbsp;V / PWM / DALI), tipo de curva configurada en el driver y mínimo de dim de fábrica. Sin esto no se mide.</p></li>
+      <li><b>Definición del objetivo con el cliente.</b><p>Bifurcación: (A) el cliente tiene un presupuesto de consumo (contrato, kWh) → se ancla en watts; (B) el cliente quiere caracterizar y decidir → se entrega la curva completa y el cliente fija el punto. El procedimiento no elige el punto por él.</p></li>
+      <li><b>Configuración de la medición.</b><p>Instrumento y su tolerancia declarada; fuente del dato (medidor calibrado o potencia reportada por el nodo, indicando cuál); tensión de línea registrada; tiempo de estabilización por escalón ≥&nbsp;10–15&nbsp;min (la potencia LED deriva al calentar); número de muestras y temperatura ambiente.</p></li>
+      <li><b>Barrido de dimerización.</b><p>Mismos escalones de comando para todas las unidades. En cada escalón registrar potencia activa (W), factor de potencia, tensión y corriente.</p></li>
+      <li><b>Muestra y dispersión.</b><p>Medir una muestra representativa del lote, no una sola luminaria. Reportar media&nbsp;±&nbsp;desviación por escalón. Un perfil global sobre unidades con curvas distintas será incorrecto para la mayoría si se calibra con una sola.</p></li>
+      <li><b>Construcción de la curva real.</b><p>Tabular comando vs potencia real medida. Trazar contra la recta teórica %&nbsp;×&nbsp;nominal solo como referencia visual de la brecha, nunca como objetivo.</p></li>
+      <li><b>Verificación de factor de potencia.</b><p>Confirmar el FP en cada escalón. Un FP que se mantiene alto (p.&nbsp;ej. &gt;&nbsp;0,95) incluso en dimerización profunda es un resultado positivo y se documenta como tal.</p></li>
+    </ol>
+  </section>
+</div>
+
+<div class="band">
+  <section class="container--read" id="presentacion">
+    <span class="sec-num">06</span>
+    <h2>Cómo se presenta al cliente</h2>
+    <p class="lead">El entregable central es una <b>tabla de transparencia</b>. No dice «configura este valor»; dice «esto es lo que crees, esto es lo que pasa, y esta es la brecha». La decisión vuelve al cliente.</p>
+    <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>Comando enviado</th><th>Ahorro que el cliente cree</th><th>Potencia real medida</th><th>Ahorro real</th></tr></thead>
+        <tbody><tr><td>80&nbsp;%</td><td class="num">20&nbsp;%</td><td class="num">—&nbsp;W</td><td class="num">—&nbsp;%</td></tr></tbody>
+      </table>
+    </div>
+    <p class="cap">Plantilla. El «ahorro real» se calcula contra el consumo medido a plena carga (no contra la nominal de catálogo). La columna de cumplimiento normativo se omite deliberadamente: no se midió luz.</p>
+    <div class="callout">
+      <span class="tag">El hallazgo comercial</span>
+      <h3>El ahorro de verdad aparece al bajar más el comando</h3>
+      <p>Para obtener el ahorro que el cliente imagina al configurar 80&nbsp;%, suele haber que comandar bastante menos. Mostrar esa brecha es el servicio: cuantifica el ahorro que el cliente está dejando sobre la mesa por confiar en la recta teórica.</p>
+    </div>
+  </section>
+</div>
+
+<div class="band band--gray">
+  <section class="container--read" id="caso">
+    <span class="sec-num">07</span>
+    <h2>Caso de referencia: circuito piloto (110&nbsp;W nominal)</h2>
+    <p class="lead">Medición sobre luminarias de 110&nbsp;W (14 unidades del lote) en un circuito piloto real. La diferencia entre la recta teórica y la potencia real medida se concentra en la zona alta de comando (70–90&nbsp;%), exactamente donde el cliente cree estar ahorrando más.</p>
+
+    <div class="chartcard">
+      <p class="ctitle">Comando vs potencia: real medida frente al supuesto lineal</p>
+      <p class="csub">La distancia entre las dos líneas es el ahorro que se cree obtener pero no ocurre.</p>
+      <div class="chartbox"><canvas id="curve" aria-label="Curva comando vs potencia real medida"></canvas></div>
+      <div class="chart-fallback" id="curveFallback">No se pudo cargar la librería de gráficos. Los datos están completos en la tabla «Curva completa medida».</div>
+    </div>
+
+    <h3>Tabla de transparencia (zona alta)</h3>
+    <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>Comando enviado</th><th>Ahorro que el cliente cree</th><th>Potencia real medida</th><th>Ahorro real</th></tr></thead>
+        <tbody>
+          <tr><td>80&nbsp;%</td><td class="num">20&nbsp;%</td><td class="num">105,95&nbsp;W</td><td class="num">4,4&nbsp;%</td></tr>
+          <tr><td>70&nbsp;%</td><td class="num">30&nbsp;%</td><td class="num">91,09&nbsp;W</td><td class="num">17,8&nbsp;%</td></tr>
+          <tr><td>60&nbsp;%</td><td class="num">40&nbsp;%</td><td class="num">76,70&nbsp;W</td><td class="num">30,8&nbsp;%</td></tr>
+          <tr class="hl"><td>≈67&nbsp;% (objetivo 20&nbsp;% real)</td><td class="num">20&nbsp;%</td><td class="num">88,00&nbsp;W</td><td class="num">20,6&nbsp;%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">Ahorro real calculado contra 110,85&nbsp;W (potencia medida a 100&nbsp;% de comando). Lectura clave: para alcanzar el 20&nbsp;% de ahorro que se asocia mentalmente al «80&nbsp;%», hay que comandar cerca de 67&nbsp;%.</p>
+
+    <h3>Curva completa medida</h3>
+    <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>Comando</th><th>Lineal teórico (W)</th><th>Real medido (W)</th><th>Diferencia (W)</th></tr></thead>
+        <tbody>
+          <tr><td>5&nbsp;%</td><td class="num">5,50</td><td class="num">13,90</td><td class="num">+8,40</td></tr>
+          <tr><td>10&nbsp;%</td><td class="num">11,00</td><td class="num">15,73</td><td class="num">+4,73</td></tr>
+          <tr><td>20&nbsp;%</td><td class="num">22,00</td><td class="num">24,73</td><td class="num">+2,73</td></tr>
+          <tr><td>30&nbsp;%</td><td class="num">33,00</td><td class="num">37,00</td><td class="num">+4,00</td></tr>
+          <tr><td>40&nbsp;%</td><td class="num">44,00</td><td class="num">49,65</td><td class="num">+5,65</td></tr>
+          <tr><td>50&nbsp;%</td><td class="num">55,00</td><td class="num">62,70</td><td class="num">+7,70</td></tr>
+          <tr><td>60&nbsp;%</td><td class="num">66,00</td><td class="num">76,70</td><td class="num">+10,70</td></tr>
+          <tr><td>70&nbsp;%</td><td class="num">77,00</td><td class="num">91,09</td><td class="num">+14,09</td></tr>
+          <tr><td>80&nbsp;%</td><td class="num">88,00</td><td class="num">105,95</td><td class="num">+17,95</td></tr>
+          <tr><td>90&nbsp;%</td><td class="num">99,00</td><td class="num">108,60</td><td class="num">+9,60</td></tr>
+          <tr><td>100&nbsp;%</td><td class="num">110,00</td><td class="num">110,85</td><td class="num">+0,85</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">Los escalones 40–100&nbsp;% están documentados en el informe de origen del caso; el resto corresponde al mismo barrido de caracterización.</p>
+
+    <h3>De la curva a la configuración: tabla de equivalencias</h3>
+    <p>En simple: no configures el porcentaje que crees; configura el porcentaje cuya potencia real coincide con lo que buscas. Con la curva medida, la conversión queda así:</p>
+    <div class="tablewrap">
+      <table class="data">
+        <thead><tr><th>DIM ideal buscado</th><th>Potencia objetivo</th><th>DIM real sugerido a configurar</th></tr></thead>
+        <tbody>
+          <tr><td>40&nbsp;%</td><td class="num">44&nbsp;W</td><td class="num"><span class="delta delta--real">35&nbsp;%</span></td></tr>
+          <tr><td>70&nbsp;%</td><td class="num">77&nbsp;W</td><td class="num"><span class="delta delta--real">60&nbsp;%</span></td></tr>
+          <tr><td>80&nbsp;%</td><td class="num">88&nbsp;W</td><td class="num"><span class="delta delta--real">67&nbsp;%</span></td></tr>
+          <tr><td>90&nbsp;%</td><td class="num">99&nbsp;W</td><td class="num"><span class="delta delta--real">75&nbsp;%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">No es que la luminaria «no responda»: su respuesta real es distinta de la curva teórica. Por eso se trabaja con estos valores ajustados. La equivalencia se caracteriza una vez por modelo y sirve para toda la flota de ese modelo.</p>
+
+    <h3>La equivalencia aplicada: perfil nocturno del piloto</h3>
+    <p>Plantilla de ahorro «Dim Circuito Piloto 01». A la derecha, el comando original y el comando ajustado con la curva real:</p>
+    <ul class="tl">
+      <li><span class="hh">Fotocelda&nbsp;ON</span><span class="ev">Encendido por ausencia de luz</span><span class="cmd"><span class="old">90&nbsp;%</span><span class="new">75&nbsp;%</span></span></li>
+      <li><span class="hh">22:00</span><span class="ev">Baja el tránsito — primer escalón de ahorro</span><span class="cmd"><span class="old">70&nbsp;%</span><span class="new">60&nbsp;%</span></span></li>
+      <li><span class="hh">01:00</span><span class="ev">Madrugada — escalón de ahorro profundo</span><span class="cmd"><span class="old">40&nbsp;%</span><span class="new">35&nbsp;%</span></span></li>
+      <li><span class="hh">05:00</span><span class="ev">Retoma actividad previa al amanecer</span><span class="cmd"><span class="old">80&nbsp;%</span><span class="new">67&nbsp;%</span></span></li>
+      <li><span class="hh">Fotocelda&nbsp;OFF</span><span class="ev">Apagado por presencia de luz</span><span class="cmd">—</span></li>
+    </ul>
+    <p class="cap">El ajuste no cambia la lógica del perfil: cambia el comando para que cada tramo consuma lo que el perfil prometía. La validación lumínica de cada tramo sigue siendo decisión del cliente.</p>
+
+    <div class="callout callout--ok">
+      <span class="tag">Calidad de energía</span>
+      <p><b>Factor de potencia en esta instalación:</b> se mantiene sobre 0,95 incluso en el comando más bajo aplicado (DIM&nbsp;40&nbsp;%). Es un resultado positivo y se documenta, pero no sustituye una verificación de nivel lumínico.</p>
+    </div>
+  </section>
+</div>
+
+<div class="band">
+  <section class="container--read" id="cierre">
+    <span class="sec-num">08</span>
+    <h2>Entregable y cierre</h2>
+    <p class="lead">El producto de este procedimiento es: la tabla de transparencia, la curva medida, la tabla de equivalencias, el FP por escalón y la curva completa por unidad (o media&nbsp;±&nbsp;desviación del lote). Con eso el cliente tiene el dato real del ahorro y conserva la decisión del punto de operación.</p>
+    <div class="callout callout--warn">
+      <span class="tag">Frase de cierre obligatoria del entregable</span>
+      <p>«Este procedimiento caracteriza el comportamiento eléctrico real del driver. La adecuación del nivel lumínico resultante a la norma vial es decisión del cliente y queda fuera del alcance de esta medición.»</p>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<footer class="band band--navy">
+  <div class="container fgrid">
+    <div>
+      <div class="logo"><span class="a">ubi</span><span class="b">cquia</span><span class="dot">.</span></div>
+      <p class="fnote">PROC-LUM-01 · Caracterización de dimerización por potencia medida. Documento de soporte técnico. Descriptivo: no certifica nivel lumínico.</p>
+    </div>
+    <div class="fnote mono">Rev. 2.0</div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  // Datos del caso medido (110 W nominal) — cifras del informe base, no alterar.
+  var labels = ["5%","10%","20%","30%","40%","50%","60%","70%","80%","90%","100%"];
+  var lineal = [5.5, 11, 22, 33, 44, 55, 66, 77, 88, 99, 110];
+  var real   = [13.9, 15.73, 24.73, 37, 49.65, 62.7, 76.7, 91.09, 105.95, 108.6, 110.85];
+  try {
+    if (typeof Chart === "undefined") { throw new Error("Chart.js no cargó"); }
+    var cv = document.getElementById("curve");
+    if (!cv) throw new Error("canvas ausente");
+    new Chart(cv.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          { label: "Potencia real medida (W)", data: real,
+            borderColor: "#22B0E1", backgroundColor: "rgba(34,176,225,.10)",
+            borderWidth: 3, tension: .25, pointRadius: 3, pointBackgroundColor: "#22B0E1", fill: false },
+          { label: "Supuesto lineal — lo que el cliente cree (W)", data: lineal,
+            borderColor: "#99A0B4", borderWidth: 2, borderDash: [6,5], tension: 0, pointRadius: 0, fill: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { labels: { font: { family: "Lato" }, color: "#464D63", usePointStyle: true } },
+          tooltip: { callbacks: { label: function(c){ return c.dataset.label + ": " + c.parsed.y.toFixed(2) + " W"; } } }
+        },
+        scales: {
+          x: { title: { display:true, text:"Comando de dimerización", color:"#99A0B4", font:{family:"Lato"} }, grid:{ display:false }, ticks:{ color:"#464D63", font:{family:"Lato"} } },
+          y: { title: { display:true, text:"Potencia [W]", color:"#99A0B4", font:{family:"Lato"} }, beginAtZero:true, grid:{ color:"rgba(30,36,69,.08)" }, ticks:{ color:"#464D63", font:{family:"Lato"} } }
+        }
+      }
+    });
+  } catch(e){
+    console.error("chart:", e);
+    var fbk = document.getElementById("curveFallback");
+    if (fbk) fbk.style.display = "block";
+  }
+})();
+</script>
+</body>
+</html>
