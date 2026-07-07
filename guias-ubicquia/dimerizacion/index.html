@@ -1,13 +1,13 @@
 <!doctype html>
 <!-- ═══ ESTADO ═══
 herramienta : Procedimiento dimerización · doc cliente PROC-LUM-01
-version     : v3 (anterior: v2)
+version     : v4 (anterior: v3)
 motor       : datos estáticos caso 110 W (curva 11 pts, base informe interno del caso) — no alterar cifras
-ultima      : 2026-07-06 · anonimización de cliente (caso genérico, plantilla «Dim Circuito Piloto 01») + sección 03 estrategias 1-2-3 con figuras SVG del circuito + «80 %» declarado como comando de ejemplo desde el inicio
+ultima      : 2026-07-06 · pase de tono cara-cliente: cierre pasa de descargo a compromiso de transparencia, «responsabilidad/obligatoria/se omite» eliminados, columnas «Ahorro esperado»
 arquitectura: single-file · band+container · Chart.js 4.4.1 CDN · sin localStorage
 marca       : Ubicquia (--ubi-*)
 verificacion: hopper — node --check del script + reconciliación de cifras contra el informe de origen
-no_tocar    : cifras medidas · frase de alcance lumínico (cierre obligatorio)
+no_tocar    : cifras medidas · límite de alcance lumínico (mantener, redactado en positivo)
 pendientes  : toggle ES/EN · segundo caso (luminaria 150 W) · export PPTX del caso · fotos reales del circuito si el cliente autoriza
 ═══ -->
 <html lang="es">
@@ -177,7 +177,7 @@ footer .container{padding-block:30px}
     <div class="meta">
       <span>Tipo: <b>Descriptivo</b></span>
       <span>Alcance: <b>Comportamiento eléctrico real del driver</b></span>
-      <span>No incluye: <b>Certificación de nivel lumínico</b></span>
+      <span>Nivel lumínico: <b>se valida en terreno, como etapa propia</b></span>
       <span>Rev.: <b>2.0</b></span>
     </div>
     <div class="toolbar"><button class="btn" onclick="window.print()">⤓ Exportar PDF</button></div>
@@ -190,14 +190,14 @@ footer .container{padding-block:30px}
   <section class="container--read" id="objetivo">
     <span class="sec-num">01</span>
     <h2>Objetivo y alcance</h2>
-    <p class="lead">Este procedimiento caracteriza el comportamiento eléctrico real del conjunto luminaria&nbsp;+&nbsp;driver bajo dimerización, y transparenta la diferencia entre el ahorro que el cliente cree obtener y el ahorro que realmente ocurre.</p>
+    <p class="lead">Este procedimiento caracteriza el comportamiento eléctrico real del conjunto luminaria&nbsp;+&nbsp;driver bajo dimerización, y transparenta la diferencia entre el ahorro esperado y el ahorro que realmente ocurre.</p>
     <p>Casi todos asumen que dimerizar una luminaria de 100&nbsp;W al 80&nbsp;% entrega 80&nbsp;W. En la práctica, la mayoría de las veces no es así: el driver entrega más potencia que esa recta teórica, de modo que el ahorro configurado es menor al esperado. Este procedimiento mide esa realidad y se la muestra al cliente sin maquillarla.</p>
     <p>El «80&nbsp;%» que se repite en todo el documento es solo un <b>comando de ejemplo</b>: sale del caso medido de la sección 07 y de lo que típicamente se configura en terreno. La misma lógica aplica a cualquier escalón (40, 60 o 90&nbsp;%).</p>
     <div class="callout callout--scope">
       <span class="tag">Declaración de alcance</span>
       <h3>Qué entrega y qué NO entrega este procedimiento</h3>
       <p><b>Entrega:</b> la potencia activa real medida en cada nivel de comando, el factor de potencia, y el ahorro real frente al consumo a plena carga. Estas son magnitudes eléctricas medidas, no estimadas.</p>
-      <p><b>No entrega:</b> la adecuación del nivel de iluminación resultante a la normativa vial. Este procedimiento no mide iluminancia ni luminancia en terreno y, por lo tanto, <b>no certifica cumplimiento lumínico</b>. La elección del punto de operación y la verificación de su cumplimiento normativo son decisión y responsabilidad del cliente.</p>
+      <p><b>No entrega:</b> el nivel de iluminación en la vía. Medir iluminancia o luminancia en terreno es una etapa propia y, cuando el proyecto la necesita, se planifica como tal. Por eso mismo aquí solo afirmamos lo que medimos: la parte eléctrica. La elección del punto de operación queda en manos del cliente — ahora con la curva real sobre la mesa, no a ciegas.</p>
     </div>
   </section>
 </div>
@@ -332,18 +332,18 @@ footer .container{padding-block:30px}
   <section class="container--read" id="presentacion">
     <span class="sec-num">06</span>
     <h2>Cómo se presenta al cliente</h2>
-    <p class="lead">El entregable central es una <b>tabla de transparencia</b>. No dice «configura este valor»; dice «esto es lo que crees, esto es lo que pasa, y esta es la brecha». La decisión vuelve al cliente.</p>
+    <p class="lead">El entregable central es una <b>tabla de transparencia</b>. No dice «configura este valor»; dice «esto es lo que se espera, esto es lo que pasa, y esta es la brecha». La decisión vuelve al cliente.</p>
     <div class="tablewrap">
       <table class="data">
-        <thead><tr><th>Comando enviado</th><th>Ahorro que el cliente cree</th><th>Potencia real medida</th><th>Ahorro real</th></tr></thead>
+        <thead><tr><th>Comando enviado</th><th>Ahorro esperado</th><th>Potencia real medida</th><th>Ahorro real</th></tr></thead>
         <tbody><tr><td>80&nbsp;%</td><td class="num">20&nbsp;%</td><td class="num">—&nbsp;W</td><td class="num">—&nbsp;%</td></tr></tbody>
       </table>
     </div>
-    <p class="cap">Plantilla. El «ahorro real» se calcula contra el consumo medido a plena carga (no contra la nominal de catálogo). La columna de cumplimiento normativo se omite deliberadamente: no se midió luz.</p>
+    <p class="cap">Plantilla. El «ahorro real» se calcula contra el consumo medido a plena carga (no contra la nominal de catálogo). No lleva columna de cumplimiento lumínico: solo afirmamos lo que medimos.</p>
     <div class="callout">
       <span class="tag">El hallazgo comercial</span>
       <h3>El ahorro de verdad aparece al bajar más el comando</h3>
-      <p>Para obtener el ahorro que el cliente imagina al configurar 80&nbsp;%, suele haber que comandar bastante menos. Mostrar esa brecha es el servicio: cuantifica el ahorro que el cliente está dejando sobre la mesa por confiar en la recta teórica.</p>
+      <p>Para obtener el ahorro esperado al configurar 80&nbsp;%, suele haber que comandar bastante menos. Mostrar esa brecha es el servicio: cuantifica el ahorro que se está dejando sobre la mesa por confiar en la recta teórica.</p>
     </div>
   </section>
 </div>
@@ -352,11 +352,11 @@ footer .container{padding-block:30px}
   <section class="container--read" id="caso">
     <span class="sec-num">07</span>
     <h2>Caso de referencia: circuito piloto (110&nbsp;W nominal)</h2>
-    <p class="lead">Medición sobre luminarias de 110&nbsp;W (14 unidades del lote) en un circuito piloto real. La diferencia entre la recta teórica y la potencia real medida se concentra en la zona alta de comando (70–90&nbsp;%), exactamente donde el cliente cree estar ahorrando más.</p>
+    <p class="lead">Medición sobre luminarias de 110&nbsp;W (14 unidades del lote) en un circuito piloto real. La diferencia entre la recta teórica y la potencia real medida se concentra en la zona alta de comando (70–90&nbsp;%), exactamente donde se asume el mayor ahorro.</p>
 
     <div class="chartcard">
       <p class="ctitle">Comando vs potencia: real medida frente al supuesto lineal</p>
-      <p class="csub">La distancia entre las dos líneas es el ahorro que se cree obtener pero no ocurre.</p>
+      <p class="csub">La distancia entre las dos líneas es el ahorro esperado que no ocurre.</p>
       <div class="chartbox"><canvas id="curve" aria-label="Curva comando vs potencia real medida"></canvas></div>
       <div class="chart-fallback" id="curveFallback">No se pudo cargar la librería de gráficos. Los datos están completos en la tabla «Curva completa medida».</div>
     </div>
@@ -364,7 +364,7 @@ footer .container{padding-block:30px}
     <h3>Tabla de transparencia (zona alta)</h3>
     <div class="tablewrap">
       <table class="data">
-        <thead><tr><th>Comando enviado</th><th>Ahorro que el cliente cree</th><th>Potencia real medida</th><th>Ahorro real</th></tr></thead>
+        <thead><tr><th>Comando enviado</th><th>Ahorro esperado</th><th>Potencia real medida</th><th>Ahorro real</th></tr></thead>
         <tbody>
           <tr><td>80&nbsp;%</td><td class="num">20&nbsp;%</td><td class="num">105,95&nbsp;W</td><td class="num">4,4&nbsp;%</td></tr>
           <tr><td>70&nbsp;%</td><td class="num">30&nbsp;%</td><td class="num">91,09&nbsp;W</td><td class="num">17,8&nbsp;%</td></tr>
@@ -420,11 +420,11 @@ footer .container{padding-block:30px}
       <li><span class="hh">05:00</span><span class="ev">Retoma actividad previa al amanecer</span><span class="cmd"><span class="old">80&nbsp;%</span><span class="new">67&nbsp;%</span></span></li>
       <li><span class="hh">Fotocelda&nbsp;OFF</span><span class="ev">Apagado por presencia de luz</span><span class="cmd">—</span></li>
     </ul>
-    <p class="cap">El ajuste no cambia la lógica del perfil: cambia el comando para que cada tramo consuma lo que el perfil prometía. La validación lumínica de cada tramo sigue siendo decisión del cliente.</p>
+    <p class="cap">El ajuste no cambia la lógica del perfil: cambia el comando para que cada tramo consuma lo que el perfil prometía. La validación lumínica de cada tramo se mide en terreno cuando el proyecto lo requiere.</p>
 
     <div class="callout callout--ok">
       <span class="tag">Calidad de energía</span>
-      <p><b>Factor de potencia en esta instalación:</b> se mantiene sobre 0,95 incluso en el comando más bajo aplicado (DIM&nbsp;40&nbsp;%). Es un resultado positivo y se documenta, pero no sustituye una verificación de nivel lumínico.</p>
+      <p><b>Factor de potencia en esta instalación:</b> se mantiene sobre 0,95 incluso en el comando más bajo aplicado (DIM&nbsp;40&nbsp;%). Es un resultado positivo y se documenta; la verificación lumínica en terreno lo complementa cuando corresponde.</p>
     </div>
   </section>
 </div>
@@ -434,9 +434,9 @@ footer .container{padding-block:30px}
     <span class="sec-num">08</span>
     <h2>Entregable y cierre</h2>
     <p class="lead">El producto de este procedimiento es: la tabla de transparencia, la curva medida, la tabla de equivalencias, el FP por escalón y la curva completa por unidad (o media&nbsp;±&nbsp;desviación del lote). Con eso el cliente tiene el dato real del ahorro y conserva la decisión del punto de operación.</p>
-    <div class="callout callout--warn">
-      <span class="tag">Frase de cierre obligatoria del entregable</span>
-      <p>«Este procedimiento caracteriza el comportamiento eléctrico real del driver. La adecuación del nivel lumínico resultante a la norma vial es decisión del cliente y queda fuera del alcance de esta medición.»</p>
+    <div class="callout callout--ok">
+      <span class="tag">Nuestro compromiso de transparencia</span>
+      <p>«Medimos el comportamiento eléctrico real del driver y lo mostramos tal cual es. El punto de operación lo elige el cliente, con la curva real en la mano; y el nivel de luz en la vía se valida en terreno, como etapa propia, cuando el proyecto lo requiere.»</p>
     </div>
   </section>
 </div>
@@ -473,7 +473,7 @@ footer .container{padding-block:30px}
           { label: "Potencia real medida (W)", data: real,
             borderColor: "#22B0E1", backgroundColor: "rgba(34,176,225,.10)",
             borderWidth: 3, tension: .25, pointRadius: 3, pointBackgroundColor: "#22B0E1", fill: false },
-          { label: "Supuesto lineal — lo que el cliente cree (W)", data: lineal,
+          { label: "Supuesto lineal — % × nominal (W)", data: lineal,
             borderColor: "#99A0B4", borderWidth: 2, borderDash: [6,5], tension: 0, pointRadius: 0, fill: false }
         ]
       },
