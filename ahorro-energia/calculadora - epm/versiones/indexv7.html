@@ -1,10 +1,9 @@
 <!doctype html>
 <!-- ═══ ESTADO ═══
 herramienta : Calculadora de ahorro — edición Medellín
-version     : v8 (anterior: v7 · fork de index.html calculadora LATAM)
+version     : v7 (anterior: v6 · fork de index.html calculadora LATAM)
 motor       : INTOCABLE — sunTimes/buildSun (NOAA), dayProfile, computeScn, savings, payback
-ultima      : 2026-07-07 · v8: tarjetas del resumen etiquetan costo/ahorro en el
-              valor monetario (sobrecosto si el delta es negativo). v7: inventario real 170.000 luminarias en 9 grupos
+ultima      : 2026-07-07 · v7: inventario real 170.000 luminarias en 9 grupos
               (44–260 W reales, ≈16,0 MW). v6: nota comercial a 6 supuestos (Telegestión fusionada
               en Dimerización con texto para perfil comercial). v5: con Convencional OFF la base pasa a Horario fijo en
               todos los efectos (baseScn, exec, basecard Inventario, PDF, comparador).
@@ -1312,7 +1311,7 @@ function renderCards(){
   const maxE=Math.max(x.kAstroDim,x.kFixed,kC,Math.abs(x.schedSave),x.dimSave,1);
   const eu=energyUnit(maxE); const rE=maxE/eu.div; const dE=rE<10?2:(rE<100?1:0); const ev=v=>nf(v/eu.div,dE)+" "+eu.u;
   const G=id=>document.getElementById(id);
-  const setC=(v,m,sb,energy,cost,cap)=>{G(v).textContent=ev(energy);G(m).textContent=money(cost)+t("per_year")+" · "+t("lbl_cost");G(sb).textContent=cap;};
+  const setC=(v,m,sb,energy,cost,cap)=>{G(v).textContent=ev(energy);G(m).textContent=money(cost)+t("per_year");G(sb).textContent=cap;};
   // card A (astronómico)
   const cardA=document.querySelector(".card.astro");
   if(cardA) cardA.style.display=S.A.enabled?"":"none";
@@ -1330,16 +1329,16 @@ function renderCards(){
   setC("rB","rBm","rBs",x.kFixed,x.kFixed*S.tariff,t("flota"));
   const pos=x.schedSave>=0;
   G("rSch").textContent=(pos?"":"−")+ev(Math.abs(x.schedSave));
-  G("rSchm").textContent=(pos?"":"−")+money(Math.abs(x.schedSave)*S.tariff)+t("per_year")+" · "+(pos?t("lbl_save"):t("lbl_extra")); G("rSchm").style.color=pos?"var(--teal)":"var(--rose)";
+  G("rSchm").textContent=(pos?"":"−")+money(Math.abs(x.schedSave)*S.tariff)+t("per_year"); G("rSchm").style.color=pos?"var(--teal)":"var(--rose)";
   G("rSchs").textContent=(x.kFixed?nf(Math.abs(x.schedSave)/x.kFixed*100,1):"0")+"% "+t("vs_fixed");
   G("rDim").textContent=ev(x.dimSave);
-  G("rDimm").textContent=money(x.dimSave*S.tariff)+t("per_year")+" · "+t("lbl_save"); G("rDimm").style.color="var(--teal)";
+  G("rDimm").textContent=money(x.dimSave*S.tariff)+t("per_year"); G("rDimm").style.color="var(--teal)";
   G("rDims").textContent=(x.kAstro100?nf(x.dimSave/x.kAstro100*100,1):"0")+"% "+t("vs_nodim");
   const pb=payback();
   if(pb.years!=null&&isFinite(pb.years)&&pb.years>0){
     G("rPay").textContent=nf(pb.years,1)+" "+t("years");
     G("rPaym").textContent=money(pb.invest)+" "+t("pay_invest"); G("rPaym").style.color="var(--indigo)";
-    G("rPays").textContent=nf(pb.nodes,0)+" "+t("pay_nodes")+" · "+t("lbl_save")+" "+money(pb.annual)+t("per_year");
+    G("rPays").textContent=nf(pb.nodes,0)+" "+t("pay_nodes")+" · "+money(pb.annual)+t("per_year");
   } else {
     G("rPay").textContent="—"; G("rPaym").style.color="var(--muted)";
     G("rPaym").textContent=(+S.nodeCost>0)?t("pay_noinfo"):t("pay_setcost"); G("rPays").textContent="";
@@ -3394,7 +3393,6 @@ Object.assign(DICT.es,{
   help_config:"<b>Empieza aquí.</b> Elige el país (carga lat/long, zona horaria y cambio de hora) e ingresa la tarifa US$/kWh. De esto dependen el amanecer/atardecer reales y el costo.<span class='tip'>Si tu sitio no está en la lista, ingresa las coordenadas a mano.</span>",
   inv_base_t:"Condición base de la comparación",
   inv_base_sub:"Alumbrado Público Convencional · tu flota a potencia plena (100%) sobre la ventana del año. Es la referencia que usará el comparador.",
-  lbl_cost:"costo", lbl_save:"ahorro", lbl_extra:"sobrecosto",
   inv_base_sub_fix:"Horario fijo 18:00–06:00 · tu flota a potencia plena (100%) sobre la ventana fija. Es la referencia que usará el comparador.",
   inv_base_energy:"Energía convencional / año", inv_base_cost:"Costo convencional / año"
 });
@@ -3403,7 +3401,6 @@ Object.assign(DICT.en,{
   help_config:"<b>Start here.</b> Pick the country (loads lat/long, time zone and DST) and enter the US$/kWh tariff. Real sunrise/sunset and cost depend on this.<span class='tip'>If your site isn't listed, type the coordinates by hand.</span>",
   inv_base_t:"Comparison base condition",
   inv_base_sub:"Conventional Public Lighting · your fleet at full power (100%) over the year window. This is the reference the comparator will use.",
-  lbl_cost:"cost", lbl_save:"savings", lbl_extra:"extra cost",
   inv_base_sub_fix:"Fixed schedule 18:00–06:00 · your fleet at full power (100%) over the fixed window. This is the reference the comparator will use.",
   inv_base_energy:"Conventional energy / yr", inv_base_cost:"Conventional cost / yr"
 });
