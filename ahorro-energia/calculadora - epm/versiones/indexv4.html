@@ -1,11 +1,9 @@
 <!doctype html>
 <!-- ═══ ESTADO ═══
 herramienta : Calculadora de ahorro — edición Medellín
-version     : v5 (anterior: v4 · fork de index.html calculadora LATAM)
+version     : v4 (anterior: v3 · fork de index.html calculadora LATAM)
 motor       : INTOCABLE — sunTimes/buildSun (NOAA), dayProfile, computeScn, savings, payback
-ultima      : 2026-07-07 · v5: con Convencional OFF la base pasa a Horario fijo en
-              todos los efectos (baseScn, exec, basecard Inventario, PDF, comparador).
-              v4: nota comercial de supuestos iniciales en la pestaña 1.
+ultima      : 2026-07-07 · v4: nota comercial de supuestos iniciales en la pestaña 1.
               v3: perfil DIM 100% por defecto (Restablecer = 100%).
               v2: tarifa 0,27 US$/kWh y escenario Convencional OFF por defecto
               (tarjeta Ahorro-dim parte oculta). v1: solo CO, inventario 160k,
@@ -1230,10 +1228,9 @@ function computeScn(scn){
 function installedKW(){return S.inventory.reduce((s,g)=>s+(g.qty||0)*(g.power||0),0)/1000;}
 function renderInvBase(){
   const el=document.getElementById("invBase"); if(!el)return;
-  const ikw=installedKW(); const bk=baseKeyFor();
-  const onH=(bk==="B"&&typeof RB!=="undefined"&&RB)?RB.onH:((typeof RA!=="undefined"&&RA)?RA.onH:0);
+  const ikw=installedKW(); const onH=(typeof RA!=="undefined"&&RA)?RA.onH:0;
   const convKwh=ikw*onH, convUSD=convKwh*S.tariff;
-  el.innerHTML=`<div class="bc-l">${t("inv_base_t")}</div><div class="bc-sub">${bk==="C"?t("inv_base_sub"):t("inv_base_sub_fix")}</div>`+
+  el.innerHTML=`<div class="bc-l">${t("inv_base_t")}</div><div class="bc-sub">${t("inv_base_sub")}</div>`+
     `<div class="bc-metrics">`+
     `<div class="bc-m"><div class="bc-k">${t("cmp_ctx_power")}</div><div class="bc-v">${nf(ikw,1)} kW</div></div>`+
     `<div class="bc-m"><div class="bc-k">${t("inv_base_energy")}</div><div class="bc-v">${efmt(convKwh)}</div></div>`+
@@ -1866,7 +1863,7 @@ function configSections(){
   secs.push({title:t("cfg_scn"),type:"table",
     head:[[t("ch_escenario"),t("cfg_state"),t("cfg_window"),t("apply_dim")]],
     body:[mk(S.A,"c_astro_dim",true),mk(S.C,"c_astro_nodim",true),mk(S.B,"c_fijo",false)],
-    note:t("base_pref")+" "+(baseKeyFor()==="C"?t("c_astro_nodim"):t("c_fijo"))});
+    note:t("base_pref")+" "+(S.baseScn==="B"?t("c_fijo"):t("c_astro_nodim"))});
   const invBody=S.inventory.map(g=>[g.name||"—",nf(+g.qty||0,0),nf(+g.power||0,0)+" W",(g.dim!==false)?t("yes"):t("no")]);
   invBody.push([t("inv_total"),nf(units,0),nf(IKW,1)+" kW",""]);
   secs.push({title:t("cfg_inv_list"),type:"table",
@@ -2128,8 +2125,7 @@ function exportPDF(){
   {const gap=12, cw=(W-2*M-2*gap)/3, ch=66;
    if(S.C.enabled) kcard(M,y,cw,ch,t("pdf_kpi_energy"),nf(savPct,1)+"%",nf(dimKwh,0)+" kWh/"+(LANG==="es"?"año":"yr"),[34,176,225]);
    else kcard(M,y,cw,ch,t("energy_year"),efmt(dimKwh),(LANG==="es"?"flota · escenario principal":"fleet · primary scenario"),[34,176,225]);
-   if(S.C.enabled) kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),money(savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
-   else kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),money(Math.max(0,x.schedSave)*S.tariff),(LANG==="es"?"por año vs horario fijo":"per year vs fixed schedule"),[174,204,83]);
+   kcard(M+cw+gap,y,cw,ch,t("pdf_kpi_money"),money(savUSD),t("pdf_kpi_money_sub"),[174,204,83]);
    kcard(M+2*(cw+gap),y,cw,ch,t("pdf_kpi_pay"),(pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—",(pb.invest?t("pdf_inv")+" "+money(pb.invest):""),[34,176,225]);
    y+=ch+18;}
   /* narrativa */
@@ -2145,10 +2141,9 @@ function exportPDF(){
   {const sl=doc.splitTextToSize(dimStrategyPDF(),W-2*M);doc.text(sl,M,y+4);y+=4+sl.length*11+12;}
   /* comparación de escenarios */
   sec(t("pdf_scn_t"));
-  {const baseIsC=S.C.enabled, bKwh=baseIsC?convKwh:eKWh("B"), bLab=baseIsC?t("conv_name"):t("c_fijo");
-   const body=[[bLab,nf(bKwh,0),money(bKwh*S.tariff),"—",t("base"),"—"]];
+  {const body=[[t("conv_name"),nf(convKwh,0),money(convUSD),"—",t("base"),"—"]];
    let bestRow=-1,bestSav=-Infinity;
-   act.forEach(c=>{if(c.key==="C")return; if(!baseIsC&&c.key==="B")return; const kk=eKWh(c.key),co=kk*S.tariff,sv=bKwh-kk,svp=bKwh?sv/bKwh*100:0;
+   act.forEach(c=>{if(c.key==="C")return; const kk=eKWh(c.key),co=kk*S.tariff,sv=convKwh-kk,svp=convKwh?sv/convKwh*100:0;
      const pbc=(c.key==="A"&&pb.years!=null&&isFinite(pb.years)&&pb.years>0)?nf(pb.years,1)+" "+t("years"):"—";
      body.push([c.lab,nf(kk,0),money(co),sv>0?money(sv*S.tariff):"—",sv>0?nf(svp,1)+"%":(Math.abs(svp)<0.05?t("base"):nf(svp,1)+"%"),pbc]);
      if(sv>bestSav){bestSav=sv;bestRow=body.length-1;}});
@@ -2361,7 +2356,7 @@ function syncScnState(){
   });
 }
 document.getElementById("enaA").addEventListener("change",e=>{S.A.enabled=e.target.checked;syncScnState();refreshLive();});
-document.getElementById("enaC").addEventListener("change",e=>{S.C.enabled=e.target.checked;if(!S.C.enabled&&S.baseScn==="C"){S.baseScn="B";syncBaseSegs();}syncScnState();refreshLive();});
+document.getElementById("enaC").addEventListener("change",e=>{S.C.enabled=e.target.checked;syncScnState();refreshLive();});
 document.getElementById("enaB").addEventListener("change",e=>{S.B.enabled=e.target.checked;syncScnState();refreshLive();});
 document.getElementById("fixOn").addEventListener("input",e=>{S.B.on=parseTime(e.target.value);refreshLive();});
 document.getElementById("fixOff").addEventListener("input",e=>{S.B.off=parseTime(e.target.value);refreshLive();});
@@ -2862,16 +2857,15 @@ function snapshotCase(name){
   const cc=COUNTRIES.find(c=>c.c===S.country);
   const place=(cc&&S.country!=="CUSTOM")?cc.n:(nf(S.lat,3)+", "+nf(S.lon,3));
   const useDim=(primary.key==="A"&&!!S.A.useDim);
-  let convKwh=0, convMonthKwh=null, refLabel=t("conv_name");
-  try{ if(S.C.enabled){ const sv=savings(); convKwh=sv.kAstro100; convMonthKwh=RA.mOn.map(h=>(+IKW||0)*h); }
-       else { convKwh=eKWh("B"); convMonthKwh=eKWhMonth("B").slice(); refLabel=t("c_fijo"); } }catch(e){}
+  let convKwh=0, convMonthKwh=null;
+  try{ const sv=savings(); convKwh=sv.kAstro100; convMonthKwh=RA.mOn.map(h=>(+IKW||0)*h); }catch(e){}
   return {
     id:"c"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
     name:name, ts:new Date().toISOString(),
     place:place, year:S.year, units:nodes, IKW:+IKW||0, tariff:tariff,
     annualKwh:annualKwh, annualUSD:annualKwh*tariff,
     monthKwh:eKWhMonth(primary.key).slice(),
-    convKwh:convKwh, convMonthKwh:convMonthKwh, refLabel:refLabel,
+    convKwh:convKwh, convMonthKwh:convMonthKwh,
     dim:S.dim.slice(), useDim:useDim,
     strategy:useDim?dimStrategyText():t("nodim_txt"),
     primLabel:primary.lab||t("c_astro_dim"),
@@ -2911,7 +2905,7 @@ function convencionalRef(){
   if(!CASES.length)return null;
   const ref=CASES.reduce((m,c)=>caseConvKwh(c)>caseConvKwh(m)?c:m,CASES[0]);
   const ck=caseConvKwh(ref); if(!(ck>0))return null;
-  return {id:"__conv__", name:ref.refLabel||t("conv_name"), synthetic:true,
+  return {id:"__conv__", name:t("conv_name"), synthetic:true,
     annualKwh:ck, annualUSD:ck*(ref.tariff||0),
     units:ref.units, IKW:ref.IKW, tariff:ref.tariff, invest:0, nodeCost:0,
     place:ref.place, year:ref.year, monthKwh:caseConvMonth(ref),
@@ -3389,7 +3383,6 @@ Object.assign(DICT.es,{
   help_config:"<b>Empieza aquí.</b> Elige el país (carga lat/long, zona horaria y cambio de hora) e ingresa la tarifa US$/kWh. De esto dependen el amanecer/atardecer reales y el costo.<span class='tip'>Si tu sitio no está en la lista, ingresa las coordenadas a mano.</span>",
   inv_base_t:"Condición base de la comparación",
   inv_base_sub:"Alumbrado Público Convencional · tu flota a potencia plena (100%) sobre la ventana del año. Es la referencia que usará el comparador.",
-  inv_base_sub_fix:"Horario fijo 18:00–06:00 · tu flota a potencia plena (100%) sobre la ventana fija. Es la referencia que usará el comparador.",
   inv_base_energy:"Energía convencional / año", inv_base_cost:"Costo convencional / año"
 });
 Object.assign(DICT.en,{
@@ -3397,7 +3390,6 @@ Object.assign(DICT.en,{
   help_config:"<b>Start here.</b> Pick the country (loads lat/long, time zone and DST) and enter the US$/kWh tariff. Real sunrise/sunset and cost depend on this.<span class='tip'>If your site isn't listed, type the coordinates by hand.</span>",
   inv_base_t:"Comparison base condition",
   inv_base_sub:"Conventional Public Lighting · your fleet at full power (100%) over the year window. This is the reference the comparator will use.",
-  inv_base_sub_fix:"Fixed schedule 18:00–06:00 · your fleet at full power (100%) over the fixed window. This is the reference the comparator will use.",
   inv_base_energy:"Conventional energy / yr", inv_base_cost:"Conventional cost / yr"
 });
 const SEC_HELP_STEP={config:1,inv:2,dim:3,scn:4,resumen:5,exec:6,cmp:7,perfil:8,tabla:8};
