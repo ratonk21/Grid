@@ -1,1236 +1,427 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-K73HD7MSR4');
-  </script>
+<!-- ═══ ESTADO ═══
+herramienta : Landing griddata.cl (tour cinemático, base v3 elegida por terceros)
+version     : v9 (anterior: v8)
+motor       : proyección Mercator + cámara fly-to + tour ordenado (funciones puras);
+              datos agregados estáticos (cc+admin1) del export UbicquiaMaster 2026-07-06
+ultima      : 2026-07-06 · modo kiosco (?kiosk=1 o #kiosk): oculta header/CTA/controles,
+              loop puro + QR a griddata.cl con UTM (utm_source=kiosk) para medir en GA4
+arquitectura: single-file · canvas 2D sin librerías (cero CDN) · geometría LATAM embebida
+              (GeoJSON simplificado 23KB) · sin localStorage
+marca       : Ubicquia (--ubi-*) sobre fondo oscuro
+verificacion: hopper — node --check + motor puro corrido en node contra DATA/GEO reales
+datos_fuente: export UbicquiaMaster 2026-07-06 (16 países) + El Salvador agregado a mano
+              (presencia sin cifras) · 54 puntos-región · ninguna cifra se muestra en pantalla
+no_tocar    : agregado DATA (regenerar solo desde nuevo export)
+pendientes  : puntos siguen en regiones reales (v3); probar kiosk en la pantalla del stand
+═══ -->
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-K73HD7MSR4');
+</script>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ubicquia® — Grid Data | Red desplegada en Latinoamérica</title>
+<meta name="description" content="Recorrido por la presencia de Ubicquia en Latinoamérica: 45 mil nodos de red en 16 países.">
+<meta property="og:title" content="Grid Data — Red desplegada en Latinoamérica">
+<meta property="og:url" content="https://griddata.cl/">
+<meta property="og:description" content="45.109 nodos de red inteligente en 16 países. Un recorrido por la región.">
+<style>
+:root{
+  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;
+  --ubi-deep:#464D63;--ubi-gray2:#99A0B4;--ubi-lime:#AECC53;
+  --bg0:#080B1C;--bg1:#131A3A;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg0)}
+body{font-family:'Lato',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#fff}
+#stage{position:fixed;inset:0;display:block}
+.mono{font-family:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace}
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Panel centralizado de reportes, simulaciones y herramientas de analisis para infraestructura inteligente Ubicquia. Datos en tiempo real, siempre disponibles." />
-  <meta property="og:title" content="ubicquia - Reportes | griddata.cl" />
-  <meta property="og:description" content="Reportes, telemetria DTM y control de luminarias Ubicquia para LATAM." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://griddata.cl/" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 46'%3E%3Cpath d='M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z' fill='%2322B0E1'/%3E%3Cpath d='M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z' fill='%23fff'/%3E%3C/svg%3E" />
-  <title>ubicquia® — Reportes</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* header */
+.top{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
+  padding:16px clamp(16px,4vw,36px);z-index:5;pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,11,28,.85),rgba(8,11,28,0))}
+.logo{font-size:clamp(17px,2.4vw,21px);font-weight:700;letter-spacing:.2px}
+.logo b{color:var(--ubi-blue)}
+.logo sup{font-size:9px;margin-left:2px;opacity:.7}
+.cta{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:999px;background:var(--ubi-blue);color:#06101f;
+  font-weight:800;font-size:clamp(12px,1.8vw,14px);text-decoration:none;letter-spacing:.02em;
+  box-shadow:0 0 22px rgba(34,176,225,.5),0 3px 14px rgba(0,0,0,.35);
+  transition:transform .2s ease,box-shadow .2s ease}
+.cta:hover{transform:translateY(-2px);box-shadow:0 0 34px rgba(34,176,225,.8),0 5px 18px rgba(0,0,0,.4)}
+.cta svg{width:15px;height:15px}
+@media (prefers-reduced-motion: reduce){.cta{transition:none}}
 
-    :root {
-      /* ── Paleta oficial Ubicquia® (Brand & Style Guide 9101 v2) ── */
-      --bg:         #EEF0F5;      /* Light Gray  — fondo preferido de marca */
-      --surface:    #ffffff;
-      --surface2:   #f5f7fb;
-      --border:     #d8dde9;
-      --text:       #1E2445;      /* Ubicquia Dark Blue — texto principal */
-      --text-mid:   #464D63;      /* Deep Gray */
-      --muted:      #99A0B4;      /* Gray */
-      --navy:       #1E2445;      /* Dark Blue — header / nav / superficies oscuras */
-      --navy-mid:   #2a3258;      /* Dark Blue aclarado — elementos activos */
-      --accent:     #22B0E1;      /* Ubicquia Blue — acento principal */
-      --accent-lt:  #d6eefa;      /* tinte claro azul */
-      --blue:       #22B0E1;      /* Ubicquia Blue */
-      --blue-lt:    #e3f4fb;
-      --green:      #005B59;      /* Ubicquia Dark Green */
-      --lime:       #AECC53;      /* Ubicquia Lime Green */
-      --green-lt:   #eef6e0;      /* tinte claro lima */
-      --radius:     8px;
-      --radius-lg:  14px;
-      --label-font: 'Lato', 'Helvetica Neue', Arial, sans-serif;
+/* tarjeta país */
+.card{position:fixed;left:clamp(14px,4vw,40px);bottom:clamp(72px,11vh,96px);z-index:5;max-width:min(430px,88vw);
+  opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s ease;pointer-events:none}
+.card.on{opacity:1;transform:translateY(0)}
+.card .kick{font-size:clamp(10px,1.4vw,11.5px);letter-spacing:.22em;text-transform:uppercase;color:var(--ubi-blue);font-weight:700}
+.card h2{margin:4px 0 2px;font-size:clamp(30px,6.4vw,52px);line-height:1.02;font-weight:800;letter-spacing:-.01em;
+  text-shadow:0 2px 30px rgba(34,176,225,.35)}
+.card .big{display:flex;align-items:baseline;gap:10px;margin-top:6px}
+.card .num{font-size:clamp(26px,5vw,40px);font-weight:700;color:var(--ubi-blue);font-family:'JetBrains Mono',monospace;
+  font-variant-numeric:tabular-nums}
+.card .nl{font-size:clamp(12px,1.8vw,14px);color:var(--ubi-gray2)}
+.card .sub{margin-top:6px;font-size:clamp(12px,1.8vw,13.5px);color:#C6CCE0}
+.card .regs{margin-top:8px;font-size:clamp(11px,1.6vw,12.5px);color:var(--ubi-gray2);line-height:1.55}
+.card .regs b{color:#E7EAF5;font-weight:600}
 
-      /* ── Sistema de layout armónico (nuevo) ── */
-      --maxw:       1180px;       /* ancho máximo del contenido */
-      --gutter:     clamp(1.25rem, 4vw, 3rem); /* margen lateral fluido */
-      --grad:       linear-gradient(90deg, var(--blue), var(--lime));
-      --shadow:     0 8px 32px rgba(30,58,123,0.13);
-      --shadow-sm:  0 1px 3px rgba(30,36,69,0.05);
-    }
+/* controles */
+.ctrl{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;align-items:center;gap:14px;
+  padding:14px clamp(16px,4vw,36px) calc(14px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(0deg,rgba(8,11,28,.9),rgba(8,11,28,0))}
+.btn{width:40px;height:40px;border-radius:50%;border:1px solid rgba(153,160,180,.35);background:rgba(30,36,69,.55);
+  color:#fff;cursor:pointer;display:grid;place-items:center;flex:none;backdrop-filter:blur(4px)}
+.btn:hover{border-color:var(--ubi-blue)}
+.btn svg{width:15px;height:15px;fill:#fff}
+.dots{display:flex;gap:7px;flex:1;align-items:center;overflow-x:auto;scrollbar-width:none;padding:6px 2px}
+.dots::-webkit-scrollbar{display:none}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(153,160,180,.35);cursor:pointer;flex:none;
+  transition:transform .25s,background .25s;border:none;padding:0}
+.dot.on{background:var(--ubi-blue);transform:scale(1.5);box-shadow:0 0 10px rgba(34,176,225,.8)}
+.stepn{font-size:11px;color:var(--ubi-gray2);font-family:'JetBrains Mono',monospace;flex:none;min-width:44px;text-align:right}
 
-    html { scroll-behavior: smooth; }
+/* intro / cierre overlays de KPIs */
+.totals{position:fixed;inset:0;z-index:4;display:grid;place-items:center;pointer-events:none;
+  opacity:0;transition:opacity .7s ease}
+.totals.on{opacity:1}
+.totals .in{text-align:center;padding:0 18px}
+.totals .k{font-size:clamp(11px,1.6vw,13px);letter-spacing:.24em;text-transform:uppercase;color:var(--ubi-blue);font-weight:700}
+.totals h1{margin:8px 0 4px;font-size:clamp(30px,7vw,58px);font-weight:800;letter-spacing:-.01em}
+.totals .row{display:flex;gap:clamp(18px,5vw,48px);justify-content:center;margin-top:18px;flex-wrap:wrap}
+.totals .t .n{font-size:clamp(24px,5vw,42px);font-weight:700;color:var(--ubi-blue);font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.totals .t .l{font-size:clamp(11px,1.6vw,13px);color:var(--ubi-gray2);margin-top:2px}
+.totals .foot{margin-top:22px;font-size:clamp(10px,1.5vw,11.5px);color:var(--ubi-gray2)}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--label-font);
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ── Shell: mismo ancho y gutters para todo bloque principal ── */
-    .shell {
-      width: 100%;
-      max-width: var(--maxw);
-      margin-inline: auto;
-      padding-inline: var(--gutter);
-    }
-
-    /* ── HEADER ── */
-    header {
-      background: var(--navy);
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .bar-inner {
-      width: 100%;
-      max-width: var(--maxw);
-      margin-inline: auto;
-      padding-inline: var(--gutter);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    header .bar-inner { height: 64px; }
-
-    .logo-wrap { display: flex; align-items: center; gap: 0.75rem; }
-    .logomark { width: 34px; height: 41px; flex-shrink: 0; }
-    .logo-text {
-      font-size: 1.15rem;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      color: #ffffff;
-      text-transform: lowercase;
-    }
-    .logo-text .wm-blue { color: var(--blue); }
-    .logo-text sup {
-      font-size: 0.5rem;
-      vertical-align: super;
-      color: rgba(255,255,255,0.55);
-      font-weight: 700;
-      margin-left: 1px;
-    }
-
-    .header-right { display: flex; align-items: center; gap: 1.1rem; }
-    .badge-env {
-      font-size: 0.68rem;
-      color: var(--navy);
-      background: var(--blue);
-      padding: 0.28rem 0.75rem;
-      border-radius: 20px;
-      letter-spacing: 0.04em;
-      font-weight: 700;
-    }
-    .header-date {
-      font-size: 0.7rem;
-      color: rgba(255,255,255,0.45);
-      letter-spacing: 0.02em;
-    }
-
-    /* ── MASTHEAD (hero + stats como una sola unidad) ── */
-    .masthead {
-      width: 100%;
-      max-width: var(--maxw);
-      margin-inline: auto;
-      padding-inline: var(--gutter);
-      padding-top: 2.4rem;
-      padding-bottom: 1.6rem;
-    }
-
-    /* ── HERO ── */
-    .hero { position: relative; margin-bottom: 1.5rem; }
-    .hero-eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      font-weight: 700;
-      margin-bottom: 0.7rem;
-    }
-    .hero-eyebrow .dot {
-      width: 6px; height: 6px;
-      background: var(--blue);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-
-    .hero h1 {
-      font-size: clamp(1.6rem, 3.4vw, 2.35rem);
-      font-weight: 700;
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      color: var(--text);
-    }
-    .hero h1 em { font-style: normal; color: var(--accent); }
-    .hero p {
-      margin-top: 0.6rem;
-      color: var(--text-mid);
-      font-size: 0.9rem;
-      line-height: 1.55;
-      max-width: 560px;
-    }
-    .hero-tagline {
-      margin-top: 0.85rem;
-      font-size: 0.84rem;
-      font-weight: 300;
-      letter-spacing: 0.01em;
-      color: var(--text-mid);
-    }
-    .hero-tagline b { font-weight: 700; color: var(--blue); }
-
-    /* ── STATS BAR ── */
-    .stats-bar {
-      background: var(--navy);
-      border-radius: var(--radius-lg);
-      display: flex;
-      overflow: hidden;
-      box-shadow: 0 6px 22px rgba(10,22,40,0.16);
-    }
-    .stat-item {
-      flex: 1;
-      padding: 0.95rem 1.6rem;
-      border-right: 1px solid rgba(255,255,255,0.07);
-      position: relative;
-    }
-    .stat-item:last-child { border-right: none; }
-    .stat-label {
-      font-size: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: rgba(255,255,255,0.42);
-      margin-bottom: 0.28rem;
-    }
-    .stat-value {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-      line-height: 1;
-    }
-    .stat-value .unit {
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.4);
-      font-weight: 500;
-      margin-left: 0.2rem;
-    }
-    .stat-sub {
-      font-size: 0.66rem;
-      color: var(--blue);
-      margin-top: 0.28rem;
-      font-weight: 600;
-    }
-
-    /* ── TABS ── */
-    .tabs {
-      width: 100%;
-      max-width: var(--maxw);
-      margin: 0 auto;
-      padding-inline: var(--gutter);
-      display: flex;
-      gap: 0.15rem;
-      flex-wrap: wrap;
-      border-bottom: 1px solid var(--border);
-    }
-    .tab {
-      font-family: inherit;
-      font-size: 0.74rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-mid);
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      padding: 0.72rem 1rem;
-      margin-bottom: -1px;
-      cursor: pointer;
-      transition: color 0.15s, border-color 0.15s;
-      white-space: nowrap;
-    }
-    .tab:hover { color: var(--text); }
-    .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-
-    /* ── SECTION ── */
-    .section {
-      width: 100%;
-      max-width: var(--maxw);
-      margin-inline: auto;
-      padding: 1.9rem var(--gutter) 0.6rem;
-    }
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .section-label {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: var(--muted);
-      white-space: nowrap;
-      font-weight: 700;
-    }
-    .section-line { flex: 1; height: 1px; background: var(--border); }
-    .section-count {
-      font-size: 0.68rem;
-      color: var(--accent);
-      background: var(--accent-lt);
-      border: 1px solid #b8caf0;
-      padding: 0.2rem 0.6rem;
-      border-radius: 20px;
-      font-weight: 600;
-    }
-
-    /* ── GRID ── */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
-      gap: 0.85rem;
-    }
-
-    /* ── CARD (tile) ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-      position: relative;
-      aspect-ratio: 1;
-      justify-content: center;
-      padding: 1rem 0.8rem;
-      text-align: center;
-      box-shadow: var(--shadow-sm);
-    }
-    .card:hover {
-      box-shadow: var(--shadow);
-      transform: translateY(-3px);
-      border-color: #a8bcf0;
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--grad);
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 1;
-    }
-    .card:hover::before { opacity: 1; }
-
-    /* ── TILE ICON ── */
-    .card-icon {
-      width: 46px; height: 46px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 0.7rem;
-      flex-shrink: 0;
-    }
-    .card-icon svg { width: 23px; height: 23px; }
-    .card-name {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.3;
-    }
-    .card-tag {
-      font-size: 0.58rem;
-      color: var(--muted);
-      margin-top: 0.25rem;
-      letter-spacing: 0.04em;
-    }
-    .card-arrow {
-      position: absolute;
-      bottom: 0.5rem; right: 0.65rem;
-      font-size: 0.6rem;
-      color: var(--blue);
-      font-weight: 700;
-      opacity: 0;
-      transform: translateX(-4px);
-      transition: opacity 0.2s, transform 0.2s;
-    }
-    .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
-
-    /* ── GUIDE CARD variant ── */
-    .card-guide:hover { border-color: #7ab89a; }
-    .card-guide::before { background: linear-gradient(90deg, var(--green), var(--lime)); }
-
-    /* ── ADD CARD ── */
-    .card-add {
-      border-style: dashed;
-      border-color: var(--border);
-      cursor: default;
-      background: transparent;
-      box-shadow: none;
-    }
-    .card-add:hover { transform: none; box-shadow: none; border-color: var(--border); }
-    .card-add:hover::before { opacity: 0; }
-    .add-icon { font-size: 2rem; color: var(--border); font-weight: 300; }
-    .add-text { font-size: 0.72rem; color: var(--muted); }
-
-    /* ── CONTACTS ── */
-    .contacts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 0.85rem;
-    }
-    .contact-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1rem 1.1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      position: relative;
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-    }
-    .contact-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--grad);
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .contact-card:hover {
-      box-shadow: var(--shadow);
-      transform: translateY(-3px);
-      border-color: #a8bcf0;
-    }
-    .contact-card:hover::before { opacity: 1; }
-    .contact-avatar {
-      width: 46px; height: 46px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: var(--navy);
-      color: #ffffff;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700;
-      font-size: 0.82rem;
-      letter-spacing: 0.02em;
-    }
-    .contact-info { flex: 1; min-width: 0; }
-    .contact-name { font-size: 0.84rem; font-weight: 700; color: var(--text); line-height: 1.2; }
-    .contact-role {
-      font-size: 0.58rem;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--muted);
-      margin-top: 0.18rem;
-    }
-    .contact-lines { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.12rem; }
-    .contact-lines a {
-      font-size: 0.67rem;
-      color: var(--text-mid);
-      text-decoration: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .contact-lines a:hover { color: var(--blue); }
-    .contact-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
-    .contact-btn {
-      width: 34px; height: 34px;
-      border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      text-decoration: none;
-      transition: transform 0.15s, filter 0.15s;
-    }
-    .contact-btn svg { width: 17px; height: 17px; }
-    .contact-btn.wa { background: var(--green); }
-    .contact-btn.mail { background: var(--blue); }
-    .contact-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
-
-    /* ── ABOUT / TEAM (legacy, conservado) ── */
-    .about-grid { display:grid; grid-template-columns:1.25fr 1fr; gap:0.7rem; align-items:start; }
-    .about-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:1.1rem 1.2rem; position:relative; overflow:hidden; }
-    .about-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--grad); }
-    .about-title { font-size:0.95rem; font-weight:700; letter-spacing:-0.02em; color:var(--text); margin-bottom:0.35rem; }
-    .about-lead { font-size:0.78rem; line-height:1.55; color:var(--text-mid); margin-bottom:0.2rem; max-width:48ch; }
-    .about-block { margin-top:0.8rem; }
-    .about-block-label { font-size:0.58rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--muted); margin-bottom:0.4rem; }
-    .about-chips { display:flex; flex-wrap:wrap; gap:0.35rem; }
-    .about-chip { font-size:0.62rem; font-weight:600; color:var(--text); background:var(--surface2); border:1px solid var(--border); padding:0.22rem 0.55rem; border-radius:20px; }
-    .about-products { display:flex; flex-direction:column; gap:0.4rem; }
-    .prod { display:flex; align-items:baseline; gap:0.6rem; }
-    .prod-name { font-weight:900; font-size:0.72rem; color:var(--blue); min-width:64px; letter-spacing:-0.01em; }
-    .prod-desc { font-size:0.68rem; color:var(--text-mid); }
-    .about-ways { font-size:0.67rem; color:var(--text-mid); line-height:1.8; }
-    .about-way { font-weight:700; color:var(--text); }
-    .about-sep { color:var(--border); margin:0 0.3rem; }
-    .about-contacts { display:flex; flex-direction:column; gap:0.7rem; }
-    @media (max-width:760px) { .about-grid { grid-template-columns:1fr; } }
-
-    /* ── TEAM PANEL: profile components ── */
-    .team-sub-label {
-      font-size: 0.62rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: var(--muted);
-      font-weight: 700;
-      margin: 1.6rem 0 0.7rem;
-    }
-    .cap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 0.85rem; }
-    .cap-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.05rem; display: flex; flex-direction: column; gap: 0.5rem; box-shadow: var(--shadow-sm); }
-    .cap-ic { width: 36px; height: 36px; border-radius: 9px; background: var(--surface2); display: flex; align-items: center; justify-content: center; }
-    .cap-ic svg { width: 18px; height: 18px; stroke: var(--blue); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .cap-item h4 { font-size: 0.8rem; font-weight: 700; color: var(--text); }
-    .cap-item p { font-size: 0.7rem; color: var(--text-mid); line-height: 1.5; }
-    .lines-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
-    .line-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.05rem 1.15rem; box-shadow: var(--shadow-sm); }
-    .line-tag { display: inline-block; font-size: 0.6rem; font-weight: 700; color: var(--blue); background: var(--blue-lt); padding: 3px 9px; border-radius: 6px; margin-bottom: 0.5rem; letter-spacing: 0.02em; }
-    .line-item h4 { font-size: 0.95rem; font-weight: 900; color: var(--navy); margin-bottom: 0.3rem; }
-    .line-item p { font-size: 0.72rem; color: var(--text-mid); line-height: 1.5; }
-    .how-band { background: var(--navy); border-radius: var(--radius-lg); padding: 1.3rem 1.4rem; margin-top: 0.2rem; }
-    .how-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--blue); font-weight: 700; margin-bottom: 0.95rem; }
-    .how-ways { display: grid; grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); gap: 1.05rem; }
-    .how-way h5 { font-size: 0.8rem; font-weight: 900; color: #ffffff; margin-bottom: 0.25rem; }
-    .how-way h5 .dash { color: var(--lime); }
-    .how-way p { font-size: 0.68rem; color: rgba(255,255,255,0.8); line-height: 1.5; }
-
-    /* ── LANG TOGGLE ── */
-    .lang-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 20px;
-      padding: 2px;
-    }
-    .lang-btn {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      padding: 0.24rem 0.7rem;
-      border-radius: 16px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      transition: background 0.18s, color 0.18s;
-      color: var(--muted);
-    }
-    .lang-btn.active { background: var(--blue); color: var(--navy); }
-    .lang-btn:not(.active):hover { color: rgba(255,255,255,0.8); }
-
-    /* ── FOOTER ── */
-    footer {
-      border-top: 1px solid var(--border);
-      background: var(--surface);
-      margin-top: 2.6rem;
-      color: var(--muted);
-      font-size: 0.74rem;
-    }
-    footer .bar-inner { padding-block: 0.95rem; }
-    .footer-brand { display: flex; align-items: center; gap: 0.5rem; }
-    .footer-wm {
-      font-weight: 900;
-      text-transform: lowercase;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      font-size: 0.85rem;
-    }
-    .footer-wm .wm-blue { color: var(--blue); }
-    .footer-wm sup { font-size: 0.45rem; vertical-align: super; color: var(--muted); }
-    .footer-dot { color: var(--border); }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 760px) {
-      .lines-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .stats-bar { flex-direction: column; }
-      .stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
-      .stat-item:last-child { border-bottom: none; }
-      .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      footer .bar-inner { flex-direction: column; gap: 0.5rem; text-align: center; }
-      .header-date { display: none; }
-    }
-
-    /* ── Accesibilidad: respeta reduce-motion ── */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.001ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.001ms !important;
-        scroll-behavior: auto !important;
-      }
-      .card:hover, .contact-card:hover { transform: none; }
-    }
-
-  </style>
+#errBanner{display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:9;
+  background:rgba(234,86,27,.15);border:1px solid #EA561B;color:#FFD9C9;border-radius:10px;
+  padding:8px 16px;font-size:12.5px;max-width:88vw}
+.qr{display:none;position:fixed;right:clamp(14px,3vw,30px);bottom:clamp(14px,3vw,30px);z-index:7;
+  flex-direction:column;align-items:center;gap:7px;text-decoration:none;
+  background:rgba(255,255,255,.96);border-radius:14px;padding:12px;
+  box-shadow:0 0 30px rgba(34,176,225,.45),0 6px 22px rgba(0,0,0,.4)}
+.qr svg{width:clamp(88px,11vw,130px);height:auto;display:block}
+.qr span{font-size:11px;font-weight:700;color:#0B1226;letter-spacing:.04em}
+body.kiosk .top,body.kiosk .ctrl{display:none}
+body.kiosk .qr{display:flex}
+@media (max-width:640px){
+  .card{bottom:84px}
+}
+</style>
 </head>
 <body>
+<canvas id="stage"></canvas>
 
-  <!-- HEADER -->
-  <header>
-    <div class="bar-inner">
-    <div class="logo-wrap">
-      <svg class="logomark" viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- UbiPin — Ubicquia Blue -->
-        <path d="M19 0C8.507 0 0 8.507 0 19c0 7.177 3.97 13.42 9.84 16.67L19 46l9.16-10.33C34.03 32.42 38 26.177 38 19 38 8.507 29.493 0 19 0z" fill="#22B0E1"/>
-        <!-- U hueca (blanca) -->
-        <path d="M13 11v9.5C13 23.538 15.462 26 18.5 26S24 23.538 24 20.5V11h-3.5v9.5c0 1.105-.895 2-2 2s-2-.895-2-2V11H13z" fill="#ffffff"/>
-      </svg>
-      <span class="logo-text"><span class="wm-blue">ubi</span>cquia<sup>®</sup></span>
-    </div>
-    <div class="header-right">
-      <span class="badge-env">REPORTS / GRIDDATA.CL</span>
-      <span class="header-date" id="header-date"></span>
-      <div class="lang-toggle">
-        <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
-        <button class="lang-btn active" id="btn-es" onclick="setLang('es')">ES</button>
-      </div>
-    </div>
-    </div>
-  </header>
+<div class="top">
+  <div class="logo"><b>ubi</b>cquia<sup>®</sup></div>
+  <a class="cta" href="/reportes/">Ir a Grid Data
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h12m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</div>
 
-  <!-- MASTHEAD (hero + stats) -->
-  <div class="masthead">
-
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-eyebrow">
-      <span class="dot"></span>
-      <span data-i18n="hero-eyebrow">Active reports collection</span>
-    </div>
-    <h1><span data-i18n="hero-title">Reports</span><br><em>Ubicquia®</em></h1>
-    <p data-i18n="hero-desc">Centralized panel of reports, simulations and analysis tools for smart infrastructure. Real-time data, always available.</p>
-    <div class="hero-tagline">simply <b>connected</b> simply <b>smart.</b></div>
+<div class="totals" id="totals">
+  <div class="in">
+    <div class="k" id="tKick">Red desplegada</div>
+    <h1 id="tTitle">Latinoamérica</h1>
   </div>
+</div>
 
-  <!-- STATS BAR -->
-  <div class="stats-bar">
-    <div class="stat-item">
-      <div class="stat-label" data-i18n="stat-active">Active reports</div>
-      <div class="stat-value" id="stat-count">4</div>
-      <div class="stat-sub" data-i18n="stat-active-sub">↑ available now</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label" data-i18n="stat-tech">Technology</div>
-      <div class="stat-value">UbiVu<span class="unit">®</span></div>
-      <div class="stat-sub" data-i18n="stat-tech-sub">AI Core active</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label" data-i18n="stat-platform">Platform</div>
-      <div class="stat-value">Web<span class="unit">/ HTML</span></div>
-      <div class="stat-sub" data-i18n="stat-platform-sub">No installation</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label" data-i18n="stat-guides">User guides</div>
-      <div class="stat-value" id="stat-guides">3</div>
-      <div class="stat-sub" data-i18n="stat-guides-sub">↑ available now</div>
-    </div>
+<div class="card" id="card">
+  <h2 id="cName">—</h2>
+</div>
 
-  </div>
-  </div><!-- /masthead -->
+<div class="ctrl">
+  <button class="btn" id="bPrev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M15 5l-8 7 8 7z"/></svg></button>
+  <button class="btn" id="bPlay" aria-label="Pausa"><svg id="iPlay" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+  <button class="btn" id="bNext" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M9 5l8 7-8 7z"/></svg></button>
+  <div class="dots" id="dots"></div>
+  <div class="stepn" id="stepN"></div>
+</div>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab active" data-tab="team"     data-i18n="tab-team"     onclick="setTab('team')">Who we are</button>
-    <button class="tab"        data-tab="projects" data-i18n="tab-projects" onclick="setTab('projects')">Projects</button>
-    <button class="tab"        data-tab="guides"   data-i18n="tab-guides"   onclick="setTab('guides')">User guides</button>
-    <button class="tab"        data-tab="dtm"      data-i18n="tab-dtm"      onclick="setTab('dtm')">DTM Analytics</button>
-    <button class="tab"        data-tab="control"  data-i18n="tab-control"  onclick="setTab('control')">Live control</button>
-  </div>
+<a class="qr" href="https://griddata.cl/?utm_source=kiosk&amp;utm_medium=qr" aria-label="griddata.cl">
+  <svg viewBox="0 0 37 37" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="37" height="37" fill="#fff"/><path d="M2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM18 2h1v1h-1zM21 2h1v1h-1zM22 2h1v1h-1zM23 2h1v1h-1zM25 2h1v1h-1zM28 2h1v1h-1zM29 2h1v1h-1zM30 2h1v1h-1zM31 2h1v1h-1zM32 2h1v1h-1zM33 2h1v1h-1zM34 2h1v1h-1zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM16 3h1v1h-1zM19 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM28 3h1v1h-1zM34 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM11 4h1v1h-1zM15 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM30 4h1v1h-1zM31 4h1v1h-1zM32 4h1v1h-1zM34 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM17 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM30 5h1v1h-1zM31 5h1v1h-1zM32 5h1v1h-1zM34 5h1v1h-1zM2 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM14 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h1v1h-1zM31 6h1v1h-1zM32 6h1v1h-1zM34 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM20 7h1v1h-1zM24 7h1v1h-1zM26 7h1v1h-1zM28 7h1v1h-1zM34 7h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM29 8h1v1h-1zM30 8h1v1h-1zM31 8h1v1h-1zM32 8h1v1h-1zM33 8h1v1h-1zM34 8h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM24 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM28 10h1v1h-1zM31 10h1v1h-1zM33 10h1v1h-1zM34 10h1v1h-1zM3 11h1v1h-1zM6 11h1v1h-1zM7 11h1v1h-1zM11 11h1v1h-1zM13 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM19 11h1v1h-1zM21 11h1v1h-1zM24 11h1v1h-1zM25 11h1v1h-1zM28 11h1v1h-1zM29 11h1v1h-1zM31 11h1v1h-1zM32 11h1v1h-1zM34 11h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM7 12h1v1h-1zM8 12h1v1h-1zM11 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM15 12h1v1h-1zM18 12h1v1h-1zM20 12h1v1h-1zM25 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM29 12h1v1h-1zM30 12h1v1h-1zM31 12h1v1h-1zM33 12h1v1h-1zM34 12h1v1h-1zM2 13h1v1h-1zM4 13h1v1h-1zM5 13h1v1h-1zM6 13h1v1h-1zM10 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM19 13h1v1h-1zM22 13h1v1h-1zM26 13h1v1h-1zM29 13h1v1h-1zM31 13h1v1h-1zM34 13h1v1h-1zM2 14h1v1h-1zM4 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM11 14h1v1h-1zM16 14h1v1h-1zM17 14h1v1h-1zM18 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM26 14h1v1h-1zM27 14h1v1h-1zM30 14h1v1h-1zM31 14h1v1h-1zM34 14h1v1h-1zM5 15h1v1h-1zM7 15h1v1h-1zM9 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM15 15h1v1h-1zM16 15h1v1h-1zM19 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM26 15h1v1h-1zM27 15h1v1h-1zM29 15h1v1h-1zM31 15h1v1h-1zM32 15h1v1h-1zM33 15h1v1h-1zM2 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM13 16h1v1h-1zM14 16h1v1h-1zM16 16h1v1h-1zM20 16h1v1h-1zM21 16h1v1h-1zM26 16h1v1h-1zM28 16h1v1h-1zM31 16h1v1h-1zM2 17h1v1h-1zM6 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM12 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM20 17h1v1h-1zM21 17h1v1h-1zM23 17h1v1h-1zM27 17h1v1h-1zM28 17h1v1h-1zM31 17h1v1h-1zM32 17h1v1h-1zM3 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM11 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM22 18h1v1h-1zM23 18h1v1h-1zM24 18h1v1h-1zM27 18h1v1h-1zM28 18h1v1h-1zM30 18h1v1h-1zM31 18h1v1h-1zM32 18h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM5 19h1v1h-1zM7 19h1v1h-1zM9 19h1v1h-1zM10 19h1v1h-1zM12 19h1v1h-1zM14 19h1v1h-1zM16 19h1v1h-1zM17 19h1v1h-1zM24 19h1v1h-1zM25 19h1v1h-1zM26 19h1v1h-1zM27 19h1v1h-1zM28 19h1v1h-1zM30 19h1v1h-1zM31 19h1v1h-1zM33 19h1v1h-1zM34 19h1v1h-1zM4 20h1v1h-1zM7 20h1v1h-1zM8 20h1v1h-1zM10 20h1v1h-1zM12 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM27 20h1v1h-1zM29 20h1v1h-1zM30 20h1v1h-1zM32 20h1v1h-1zM33 20h1v1h-1zM2 21h1v1h-1zM3 21h1v1h-1zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h1v1h-1zM15 21h1v1h-1zM17 21h1v1h-1zM18 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM28 21h1v1h-1zM30 21h1v1h-1zM33 21h1v1h-1zM34 21h1v1h-1zM8 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM13 22h1v1h-1zM16 22h1v1h-1zM17 22h1v1h-1zM18 22h1v1h-1zM22 22h1v1h-1zM23 22h1v1h-1zM25 22h1v1h-1zM31 22h1v1h-1zM32 22h1v1h-1zM34 22h1v1h-1zM2 23h1v1h-1zM3 23h1v1h-1zM5 23h1v1h-1zM11 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM17 23h1v1h-1zM18 23h1v1h-1zM19 23h1v1h-1zM21 23h1v1h-1zM22 23h1v1h-1zM23 23h1v1h-1zM25 23h1v1h-1zM28 23h1v1h-1zM29 23h1v1h-1zM31 23h1v1h-1zM34 23h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM17 24h1v1h-1zM19 24h1v1h-1zM20 24h1v1h-1zM25 24h1v1h-1zM26 24h1v1h-1zM27 24h1v1h-1zM28 24h1v1h-1zM29 24h1v1h-1zM30 24h1v1h-1zM32 24h1v1h-1zM33 24h1v1h-1zM34 24h1v1h-1zM3 25h1v1h-1zM5 25h1v1h-1zM6 25h1v1h-1zM9 25h1v1h-1zM10 25h1v1h-1zM11 25h1v1h-1zM12 25h1v1h-1zM14 25h1v1h-1zM16 25h1v1h-1zM17 25h1v1h-1zM20 25h1v1h-1zM21 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM28 25h1v1h-1zM31 25h1v1h-1zM34 25h1v1h-1zM2 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM11 26h1v1h-1zM12 26h1v1h-1zM15 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM28 26h1v1h-1zM29 26h1v1h-1zM30 26h1v1h-1zM31 26h1v1h-1zM10 27h1v1h-1zM11 27h1v1h-1zM14 27h1v1h-1zM17 27h1v1h-1zM18 27h1v1h-1zM20 27h1v1h-1zM21 27h1v1h-1zM23 27h1v1h-1zM25 27h1v1h-1zM26 27h1v1h-1zM30 27h1v1h-1zM31 27h1v1h-1zM33 27h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM7 28h1v1h-1zM8 28h1v1h-1zM10 28h1v1h-1zM14 28h1v1h-1zM15 28h1v1h-1zM19 28h1v1h-1zM20 28h1v1h-1zM21 28h1v1h-1zM22 28h1v1h-1zM25 28h1v1h-1zM26 28h1v1h-1zM28 28h1v1h-1zM30 28h1v1h-1zM33 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM10 29h1v1h-1zM11 29h1v1h-1zM12 29h1v1h-1zM14 29h1v1h-1zM16 29h1v1h-1zM19 29h1v1h-1zM20 29h1v1h-1zM21 29h1v1h-1zM23 29h1v1h-1zM24 29h1v1h-1zM25 29h1v1h-1zM26 29h1v1h-1zM30 29h1v1h-1zM31 29h1v1h-1zM32 29h1v1h-1zM33 29h1v1h-1zM2 30h1v1h-1zM4 30h1v1h-1zM5 30h1v1h-1zM6 30h1v1h-1zM8 30h1v1h-1zM14 30h1v1h-1zM15 30h1v1h-1zM16 30h1v1h-1zM18 30h1v1h-1zM19 30h1v1h-1zM20 30h1v1h-1zM23 30h1v1h-1zM25 30h1v1h-1zM26 30h1v1h-1zM27 30h1v1h-1zM28 30h1v1h-1zM29 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM33 30h1v1h-1zM34 30h1v1h-1zM2 31h1v1h-1zM4 31h1v1h-1zM5 31h1v1h-1zM6 31h1v1h-1zM8 31h1v1h-1zM10 31h1v1h-1zM11 31h1v1h-1zM13 31h1v1h-1zM15 31h1v1h-1zM18 31h1v1h-1zM19 31h1v1h-1zM22 31h1v1h-1zM23 31h1v1h-1zM26 31h1v1h-1zM29 31h1v1h-1zM34 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM5 32h1v1h-1zM6 32h1v1h-1zM8 32h1v1h-1zM10 32h1v1h-1zM12 32h1v1h-1zM13 32h1v1h-1zM14 32h1v1h-1zM16 32h1v1h-1zM17 32h1v1h-1zM18 32h1v1h-1zM19 32h1v1h-1zM22 32h1v1h-1zM24 32h1v1h-1zM26 32h1v1h-1zM27 32h1v1h-1zM28 32h1v1h-1zM29 32h1v1h-1zM31 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h1v1h-1zM12 33h1v1h-1zM13 33h1v1h-1zM16 33h1v1h-1zM19 33h1v1h-1zM20 33h1v1h-1zM27 33h1v1h-1zM29 33h1v1h-1zM30 33h1v1h-1zM34 33h1v1h-1zM2 34h1v1h-1zM3 34h1v1h-1zM4 34h1v1h-1zM5 34h1v1h-1zM6 34h1v1h-1zM7 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM19 34h1v1h-1zM20 34h1v1h-1zM23 34h1v1h-1zM25 34h1v1h-1zM30 34h1v1h-1zM32 34h1v1h-1z" fill="#0B1226"/></svg>
+  <span>griddata.cl</span>
+</a>
 
-  <!-- WHO WE ARE / LATAM TEAM SECTION -->
-  <section class="section tab-panel active" data-panel="team" id="team-section">
-    <div class="section-header">
-      <span class="section-label" data-i18n="section-team">latam team</span>
-      <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="team-count-label">people</span></span>
-    </div>
+<div id="errBanner"></div>
 
-    <p class="about-lead" data-i18n="about-lead" style="max-width:74ch; margin-bottom:1.3rem;">An agile, end-to-end regional operation: we accompany every project from technical validation to post-sales support, across two product lines throughout Latin America.</p>
+<script>
+'use strict';
+const DATA = {"generated":"2026-07-06","source_rows":45547,"excluded_non_latam":438,"totals":{"nodes":45109,"countries":17,"regions":53,"customers":68},"countries":[{"cc":"BS","name":"Bahamas","nodes":27,"customers":3,"regions":2},{"cc":"MX","name":"México","nodes":18476,"customers":19,"regions":11},{"cc":"PR","name":"Puerto Rico","nodes":1,"customers":1,"regions":1},{"cc":"DO","name":"República Dominicana","nodes":2,"customers":2,"regions":2},{"cc":"VG","name":"Islas Vírgenes Británicas","nodes":1,"customers":1,"regions":1},{"cc":"JM","name":"Jamaica","nodes":2,"customers":1,"regions":2},{"cc":"GT","name":"Guatemala","nodes":10,"customers":3,"regions":1},{"cc":"SV","name":"El Salvador","nodes":0,"customers":1,"regions":1},{"cc":"GD","name":"Granada","nodes":13,"customers":1,"regions":1},{"cc":"CR","name":"Costa Rica","nodes":254,"customers":4,"regions":3},{"cc":"PA","name":"Panamá","nodes":1,"customers":1,"regions":1},{"cc":"CO","name":"Colombia","nodes":8076,"customers":15,"regions":11},{"cc":"SR","name":"Surinam","nodes":1,"customers":1,"regions":1},{"cc":"EC","name":"Ecuador","nodes":1931,"customers":2,"regions":2},{"cc":"PE","name":"Perú","nodes":3283,"customers":5,"regions":4},{"cc":"UY","name":"Uruguay","nodes":562,"customers":4,"regions":4},{"cc":"CL","name":"Chile","nodes":12469,"customers":14,"regions":6}],"regions":[{"cc":"MX","country":"México","region":"Oaxaca","unit":"Estado","lat":17.092,"lon":-96.718,"nodes":15644,"customers":2,"cities":["San Andres Huayapam","Fraccionamiento Riberas de San Jeronimo","San Agustin de las Juntas"]},{"cc":"CL","country":"Chile","region":"Región Metropolitana","unit":"Región","lat":-33.543,"lon":-70.772,"nodes":12182,"customers":9,"cities":["Lo Prado","Penaflor","Puente Alto"]},{"cc":"CO","country":"Colombia","region":"Risaralda","unit":"Departamento","lat":4.804,"lon":-75.704,"nodes":3213,"customers":1,"cities":["Pereira","Dos Quebradas"]},{"cc":"MX","country":"México","region":"Ciudad de México","unit":"Estado","lat":19.421,"lon":-99.2,"nodes":2625,"customers":8,"cities":["Polanco","Azcapotzalco","Tlalpan"]},{"cc":"PE","country":"Perú","region":"Lima","unit":"Región","lat":-12.346,"lon":-76.765,"nodes":2286,"customers":3,"cities":["Santa Maria","San Luis","San Vicente de Canete"]},{"cc":"EC","country":"Ecuador","region":"Guayas","unit":"Provincia","lat":-2.206,"lon":-79.966,"nodes":1891,"customers":2,"cities":["Guayaquil","La Libertad"]},{"cc":"CO","country":"Colombia","region":"Antioquia","unit":"Departamento","lat":6.275,"lon":-75.527,"nodes":1517,"customers":2,"cities":["Medellin","San Rafael","Itagui"]},{"cc":"CO","country":"Colombia","region":"Caldas","unit":"Departamento","lat":5.384,"lon":-74.842,"nodes":1508,"customers":2,"cities":["La Dorada","Manizales","Villamaria"]},{"cc":"CO","country":"Colombia","region":"Bolívar","unit":"Departamento","lat":10.337,"lon":-75.448,"nodes":1080,"customers":6,"cities":["Cartagena","Turbaco","Arjona"]},{"cc":"PE","country":"Perú","region":"La Libertad","unit":"Región","lat":-8.11,"lon":-79.0,"nodes":995,"customers":2,"cities":["El Porvenir","Trujillo","Huanchaco"]},{"cc":"CO","country":"Colombia","region":"Cundinamarca","unit":"Departamento","lat":5.07,"lon":-74.077,"nodes":669,"customers":4,"cities":["Zipaquira","Puerto Salgar","Chia"]},{"cc":"UY","country":"Uruguay","region":"Paysandú","unit":"Departamento","lat":-32.304,"lon":-58.095,"nodes":457,"customers":2,"cities":["Paysandu","Porvenir"]},{"cc":"CL","country":"Chile","region":"Región de Valparaíso","unit":"Región","lat":-33.03,"lon":-71.562,"nodes":259,"customers":9,"cities":["Valparaiso","Vina del Mar","San Antonio"]},{"cc":"CR","country":"Costa Rica","region":"Alajuela","unit":"Provincia","lat":9.973,"lon":-84.348,"nodes":164,"customers":4,"cities":["Carrillos","Atenas","Orotina"]},{"cc":"UY","country":"Uruguay","region":"Río Negro","unit":"Departamento","lat":-33.1,"lon":-57.439,"nodes":95,"customers":2,"cities":["Young"]},{"cc":"MX","country":"México","region":"Estado de México","unit":"Estado","lat":19.512,"lon":-98.984,"nodes":68,"customers":5,"cities":["Colonia Guadalupe Victoria","Santo Domingo de Guzman","San Jose del Puente"]},{"cc":"MX","country":"México","region":"Nuevo León","unit":"Estado","lat":25.799,"lon":-100.0,"nodes":67,"customers":3,"cities":["Pesqueria","San Antonio"]},{"cc":"CR","country":"Costa Rica","region":"San José","unit":"Provincia","lat":9.94,"lon":-84.185,"nodes":65,"customers":1,"cities":["Santa Ana","San Jose"]},{"cc":"CO","country":"Colombia","region":"Valle del Cauca","unit":"Departamento","lat":4.687,"lon":-75.786,"nodes":58,"customers":3,"cities":["Ulloa","Cartago","Yumbo"]},{"cc":"EC","country":"Ecuador","region":"Santa Elena","unit":"Provincia","lat":-2.21,"lon":-81.0,"nodes":40,"customers":1,"cities":["Salinas"]},{"cc":"BS","country":"Bahamas","region":"Nueva Providencia","unit":"Distrito","lat":25.1,"lon":-77.3,"nodes":26,"customers":2,"cities":["Nassau"]},{"cc":"CR","country":"Costa Rica","region":"Heredia","unit":"Provincia","lat":9.96,"lon":-84.3,"nodes":25,"customers":1,"cities":["Colon"]},{"cc":"MX","country":"México","region":"Veracruz","unit":"Estado","lat":18.1,"lon":-94.4,"nodes":23,"customers":1,"cities":["Villa Nanchital"]},{"cc":"CO","country":"Colombia","region":"Santander","unit":"Departamento","lat":7.066,"lon":-73.865,"nodes":20,"customers":1,"cities":["Barrancabermeja"]},{"cc":"CL","country":"Chile","region":"Región de O'Higgins","unit":"Región","lat":-34.047,"lon":-70.765,"nodes":17,"customers":2,"cities":["Graneros","Santa Cruz"]},{"cc":"GD","country":"Granada","region":"San Patricio","unit":"Parroquia","lat":12.2,"lon":-61.6,"nodes":13,"customers":1,"cities":["Sauteurs"]},{"cc":"MX","country":"México","region":"Hidalgo","unit":"Estado","lat":20.2,"lon":-99.2,"nodes":13,"customers":1,"cities":["Colonia Tenhe"]},{"cc":"GT","country":"Guatemala","region":"Guatemala (depto.)","unit":"Departamento","lat":14.6,"lon":-90.5,"nodes":10,"customers":3,"cities":["Santa Catarina Pinula"]},{"cc":"MX","country":"México","region":"Sonora","unit":"Estado","lat":29.1,"lon":-111.0,"nodes":10,"customers":1,"cities":["Hermosillo"]},{"cc":"MX","country":"México","region":"Baja California","unit":"Estado","lat":32.5,"lon":-117.0,"nodes":9,"customers":2,"cities":["Tijuana"]},{"cc":"UY","country":"Uruguay","region":"Canelones","unit":"Departamento","lat":-34.8,"lon":-56.2,"nodes":9,"customers":3,"cities":["La Paz"]},{"cc":"MX","country":"México","region":"Puebla","unit":"Estado","lat":19.0,"lon":-98.3,"nodes":8,"customers":1,"cities":["Santa Clara"]},{"cc":"MX","country":"México","region":"Quintana Roo","unit":"Estado","lat":21.2,"lon":-86.9,"nodes":8,"customers":1,"cities":["Zona Urbana Ejido Isla Mujeres"]},{"cc":"CL","country":"Chile","region":"Región del Biobío","unit":"Región","lat":-37.26,"lon":-72.58,"nodes":5,"customers":1,"cities":["Nacimiento","Bulnes"]},{"cc":"CO","country":"Colombia","region":"Tolima","unit":"Departamento","lat":4.432,"lon":-75.2,"nodes":5,"customers":1,"cities":["Ibague"]},{"cc":"CL","country":"Chile","region":"Región del Maule","unit":"Región","lat":-35.1,"lon":-71.4,"nodes":4,"customers":1,"cities":["Molina"]},{"cc":"CO","country":"Colombia","region":"Atlántico","unit":"Departamento","lat":11.0,"lon":-74.8,"nodes":3,"customers":1,"cities":["Barranquilla"]},{"cc":"CL","country":"Chile","region":"Región de Coquimbo","unit":"Región","lat":-30.2,"lon":-71.4,"nodes":2,"customers":1,"cities":["Coquimbo"]},{"cc":"CO","country":"Colombia","region":"Bogotá D.C.","unit":"Departamento","lat":4.665,"lon":-74.1,"nodes":2,"customers":2,"cities":["Bogota"]},{"cc":"BS","country":"Bahamas","region":"Mayaguana","unit":"Distrito","lat":24.0,"lon":-72.3,"nodes":1,"customers":1,"cities":["Abraham's Bay"]},{"cc":"CO","country":"Colombia","region":"Guaviare","unit":"Departamento","lat":2.58,"lon":-72.6,"nodes":1,"customers":1,"cities":["San Jose del Guaviare"]},{"cc":"DO","country":"República Dominicana","region":"Distrito Nacional","unit":"Provincia","lat":18.5,"lon":-69.9,"nodes":1,"customers":1,"cities":["Ensanche Luperon"]},{"cc":"DO","country":"República Dominicana","region":"San Juan","unit":"Provincia","lat":18.6,"lon":-68.4,"nodes":1,"customers":1,"cities":["Punta Cana"]},{"cc":"JM","country":"Jamaica","region":"Kingston","unit":"Parroquia","lat":18.0,"lon":-76.8,"nodes":1,"customers":1,"cities":["Kingston"]},{"cc":"JM","country":"Jamaica","region":"Saint Andrew","unit":"Parroquia","lat":18.0,"lon":-76.7,"nodes":1,"customers":1,"cities":["Gordon Town"]},{"cc":"MX","country":"México","region":"Coahuila","unit":"Estado","lat":25.4,"lon":-101.0,"nodes":1,"customers":1,"cities":["Saltillo"]},{"cc":"PA","country":"Panamá","region":"Panamá (prov.)","unit":"Provincia","lat":8.99,"lon":-79.5,"nodes":1,"customers":1,"cities":["Panama"]},{"cc":"PE","country":"Perú","region":"Callao","unit":"Región","lat":-12.1,"lon":-77.1,"nodes":1,"customers":1,"cities":["Callao"]},{"cc":"PE","country":"Perú","region":"San Martín","unit":"Región","lat":-6.06,"lon":-77.2,"nodes":1,"customers":1,"cities":["Rioja"]},{"cc":"PR","country":"Puerto Rico","region":"Aguadilla","unit":"Municipio","lat":18.9,"lon":-67.5,"nodes":1,"customers":1,"cities":["San Antonio"]},{"cc":"SR","country":"Surinam","region":"Paramaribo","unit":"Distrito","lat":5.87,"lon":-55.2,"nodes":1,"customers":1,"cities":["Paramaribo"]},{"cc":"UY","country":"Uruguay","region":"San José","unit":"Departamento","lat":-34.5,"lon":-56.8,"nodes":1,"customers":1,"cities":["Rafael Perazza"]},{"cc":"VG","country":"Islas Vírgenes Británicas","region":"Road Town","unit":"Territorio","lat":18.4,"lon":-64.6,"nodes":1,"customers":1,"cities":["Road Town"]},{"cc":"SV","country":"El Salvador","region":"San Salvador","unit":"Departamento","lat":13.69,"lon":-89.19,"nodes":0,"customers":1,"cities":["San Salvador"]}]};
+const GEO = [{"cc":null,"p":[[[-65.5,-55.2],[-66.45,-55.25],[-66.96,-54.9],[-67.56,-54.87],[-68.63,-54.87],[-68.63,-52.64],[-68.25,-53.1],[-67.75,-53.85],[-66.45,-54.45],[-65.05,-54.7],[-65.5,-55.2]],[[-64.96,-22.08],[-64.38,-22.8],[-63.99,-21.99],[-62.85,-22.03],[-62.69,-22.25],[-60.85,-23.88],[-60.03,-24.03],[-58.81,-24.77],[-57.78,-25.16],[-57.63,-25.6],[-58.62,-27.12],[-57.61,-27.4],[-56.49,-27.55],[-55.7,-27.39],[-54.79,-26.62],[-54.63,-25.74],[-54.13,-25.55],[-53.63,-26.12],[-53.65,-26.92],[-54.49,-27.47],[-55.16,-27.88],[-56.29,-28.85],[-57.63,-30.22],[-57.87,-31.02],[-58.14,-32.04],[-58.13,-33.04],[-58.35,-33.26],[-58.43,-33.91],[-58.5,-34.43],[-57.23,-35.29],[-57.36,-35.98],[-56.74,-36.41],[-56.79,-36.9],[-57.75,-38.18],[-59.23,-38.72],[-61.24,-38.93],[-62.34,-38.83],[-62.13,-39.42],[-62.33,-40.17],[-62.15,-40.68],[-62.75,-41.03],[-63.77,-41.17],[-64.73,-40.8],[-65.12,-41.06],[-64.98,-42.06],[-64.3,-42.36],[-63.76,-42.04],[-63.46,-42.56],[-64.38,-42.87],[-65.18,-43.5],[-65.33,-44.5],[-65.57,-45.04],[-66.51,-45.04],[-67.29,-45.55],[-67.58,-46.3],[-66.6,-47.03],[-65.64,-47.24],[-65.99,-48.13],[-67.17,-48.7],[-67.82,-49.87],[-68.73,-50.26],[-69.14,-50.73],[-68.82,-51.77],[-68.15,-52.35],[-68.57,-52.3],[-69.5,-52.14],[-71.91,-52.01],[-72.33,-51.43],[-72.31,-50.68],[-72.98,-50.74],[-73.33,-50.38],[-73.42,-49.32],[-72.65,-48.88],[-72.33,-48.24],[-72.45,-47.74],[-71.92,-46.88],[-71.55,-45.56],[-71.66,-44.97],[-71.22,-44.78],[-71.33,-44.41],[-71.79,-44.21],[-71.46,-43.79],[-71.92,-43.41],[-72.15,-42.25],[-71.75,-42.05],[-71.92,-40.83],[-71.68,-39.81],[-71.41,-38.92],[-70.81,-38.55],[-71.12,-37.58],[-71.12,-36.66],[-70.36,-36.01],[-70.39,-35.17],[-69.82,-34.19],[-69.81,-33.27],[-70.07,-33.09],[-70.54,-31.37],[-69.92,-30.34],[-70.01,-29.37],[-69.66,-28.46],[-69.0,-27.52],[-68.3,-26.9],[-68.59,-26.51],[-68.39,-26.19],[-68.42,-24.52],[-67.33,-24.03],[-66.99,-22.99],[-67.11,-22.74],[-66.27,-21.83],[-64.96,-22.08]]]},{"cc":null,"p":[[[-89.14,17.81],[-89.15,17.96],[-89.03,18.0],[-88.85,17.88],[-88.49,18.49],[-88.3,18.5],[-88.3,18.35],[-88.11,18.35],[-88.12,18.08],[-88.29,17.64],[-88.2,17.49],[-88.3,17.13],[-88.36,16.53],[-88.55,16.27],[-88.73,16.23],[-88.93,15.89],[-89.23,15.89],[-89.15,17.02],[-89.14,17.81]]]},{"cc":null,"p":[[[-62.85,-22.03],[-63.99,-21.99],[-64.38,-22.8],[-64.96,-22.08],[-66.27,-21.83],[-67.11,-22.74],[-67.83,-22.87],[-68.22,-21.49],[-68.76,-20.37],[-68.44,-19.41],[-68.97,-18.98],[-69.1,-18.26],[-69.59,-17.58],[-68.96,-16.5],[-69.39,-15.66],[-69.16,-15.32],[-69.34,-14.95],[-68.95,-14.45],[-68.93,-13.6],[-68.88,-12.9],[-68.67,-12.56],[-69.53,-10.95],[-68.79,-11.04],[-68.27,-11.01],[-68.05,-10.71],[-67.17,-10.31],[-66.65,-9.93],[-65.34,-9.76],[-65.44,-10.51],[-65.32,-10.9],[-65.4,-11.57],[-64.32,-12.46],[-63.2,-12.63],[-62.8,-13.0],[-62.13,-13.2],[-61.71,-13.49],[-61.08,-13.48],[-60.5,-13.78],[-60.46,-14.35],[-60.26,-14.65],[-60.25,-15.08],[-60.54,-15.09],[-60.16,-16.26],[-58.24,-16.3],[-58.39,-16.88],[-58.28,-17.27],[-57.73,-17.55],[-57.5,-18.17],[-57.68,-18.96],[-57.95,-19.4],[-57.85,-19.97],[-58.17,-20.18],[-58.18,-19.87],[-59.12,-19.36],[-60.04,-19.34],[-61.79,-19.63],[-62.27,-20.51],[-62.29,-21.05],[-62.69,-22.25],[-62.85,-22.03]]]},{"cc":null,"p":[[[-57.63,-30.22],[-56.29,-28.85],[-55.16,-27.88],[-54.49,-27.47],[-53.65,-26.92],[-53.63,-26.12],[-54.13,-25.55],[-54.63,-25.74],[-54.43,-25.16],[-54.29,-24.57],[-54.29,-24.02],[-54.65,-23.84],[-55.03,-24.0],[-55.4,-23.96],[-55.52,-23.57],[-55.61,-22.66],[-55.8,-22.36],[-56.47,-22.09],[-56.88,-22.28],[-57.94,-22.09],[-57.87,-20.73],[-58.17,-20.18],[-57.85,-19.97],[-57.95,-19.4],[-57.68,-18.96],[-57.5,-18.17],[-57.73,-17.55],[-58.28,-17.27],[-58.39,-16.88],[-58.24,-16.3],[-60.16,-16.26],[-60.54,-15.09],[-60.25,-15.08],[-60.26,-14.65],[-60.46,-14.35],[-60.5,-13.78],[-61.08,-13.48],[-61.71,-13.49],[-62.13,-13.2],[-62.8,-13.0],[-63.2,-12.63],[-64.32,-12.46],[-65.4,-11.57],[-65.32,-10.9],[-65.44,-10.51],[-65.34,-9.76],[-66.65,-9.93],[-67.17,-10.31],[-68.05,-10.71],[-68.27,-11.01],[-68.79,-11.04],[-69.53,-10.95],[-70.09,-11.12],[-70.55,-11.01],[-70.48,-9.49],[-71.3,-10.08],[-72.18,-10.05],[-72.56,-9.52],[-73.23,-9.46],[-73.02,-9.03],[-73.57,-8.42],[-73.99,-7.52],[-73.72,-7.34],[-73.72,-6.92],[-73.12,-6.63],[-73.22,-6.09],[-72.96,-5.74],[-72.89,-5.27],[-71.75,-4.59],[-70.93,-4.4],[-70.79,-4.25],[-69.89,-4.3],[-69.44,-1.56],[-69.42,-1.12],[-69.58,-0.55],[-70.02,-0.19],[-70.02,0.54],[-69.45,0.71],[-69.25,0.6],[-69.22,0.99],[-69.8,1.09],[-69.82,1.71],[-67.87,1.69],[-67.54,2.04],[-67.26,1.72],[-67.07,1.13],[-66.88,1.25],[-66.33,0.72],[-65.55,0.79],[-65.35,1.1],[-64.61,1.33],[-64.2,1.49],[-64.08,1.92],[-63.37,2.2],[-63.42,2.41],[-64.27,2.5],[-64.41,3.13],[-64.37,3.8],[-64.82,4.06],[-64.63,4.15],[-63.89,4.02],[-63.09,3.77],[-62.8,4.01],[-62.09,4.16],[-60.97,4.54],[-60.6,4.92],[-60.73,5.2],[-60.21,5.24],[-59.98,5.01],[-60.11,4.57],[-59.77,4.42],[-59.54,3.96],[-59.82,3.61],[-59.97,2.76],[-59.72,2.25],[-59.65,1.79],[-59.03,1.32],[-58.54,1.27],[-58.43,1.46],[-58.11,1.51],[-57.66,1.68],[-57.34,1.95],[-56.78,1.86],[-56.54,1.9],[-56.0,1.82],[-55.91,2.02],[-56.07,2.22],[-55.97,2.51],[-55.57,2.42],[-55.1,2.52],[-54.52,2.31],[-54.09,2.11],[-53.78,2.38],[-53.55,2.33],[-53.42,2.05],[-52.94,2.12],[-52.56,2.5],[-52.25,3.24],[-51.66,4.16],[-51.32,4.2],[-51.07,3.65],[-50.51,1.9],[-49.97,1.74],[-49.95,1.05],[-50.7,0.22],[-50.39,-0.08],[-48.62,-0.24],[-48.58,-1.24],[-47.82,-0.58],[-46.57,-0.94],[-44.91,-1.55],[-44.42,-2.14],[-44.58,-2.69],[-43.42,-2.38],[-41.47,-2.91],[-39.98,-2.87],[-38.5,-3.7],[-37.22,-4.82],[-36.45,-5.11],[-35.6,-5.15],[-35.24,-5.46],[-34.9,-6.74],[-34.73,-7.34],[-35.13,-9.0],[-35.64,-9.65],[-37.05,-11.04],[-37.68,-12.17],[-38.42,-13.04],[-38.67,-13.06],[-38.95,-13.79],[-38.88,-15.67],[-39.16,-17.21],[-39.27,-17.87],[-39.58,-18.26],[-39.76,-19.6],[-40.77,-20.9],[-40.94,-21.94],[-41.75,-22.37],[-41.99,-22.97],[-43.07,-22.97],[-44.65,-23.35],[-45.35,-23.8],[-46.47,-24.09],[-47.65,-24.89],[-48.5,-25.88],[-48.64,-26.62],[-48.47,-27.18],[-48.66,-28.19],[-48.89,-28.67],[-49.59,-29.22],[-50.7,-30.98],[-51.58,-31.78],[-52.26,-32.25],[-52.71,-33.2],[-53.37,-33.77],[-53.65,-33.2],[-53.21,-32.73],[-53.79,-32.05],[-54.57,-31.49],[-55.6,-30.85],[-55.97,-30.88],[-56.98,-30.11],[-57.63,-30.22]]]},{"cc":"CL","p":[[[-68.63,-52.64],[-68.63,-54.87],[-67.56,-54.87],[-66.96,-54.9],[-67.29,-55.3],[-68.15,-55.61],[-68.64,-55.58],[-69.23,-55.5],[-69.96,-55.2],[-71.01,-55.05],[-72.26,-54.5],[-73.29,-53.96],[-74.66,-52.84],[-73.84,-53.05],[-72.43,-53.72],[-71.11,-54.07],[-70.59,-53.62],[-70.27,-52.93],[-69.35,-52.52],[-68.63,-52.64]],[[-68.22,-21.49],[-67.83,-22.87],[-67.11,-22.74],[-66.99,-22.99],[-67.33,-24.03],[-68.42,-24.52],[-68.39,-26.19],[-68.59,-26.51],[-68.3,-26.9],[-69.0,-27.52],[-69.66,-28.46],[-70.01,-29.37],[-69.92,-30.34],[-70.54,-31.37],[-70.07,-33.09],[-69.81,-33.27],[-69.82,-34.19],[-70.39,-35.17],[-70.36,-36.01],[-71.12,-36.66],[-71.12,-37.58],[-70.81,-38.55],[-71.41,-38.92],[-71.68,-39.81],[-71.92,-40.83],[-71.75,-42.05],[-72.15,-42.25],[-71.92,-43.41],[-71.46,-43.79],[-71.79,-44.21],[-71.33,-44.41],[-71.22,-44.78],[-71.66,-44.97],[-71.55,-45.56],[-71.92,-46.88],[-72.45,-47.74],[-72.33,-48.24],[-72.65,-48.88],[-73.42,-49.32],[-73.33,-50.38],[-72.98,-50.74],[-72.31,-50.68],[-72.33,-51.43],[-71.91,-52.01],[-69.5,-52.14],[-68.57,-52.3],[-69.46,-52.29],[-69.94,-52.54],[-70.85,-52.9],[-71.01,-53.83],[-71.43,-53.86],[-72.56,-53.53],[-73.7,-52.84],[-74.95,-52.26],[-75.26,-51.63],[-74.98,-51.04],[-75.48,-50.38],[-75.61,-48.67],[-75.18,-47.71],[-74.13,-46.94],[-75.64,-46.65],[-74.69,-45.76],[-74.35,-44.1],[-73.24,-44.45],[-72.72,-42.38],[-73.39,-42.12],[-73.7,-43.37],[-74.33,-43.22],[-74.02,-41.79],[-73.68,-39.94],[-73.22,-39.26],[-73.51,-38.28],[-73.59,-37.16],[-73.17,-37.12],[-72.55,-35.51],[-71.86,-33.91],[-71.44,-32.42],[-71.67,-30.92],[-71.37,-30.1],[-71.49,-28.86],[-70.91,-27.64],[-70.72,-25.71],[-70.4,-23.63],[-70.09,-21.39],[-70.16,-19.76],[-70.37,-18.35],[-69.86,-18.09],[-69.59,-17.58],[-69.1,-18.26],[-68.97,-18.98],[-68.44,-19.41],[-68.76,-20.37],[-68.22,-21.49]]]},{"cc":"CO","p":[[[-75.37,-0.15],[-75.8,0.08],[-76.29,0.42],[-76.58,0.26],[-77.42,0.4],[-77.67,0.83],[-77.86,0.81],[-78.86,1.38],[-78.99,1.69],[-78.62,1.77],[-78.66,2.27],[-78.43,2.63],[-77.93,2.7],[-77.51,3.33],[-77.13,3.85],[-77.5,4.09],[-77.31,4.67],[-77.53,5.58],[-77.32,5.85],[-77.48,6.69],[-77.88,7.22],[-77.75,7.71],[-77.43,7.64],[-77.24,7.94],[-77.47,8.52],[-77.35,8.67],[-76.84,8.64],[-76.09,9.34],[-75.67,9.44],[-75.66,9.77],[-75.48,10.62],[-74.91,11.08],[-74.28,11.1],[-74.2,11.31],[-73.41,11.23],[-72.63,11.73],[-72.24,11.96],[-71.75,12.44],[-71.4,12.38],[-71.14,12.11],[-71.33,11.78],[-71.97,11.61],[-72.23,11.11],[-72.61,10.82],[-72.91,10.45],[-73.03,9.74],[-73.3,9.15],[-72.79,9.09],[-72.66,8.63],[-72.44,8.41],[-72.36,8.0],[-72.48,7.63],[-72.44,7.42],[-72.2,7.34],[-71.96,6.99],[-70.67,7.09],[-70.09,6.96],[-69.39,6.1],[-68.99,6.21],[-68.27,6.15],[-67.7,6.27],[-67.34,6.1],[-67.52,5.56],[-67.74,5.22],[-67.82,4.5],[-67.62,3.84],[-67.34,3.54],[-67.3,3.32],[-67.81,2.82],[-67.45,2.6],[-67.18,2.25],[-66.88,1.25],[-67.07,1.13],[-67.26,1.72],[-67.54,2.04],[-67.87,1.69],[-69.82,1.71],[-69.8,1.09],[-69.22,0.99],[-69.25,0.6],[-69.45,0.71],[-70.02,0.54],[-70.02,-0.19],[-69.58,-0.55],[-69.42,-1.12],[-69.44,-1.56],[-69.89,-4.3],[-70.39,-3.77],[-70.69,-3.74],[-70.05,-2.73],[-70.81,-2.26],[-71.41,-2.34],[-71.77,-2.17],[-72.33,-2.43],[-73.07,-2.31],[-73.66,-1.26],[-74.12,-1.0],[-74.44,-0.53],[-75.11,-0.06],[-75.37,-0.15]]]},{"cc":"CR","p":[[[-82.97,8.23],[-83.51,8.45],[-83.71,8.66],[-83.6,8.83],[-83.63,9.05],[-83.91,9.29],[-84.3,9.49],[-84.65,9.62],[-84.71,9.91],[-84.98,10.09],[-84.91,9.8],[-85.11,9.56],[-85.34,9.83],[-85.66,9.93],[-85.8,10.13],[-85.79,10.44],[-85.66,10.75],[-85.94,10.9],[-85.71,11.09],[-85.56,11.22],[-84.9,10.95],[-84.67,11.08],[-84.36,11.0],[-84.19,10.79],[-83.9,10.73],[-83.66,10.94],[-83.4,10.4],[-83.02,9.99],[-82.55,9.57],[-82.93,9.48],[-82.93,9.07],[-82.72,8.93],[-82.87,8.81],[-82.83,8.63],[-82.91,8.42],[-82.97,8.23]]]},{"cc":null,"p":[[[-82.27,23.19],[-81.4,23.12],[-80.62,23.11],[-79.68,22.77],[-79.28,22.4],[-78.35,22.51],[-77.99,22.28],[-77.15,21.66],[-76.52,21.21],[-76.19,21.22],[-75.6,21.02],[-75.67,20.74],[-74.93,20.69],[-74.18,20.28],[-74.3,20.05],[-74.96,19.92],[-75.63,19.87],[-76.32,19.95],[-77.76,19.86],[-77.09,20.41],[-77.49,20.67],[-78.14,20.74],[-78.48,21.03],[-78.72,21.6],[-79.28,21.56],[-80.22,21.83],[-80.52,22.04],[-81.82,22.19],[-82.17,22.39],[-81.8,22.64],[-82.78,22.69],[-83.49,22.17],[-83.91,22.15],[-84.05,21.91],[-84.55,21.8],[-84.97,21.9],[-84.45,22.2],[-84.23,22.57],[-83.78,22.79],[-83.27,22.98],[-82.51,23.08],[-82.27,23.19]]]},{"cc":"DO","p":[[[-71.71,19.71],[-71.59,19.88],[-70.81,19.88],[-70.21,19.62],[-69.95,19.65],[-69.77,19.29],[-69.22,19.31],[-69.25,19.02],[-68.81,18.98],[-68.32,18.61],[-68.69,18.21],[-69.16,18.42],[-69.62,18.38],[-69.95,18.43],[-70.13,18.25],[-70.52,18.18],[-70.67,18.43],[-71.0,18.28],[-71.4,17.6],[-71.66,17.76],[-71.71,18.04],[-71.69,18.32],[-71.95,18.62],[-71.7,18.79],[-71.62,19.17],[-71.71,19.71]]]},{"cc":"EC","p":[[[-80.3,-3.4],[-79.77,-2.66],[-79.99,-2.22],[-80.37,-2.69],[-80.97,-2.25],[-80.76,-1.97],[-80.93,-1.06],[-80.58,-0.91],[-80.4,-0.28],[-80.02,0.36],[-80.09,0.77],[-79.54,0.98],[-78.86,1.38],[-77.86,0.81],[-77.67,0.83],[-77.42,0.4],[-76.58,0.26],[-76.29,0.42],[-75.8,0.08],[-75.37,-0.15],[-75.23,-0.91],[-75.54,-1.56],[-76.64,-2.61],[-77.84,-3.0],[-78.45,-3.87],[-78.64,-4.55],[-79.21,-4.96],[-79.62,-4.45],[-80.03,-4.35],[-80.44,-4.43],[-80.47,-4.06],[-80.18,-3.82],[-80.3,-3.4]]]},{"cc":"GT","p":[[[-90.1,13.74],[-90.61,13.91],[-91.23,13.93],[-91.69,14.13],[-92.23,14.54],[-92.2,14.83],[-92.09,15.06],[-92.23,15.25],[-91.75,16.07],[-90.46,16.07],[-90.44,16.41],[-90.6,16.47],[-90.71,16.69],[-91.08,16.92],[-91.45,17.25],[-91.0,17.25],[-91.0,17.82],[-90.07,17.82],[-89.14,17.81],[-89.15,17.02],[-89.23,15.89],[-88.93,15.89],[-88.6,15.71],[-88.52,15.86],[-88.23,15.73],[-88.68,15.35],[-89.15,15.07],[-89.23,14.87],[-89.15,14.68],[-89.35,14.42],[-89.59,14.36],[-89.53,14.24],[-89.72,14.13],[-90.06,13.88],[-90.1,13.74]]]},{"cc":null,"p":[[[-52.56,2.5],[-52.94,2.12],[-53.42,2.05],[-53.55,2.33],[-53.78,2.38],[-54.09,2.11],[-54.52,2.31],[-54.27,2.74],[-54.18,3.19],[-54.01,3.62],[-54.4,4.21],[-54.48,4.9],[-53.96,5.76],[-53.62,5.65],[-52.88,5.41],[-51.82,4.57],[-51.66,4.16],[-52.25,3.24],[-52.56,2.5]]]},{"cc":null,"p":[[[-59.76,8.37],[-59.1,8.0],[-58.48,7.35],[-58.45,6.83],[-58.08,6.81],[-57.54,6.32],[-57.15,5.97],[-57.31,5.07],[-57.91,4.81],[-57.86,4.58],[-58.04,4.06],[-57.6,3.33],[-57.28,3.33],[-57.15,2.77],[-56.54,1.9],[-56.78,1.86],[-57.34,1.95],[-57.66,1.68],[-58.11,1.51],[-58.43,1.46],[-58.54,1.27],[-59.03,1.32],[-59.65,1.79],[-59.72,2.25],[-59.97,2.76],[-59.82,3.61],[-59.54,3.96],[-59.77,4.42],[-60.11,4.57],[-59.98,5.01],[-60.21,5.24],[-60.73,5.2],[-61.41,5.96],[-61.14,6.23],[-61.16,6.7],[-60.54,6.86],[-60.3,7.04],[-60.64,7.42],[-60.55,7.78],[-59.76,8.37]]]},{"cc":null,"p":[[[-87.32,12.98],[-87.49,13.3],[-87.79,13.38],[-87.72,13.79],[-87.86,13.89],[-88.07,13.96],[-88.5,13.85],[-88.54,13.98],[-88.84,14.14],[-89.06,14.34],[-89.35,14.42],[-89.15,14.68],[-89.23,14.87],[-89.15,15.07],[-88.68,15.35],[-88.23,15.73],[-87.9,15.86],[-87.62,15.88],[-87.52,15.8],[-87.37,15.85],[-86.9,15.76],[-86.44,15.78],[-86.12,15.89],[-86.0,16.01],[-85.68,15.95],[-85.44,15.89],[-85.18,15.91],[-84.98,16.0],[-84.53,15.86],[-84.37,15.84],[-84.06,15.65],[-83.77,15.42],[-83.41,15.27],[-83.15,15.0],[-83.49,15.02],[-83.63,14.88],[-83.98,14.75],[-84.23,14.75],[-84.45,14.62],[-84.65,14.67],[-84.82,14.82],[-85.05,14.55],[-85.17,14.35],[-85.51,14.08],[-85.7,13.96],[-85.8,13.84],[-86.1,14.04],[-86.31,13.77],[-86.52,13.78],[-86.76,13.75],[-86.73,13.26],[-86.88,13.25],[-87.01,13.03],[-87.32,12.98]]]},{"cc":null,"p":[[[-73.19,19.92],[-72.58,19.87],[-71.71,19.71],[-71.62,19.17],[-71.7,18.79],[-71.95,18.62],[-71.69,18.32],[-71.71,18.04],[-72.37,18.21],[-72.84,18.15],[-73.45,18.22],[-73.92,18.03],[-74.46,18.34],[-74.37,18.66],[-73.45,18.53],[-72.69,18.45],[-72.33,18.67],[-72.79,19.1],[-72.78,19.48],[-73.42,19.64],[-73.19,19.92]]]},{"cc":"JM","p":[[[-77.57,18.49],[-76.9,18.4],[-76.37,18.16],[-76.2,17.89],[-76.9,17.87],[-77.21,17.7],[-77.77,17.86],[-78.34,18.23],[-78.22,18.45],[-77.8,18.52],[-77.57,18.49]]]},{"cc":"MX","p":[[[-97.14,25.87],[-97.53,24.99],[-97.7,24.27],[-97.78,22.93],[-97.87,22.44],[-97.7,21.9],[-97.39,21.41],[-97.19,20.64],[-96.53,19.89],[-96.29,19.32],[-95.9,18.83],[-94.84,18.56],[-94.43,18.14],[-93.55,18.42],[-92.79,18.52],[-92.04,18.7],[-91.41,18.88],[-90.77,19.28],[-90.53,19.87],[-90.45,20.71],[-90.28,21.0],[-89.6,21.26],[-88.54,21.49],[-87.66,21.46],[-87.05,21.54],[-86.81,21.33],[-86.85,20.85],[-87.38,20.26],[-87.62,19.65],[-87.44,19.47],[-87.59,19.04],[-87.84,18.26],[-88.09,18.52],[-88.3,18.5],[-88.49,18.49],[-88.85,17.88],[-89.03,18.0],[-89.15,17.96],[-89.14,17.81],[-90.07,17.82],[-91.0,17.82],[-91.0,17.25],[-91.45,17.25],[-91.08,16.92],[-90.71,16.69],[-90.6,16.47],[-90.44,16.41],[-90.46,16.07],[-91.75,16.07],[-92.23,15.25],[-92.09,15.06],[-92.2,14.83],[-92.23,14.54],[-93.36,15.62],[-93.88,15.94],[-94.69,16.2],[-95.25,16.13],[-96.05,15.75],[-96.56,15.65],[-97.26,15.92],[-98.01,16.11],[-98.95,16.57],[-99.7,16.71],[-100.83,17.17],[-101.67,17.65],[-101.92,17.92],[-102.48,17.98],[-103.5,18.29],[-103.92,18.75],[-104.99,19.32],[-105.49,19.95],[-105.73,20.43],[-105.4,20.53],[-105.5,20.82],[-105.27,21.08],[-105.27,21.42],[-105.6,21.87],[-105.69,22.27],[-106.03,22.77],[-106.91,23.77],[-107.92,24.55],[-108.4,25.17],[-109.26,25.58],[-109.44,25.82],[-109.29,26.44],[-109.8,26.68],[-110.39,27.16],[-110.64,27.86],[-111.18,27.94],[-111.76,28.47],[-112.23,28.95],[-112.27,29.27],[-112.81,30.02],[-113.16,30.79],[-113.15,31.17],[-113.87,31.57],[-114.21,31.52],[-114.78,31.8],[-114.94,31.39],[-114.77,30.91],[-114.67,30.16],[-114.33,29.75],[-113.59,29.06],[-113.42,28.83],[-113.27,28.75],[-113.14,28.41],[-112.96,28.43],[-112.76,27.78],[-112.46,27.53],[-112.24,27.17],[-111.62,26.66],[-111.28,25.73],[-110.99,25.29],[-110.71,24.83],[-110.66,24.3],[-110.17,24.27],[-109.77,23.81],[-109.41,23.36],[-109.43,23.19],[-109.85,22.82],[-110.03,22.82],[-110.3,23.43],[-110.95,24.0],[-111.67,24.48],[-112.18,24.74],[-112.15,25.47],[-112.3,26.01],[-112.78,26.32],[-113.46,26.77],[-113.6,26.64],[-113.85,26.9],[-114.47,27.14],[-115.06,27.72],[-114.57,27.74],[-114.2,28.12],[-114.16,28.57],[-114.93,29.28],[-115.52,29.56],[-115.89,30.18],[-116.26,30.84],[-116.72,31.64],[-117.13,32.54],[-115.99,32.61],[-114.72,32.72],[-114.81,32.53],[-113.3,32.04],[-111.02,31.33],[-109.03,31.34],[-108.24,31.34],[-108.24,31.75],[-106.51,31.75],[-106.14,31.4],[-105.63,31.08],[-105.04,30.64],[-104.71,30.12],[-104.46,29.57],[-103.94,29.27],[-103.11,28.97],[-102.48,29.76],[-101.66,29.78],[-100.96,29.38],[-100.46,28.7],[-100.11,28.11],[-99.52,27.54],[-99.3,26.84],[-99.02,26.37],[-98.24,26.06],[-97.53,25.84],[-97.14,25.87]]]},{"cc":null,"p":[[[-85.71,11.09],[-86.06,11.4],[-86.53,11.81],[-86.75,12.14],[-87.17,12.46],[-87.67,12.91],[-87.56,13.06],[-87.39,12.91],[-87.01,13.03],[-86.88,13.25],[-86.73,13.26],[-86.76,13.75],[-86.52,13.78],[-86.31,13.77],[-86.1,14.04],[-85.8,13.84],[-85.7,13.96],[-85.51,14.08],[-85.17,14.35],[-85.15,14.56],[-84.92,14.79],[-84.65,14.67],[-84.45,14.62],[-84.23,14.75],[-83.98,14.75],[-83.63,14.88],[-83.49,15.02],[-83.15,15.0],[-83.23,14.9],[-83.28,14.68],[-83.18,14.31],[-83.41,13.97],[-83.52,13.57],[-83.55,13.13],[-83.5,12.87],[-83.47,12.42],[-83.63,12.32],[-83.72,11.89],[-83.65,11.63],[-83.86,11.37],[-83.81,11.1],[-83.66,10.94],[-83.9,10.73],[-84.19,10.79],[-84.36,11.0],[-84.67,11.08],[-84.9,10.95],[-85.56,11.22],[-85.71,11.09]]]},{"cc":"PA","p":[[[-77.88,7.22],[-78.21,7.51],[-78.43,8.05],[-78.18,8.32],[-78.44,8.39],[-78.62,8.72],[-79.12,9.0],[-79.56,8.93],[-79.76,8.58],[-80.16,8.33],[-80.38,8.3],[-80.48,8.09],[-80.0,7.55],[-80.28,7.42],[-80.42,7.27],[-80.89,7.22],[-81.06,7.82],[-81.19,7.65],[-81.52,7.71],[-81.72,8.11],[-82.13,8.18],[-82.39,8.29],[-82.82,8.29],[-82.85,8.07],[-82.97,8.23],[-82.91,8.42],[-82.83,8.63],[-82.87,8.81],[-82.72,8.93],[-82.93,9.07],[-82.93,9.48],[-82.55,9.57],[-82.19,9.21],[-82.21,9.0],[-81.81,8.95],[-81.71,9.03],[-81.44,8.79],[-80.95,8.86],[-80.52,9.11],[-79.91,9.31],[-79.57,9.61],[-79.02,9.55],[-78.5,9.42],[-78.06,9.25],[-77.73,8.95],[-77.35,8.67],[-77.47,8.52],[-77.24,7.94],[-77.43,7.64],[-77.75,7.71],[-77.88,7.22]]]},{"cc":"PE","p":[[[-69.59,-17.58],[-69.86,-18.09],[-70.37,-18.35],[-71.38,-17.77],[-71.46,-17.36],[-73.44,-16.36],[-75.24,-15.27],[-76.01,-14.65],[-76.42,-13.82],[-76.26,-13.54],[-77.11,-12.22],[-78.09,-10.38],[-79.04,-8.39],[-79.45,-7.93],[-79.76,-7.19],[-80.54,-6.54],[-81.25,-6.14],[-80.93,-5.69],[-81.41,-4.74],[-81.1,-4.04],[-80.3,-3.4],[-80.18,-3.82],[-80.47,-4.06],[-80.44,-4.43],[-80.03,-4.35],[-79.62,-4.45],[-79.21,-4.96],[-78.64,-4.55],[-78.45,-3.87],[-77.84,-3.0],[-76.64,-2.61],[-75.54,-1.56],[-75.23,-0.91],[-75.37,-0.15],[-75.11,-0.06],[-74.44,-0.53],[-74.12,-1.0],[-73.66,-1.26],[-73.07,-2.31],[-72.33,-2.43],[-71.77,-2.17],[-71.41,-2.34],[-70.81,-2.26],[-70.05,-2.73],[-70.69,-3.74],[-70.39,-3.77],[-69.89,-4.3],[-70.79,-4.25],[-70.93,-4.4],[-71.75,-4.59],[-72.89,-5.27],[-72.96,-5.74],[-73.22,-6.09],[-73.12,-6.63],[-73.72,-6.92],[-73.72,-7.34],[-73.99,-7.52],[-73.57,-8.42],[-73.02,-9.03],[-73.23,-9.46],[-72.56,-9.52],[-72.18,-10.05],[-71.3,-10.08],[-70.48,-9.49],[-70.55,-11.01],[-70.09,-11.12],[-69.53,-10.95],[-68.67,-12.56],[-68.88,-12.9],[-68.93,-13.6],[-68.95,-14.45],[-69.34,-14.95],[-69.16,-15.32],[-69.39,-15.66],[-68.96,-16.5],[-69.59,-17.58]]]},{"cc":"PR","p":[[[-66.28,18.51],[-65.77,18.43],[-65.59,18.23],[-65.85,17.98],[-66.6,17.98],[-67.18,17.95],[-67.24,18.37],[-67.1,18.52],[-66.28,18.51]]]},{"cc":null,"p":[[[-62.69,-22.25],[-62.29,-21.05],[-62.27,-20.51],[-61.79,-19.63],[-60.04,-19.34],[-59.12,-19.36],[-58.18,-19.87],[-58.17,-20.18],[-57.87,-20.73],[-57.94,-22.09],[-56.88,-22.28],[-56.47,-22.09],[-55.8,-22.36],[-55.61,-22.66],[-55.52,-23.57],[-55.4,-23.96],[-55.03,-24.0],[-54.65,-23.84],[-54.29,-24.02],[-54.29,-24.57],[-54.43,-25.16],[-54.63,-25.74],[-54.79,-26.62],[-55.7,-27.39],[-56.49,-27.55],[-57.61,-27.4],[-58.62,-27.12],[-57.63,-25.6],[-57.78,-25.16],[-58.81,-24.77],[-60.03,-24.03],[-60.85,-23.88],[-62.69,-22.25]]]},{"cc":"SV","p":[[[-87.79,13.38],[-87.9,13.15],[-88.48,13.16],[-88.84,13.26],[-89.26,13.46],[-89.81,13.52],[-90.1,13.74],[-90.06,13.88],[-89.72,14.13],[-89.53,14.24],[-89.59,14.36],[-89.35,14.42],[-89.06,14.34],[-88.84,14.14],[-88.54,13.98],[-88.5,13.85],[-88.07,13.96],[-87.86,13.89],[-87.72,13.79],[-87.79,13.38]]]},{"cc":"SR","p":[[[-57.15,5.97],[-55.95,5.77],[-55.84,5.95],[-55.03,6.03],[-53.96,5.76],[-54.48,4.9],[-54.4,4.21],[-54.01,3.62],[-54.18,3.19],[-54.27,2.73],[-54.52,2.31],[-55.1,2.52],[-55.57,2.42],[-55.97,2.51],[-56.07,2.22],[-55.91,2.02],[-56.0,1.82],[-56.54,1.9],[-57.15,2.77],[-57.28,3.33],[-57.6,3.33],[-58.04,4.06],[-57.86,4.58],[-57.91,4.81],[-57.31,5.07],[-57.15,5.97]]]},{"cc":null,"p":[[[-61.68,10.76],[-61.1,10.89],[-60.9,10.86],[-60.94,10.11],[-61.77,10],[-61.95,10.09],[-61.66,10.37],[-61.68,10.76]]]},{"cc":"UY","p":[[[-57.63,-30.22],[-56.98,-30.11],[-55.97,-30.88],[-55.6,-30.85],[-54.57,-31.49],[-53.79,-32.05],[-53.21,-32.73],[-53.65,-33.2],[-53.37,-33.77],[-53.81,-34.4],[-54.94,-34.95],[-55.67,-34.75],[-56.22,-34.86],[-57.14,-34.43],[-57.82,-34.46],[-58.43,-33.91],[-58.35,-33.26],[-58.13,-33.04],[-58.14,-32.04],[-57.87,-31.02],[-57.63,-30.22]]]},{"cc":null,"p":[[[-71.33,11.78],[-71.36,11.54],[-71.95,11.42],[-71.62,10.97],[-71.63,10.45],[-72.07,9.87],[-71.7,9.07],[-71.26,9.14],[-71.04,9.86],[-71.35,10.21],[-71.4,10.97],[-70.16,11.38],[-70.29,11.85],[-69.94,12.16],[-69.58,11.46],[-68.88,11.44],[-68.23,10.89],[-68.19,10.55],[-67.3,10.55],[-66.23,10.65],[-65.66,10.2],[-64.89,10.08],[-64.33,10.39],[-64.32,10.64],[-63.08,10.7],[-61.88,10.72],[-62.73,10.42],[-62.39,9.95],[-61.59,9.87],[-60.83,9.38],[-60.67,8.58],[-60.15,8.6],[-59.76,8.37],[-60.55,7.78],[-60.64,7.42],[-60.3,7.04],[-60.54,6.86],[-61.16,6.7],[-61.14,6.23],[-61.41,5.96],[-60.73,5.2],[-60.6,4.92],[-60.97,4.54],[-62.09,4.16],[-62.8,4.01],[-63.09,3.77],[-63.89,4.02],[-64.63,4.15],[-64.82,4.06],[-64.37,3.8],[-64.41,3.13],[-64.27,2.5],[-63.42,2.41],[-63.37,2.2],[-64.08,1.92],[-64.2,1.49],[-64.61,1.33],[-65.35,1.1],[-65.55,0.79],[-66.33,0.72],[-66.88,1.25],[-67.18,2.25],[-67.45,2.6],[-67.81,2.82],[-67.3,3.32],[-67.34,3.54],[-67.62,3.84],[-67.82,4.5],[-67.74,5.22],[-67.52,5.56],[-67.34,6.1],[-67.7,6.27],[-68.27,6.15],[-68.99,6.21],[-69.39,6.1],[-70.09,6.96],[-70.67,7.09],[-71.96,6.99],[-72.2,7.34],[-72.44,7.42],[-72.48,7.63],[-72.36,8.0],[-72.44,8.41],[-72.66,8.63],[-72.79,9.09],[-73.3,9.15],[-73.03,9.74],[-72.91,10.45],[-72.61,10.82],[-72.23,11.11],[-71.97,11.61],[-71.33,11.78]]]}];
 
-    <div class="team-sub-label" data-i18n="about-do-label">What we do</div>
-    <div class="cap-grid">
-      <div class="cap-item">
-        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 18 0v4a2 2 0 0 1-2 2h-1v-6h3M3 12v4a2 2 0 0 0 2 2h1v-6H3"/></svg></div>
-        <h4 data-i18n="cap-support">Technical support</h4>
-        <p data-i18n="cap-support-d">Hands-on technical support in the field: installation, commissioning, training and issue resolution for clients and distributors.</p>
-      </div>
-      <div class="cap-item">
-        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 3l8 4v5c0 4.5-3 8-8 9-5-1-8-4.5-8-9V7l8-4z"/></svg></div>
-        <h4 data-i18n="cap-qa">Quality assurance</h4>
-        <p data-i18n="cap-qa-d">Field quality control, validating firmware, connectivity and electrical parameters on every deployment.</p>
-      </div>
-      <div class="cap-item">
-        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="6" cy="7" r="0.5"/></svg></div>
-        <h4 data-i18n="cap-deploy">Regional deployment</h4>
-        <p data-i18n="cap-deploy-d">Validation and rollout of new deployments across countries, with presence at industry events and expos.</p>
-      </div>
-      <div class="cap-item">
-        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9"/></svg></div>
-        <h4 data-i18n="cap-presales">Technical pre-sales</h4>
-        <p data-i18n="cap-presales-d">Technical review of tenders and technical-commercial strategy, providing differentiation versus competitors.</p>
-      </div>
-      <div class="cap-item">
-        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg></div>
-        <h4 data-i18n="cap-commercial">Commercial support</h4>
-        <p data-i18n="cap-commercial-d">Executive-level presentations to utilities and support to client and distributor relationships across the region.</p>
-      </div>
-      <div class="cap-item">
-        <div class="cap-ic"><svg viewBox="0 0 24 24"><path d="M14 6l4 4M3 21l9-9M14 6l4-4 3 3-4 4M14 6l-9 9-2 5 5-2"/></svg></div>
-        <h4 data-i18n="cap-tools">Tools & analytics</h4>
-        <p data-i18n="cap-tools-d">In-house analysis tools and automated reporting that cut turnaround time and improve diagnostic consistency.</p>
-      </div>
-    </div>
+/* ══════════ MOTOR (funciones puras — testeables sin DOM) ══════════ */
+const D2R = Math.PI/180;
+function projX(lon){ return lon; }
+function projY(lat){ const p=Math.max(-84,Math.min(84,lat))*D2R; return -Math.log(Math.tan(Math.PI/4+p/2))/D2R; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+function easeInOut(t){ return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+function easeOut(t){ return 1-Math.pow(1-t,3); }
 
-    <div class="team-sub-label" data-i18n="about-prod-label">Product lines</div>
-    <div class="lines-grid">
-      <div class="line-item">
-        <span class="line-tag">Smart Streetlighting</span>
-        <h4>Ubicells</h4>
-        <p data-i18n="prod-ubicells-d">Smart streetlighting controllers that cut energy use and operating costs.</p>
-      </div>
-      <div class="line-item">
-        <span class="line-tag">Grid Monitoring</span>
-        <h4>DTM</h4>
-        <p data-i18n="prod-dtm-d">Transformer and grid monitoring telemetry.</p>
-      </div>
-    </div>
+function bboxOf(points){ // points: [[x,y],...] en espacio proyectado
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const [x,y] of points){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  return {x0,y0,x1,y1};
+}
+function camFit(bb, vw, vh, pad){ // devuelve {cx,cy,s}
+  const w=Math.max(bb.x1-bb.x0, .0001), h=Math.max(bb.y1-bb.y0, .0001);
+  const s=Math.min(vw*(1-pad*2)/w, vh*(1-pad*2)/h);
+  return {cx:(bb.x0+bb.x1)/2, cy:(bb.y0+bb.y1)/2, s};
+}
+function camLerp(a,b,t){ // interpolación con escala en espacio log (vuelo natural)
+  return {cx:lerp(a.cx,b.cx,t), cy:lerp(a.cy,b.cy,t),
+          s:Math.exp(lerp(Math.log(a.s),Math.log(b.s),t))};
+}
+function countryPoints(cc){ // todos los vértices proyectados de un país (silueta + regiones)
+  const pts=[];
+  for(const g of GEO){ if(g.cc===cc) for(const ring of g.p) for(const [lo,la] of ring) pts.push([projX(lo),projY(la)]); }
+  for(const r of DATA.regions){ if(r.cc===cc) pts.push([projX(r.lon),projY(r.lat)]); }
+  return pts;
+}
+function allPoints(){
+  const pts=[];
+  for(const r of DATA.regions) pts.push([projX(r.lon),projY(r.lat)]);
+  for(const g of GEO) for(const ring of g.p) for(const [lo,la] of ring) pts.push([projX(lo),projY(la)]);
+  return pts;
+}
+function buildTour(){ // paradas: intro → países por nodos desc → cierre
+  const stops=[{type:'intro',dur:3500}];
+  for(const c of DATA.countries){
+    stops.push({type:'country',cc:c.cc,c,dur:1000});
+  }
+  stops.push({type:'outro',dur:4000});
+  return stops;
+}
+function fmt(n){ return Number(n).toLocaleString('es-CL'); }
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-    <div class="how-band">
-      <div class="how-label" data-i18n="about-how-label">How we work</div>
-      <div class="how-ways">
-        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-1">Lean</span></h5><p data-i18n="way-1-d">A compact structure that covers the whole region without losing closeness to each project.</p></div>
-        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-2">End-to-end</span></h5><p data-i18n="way-2-d">From the first technical test to post-sales continuity: we own the full cycle.</p></div>
-        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-3">Regional technical face</span></h5><p data-i18n="way-3-d">Technical representation of Ubicquia before clients, distributors and industry executives.</p></div>
-        <div class="how-way"><h5><span class="dash">—</span> <span data-i18n="way-4">Results-oriented</span></h5><p data-i18n="way-4-d">Beyond transferring technical information: concrete impact on the customer experience and outcomes.</p></div>
-      </div>
-    </div>
+/* ══════════ ESTADO / SETUP ══════════ */
+const REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas=document.getElementById('stage'), ctx=canvas.getContext('2d');
+let VW=0,VH=0,DPR=1;
+const regionsP = DATA.regions.map(r=>({...r, x:projX(r.lon), y:projY(r.lat)}));
+const geoP = GEO.map(g=>({cc:g.cc, rings:g.p.map(ring=>ring.map(([lo,la])=>[projX(lo),projY(la)]))}));
+const ccWithGeo = new Set(GEO.filter(g=>g.cc).map(g=>g.cc));
+const TOUR = buildTour();
+const WORLD_BB = bboxOf(allPoints());
 
-    <div class="team-sub-label" data-i18n="contacts-label">Contacts</div>
-    <div class="contacts-grid">
-      <div class="contact-card">
-      <div class="contact-avatar">NC</div>
-      <div class="contact-info">
-      <div class="contact-name">Nicolás Cicinelli</div>
-      <div class="contact-role">Partner Sales Manager · LATAM</div>
-      <div class="contact-lines">
-      <a href="tel:+18573523957">+1 (857) 352-3957</a>
-      <a href="mailto:ncicinelli@ubicquia.com">ncicinelli@ubicquia.com</a>
-      </div>
-      </div>
-      <div class="contact-actions">
-      <a class="contact-btn wa" data-wa="18573523957" data-name="Nicolás" href="https://wa.me/18573523957?text=Hola%20Nicol%C3%A1s%2C%20te%20escribo%20desde%20griddata.cl." target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Nicolás Cicinelli">
-      <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
-      </a>
-      <a class="contact-btn mail" href="mailto:ncicinelli@ubicquia.com" title="Email" aria-label="Email Nicolás Cicinelli">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-      </a>
-      </div>
-      </div>
+// cámaras por parada (dependen del viewport → recalcular en resize)
+let camStops=[];
+function computeCams(){
+  camStops = TOUR.map(st=>{
+    if(st.type==='intro'||st.type==='outro') return camFit(WORLD_BB,VW,VH,0.07);
+    const pts=countryPoints(st.cc);
+    const bb=bboxOf(pts);
+    // países-punto (1 región): abrir la caja para no hacer zoom infinito
+    const minSpan = 3.2;
+    if(bb.x1-bb.x0<minSpan){const m=(minSpan-(bb.x1-bb.x0))/2;bb.x0-=m;bb.x1+=m;}
+    if(bb.y1-bb.y0<minSpan){const m=(minSpan-(bb.y1-bb.y0))/2;bb.y0-=m;bb.y1+=m;}
+    const fit = camFit(bb,VW,VH,0.16);
+    const sWorld = camFit(WORLD_BB,VW,VH,0.07).s;
+    fit.s = Math.min(fit.s, sWorld*2.5); // centra el país sin perder el continente
+    return fit;
+  });
+}
 
-      <div class="contact-card">
-      <div class="contact-avatar">EB</div>
-      <div class="contact-info">
-      <div class="contact-name">Elías Quiñones Bustos</div>
-      <div class="contact-role">Field Service Engineer · LATAM</div>
-      <div class="contact-lines">
-      <a href="tel:+56930647327">+56 9 3064 7327</a>
-      <a href="mailto:ebustos@ubicquia.com">ebustos@ubicquia.com</a>
-      </div>
-      </div>
-      <div class="contact-actions">
-      <a class="contact-btn wa" data-wa="56930647327" data-name="Elías" href="https://wa.me/56930647327?text=Hola%20El%C3%ADas%2C%20te%20escribo%20desde%20griddata.cl." target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp Elías Quiñones Bustos">
-      <svg viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm0 18.13c-1.53 0-3.03-.41-4.34-1.19l-.31-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.35c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.69 8.24-8.23 8.24z"/></svg>
-      </a>
-      <a class="contact-btn mail" href="mailto:ebustos@ubicquia.com" title="Email" aria-label="Email Elías Quiñones Bustos">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-      </a>
-      </div>
-      </div>
-    </div>
-  </section>
+let idx=0, playing=!REDUCE, tStop=0, flying=true, tFly=0;
+const FLY_MS = REDUCE?1:800;
+let cam, camFrom, camTo;
 
-  <!-- PROJECTS SECTION -->
-  <section class="section tab-panel" data-panel="projects">
-    <div class="section-header">
-      <span class="section-label" data-i18n="section-projects">projects</span>
-      <div class="section-line"></div>
-      <span class="section-count" id="section-count">06 reports</span>
-    </div>
+let particles=[];
+function seedParticles(){
+  particles=[];
+  if(REDUCE) return;
+  const n = VW<640?26:46;
+  for(let i=0;i<n;i++) particles.push({x:Math.random(),y:Math.random(),
+    vx:(Math.random()-.5)*.00006,vy:(Math.random()-.5)*.00006,r:Math.random()*1.4+.4,a:Math.random()*.5+.15});
+}
 
-    <div class="grid" id="projects-grid">
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  VW=window.innerWidth; VH=window.innerHeight;
+  canvas.width=VW*DPR; canvas.height=VH*DPR;
+  canvas.style.width=VW+'px'; canvas.style.height=VH+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  computeCams();
+  if(!cam) cam={...camStops[0]};
+  camTo=camStops[idx];
+  seedParticles();
+}
 
-  <a class="card" href="./ahorro-energia/" target="_blank">
-        <div class="card-icon" style="background:var(--green);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2.2"/><rect x="7.6" y="4.8" width="8.8" height="5.2" rx="0.7"/><path d="M13 5.6 10.7 8.4h1.7l-1.4 2"/><path d="M8.6 13.6h0M12 13.6h0M15.4 13.6h0M8.6 17.6h0M12 17.6h0M15.4 17.6h0"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-energy">UbiCell Energy Savings Calculator</div>
-        <div class="card-tag" data-i18n="tag-energy">Energy Savings</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
+/* ══════════ TOUR CONTROL ══════════ */
+function goTo(i, instant){
+  idx=(i+TOUR.length)%TOUR.length;
+  camFrom={...cam}; camTo=camStops[idx];
+  flying=true; tFly=0; tStop=0;
+  if(instant||REDUCE){ cam={...camTo}; flying=false; }
+  renderOverlay();
+}
+function next(){ goTo(idx+1); }
+function prev(){ goTo(idx-1); }
 
+/* ══════════ OVERLAY (tarjeta / totales / dots) ══════════ */
+const card=document.getElementById('card'), totals=document.getElementById('totals');
+const el=id=>document.getElementById(id);
 
-      <a class="card" href="./informe-ubicell/" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21h4"/><path d="M8.5 21V8.5"/><path d="M8.5 8.5h5"/><path d="M13.5 8.5v1.3"/><path d="M12 9.8h3l-1.5 2.6z"/><path d="M16.4 6.4a3.2 3.2 0 0 1 0 4.2"/><path d="M14.9 7.7a1.3 1.3 0 0 1 0 1.6"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-ubicell">UbiCell Report</div>
-        <div class="card-tag" data-i18n="tag-connectivity">Connectivity</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
+function renderDots(){
+  const d=el('dots');
+  d.innerHTML=TOUR.map((s,i)=>`<button class="dot${i===idx?' on':''}" data-i="${i}" aria-label="Parada ${i+1}"></button>`).join('');
+  d.querySelectorAll('.dot').forEach(b=>b.addEventListener('click',()=>goTo(+b.dataset.i)));
+  const on=d.querySelector('.dot.on'); if(on) on.scrollIntoView({inline:'center',block:'nearest',behavior:REDUCE?'auto':'smooth'});
+  el('stepN').textContent=(idx+1)+' / '+TOUR.length;
+}
+function renderOverlay(){
+  const st=TOUR[idx];
+  if(st.type==='country'){
+    totals.classList.remove('on'); card.classList.add('on');
+    el('cName').textContent=st.c.name;
+  } else {
+    card.classList.remove('on'); totals.classList.add('on');
+    el('tKick').textContent='Red desplegada';
+    el('tTitle').textContent='Latinoamérica';
+  }
+  renderDots();
+}
 
-      <a class="card" href="./reporte-personalizado-ubicquia/" target="_blank">
-        <div class="card-icon" style="background:var(--navy);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h9"/><path d="M17 6.5h3"/><circle cx="15" cy="6.5" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 17.5h9"/><path d="M17 17.5h3"/><circle cx="15" cy="17.5" r="2"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-custom">Custom Reports</div>
-        <div class="card-tag" data-i18n="tag-custom">Custom Report</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
+/* ══════════ RENDER CANVAS ══════════ */
+function W2S(x,y){ return [VW/2+(x-cam.cx)*cam.s, VH/2+(y-cam.cy)*cam.s]; }
 
-      <a class="card" href="./reporte-obra-emblema/" target="_blank">
-        <div class="card-icon" style="background:var(--navy);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21V3"/><path d="M6.5 4h11l-2.5 3.3 2.5 3.3h-11z"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-emblema">Obra Emblema Report</div>
-        <div class="card-tag" data-i18n="tag-emblema">Obra Emblema</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
+function draw(now,dt){
+  // fondo
+  const g=ctx.createRadialGradient(VW/2,VH*0.42,0,VW/2,VH*0.42,Math.max(VW,VH)*0.75);
+  g.addColorStop(0,'#131A3A'); g.addColorStop(1,'#080B1C');
+  ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
 
-
-
-
-      <a class="card" href="./optimo-SEN/" target="_blank">
-        <div class="card-icon" style="background:var(--navy);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 17l5-6 4 4 4-7 5 6"/><path d="M3 21h18"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-optimo-sen">optimo-SEN</div>
-        <div class="card-tag" data-i18n="tag-optimo-sen">Restricciones Ambientales SEN</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./licitaciones-ciudad/">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 8h8M8 12h8M8 16h5"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-licitaciones">Monitor de Licitaciones</div>
-        <div class="card-tag" data-i18n="tag-licitaciones">ChileCompra</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./sistema-movilidad/">
-        <div class="card-icon" style="background:var(--green);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10z"/><circle cx="12" cy="11" r="2.3"/><path d="M12 4.5v1.4M12 16.1v1.4M5 11h1.4M17.6 11H19"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-mobility">Mobility System</div>
-        <div class="card-tag" data-i18n="tag-confidential">Confidential</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <div class="card card-add">
-        <div class="add-icon">+</div>
-        <div class="add-text" data-i18n="next-report">// next report</div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- USER GUIDES SECTION -->
-  <section class="section tab-panel" data-panel="guides">
-    <div class="section-header">
-      <span class="section-label" data-i18n="section-guides">user guides</span>
-      <div class="section-line"></div>
-      <span class="section-count" id="guides-count" style="background:var(--green-lt); border-color:#a8c8a0; color:var(--green);">03 <span data-i18n="guides-label">guides</span></span>
-    </div>
-
-    <div class="grid" id="guides-grid">
-
-      <a class="card card-guide" href="./guias-ubicquia/" target="_blank">
-        <div class="card-icon" style="background:var(--green);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            <path d="M9 7h6M9 11h6M9 15h4"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-guides-hub">Guías Ubicquia</div>
-        <div class="card-tag" data-i18n="tag-guides-hub">Manuales · Operación · Alertas</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-    </div>
-  </section>
-
-  <!-- DTM ANALYTICS SECTION -->
-  <section class="section tab-panel" data-panel="dtm">
-    <div class="section-header">
-      <span class="section-label" data-i18n="section-dtm">DTM Analytics</span>
-      <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);"><span id="dtm-count">04</span> <span data-i18n="dtm-count-label">tools</span></span>
-    </div>
-
-    <div class="grid" id="dtm-grid">
-
-      <a class="card" href="./cargabilidad-transformadores/" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5a8 8 0 0 1 16 0"/><path d="M12 17.5l4-3.2"/><circle cx="12" cy="17.5" r="1.2" fill="#ffffff" stroke="none"/><path d="M4.4 16.2h1.3M18.3 16.2h1.3"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-transformers">Transformer Loading</div>
-        <div class="card-tag" data-i18n="tag-grid">Grid Monitoring</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./salud-transformador/indexsalud.html" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3l2-5 4 10 2-5h7"/></svg>
-        </div>
-        <div class="card-name" data-i18n="card-salud">DTM2 Condition Report</div>
-        <div class="card-tag" data-i18n="tag-salud">Transformer Health</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./explorador-dtm/" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8 20 20"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-dtm-download">Explorador DTM</div>
-        <div class="card-tag" data-i18n="tag-dtm">Telemetría y Salud</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./itic-cbema/" target="_blank">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 20h18"/><path d="M4 16h3l1-9 2 13 2-9 1.5 5H20"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-itic">ITIC / CBEMA Analysis</div>
-        <div class="card-tag" data-i18n="tag-itic">Power Quality</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-    </div>
-  </section>
-
-  <!-- LIVE CONTROL SECTION -->
-  <section class="section tab-panel" data-panel="control">
-    <div class="section-header">
-      <span class="section-label" data-i18n="section-control">live control</span>
-      <div class="section-line"></div>
-      <span class="section-count" style="background:var(--blue-lt); border-color:#9ed3ec; color:var(--blue);">02 <span data-i18n="control-count-label">tools</span></span>
-    </div>
-
-    <div class="grid" id="control-grid">
-
-      <a class="card" href="./control/">
-        <div class="card-icon" style="background:var(--blue);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18h6"/><path d="M10 21h4"/>
-            <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.3 1 2.5h6c0-1.2.3-1.8 1-2.5A6 6 0 0 0 12 3z"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-control">Luminaire Control</div>
-        <div class="card-tag" data-i18n="tag-control">UbiLight · Live</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-      <a class="card" href="./reboot/">
-        <div class="card-icon" style="background:var(--navy);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v5h-5"/><path d="M12 8v4l2.5 1.5"/>
-          </svg>
-        </div>
-        <div class="card-name" data-i18n="card-reboot">Luminaire Reboot</div>
-        <div class="card-tag" data-i18n="tag-reboot">UbiLight · Reboot</div>
-        <span class="card-arrow" data-i18n="open">open →</span>
-      </a>
-
-    </div>
-  </section>
-
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="bar-inner">
-    <div class="footer-brand">
-      <span class="footer-wm"><span class="wm-blue">ubi</span>cquia<sup>®</sup></span>
-      <span class="footer-dot">·</span>
-      <span>griddata.cl</span>
-    </div>
-    <span id="footer-count"></span>
-    </div>
-  </footer>
-
-  <script>
-    // ── i18n dictionary ──
-    const i18n = {
-      en: {
-        'hero-eyebrow':       'Active reports collection',
-        'hero-title':         'Reports',
-        'hero-desc':          'Centralized panel of reports, simulations and analysis tools for smart infrastructure. Real-time data, always available.',
-        'stat-active':        'Active reports',
-        'stat-active-sub':    '↑ available now',
-        'stat-tech':          'Technology',
-        'stat-tech-sub':      'AI Core active',
-        'stat-platform':      'Platform',
-        'stat-platform-sub':  'No installation',
-        'stat-guides':        'User guides',
-        'stat-guides-sub':    '↑ available now',
-        'section-projects':   'projects',
-        'card-transformers':  'Transformer Loading',
-        'tag-grid':           'Grid Monitoring',
-        'card-salud':         'DTM2 Condition Report',
-        'tag-salud':          'Transformer Health',
-        'card-energy':        'UbiCell Energy Savings Calculator',
-        'tag-energy':         'Energy Savings',
-        'card-ubicell':       'UbiCell Report',
-        'tag-connectivity':   'Connectivity',
-        'card-custom':        'Custom Reports',
-        'tag-custom':         'Custom Report',
-        'card-emblema':       'Obra Emblema Report',
-        'tag-emblema':        'Obra Emblema',
-        'card-optimo-sen':    'optimo-SEN',
-        'tag-optimo-sen':     'SEN Environmental Constraints',
-        'card-licitaciones':  'Tender Monitor',
-        'tag-licitaciones':   'ChileCompra',
-        'card-mobility':      'Mobility System',
-        'tag-confidential':   'Confidential',
-        'next-report':        '// next report',
-        'section-guides':     'user guides',
-        'guides-label':       'guides',
-        'card-guides-hub':    'Ubicquia Guides',
-        'tag-guides-hub':     'Manuals · Ops · Alerts',
-        'tag-platform-manual':'Platform Manual',
-        'card-workorder':     'Work Order Guide',
-        'tag-workorder':      'Work Orders',
-        'section-dtm':        'DTM Analytics',
-        'dtm-count-label':    'tools',
-        'card-dtm-download':  'DTM Explorer',
-        'tag-dtm':            'Telemetry & Health',
-        'card-itic':          'ITIC / CBEMA Analysis',
-        'tag-itic':           'Power Quality',
-        'section-control':    'live control',
-        'control-count-label':'tools',
-        'section-contacts':   'contacts',
-        'contacts-count-label':'people',
-        'wa-msg':             (name) => 'Hi ' + name + ', I\'m reaching out from griddata.cl.',
-        'card-control':       'Luminaire Control',
-        'tag-control':        'UbiLight · Live',
-        'card-reboot':        'Luminaire Reboot',
-        'tag-reboot':         'UbiLight · Reboot',
-        'open':               'open →',
-        'footer-reports':     (n) => n + ' report' + (n !== 1 ? 's' : '') + ' available',
-        'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reports',
-        'section-team':       'latam team',
-        'team-count-label':   'people',
-        'about-title':        'Who we are',
-        'about-lead':         'An agile, end-to-end regional operation: we accompany every project from technical validation to post-sales support, across two product lines throughout Latin America.',
-        'about-do-label':     'What we do',
-        'cap-support':        'Technical support',
-        'cap-qa':             'Quality assurance',
-        'cap-deploy':         'Regional deployment',
-        'cap-presales':       'Technical pre-sales',
-        'cap-commercial':     'Commercial support',
-        'cap-tools':          'Tools & analytics',
-        'about-prod-label':   'Product lines',
-        'prod-ubicells':      'Smart streetlighting control',
-        'prod-dtm':           'Transformer & grid monitoring',
-        'about-how-label':    'How we work',
-        'way-1':              'Lean',
-        'way-2':              'End-to-end',
-        'way-3':              'Regional technical face',
-        'way-4':              'Results-oriented',
-        'tab-team':           'Who we are',
-        'tab-projects':       'Projects',
-        'tab-guides':         'User guides',
-        'tab-dtm':            'DTM Analytics',
-        'tab-control':        'Live control',
-        'contacts-label':     'Contacts',
-        'cap-support-d':      'Hands-on technical support in the field: installation, commissioning, training and issue resolution for clients and distributors.',
-        'cap-qa-d':           'Field quality control, validating firmware, connectivity and electrical parameters on every deployment.',
-        'cap-deploy-d':       'Validation and rollout of new deployments across countries, with presence at industry events and expos.',
-        'cap-presales-d':     'Technical review of tenders and technical-commercial strategy, providing differentiation versus competitors.',
-        'cap-commercial-d':   'Executive-level presentations to utilities and support to client and distributor relationships across the region.',
-        'cap-tools-d':        'In-house analysis tools and automated reporting that cut turnaround time and improve diagnostic consistency.',
-        'prod-ubicells-d':    'Smart streetlighting controllers that cut energy use and operating costs, with point-to-point remote management.',
-        'prod-dtm-d':         'Transformer and grid monitoring: voltage, current and load telemetry to improve system visibility and resilience.',
-        'way-1-d':            'A compact structure that covers the whole region without losing closeness to each project.',
-        'way-2-d':            'From the first technical test to post-sales continuity: we own the full cycle.',
-        'way-3-d':            'Technical representation of Ubicquia before clients, distributors and industry executives.',
-        'way-4-d':            'Beyond transferring technical information: concrete impact on the customer experience and outcomes.',
-        'date-locale':        'en-US',
-      },
-      es: {
-        'hero-eyebrow':       'Colección de reportes activos',
-        'hero-title':         'Reportes',
-        'hero-desc':          'Panel centralizado de informes, simulaciones y herramientas de análisis para infraestructura inteligente. Datos en tiempo real, disponibles siempre.',
-        'stat-active':        'Reportes activos',
-        'stat-active-sub':    '↑ disponibles ahora',
-        'stat-tech':          'Tecnología',
-        'stat-tech-sub':      'AI Core activo',
-        'stat-platform':      'Plataforma',
-        'stat-platform-sub':  'Sin instalación',
-        'stat-guides':        'Guías de usuario',
-        'stat-guides-sub':    '↑ disponibles ahora',
-        'section-projects':   'proyectos',
-        'card-transformers':  'Cargabilidad Transformadores',
-        'tag-grid':           'Grid Monitoring',
-        'card-salud':         'Informe Condición DTM2',
-        'tag-salud':          'Salud Transformador',
-        'card-energy':        'Calculadora Ahorro de Energía UbiCell',
-        'tag-energy':         'Ahorro Energía',
-        'card-ubicell':       'Informe UbiCell',
-        'tag-connectivity':   'Conectividad',
-        'card-custom':        'Reportes Personalizados',
-        'tag-custom':         'Custom Report',
-        'card-emblema':       'Reporte Obra Emblema',
-        'tag-emblema':        'Obra Emblema',
-        'card-optimo-sen':    'optimo-SEN',
-        'tag-optimo-sen':     'Restricciones Ambientales SEN',
-        'card-licitaciones':  'Monitor de Licitaciones',
-        'tag-licitaciones':   'ChileCompra',
-        'card-mobility':      'Sistema de Movilidad',
-        'tag-confidential':   'Confidencial',
-        'next-report':        '// próximo reporte',
-        'section-guides':     'guías de usuario',
-        'guides-label':       'guías',
-        'card-guides-hub':    'Guías Ubicquia',
-        'tag-guides-hub':     'Manuales · Operación · Alertas',
-        'tag-platform-manual':'Manual de Plataforma',
-        'card-workorder':     'Guía Work Order',
-        'tag-workorder':      'Órdenes de Trabajo',
-        'section-dtm':        'DTM Analytics',
-        'dtm-count-label':    'herramientas',
-        'card-dtm-download':  'Explorador DTM',
-        'tag-dtm':            'Telemetría y Salud',
-        'card-itic':          'Análisis ITIC / CBEMA',
-        'tag-itic':           'Calidad de Energía',
-        'section-control':    'control en vivo',
-        'control-count-label':'herramientas',
-        'section-contacts':   'contactos',
-        'contacts-count-label':'personas',
-        'wa-msg':             (name) => 'Hola ' + name + ', te escribo desde griddata.cl.',
-        'card-control':       'Control de Luminaria',
-        'tag-control':        'UbiLight · En vivo',
-        'card-reboot':        'Reinicio de Luminaria',
-        'tag-reboot':         'UbiLight · Reinicio',
-        'open':               'abrir →',
-        'footer-reports':     (n) => n + ' reporte' + (n !== 1 ? 's' : '') + ' disponibles',
-        'section-count-fmt':  (n) => String(n).padStart(2,'0') + ' reportes',
-        'section-team':       'equipo latam',
-        'team-count-label':   'personas',
-        'about-title':        'Quiénes somos',
-        'about-lead':         'Operación regional ágil y de extremo a extremo: acompañamos cada proyecto desde la validación técnica hasta el soporte post-venta, en dos líneas de producto a lo largo de América Latina.',
-        'about-do-label':     'Qué hacemos',
-        'cap-support':        'Soporte técnico',
-        'cap-qa':             'Aseguramiento de calidad',
-        'cap-deploy':         'Implementación regional',
-        'cap-presales':       'Pre-venta técnica',
-        'cap-commercial':     'Soporte comercial',
-        'cap-tools':          'Herramientas y análisis',
-        'about-prod-label':   'Líneas de producto',
-        'prod-ubicells':      'Control inteligente de alumbrado',
-        'prod-dtm':           'Monitoreo de transformadores y red',
-        'about-how-label':    'Cómo trabajamos',
-        'way-1':              'Ágil',
-        'way-2':              'De extremo a extremo',
-        'way-3':              'Cara técnica regional',
-        'way-4':              'Orientados a resultados',
-        'tab-team':           'Quiénes somos',
-        'tab-projects':       'Proyectos',
-        'tab-guides':         'Guías',
-        'tab-dtm':            'DTM Analytics',
-        'tab-control':        'Control en vivo',
-        'contacts-label':     'Contactos',
-        'cap-support-d':      'Acompañamiento técnico en terreno: instalación, puesta en marcha, capacitación y resolución para clientes y distribuidores.',
-        'cap-qa-d':           'Control de calidad de implementaciones, validando firmware, conectividad y parámetros eléctricos en cada despliegue.',
-        'cap-deploy-d':       'Validación e implementación de nuevos despliegues en distintos países, con presencia en eventos y ferias del sector.',
-        'cap-presales-d':     'Revisión técnica de licitaciones y estrategias técnico-comerciales, aportando diferenciación frente a la competencia.',
-        'cap-commercial-d':   'Presentaciones a ejecutivos de empresas eléctricas y apoyo a la relación con clientes y distribuidores en la región.',
-        'cap-tools-d':        'Desarrollo de herramientas propias de análisis y reportería automatizada que reducen tiempos y mejoran la consistencia del diagnóstico.',
-        'prod-ubicells-d':    'Controladores inteligentes de alumbrado público que reducen el consumo energético y los costos de operación, con telegestión punto a punto.',
-        'prod-dtm-d':         'Monitoreo de transformadores y red eléctrica: telemetría de voltaje, corriente y carga para mejorar la visibilidad y la resiliencia del sistema.',
-        'way-1-d':            'Estructura compacta que cubre toda la región sin perder cercanía con cada proyecto.',
-        'way-2-d':            'Del primer test técnico a la continuidad post-venta: nos hacemos cargo del ciclo completo.',
-        'way-3-d':            'Representación técnica de Ubicquia ante clientes, distribuidores y ejecutivos del sector.',
-        'way-4-d':            'Más allá de transferir información técnica: impacto concreto en la experiencia y los resultados del cliente.',
-        'date-locale':        'es-CL',
-      }
-    };
-
-    let currentLang = 'es';
-
-    function applyLang(lang) {
-      const dict = i18n[lang];
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (dict[key] && typeof dict[key] === 'string') el.textContent = dict[key];
-      });
-      // dynamic counters
-      const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
-      document.getElementById('footer-count').textContent = dict['footer-reports'](count);
-      document.getElementById('section-count').textContent = dict['section-count-fmt'](count);
-      // date
-      const now = new Date();
-      document.getElementById('header-date').textContent =
-        now.toLocaleDateString(dict['date-locale'], { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
-      // WhatsApp: mensaje pre-escrito según idioma
-      document.querySelectorAll('.contact-btn.wa').forEach(a => {
-        const num = a.getAttribute('data-wa');
-        const name = a.getAttribute('data-name') || '';
-        a.href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(dict['wa-msg'](name));
-      });
-      // toggle buttons
-      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-      document.getElementById('btn-es').classList.toggle('active', lang === 'es');
-      document.documentElement.lang = lang;
-      currentLang = lang;
+  // partículas ambiente
+  if(particles.length){
+    ctx.fillStyle='rgba(153,160,180,1)';
+    for(const p of particles){
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+      if(p.x<0)p.x+=1; if(p.x>1)p.x-=1; if(p.y<0)p.y+=1; if(p.y>1)p.y-=1;
+      ctx.globalAlpha=p.a*0.5; ctx.beginPath();
+      ctx.arc(p.x*VW,p.y*VH,p.r,0,6.2832); ctx.fill();
     }
+    ctx.globalAlpha=1;
+  }
 
-    function setTab(name) {
-      document.querySelectorAll('.tab-panel').forEach(function(p){
-        p.classList.toggle('active', p.getAttribute('data-panel') === name);
-      });
-      document.querySelectorAll('.tab').forEach(function(t){
-        t.classList.toggle('active', t.getAttribute('data-tab') === name);
-      });
+  const st=TOUR[idx];
+  const activeCC = st.type==='country'?st.cc:null;
+
+  // siluetas
+  for(const gp of geoP){
+    const present=!!gp.cc, active=gp.cc===activeCC;
+    ctx.beginPath();
+    for(const ring of gp.rings){
+      const [sx,sy]=W2S(ring[0][0],ring[0][1]); ctx.moveTo(sx,sy);
+      for(let i=1;i<ring.length;i++){ const [x,y]=W2S(ring[i][0],ring[i][1]); ctx.lineTo(x,y); }
+      ctx.closePath();
     }
-
-    function setLang(lang) {
-      applyLang(lang);
+    if(active){
+      ctx.save(); ctx.shadowColor='rgba(34,176,225,.85)'; ctx.shadowBlur=26;
+      ctx.fillStyle='rgba(34,176,225,.16)'; ctx.fill();
+      ctx.strokeStyle='rgba(34,176,225,.95)'; ctx.lineWidth=1.6; ctx.stroke(); ctx.restore();
+    } else if(present){
+      ctx.fillStyle='rgba(34,176,225,.055)'; ctx.fill();
+      ctx.strokeStyle='rgba(34,176,225,.42)'; ctx.lineWidth=1; ctx.stroke();
+    } else {
+      ctx.fillStyle='rgba(70,77,99,.10)'; ctx.fill();
+      ctx.strokeStyle='rgba(153,160,180,.20)'; ctx.lineWidth=.8; ctx.stroke();
     }
+  }
 
-    // init
-    const count = document.querySelectorAll('#projects-grid .card:not(.card-add)').length;
-    document.getElementById('stat-count').textContent = count;
-    document.getElementById('stat-guides').textContent = '3';
-    document.getElementById('dtm-count').textContent = String(document.querySelectorAll('#dtm-grid .card:not(.card-add)').length).padStart(2,'0');
-    var _validTabs = ['team','projects','guides','dtm','control'];
-    var _initTab = (location.hash || '').replace('#','');
-    setTab(_validTabs.indexOf(_initTab) >= 0 ? _initTab : 'team');
-    applyLang('es');
-  </script>
+  // puntos de región (glow aditivo)
+  ctx.globalCompositeOperation='lighter';
+  for(const r of regionsP){
+    const [sx,sy]=W2S(r.x,r.y);
+    if(sx<-60||sx>VW+60||sy<-60||sy>VH+60) continue;
+    const isActive = activeCC ? r.cc===activeCC : true;
+    const base = 11; // brillo uniforme: toda región luce como 20k nodos
+    const zoomK = clamp(cam.s/camStops[0].s,1,3.4);
+    const rad = base*Math.pow(zoomK,.42);
+    const pulse = REDUCE?1 : 1+0.12*Math.sin(now/620 + r.x*3.1);
+    const a = isActive? .95 : (activeCC? .16 : .8);
+    // halo
+    const hg=ctx.createRadialGradient(sx,sy,0,sx,sy,rad*3*pulse);
+    hg.addColorStop(0,`rgba(34,176,225,${.5*a})`);
+    hg.addColorStop(1,'rgba(34,176,225,0)');
+    ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(sx,sy,rad*3*pulse,0,6.2832); ctx.fill();
+    // núcleo
+    ctx.fillStyle=`rgba(210,240,252,${a})`;
+    ctx.beginPath(); ctx.arc(sx,sy,Math.max(1.4,rad*.34),0,6.2832); ctx.fill();
+    // anillo marcador para países sin silueta (islas fuera del 110m)
+    if(isActive && !ccWithGeo.has(r.cc)){
+      ctx.strokeStyle=`rgba(34,176,225,${.8*a})`; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(sx,sy,rad*2.1*pulse,0,6.2832); ctx.stroke();
+    }
+  }
+  ctx.globalCompositeOperation='source-over';
+}
 
+/* ══════════ LOOP ══════════ */
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(now-last,50); last=now;
+  if(flying){
+    tFly+=dt;
+    const t=easeInOut(clamp(tFly/FLY_MS,0,1));
+    cam=camLerp(camFrom,camTo,t);
+    if(tFly>=FLY_MS){ flying=false; cam={...camTo}; }
+  } else if(playing){
+    tStop+=dt;
+    if(tStop>=TOUR[idx].dur) next();
+  }
+  draw(now,dt);
+  requestAnimationFrame(loop);
+}
+
+/* ══════════ UI ══════════ */
+function setPlayIcon(){
+  el('iPlay').innerHTML = playing
+    ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>'
+    : '<path d="M8 5l11 7-11 7z"/>';
+}
+function boot(){
+  try{
+    if(new URLSearchParams(location.search).has('kiosk')||location.hash==='#kiosk')
+      document.body.classList.add('kiosk');
+    resize();
+    cam={...camStops[0]}; camFrom={...cam}; camTo=camStops[0];
+    flying=false;
+    renderOverlay(); setPlayIcon();
+    el('bNext').addEventListener('click',()=>{playing&&0;next();});
+    el('bPrev').addEventListener('click',prev);
+    el('bPlay').addEventListener('click',()=>{playing=!playing;tStop=0;setPlayIcon();});
+    canvas.addEventListener('click',next);
+    window.addEventListener('resize',resize);
+    document.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight')next(); else if(e.key==='ArrowLeft')prev();
+      else if(e.key===' '){e.preventDefault();playing=!playing;tStop=0;setPlayIcon();}
+    });
+    requestAnimationFrame(t=>{last=t;loop(t);});
+  }catch(e){
+    const b=el('errBanner'); b.textContent='No se pudo iniciar la animación: '+e.message; b.style.display='block';
+    console.error(e);
+  }
+}
+window.addEventListener('error',ev=>{
+  const b=el('errBanner');
+  if(b.style.display!=='block'){ b.textContent='Error en la página: '+(ev.message||'desconocido'); b.style.display='block'; }
+});
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+</script>
 </body>
 </html>
-
-
