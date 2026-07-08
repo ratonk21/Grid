@@ -257,6 +257,9 @@ async function rebootNodes(token, subpanel, ids){
   return { accepted, controlName: (j.data && j.data.controlName) || 'Reboot unit' };
 }
 
+// Named exports para pruebas unitarias (invisibles para Vercel, que solo usa el default).
+export { normSubs, scopeAllows, mapState, scopeOf, loadPanels, panelCreds, liveOf, idSet };
+
 // ===================== HANDLER =====================
 export default async function handler(req, res){
   if (req.method !== 'POST') return res.status(405).json({ ok:false, error:'Método no permitido' });

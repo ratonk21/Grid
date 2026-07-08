@@ -174,6 +174,9 @@ function filterPowerRestored(rows) {
   return addMsgFields(rows).filter(r => r.MsgStr === 'AlertPowerRestored' || r.alertvalue === 'Restored');
 }
 
+// Named exports para pruebas unitarias (invisibles para Vercel, que solo usa el default).
+export { pageSignature, normalizePanel, getCredentials, safelyParseJson, addMsgFields, filterPowerLoss, filterPowerRestored };
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
