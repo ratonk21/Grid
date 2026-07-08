@@ -2,8 +2,18 @@
 <!--
 ESTADO ------------------------------------------------------
 herramienta : circuito-gt
-version     : v11
+version     : v12
 fecha       : 2026-07-08
+hecho v12   : boton STREET VIEW (mismo patron del juego de paracaidas):
+              pill "SV" bajo el minimapa + tecla V; abre Google Street
+              View en pestana nueva EN LA POSICION Y RUMBO ACTUALES del
+              auto (Maps URLs api=1&map_action=pano, sin API key);
+              conversion mundo->lat/lon con el centro CFG y rumbo
+              brujula = atan2(sin(head), -cos(head)); funciona en
+              carrera y paseo. Limite: la imagen de Street View NO se
+              puede usar como mundo/textura del juego (ToS Google);
+              embeberla en un panel dentro del juego requeriria API key
+              propia (Embed API) - no incluido.
 hecho v11   : proxy VERIFICADO en produccion: la funcion quedo en
               https://www.griddata.cl/api/api-osm (nombre de archivo
               api/api-osm.js; logs Vercel con 200 ejecutando Overpass)
@@ -174,7 +184,7 @@ notas       : sin nada de franquicias; nombre y estetica genericos.
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Circuito GT 3D · Catemu · v11</title>
+<title>Circuito GT 3D · Catemu · v12</title>
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:#0c1220;font-family:system-ui,Segoe UI,Roboto,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none}
   canvas{display:block}
@@ -199,6 +209,7 @@ notas       : sin nada de franquicias; nombre y estetica genericos.
   #brk{border-color:rgba(255,120,120,.6)}
   #street{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:#eaf2ff;font-size:14px;font-weight:700;text-shadow:0 1px 3px #000;background:rgba(10,16,30,.5);padding:5px 14px;border-radius:9px;z-index:5;display:none;max-width:72vw;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #mmap{position:fixed;top:10px;right:12px;width:158px;height:158px;border-radius:10px;border:1px solid rgba(150,180,255,.4);background:rgba(8,13,26,.55);z-index:5;display:none}
+  #svbtn{position:fixed;top:176px;right:12px;z-index:5;display:none;background:rgba(20,30,52,.72);border:1.5px solid rgba(150,180,255,.5);color:#eaf2ff;font-size:12px;font-weight:800;padding:7px 12px;border-radius:9px;cursor:pointer}
   #freego{margin-top:12px;margin-left:8px;background:#2f8a4c;border:none;color:#fff;font-size:16px;font-weight:700;padding:12px 22px;border-radius:10px;cursor:pointer}
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0c1220;color:#9fb4dd;z-index:9;font-size:15px}
 </style>
@@ -219,7 +230,7 @@ notas       : sin nada de franquicias; nombre y estetica genericos.
   <div class="cr"><div class="tb" id="brk">FRENO</div><div class="tb" id="acc">ACEL</div></div>
 </div>
 <div id="pause" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,10,20,.6);z-index:8"><div class="card"><h1>Pausa</h1><button id="resume" style="margin:8px;background:#2f5db8;border:none;color:#fff;font-weight:700;padding:11px 26px;border-radius:10px;cursor:pointer">REANUDAR</button><button id="rest2" style="margin:8px;background:#e33b3b;border:none;color:#fff;font-weight:700;padding:11px 26px;border-radius:10px;cursor:pointer">REINICIAR</button></div></div>
-<div id="street"></div><canvas id="mmap" width="158" height="158"></canvas>
+<div id="street"></div><button id="svbtn" title="Street View aquí (V)">SV · CALLE</button><canvas id="mmap" width="158" height="158"></canvas>
 <div id="loading">Construyendo circuito&hellip;</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
   onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s);"></script>
@@ -810,6 +821,16 @@ function drawMinimap(){
   g.moveTo(0,-5);g.lineTo(-3.4,4);g.lineTo(3.4,4);g.closePath(); g.fill(); g.restore();
 }
 var MODE='race',streetEl=null,stT=0;
+function worldToLL(x,z){return [CFG.lat0-z/CFG.mLat, CFG.lon0+x/CFG.mLon];}
+function openStreetView(){
+  if(!player) return;
+  var ll=worldToLL(player.x,player.z);
+  var b=Math.atan2(Math.sin(player.head),-Math.cos(player.head))*180/Math.PI;
+  b=((b%360)+360)%360;
+  var u='https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+
+    ll[0].toFixed(6)+','+ll[1].toFixed(6)+'&heading='+b.toFixed(0);
+  window.open(u,'_blank','noopener');
+}
 function updateStreet(dt){
   if(!streetEl||!NET.ok) return;
   stT-=dt; if(stT>0) return; stT=0.5;
@@ -1511,6 +1532,7 @@ function initControls(){
   window.addEventListener('keydown',function(e){
     keys[e.code]=true;
     if(e.code==='KeyR') restart();
+    if(e.code==='KeyV') openStreetView();
     if(e.code==='Escape'){e.preventDefault();togglePause();}
   });
   window.addEventListener('keyup',function(e){keys[e.code]=false;});
@@ -1547,6 +1569,9 @@ function initControls(){
     });
   });
   if(COARSE&&streetEl) streetEl.style.bottom='112px';
+  var sv=document.getElementById('svbtn');
+  sv.style.display='block';
+  sv.addEventListener('click',openStreetView);
   document.addEventListener('contextmenu',function(e){e.preventDefault();});
 }
 function togglePause(){
