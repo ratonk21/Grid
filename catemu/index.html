@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<!--
+ESTADO ------------------------------------------------------
+herramienta : circuito-gt
+version     : v10
+fecha       : 2026-07-08
+hecho v10   : dos causas de "no funciona": (a) la escalera v9 podia
+              colgar el boot hasta ~50 s (5 mirrors x 10 s si el error
+              es de red muda) => fetchOP ahora tiene DEADLINE GLOBAL:
+              vias 13 s / extras 30 s en total; cumplido el plazo el
+              juego arranca igual con fallback y el boton queda en
+              REINTENTAR con el error real; (b) la dependencia de
+              mirrors publicos (406 anti-bot, CORS variable) no es
+              verificable desde el navegador => PROXY PROPIO
+              griddata.cl/api/osm PRIMERO en la escalera: funcion
+              serverless Vercel (archivo api/osm.js adjunto) que pega a
+              Overpass servidor-a-servidor con User-Agent correcto y
+              cachea la respuesta 7 dias en el edge (tras el primer
+              exito el juego carga al tiro y queda inmune a caidas de
+              Overpass); si el proxy no esta desplegado, 404 en <1 s y
+              sigue la escalera publica; ademas smoke test integral en
+              Node (WebGL/DOM/fetch mockeados) que ejecuta boot ->
+              buildAll -> click PASEO -> 90 frames manejando.
+supuestos v10: proxy pendiente de deploy por RK (2 pasos); mientras, el
+              juego usa mirrors publicos con los deadlines nuevos.
+hecho v9    : arreglo "SIN RED VIAL": overpass-api.de agrego filtros
+              anti-scraper (406/429 persistentes a clientes que "parecen
+              bot") y el mirror kumi cambio de operador => escalera de 5
+              instancias vigentes 2026 en orden de confiabilidad
+              (kumi.systems -> private.coffee -> z.overpass-api.de ->
+              lz4.overpass-api.de -> overpass-api.de), requests GET
+              ?data= con Accept: application/json (sin preflight);
+              query de VIAS separada de la de EDIFICIOS+PARQUES: las
+              calles (livianas, criticas) cargan primero y habilitan
+              circuito + paseo; los extras llegan aparte con timeout
+              largo y se agregan EN CALIENTE aunque el mundo ya este
+              construido (bloques, parques y minimapa se re-arman);
+              respuesta 200 vacia o con remark de timeout se trata como
+              falla y pasa al siguiente mirror; el boton verde muestra
+              el diagnostico real (HTTP 406, timeout, sin datos, red) y
+              un clic REINTENTA: si la red llega despues, el paseo
+              libre se habilita al vuelo (el circuito de carrera queda
+              en el trazado fallback de esa sesion, recargar para
+              circuito urbano); pueblo sintetico se omite apenas hay
+              red vial real (antes esperaba edificios).
+supuestos v9: mirrors segun wiki OSM + estado abril 2026; si el reintento
+              trae calles tarde, solo el paseo usa OSM esa sesion.
+hecho v8    : modo PASEO LIBRE por TODA la red vial real de Catemu (la
+              misma zona del mapa de referencia): boton propio en el
+              panel; se dibuja cada calle OSM como cinta de asfalto con
+              ancho por clase (primary 8 m ... living_street 4.5 m) y
+              micro-offset de altura por via para evitar z-fighting en
+              cruces; fisica libre (mismo motor de marchas/freno) sobre
+              el terreno con pendiente, salirse de la calle frena a
+              ~30 km/h (hash espacial de segmentos, distancia real
+              punto-segmento); manzanas con EDIFICIOS: huellas
+              building=* de OSM convertidas a bloques OBB (angulo del
+              lado mas largo) en un InstancedMesh con color pastel por
+              instancia y altura por building:levels, con COLISION
+              solida (hash de OBBs, revert + corte de velocidad);
+              capas de PARQUES/areas verdes (leisure/landuse) como
+              poligonos ShapeGeometry drapeados en verde; minimapa
+              canvas arriba-derecha (calles por clase, parques,
+              circuito, jugador con rumbo, rivales en carrera, N) y
+              letrero inferior con el NOMBRE DE LA CALLE actual (via
+              OSM mas cercana con nombre); pueblo sintetico se omite si
+              llegan edificios reales; query Overpass unificada
+              (highway+building+leisure+landuse, out geom). Si el loop
+              de circuito falla pero hay red vial, el paseo libre queda
+              disponible igual; sin red, el boton avisa y solo corre el
+              modo carrera con el trazado v6.
+supuestos v8: edificios = bloques OBB (lo pedido), no huella exacta;
+              parques con triangulacion de borde (valle plano, +0.35 m
+              sobre terreno); volver de paseo a carrera = recargar;
+              colision auto-edificio detiene, no desliza.
+hecho v7    : (1) calles reales de Catemu: al abrir descarga la red vial
+              del pueblo desde Overpass API (OSM, sin API key; mirror
+              kumi.systems de respaldo, POST urlencoded, timeout 9 s);
+              grafo por coordenada compartida, Dijkstra ida (nodo mas
+              cercano al centro -> nodo a 0.85-1.75 km que maximiza el
+              desplazamiento) + vuelta con aristas de ida penalizadas x8
+              => circuito cerrado POR LAS CALLES REALES; densificado a
+              14 m, esquinas redondeadas (Chaikin x2, r~5-7 m) y
+              remuestreo a N puntos equidistantes que alimentan el MISMO
+              TRK de siempre (fisica, IA, pianos y barreras intactos);
+              calzada urbana mas angosta (roadHalf 4.6, barrera 8.4),
+              vmax de curva baja a 9 m/s en esquinas de pueblo, y el
+              trazado calza visualmente con el satelite Esri; fallback
+              total al spline v6 si no hay red (aviso en panel).
+              (2) autos reales: carroceria por ExtrudeGeometry con perfil
+              curvo (capo, parabrisas, fastback) + pasos de rueda
+              recortados en el contorno + bevel suave; canopy de vidrio
+              oscuro aparte, aleron, espejos, splitter, escapes; pintura
+              MeshPhysicalMaterial con clearcoat y envMap cubico
+              procedural (reflejos de cielo), llantas con neumatico +
+              rin metalico; sombra de contacto (sprite radial) bajo cada
+              auto. (3) grafica: sombras 2048 en desktop (1024 tactil),
+              asfalto con lineas de borde, mismo contrato userData
+              (wheels/fronts/brakeM) asi que la fisica no se toco.
+supuestos v7: el loop OSM puede compartir tramos cortos ida/vuelta si el
+              grafo del pueblo no da alternativa (penalizacion x8 lo
+              evita casi siempre); graderias se omiten en modo calles
+              (caerian sobre casas); atribucion OSM en el panel.
+stack       : un solo HTML, Three.js r128 (cdnjs + fallback jsdelivr),
+              sin localStorage, geometria 100% procedural, sin marcas.
+hecho v6    : Catemu real en 3D como el visor MapLibre adjunto y con sus
+              mismas fuentes: imagen satelital Esri World Imagery (z15,
+              ~8 m/px, hasta ~40 teselas) drapeada sobre el DEM con UV en
+              proyeccion Mercator, cargada en paralelo y aplicada al vuelo
+              (fallback: colores por cota si no llega); fix "pista cortada":
+              terraplen mas ancho (20-70 m, antes 9-26 con vertices cada
+              36 m que atravesaban la calzada) + calzada/pianos/autos
+              levantados 0.45 m sobre la rasante; niebla mas lejana y
+              vegetacion reducida para dejar ver el satelite.
+hecho v5    : geografia real de Catemu (V Region, Chile): relieve por DEM
+              AWS Terrain Tiles (terrarium z12, ~32 m/px, bbox 6 teselas
+              alrededor de -32.787,-70.965) descargado al abrir, decodificado
+              en canvas y muestreado bilineal; trazado propio de circuito
+              sobre el valle y los cerros con alturas reales (suavizado +
+              pendiente max 14%); terreno 7.2x5.8 km con colores por cota y
+              pendiente (valle agricola verde, laderas doradas, matorral,
+              roca), terraplen/corte automatico hacia la pista; pista,
+              pianos, barreras, arco, graderias y arboles siguen la altura;
+              fisica con pendiente (la gravedad frena subiendo y empuja
+              bajando, el auto cabecea); pueblo low-poly con iglesia y
+              medialuna de rodeo; fallback sintetico tipo Catemu si no hay
+              internet (aviso en pantalla).
+supuestos v5: aproximacion lineal de latitud dentro del bbox, trazado es
+              diseno propio (no calles reales todavia), la IA no siente la
+              pendiente, graderias sobre pedestal.
+hecho v4    : caja automatica (sube al 97% del tope de marcha, baja bajo el
+              72% de la anterior; se quitan Shift/Ctrl y botones M+/M-);
+              render mejorado: sombras dinamicas PCF 1024 que siguen al
+              jugador (autos, arboles y rocas proyectan; pista y pasto
+              reciben), tone mapping ACES + sRGB, anisotropia en asfalto y
+              pasto, cielo con domo degradado y sol con halo calido.
+hecho v3    : partida quieta (largada bloquea el auto en 0, sin deriva);
+              freno rehecho: frena hasta 0 y solo da reversa (max -29 km/h)
+              si lo mantienes detenido.
+hecho v2    : auto corregido (frente adelante: focos/capo +Z, spoiler y
+              luces de freno atras), caja de 6 marchas manual (Shift sube,
+              Ctrl baja, botones M+/M- en tactil, tope 6ta ~261 km/h asi
+              que 250 es alcanzable), ESC abre menu de pausa propio
+              (Reanudar/Reiniciar) con preventDefault, rubber-band de IA
+              (lideres aflojan hasta -14% si te sacan ventaja, aprietan
+              hasta +7% si vas ganando; velocidad de curva fisica intacta).
+hecho v1    : circuito cerrado por spline Catmull-Rom (~2.3 km) con asfalto,
+              pianos rojo/blanco en curvas, barreras, arco de partida,
+              graderias, arboles/rocas instanciados, montanas y nubes;
+              auto GT low-poly en tercera persona (camara chase suave),
+              fisica arcade (aceleracion, freno, giro dependiente de
+              velocidad, pasto frena, barrera hace clamp lateral);
+              4 rivales IA que frenan por curvatura con lookahead;
+              carrera a 3 vueltas con cuenta regresiva, posicion en vivo,
+              tiempo de vuelta / mejor, pantalla de resultados, R reinicia;
+              controles teclado (WASD/flechas) y tactiles (giro + acel/freno).
+pendiente   : colision auto-auto (v1 se atraviesan), audio motor, pista con
+              desnivel (v1 plana), minimapa, marchas/derrape fisico real,
+              repeticion, eleccion de auto.
+notas       : sin nada de franquicias; nombre y estetica genericos.
+-------------------------------------------------------------
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Circuito GT 3D · Catemu · v10</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c1220;font-family:system-ui,Segoe UI,Roboto,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none}
+  canvas{display:block}
+  #hud{position:fixed;top:10px;left:12px;color:#eaf2ff;text-shadow:0 1px 3px #000;pointer-events:none;z-index:5}
+  #pos{font-size:30px;font-weight:800;letter-spacing:1px}
+  #lap,#time{font-size:14px;opacity:.92;margin-top:2px}
+  #speed{position:fixed;right:14px;bottom:120px;color:#eaf2ff;text-align:right;text-shadow:0 1px 3px #000;pointer-events:none;z-index:5}
+  #speed b{font-size:42px;font-weight:800}
+  #speed span{font-size:13px;opacity:.8}
+  #center{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:6;color:#fff;font-size:74px;font-weight:900;text-shadow:0 3px 12px #000}
+  #panel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(6,10,20,.72);z-index:8}
+  .card{background:#121a2c;border:1px solid #2b3c60;border-radius:14px;padding:22px 26px;color:#dfe9ff;max-width:340px;text-align:center}
+  .card h1{margin:0 0 6px;font-size:22px}
+  .card p{margin:6px 0;font-size:13.5px;line-height:1.5;opacity:.9}
+  .card table{margin:10px auto 4px;font-size:13.5px;border-collapse:collapse}
+  .card td{padding:3px 10px;text-align:left}
+  #go{margin-top:12px;background:#e33b3b;border:none;color:#fff;font-size:16px;font-weight:700;padding:12px 34px;border-radius:10px;cursor:pointer}
+  #touch{position:fixed;left:0;right:0;bottom:0;display:none;justify-content:space-between;padding:0 14px 18px;z-index:7}
+  .cl,.cr{display:flex;gap:12px}
+  .tb{width:78px;height:78px;border-radius:50%;background:rgba(20,30,52,.55);border:1.5px solid rgba(150,180,255,.5);color:#eaf2ff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;touch-action:none}
+  .tb.on{background:rgba(80,120,220,.65)}
+  #brk{border-color:rgba(255,120,120,.6)}
+  #street{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:#eaf2ff;font-size:14px;font-weight:700;text-shadow:0 1px 3px #000;background:rgba(10,16,30,.5);padding:5px 14px;border-radius:9px;z-index:5;display:none;max-width:72vw;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #mmap{position:fixed;top:10px;right:12px;width:158px;height:158px;border-radius:10px;border:1px solid rgba(150,180,255,.4);background:rgba(8,13,26,.55);z-index:5;display:none}
+  #freego{margin-top:12px;margin-left:8px;background:#2f8a4c;border:none;color:#fff;font-size:16px;font-weight:700;padding:12px 22px;border-radius:10px;cursor:pointer}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0c1220;color:#9fb4dd;z-index:9;font-size:15px}
+</style>
+</head>
+<body>
+<div id="hud"><div id="pos">P1</div><div id="lap">Vuelta 1 / 3</div><div id="time">0:00.0 · mejor —</div></div>
+<div id="speed"><div id="gearbox" style="font-size:19px;font-weight:800;color:#ffd27a">M1</div><b id="spd">0</b> <span>km/h</span></div>
+<div id="center"></div>
+<div id="panel"><div class="card">
+  <h1>Circuito GT · Catemu</h1>
+  <p>Carrera a 3 vueltas contra 4 rivales por Catemu real.<br><span id="tlen">Cargando trazado&hellip;</span><br><span style="opacity:.65;font-size:11.5px">Im&aacute;genes &copy; Esri, Maxar &middot; Relieve: AWS Terrain Tiles &middot; Calles &copy; OpenStreetMap contributors</span></p>
+  <p><b>W</b>/<b>&#8593;</b> acelerar · <b>S</b>/<b>&#8595;</b> freno · <b>A D</b>/<b>&#8592;&#8594;</b> girar · <b>R</b> reiniciar · <b>ESC</b> pausa · caja autom&aacute;tica</p>
+  <p>En pantalla t&aacute;ctil: botones de giro a la izquierda, ACEL/FRENO a la derecha.</p>
+  <button id="go">CARRERA</button><button id="freego">PASEO LIBRE</button>
+</div></div>
+<div id="touch">
+  <div class="cl"><div class="tb" id="btnL">&#9664;</div><div class="tb" id="btnR">&#9654;</div></div>
+  <div class="cr"><div class="tb" id="brk">FRENO</div><div class="tb" id="acc">ACEL</div></div>
+</div>
+<div id="pause" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,10,20,.6);z-index:8"><div class="card"><h1>Pausa</h1><button id="resume" style="margin:8px;background:#2f5db8;border:none;color:#fff;font-weight:700;padding:11px 26px;border-radius:10px;cursor:pointer">REANUDAR</button><button id="rest2" style="margin:8px;background:#e33b3b;border:none;color:#fff;font-weight:700;padding:11px 26px;border-radius:10px;cursor:pointer">REINICIAR</button></div></div>
+<div id="street"></div><canvas id="mmap" width="158" height="158"></canvas>
+<div id="loading">Construyendo circuito&hellip;</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js';document.head.appendChild(s);"></script>
+<script>
+/* CIRCUITO GT 3D v2 — un solo archivo, Three.js r128, todo procedural */
+'use strict';
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function lerp(a,b,t){return a+(b-a)*t;}
+function rand(a,b){return a+Math.random()*(b-a);}
+var TAU=Math.PI*2;
+
+var CFG={roadHalf:7,barrier:14.5,laps:3,maxV:72.5,N:720,lon0:-70.965,lat0:-32.787,mLon:93578,mLat:110852};
+var COARSE=(typeof window!=='undefined')&&((window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window));
+
+// ---- spline del circuito (Catmull-Rom cerrada) ----
+var CTRL=[[0,0],[468,-47],[1014,31],[1482,-117],[1677,-468],[1521,-858],[1014,-1053],[390,-1014],[-234,-1092],[-702,-819],[-897,-390],[-624,-47],[-234,47]];
+var TRK={p:[],t:[],n:[],curv:[],arc:[],vmax:[],len:0};
+function catmull(pts,i,u){
+  var m=pts.length;
+  var p0=pts[(i-1+m)%m],p1=pts[i],p2=pts[(i+1)%m],p3=pts[(i+2)%m];
+  var u2=u*u,u3=u2*u;
+  function c(a,b,cc,d){return 0.5*((2*b)+(-a+cc)*u+(2*a-5*b+4*cc-d)*u2+(-a+3*b-3*cc+d)*u3);}
+  return [c(p0[0],p1[0],p2[0],p3[0]), c(p0[1],p1[1],p2[1],p3[1])];
+}
+function buildTrackData(){
+  var m=CTRL.length, N=CFG.N;
+  if(OSM.ok&&OSM.pts&&OSM.pts.length===N){
+    TRK.p=OSM.pts.slice();
+  } else {
+    OSM.ok=false;
+    for(var k=0;k<N;k++){
+      var f=k/N*m, i=Math.floor(f), u=f-i;
+      TRK.p.push(catmull(CTRL,i%m,u));
+    }
+  }
+  var L=0;
+  for(var k2=0;k2<N;k2++){
+    var a=TRK.p[k2], b=TRK.p[(k2+1)%N];
+    var dx=b[0]-a[0], dz=b[1]-a[1], d=Math.max(Math.hypot(dx,dz),1e-6);
+    TRK.arc.push(L); L+=d;
+    TRK.t.push([dx/d,dz/d]);
+    TRK.n.push([-dz/d,dx/d]);
+  }
+  TRK.len=L;
+  for(var k3=0;k3<N;k3++){
+    var t0=TRK.t[(k3-1+N)%N], t1=TRK.t[(k3+1)%N];
+    var ang=Math.atan2(t0[0]*t1[1]-t0[1]*t1[0], t0[0]*t1[0]+t0[1]*t1[1]);
+    var ds=(TRK.arc[(k3+1)%N]-TRK.arc[(k3-1+N)%N]+TRK.len)%TRK.len;
+    var kv=Math.abs(ang)/Math.max(ds,0.001);
+    TRK.curv.push(kv);
+  }
+  var vlo=OSM.ok?9:17;
+  for(var k4=0;k4<N;k4++){
+    var kk=0;
+    for(var w=-2;w<=2;w++) kk=Math.max(kk,TRK.curv[(k4+w+N)%N]);
+    TRK.vmax.push(clamp(Math.sqrt(15.5/Math.max(kk,1e-4)),vlo,CFG.maxV));
+  }
+}
+function sampleAt(s){
+  s=((s%TRK.len)+TRK.len)%TRK.len;
+  var N=CFG.N, lo=0, hi=N-1;
+  while(lo<hi){ var mid=(lo+hi+1)>>1; if(TRK.arc[mid]<=s) lo=mid; else hi=mid-1; }
+  return lo;
+}
+
+// ---- DEM real de Catemu (AWS Terrain Tiles, terrarium z12) ----
+function smoothstep(a,b,t){t=clamp((t-a)/(b-a),0,1);return t*t*(3-2*t);}
+function hash2(x,y){var v=Math.sin(x*127.1+y*311.7)*43758.5453;return v-Math.floor(v);}
+function vnoise(x,y){var xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi;
+  var a=hash2(xi,yi),b=hash2(xi+1,yi),c=hash2(xi,yi+1),d=hash2(xi+1,yi+1);
+  var u=xf*xf*(3-2*xf),v2=yf*yf*(3-2*yf);
+  return lerp(lerp(a,b,u),lerp(c,d,u),v2);}
+function fbm(x,y){return vnoise(x,y)*0.55+vnoise(x*2.1,y*2.1)*0.27+vnoise(x*4.3,y*4.3)*0.18;}
+function t2lon(x){return x/4096*360-180;}
+function t2lat(y){return Math.atan(Math.sinh(Math.PI*(1-2*y/4096)))*180/Math.PI;}
+var DEM={ok:false,W:768,H:512,d:null,tx0:1239,ty0:2442,
+  lonW:t2lon(1239),lonE:t2lon(1242),latN:t2lat(2442),latS:t2lat(2444)};
+function loadDEM(done){
+  var pend=6,fail=false,fin=false;
+  var cv=document.createElement('canvas');cv.width=DEM.W;cv.height=DEM.H;
+  var cx=cv.getContext('2d');
+  function bail(){if(fail||fin)return;fail=true;done(false);}
+  var to=setTimeout(bail,9000);
+  function finish(){
+    if(fail||fin)return;fin=true;clearTimeout(to);
+    try{
+      var id=cx.getImageData(0,0,DEM.W,DEM.H).data;
+      DEM.d=new Float32Array(DEM.W*DEM.H);
+      for(var i=0;i<DEM.W*DEM.H;i++) DEM.d[i]=(id[i*4]*256+id[i*4+1]+id[i*4+2]/256)-32768;
+      DEM.ok=true;done(true);
+    }catch(e){done(false);}
+  }
+  for(var tx=0;tx<3;tx++)for(var ty=0;ty<2;ty++)(function(tx,ty){
+    var im=new Image();im.crossOrigin='anonymous';
+    im.onload=function(){cx.drawImage(im,tx*256,ty*256);if(--pend===0)finish();};
+    im.onerror=bail;
+    im.src='https://s3.amazonaws.com/elevation-tiles-prod/terrarium/12/'+(DEM.tx0+tx)+'/'+(DEM.ty0+ty)+'.png';
+  })(tx,ty);
+}
+function synthH(x,z){
+  var n=-z;
+  var v=438+(fbm(x*0.0015+7,z*0.0015)-0.5)*36;
+  var dn=Math.max(0,n-900),ds=Math.max(0,-n-1000),de=Math.max(0,Math.abs(x)-1900);
+  v+=Math.pow(dn,1.2)*0.13+Math.pow(ds,1.2)*0.10+de*0.12;
+  v+=fbm(x*0.0004,z*0.0004)*40*((dn+ds>0)?1:0.2);
+  return v;
+}
+function heightRaw(x,z){
+  if(!DEM.ok) return synthH(x,z);
+  var lon=CFG.lon0+x/CFG.mLon, lat=CFG.lat0+(-z)/CFG.mLat;
+  var fx=clamp((lon-DEM.lonW)/(DEM.lonE-DEM.lonW),0,1)*(DEM.W-1);
+  var fy=clamp((DEM.latN-lat)/(DEM.latN-DEM.latS),0,1)*(DEM.H-1);
+  var x0=fx|0,y0=fy|0,x1=Math.min(x0+1,DEM.W-1),y1=Math.min(y0+1,DEM.H-1),ax=fx-x0,ay=fy-y0;
+  var d=DEM.d,W=DEM.W;
+  return lerp(lerp(d[y0*W+x0],d[y0*W+x1],ax),lerp(d[y1*W+x0],d[y1*W+x1],ax),ay);
+}
+var H0=0;
+function heightAt(x,z){return heightRaw(x,z)-H0;}
+
+// ---- satelite Esri World Imagery drapeado (mismas fuentes que el visor MapLibre) ----
+function mY(lat){return Math.log(Math.tan(Math.PI/4+lat*Math.PI/360));}
+var SAT=(function(){
+  var Z=15,n=Math.pow(2,Z);
+  function lon2t(l){return Math.floor((l+180)/360*n);}
+  function lat2t(l){var r=l*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n);}
+  var lonA=CFG.lon0-3600/CFG.mLon, lonB=CFG.lon0+3600/CFG.mLon;
+  var latA=CFG.lat0+3200/CFG.mLat, latB=CFG.lat0-2600/CFG.mLat;
+  var tx0=lon2t(lonA),tx1=lon2t(lonB),ty0=lat2t(latA),ty1=lat2t(latB);
+  if((tx1-tx0+1)*(ty1-ty0+1)>60){Z=14;n=Math.pow(2,Z);tx0=lon2t(lonA);tx1=lon2t(lonB);ty0=lat2t(latA);ty1=lat2t(latB);}
+  function t2lo(x){return x/n*360-180;}
+  function t2la(y){return Math.atan(Math.sinh(Math.PI*(1-2*y/n)))*180/Math.PI;}
+  return {ok:false,Z:Z,tx0:tx0,tx1:tx1,ty0:ty0,ty1:ty1,
+    lonW:t2lo(tx0),lonE:t2lo(tx1+1),latN:t2la(ty0),latS:t2la(ty1+1),tex:null};
+})();
+function loadSAT(){
+  var nx=SAT.tx1-SAT.tx0+1, ny=SAT.ty1-SAT.ty0+1;
+  var cv=document.createElement('canvas'); cv.width=nx*256; cv.height=ny*256;
+  var cx=cv.getContext('2d');
+  var total=nx*ny, pend=total, okc=0, done=false;
+  function finish(){
+    if(done) return; done=true;
+    if(okc<total*0.7) return;                    // muy incompleto: quedarse con colores
+    var tex=new THREE.CanvasTexture(cv);
+    tex.minFilter=THREE.LinearFilter; tex.generateMipmaps=false;
+    if(THREE.sRGBEncoding!==undefined) tex.encoding=THREE.sRGBEncoding;
+    if(renderer&&renderer.capabilities&&renderer.capabilities.getMaxAnisotropy) tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    SAT.tex=tex; SAT.ok=true;
+    if(TERR){ TERR.material=new THREE.MeshLambertMaterial({map:tex}); }
+  }
+  var to=setTimeout(finish,12000);
+  for(var a=0;a<nx;a++)for(var b=0;b<ny;b++)(function(a,b){
+    var im=new Image(); im.crossOrigin='anonymous';
+    im.onload=function(){cx.drawImage(im,a*256,b*256);okc++;if(--pend===0){clearTimeout(to);finish();}};
+    im.onerror=function(){if(--pend===0){clearTimeout(to);finish();}};
+    im.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+SAT.Z+'/'+(SAT.ty0+b)+'/'+(SAT.tx0+a);
+  })(a,b);
+}
+var TERR=null, ROADL=0.45;
+
+function buildTrackHeights(){
+  var N=CFG.N,h=[];
+  for(var i=0;i<N;i++)h.push(heightAt(TRK.p[i][0],TRK.p[i][1]));
+  for(var pass=0;pass<3;pass++){
+    var s2=h.slice();
+    for(var j=0;j<N;j++){var acc=0;for(var w=-5;w<=5;w++)acc+=s2[(j+w+N)%N];h[j]=acc/11;}
+  }
+  for(var r=0;r<2;r++){
+    for(var f=1;f<=N;f++){var a=f%N,b=(f-1+N)%N;var ds=((TRK.arc[a]-TRK.arc[b]+TRK.len)%TRK.len)||7;if(h[a]>h[b]+0.14*ds)h[a]=h[b]+0.14*ds;}
+    for(var g=N-1;g>=0;g--){var a2=g%N,b2=(g+1)%N;var ds2=((TRK.arc[b2]-TRK.arc[a2]+TRK.len)%TRK.len)||7;if(h[a2]>h[b2]+0.14*ds2)h[a2]=h[b2]+0.14*ds2;}
+  }
+  var m=h[0];TRK.h=h.map(function(v){return v-m;});
+}
+var BK={m:{}};
+function buildBuckets(){
+  BK.m={};
+  for(var i=0;i<CFG.N;i++){
+    var p=TRK.p[i],k=Math.floor(p[0]/90)+'_'+Math.floor(p[1]/90);
+    (BK.m[k]||(BK.m[k]=[])).push(i);
+  }
+}
+function distToTrack(x,z){
+  var cx=Math.floor(x/90),cz=Math.floor(z/90),bd=1e18,bi=-1;
+  for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){
+    var l=BK.m[(cx+a)+'_'+(cz+b)];if(!l)continue;
+    for(var q=0;q<l.length;q++){
+      var p=TRK.p[l[q]];
+      var d=(x-p[0])*(x-p[0])+(z-p[1])*(z-p[1]);
+      if(d<bd){bd=d;bi=l[q];}
+    }
+  }
+  return {d:bi<0?1e9:Math.sqrt(bd),i:bi};
+}
+
+// ---- calles reales de Catemu (OSM Overpass) ----
+var OSM={ok:false,net:false,pts:null,raw:null,ext:null,extBusy:false,err:null};
+function ll2xz(lat,lon){return [(lon-CFG.lon0)*CFG.mLon,-(lat-CFG.lat0)*CFG.mLat];}
+var OPMIRRORS=[
+  'https://griddata.cl/api/osm',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass-api.de/api/interpreter'];
+function opBBox(){
+  var dLat=0.0125,dLon=0.0145;
+  return (CFG.lat0-dLat)+','+(CFG.lon0-dLon)+','+(CFG.lat0+dLat)+','+(CFG.lon0+dLon);
+}
+function opBad(js){                                  // 200 pero inutil
+  if(!js||!js.elements) return 'sin datos';
+  if(js.elements.length===0){
+    if(js.remark&&/time|memory/i.test(js.remark)) return 'timeout del servidor';
+    return 'sin datos';
+  }
+  return null;
+}
+function fetchOP(q,tmo,total,cb){                    // escalera con plazo global
+  var ui=-1,fin=false,t0=Date.now();
+  function next(err){
+    if(fin) return;
+    var left=total-(Date.now()-t0);
+    if(++ui>=OPMIRRORS.length||left<800){
+      fin=true;cb(false,null,(err||'sin respuesta')+' ('+ui+' srv)');return;
+    }
+    var settled=false,lastErr='red/CORS';
+    function bad(e){if(settled||fin)return;settled=true;next(e||lastErr);}
+    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+    var to=setTimeout(function(){if(ctrl)ctrl.abort();bad('timeout');},Math.min(tmo,left));
+    fetch(OPMIRRORS[ui]+'?data='+encodeURIComponent(q),
+      {method:'GET',headers:{'Accept':'application/json'},signal:ctrl?ctrl.signal:undefined})
+      .then(function(r){
+        if(!r.ok){lastErr='HTTP '+r.status;throw 0;}
+        return r.json();
+      })
+      .then(function(js){
+        clearTimeout(to); if(settled||fin) return;
+        var why=opBad(js);
+        if(why){settled=true;next(why);return;}
+        settled=true; fin=true; cb(true,js,null);
+      })
+      .catch(function(){clearTimeout(to);bad(lastErr);});
+  }
+  next(null);
+}
+function loadOSM(done){                              // Q1: solo vias (critico)
+  var q='[out:json][timeout:20];way["highway"~"^(primary|secondary|tertiary|residential|unclassified|living_street)$"]('+opBBox()+');out geom;';
+  fetchOP(q,6000,13000,function(ok,js,err){
+    if(!ok){OSM.err=err;done(false);return;}
+    var el=js.elements,nhw=0;
+    for(var i=0;i<el.length;i++) if(el[i].type==='way'&&el[i].tags&&el[i].tags.highway) nhw++;
+    if(nhw<8){OSM.err='pocas vias ('+nhw+')';done(false);return;}
+    OSM.raw=el; OSM.net=true; OSM.err=null;
+    var pts=null;
+    try{pts=buildStreetLoop(el);}catch(e){pts=null;}
+    if(pts&&pts.length===CFG.N){OSM.ok=true;OSM.pts=pts;}
+    done(true);
+  });
+}
+function loadExtras(){                               // Q2: edificios+parques (pesado, progresivo)
+  if(OSM.extBusy||OSM.ext) return;
+  OSM.extBusy=true;
+  var bb=opBBox();
+  var q='[out:json][timeout:40];('+
+    'way["building"]('+bb+');'+
+    'way["leisure"~"^(park|pitch|playground|garden|sports_centre)$"]('+bb+');'+
+    'way["landuse"~"^(grass|recreation_ground|village_green|cemetery)$"]('+bb+');'+
+    ');out geom;';
+  fetchOP(q,12000,30000,function(ok,js){
+    OSM.extBusy=false;
+    if(!ok) return;                                  // sin extras: calles igual sirven
+    OSM.ext=js.elements||[];
+    if(WORLD_READY) addExtras();
+  });
+}
+var WORLD_READY=false;
+function addExtras(){
+  try{buildBlocks();buildParks();initMinimap();}catch(e){}
+}
+function buildStreetLoop(elems){
+  var id={},xs=[],zs=[],adj=[],nn=0;
+  function nid(lat,lon){
+    var k=lat+','+lon,v=id[k];
+    if(v===undefined){v=nn++;id[k]=v;var w=ll2xz(lat,lon);xs.push(w[0]);zs.push(w[1]);adj.push([]);}
+    return v;
+  }
+  var wf={primary:0.9,secondary:0.8,tertiary:0.85,residential:1.0,unclassified:1.05,living_street:1.15};
+  for(var e=0;e<elems.length;e++){
+    var wy=elems[e]; if(wy.type!=='way'||!wy.geometry) continue;
+    var hw=wy.tags&&wy.tags.highway; if(!hw) continue;
+    var f=wf[hw]||1.0;
+    for(var g=1;g<wy.geometry.length;g++){
+      var a=nid(wy.geometry[g-1].lat,wy.geometry[g-1].lon);
+      var b=nid(wy.geometry[g].lat,wy.geometry[g].lon);
+      if(a===b) continue;
+      var L=Math.hypot(xs[a]-xs[b],zs[a]-zs[b]); if(!(L>0.1)) continue;
+      adj[a].push({n:b,w:L*f,p:0}); adj[b].push({n:a,w:L*f,p:0});
+    }
+  }
+  if(nn<60) return null;
+  function dijkstra(src){
+    var dist=new Float64Array(nn),prev=new Int32Array(nn),vis=new Uint8Array(nn);
+    for(var i=0;i<nn;i++){dist[i]=1e18;prev[i]=-1;}
+    dist[src]=0;
+    for(var it=0;it<nn;it++){
+      var u=-1,bd=1e18;
+      for(var j=0;j<nn;j++) if(!vis[j]&&dist[j]<bd){bd=dist[j];u=j;}
+      if(u<0) break; vis[u]=1;
+      var ad=adj[u];
+      for(var k=0;k<ad.length;k++){
+        var ed=ad[k],nd=dist[u]+ed.w*(ed.p?8:1);
+        if(nd<dist[ed.n]){dist[ed.n]=nd;prev[ed.n]=u;}
+      }
+    }
+    return {d:dist,prev:prev};
+  }
+  function mark(a,b){
+    var i,l=adj[a]; for(i=0;i<l.length;i++) if(l[i].n===b) l[i].p=1;
+    l=adj[b]; for(i=0;i<l.length;i++) if(l[i].n===a) l[i].p=1;
+  }
+  var A=0,bd=1e18,i;
+  for(i=0;i<nn;i++){var d0=xs[i]*xs[i]+zs[i]*zs[i];if(d0<bd){bd=d0;A=i;}}
+  var r1=dijkstra(A),B=-1,bs=-1;
+  for(i=0;i<nn;i++){
+    if(r1.d[i]<850||r1.d[i]>1750) continue;
+    var s=Math.hypot(xs[i]-xs[A],zs[i]-zs[A]);
+    if(s>bs){bs=s;B=i;}
+  }
+  if(B<0){
+    bs=-1;
+    for(i=0;i<nn;i++) if(r1.d[i]<1e17&&r1.d[i]>bs){bs=r1.d[i];B=i;}
+    if(B<0||r1.d[B]<420) return null;
+  }
+  function walk(prev,to){var out=[];for(var u=to;u>=0;u=prev[u])out.push(u);return out.reverse();}
+  var p1=walk(r1.prev,B);
+  if(p1.length<2||p1[0]!==A) return null;
+  for(i=1;i<p1.length;i++) mark(p1[i-1],p1[i]);
+  var r2=dijkstra(B);
+  if(r2.d[A]>1e17) return null;
+  var p2=walk(r2.prev,A);
+  var loop=p1.concat(p2.slice(1)); loop.pop();
+  var raw=[]; for(i=0;i<loop.length;i++) raw.push([xs[loop[i]],zs[loop[i]]]);
+  return refineLoop(raw);
+}
+function refineLoop(raw){
+  var pts=[raw[0]],i;
+  for(i=1;i<raw.length;i++){
+    var q=raw[i],l=pts[pts.length-1];
+    if(Math.hypot(q[0]-l[0],q[1]-l[1])>0.5) pts.push(q);
+  }
+  if(pts.length<8) return null;
+  function dens(p){
+    var o=[];
+    for(var i2=0;i2<p.length;i2++){
+      var a=p[i2],b=p[(i2+1)%p.length]; o.push(a);
+      var d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.floor(d/14);
+      for(var k=1;k<=n;k++) o.push([lerp(a[0],b[0],k/(n+1)),lerp(a[1],b[1],k/(n+1))]);
+    }
+    return o;
+  }
+  function chai(p){
+    var o=[];
+    for(var i3=0;i3<p.length;i3++){
+      var a=p[i3],b=p[(i3+1)%p.length];
+      o.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25],
+             [a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75]);
+    }
+    return o;
+  }
+  pts=chai(chai(dens(pts)));
+  var N=CFG.N,L=0,acc=[0];
+  for(i=0;i<pts.length;i++){
+    var a2=pts[i],b2=pts[(i+1)%pts.length];
+    L+=Math.hypot(b2[0]-a2[0],b2[1]-a2[1]); acc.push(L);
+  }
+  if(L<900) return null;
+  var out=[],j=0;
+  for(i=0;i<N;i++){
+    var s=i/N*L;
+    while(acc[j+1]<s) j++;
+    var a3=pts[j%pts.length],b3=pts[(j+1)%pts.length],
+        t=(s-acc[j])/Math.max(acc[j+1]-acc[j],1e-6);
+    out.push([lerp(a3[0],b3[0],t),lerp(a3[1],b3[1],t)]);
+  }
+  return out;
+}
+
+// ---- red vial completa, edificios y parques (capas OSM) ----
+var NET={ways:[],sh:{},cell:40,ok:false,built:false};
+var BLD={n:0,list:[],sh:{},cell:34,built:false};
+var PRK={n:0,built:false};
+var HWHALF={primary:4.0,secondary:3.5,tertiary:3.25,residential:2.75,unclassified:2.75,living_street:2.25};
+function netKey(x,z){return Math.floor(x/NET.cell)+'_'+Math.floor(z/NET.cell);}
+function buildStreetNet(){
+  if(!OSM.raw||NET.built) return; NET.built=true;
+  var pos=[],uvv=[],idx=[],vi=0,si=0;
+  for(var e=0;e<OSM.raw.length;e++){
+    var wy=OSM.raw[e]; if(wy.type!=='way'||!wy.geometry) continue;
+    var hw=wy.tags&&wy.tags.highway; if(!hw||!HWHALF[hw]) continue;
+    var half=HWHALF[hw], name=(wy.tags&&wy.tags.name)||'';
+    var wIdx=NET.ways.length;
+    NET.ways.push({name:name,cls:hw,pts:[]});
+    var yoff=0.28+(wIdx%7)*0.013;               // anti z-fight en cruces
+    var P=[];
+    for(var g=0;g<wy.geometry.length;g++){
+      var w=ll2xz(wy.geometry[g].lat,wy.geometry[g].lon);
+      P.push(w); NET.ways[wIdx].pts.push(w);
+    }
+    for(var s=0;s<P.length-1;s++){
+      var a=P[s],b=P[s+1];
+      var dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);
+      if(L<0.5) continue;
+      var nx=-dz/L,nz=dx/L;
+      var ya=heightAt(a[0],a[1])+yoff, yb=heightAt(b[0],b[1])+yoff;
+      pos.push(a[0]-nx*half,ya,a[1]-nz*half, a[0]+nx*half,ya,a[1]+nz*half,
+               b[0]-nx*half,yb,b[1]-nz*half, b[0]+nx*half,yb,b[1]+nz*half);
+      uvv.push(0,si*0.5, 1,si*0.5, 0,si*0.5+L*0.07, 1,si*0.5+L*0.07);
+      idx.push(vi,vi+1,vi+2, vi+1,vi+3,vi+2); vi+=4; si++;
+      // hash espacial: la AABB del segmento toca estas celdas
+      var x0=Math.floor(Math.min(a[0],b[0])/NET.cell),x1=Math.floor(Math.max(a[0],b[0])/NET.cell);
+      var z0=Math.floor(Math.min(a[1],b[1])/NET.cell),z1=Math.floor(Math.max(a[1],b[1])/NET.cell);
+      for(var cx=x0;cx<=x1;cx++)for(var cz=z0;cz<=z1;cz++){
+        var k=cx+'_'+cz;(NET.sh[k]||(NET.sh[k]=[])).push({ax:a[0],az:a[1],bx:b[0],bz:b[1],w:wIdx,h:half});
+      }
+    }
+  }
+  if(vi===0) return;
+  var g2=new THREE.BufferGeometry();
+  g2.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g2.setAttribute('uv',new THREE.Float32BufferAttribute(uvv,2));
+  g2.setIndex(idx); g2.computeVertexNormals();
+  var m=new THREE.Mesh(g2,MAT.road); m.receiveShadow=true; scene.add(m);
+  NET.ok=true;
+}
+function distToStreet(x,z){
+  var cx=Math.floor(x/NET.cell),cz=Math.floor(z/NET.cell),bd=1e18,bw=-1,bh=0;
+  for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){
+    var l=NET.sh[(cx+a)+'_'+(cz+b)]; if(!l) continue;
+    for(var q=0;q<l.length;q++){
+      var s=l[q],dx=s.bx-s.ax,dz=s.bz-s.az,L2=dx*dx+dz*dz;
+      var t=L2>0?clamp(((x-s.ax)*dx+(z-s.az)*dz)/L2,0,1):0;
+      var px=s.ax+dx*t-x, pz=s.az+dz*t-z, d=px*px+pz*pz;
+      if(d<bd){bd=d;bw=s.w;bh=s.h;}
+    }
+  }
+  return {d:bw<0?1e9:Math.sqrt(bd),w:bw,h:bh};
+}
+function buildBlocks(){
+  if(!OSM.ext||BLD.built) return; BLD.built=true;
+  var pal=[0xe7e0d2,0xd9c9a8,0xcdb493,0xe2d3bd,0xd8d2c4,0xc9b8a0];
+  for(var e=0;e<OSM.ext.length&&BLD.list.length<4000;e++){
+    var wy=OSM.ext[e];
+    if(wy.type!=='way'||!wy.geometry||!(wy.tags&&wy.tags.building!==undefined)) continue;
+    var P=[],i;
+    for(i=0;i<wy.geometry.length;i++) P.push(ll2xz(wy.geometry[i].lat,wy.geometry[i].lon));
+    if(P.length<3) continue;
+    // angulo del lado mas largo
+    var bl=0,ang=0;
+    for(i=0;i<P.length-1;i++){
+      var dx=P[i+1][0]-P[i][0],dz=P[i+1][1]-P[i][1],L=dx*dx+dz*dz;
+      if(L>bl){bl=L;ang=Math.atan2(dz,dx);}
+    }
+    var ca=Math.cos(-ang),sa=Math.sin(-ang);
+    var mnx=1e18,mxx=-1e18,mnz=1e18,mxz=-1e18;
+    for(i=0;i<P.length;i++){
+      var rx=P[i][0]*ca-P[i][1]*sa, rz=P[i][0]*sa+P[i][1]*ca;
+      if(rx<mnx)mnx=rx; if(rx>mxx)mxx=rx; if(rz<mnz)mnz=rz; if(rz>mxz)mxz=rz;
+    }
+    var hwd=(mxx-mnx)/2,hdd=(mxz-mnz)/2;
+    if(hwd<1||hdd<1||hwd>60||hdd>60) continue;
+    var lcx=(mnx+mxx)/2, lcz=(mnz+mxz)/2;
+    var cb=Math.cos(ang),sb=Math.sin(ang);
+    var wx=lcx*cb-lcz*sb, wz=lcx*sb+lcz*cb;
+    var lv=parseFloat(wy.tags['building:levels'])||1;
+    var hh=clamp(lv,1,5)*3.0+rand(0.2,1.4);
+    BLD.list.push({cx:wx,cz:wz,hw:hwd,hd:hdd,ang:ang,h:hh,col:pal[BLD.list.length%pal.length]});
+  }
+  BLD.n=BLD.list.length;
+  if(!BLD.n) return;
+  var im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),
+    new THREE.MeshLambertMaterial({color:0xffffff}),BLD.n);
+  var M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
+      Pv=new THREE.Vector3(),S=new THREE.Vector3(),C=new THREE.Color();
+  for(var j=0;j<BLD.n;j++){
+    var bld=BLD.list[j], base=heightAt(bld.cx,bld.cz);
+    E.set(0,-bld.ang,0); Q.setFromEuler(E);
+    Pv.set(bld.cx,base+bld.h/2,bld.cz); S.set(bld.hw*2,bld.h,bld.hd*2);
+    M.compose(Pv,Q,S); im.setMatrixAt(j,M);
+    if(im.setColorAt){C.setHex(bld.col);im.setColorAt(j,C);}
+    // hash de colision por AABB del OBB
+    var r=Math.hypot(bld.hw,bld.hd);
+    var x0=Math.floor((bld.cx-r)/BLD.cell),x1=Math.floor((bld.cx+r)/BLD.cell);
+    var z0=Math.floor((bld.cz-r)/BLD.cell),z1=Math.floor((bld.cz+r)/BLD.cell);
+    for(var cx2=x0;cx2<=x1;cx2++)for(var cz2=z0;cz2<=z1;cz2++){
+      var k2=cx2+'_'+cz2;(BLD.sh[k2]||(BLD.sh[k2]=[])).push(j);
+    }
+  }
+  im.castShadow=true; im.receiveShadow=true;
+  if(im.instanceColor) im.instanceColor.needsUpdate=true;
+  scene.add(im);
+}
+function hitBld(x,z){
+  var l=BLD.sh[Math.floor(x/BLD.cell)+'_'+Math.floor(z/BLD.cell)];
+  if(!l) return false;
+  for(var i=0;i<l.length;i++){
+    var b=BLD.list[l[i]];
+    var dx=x-b.cx,dz=z-b.cz,ca=Math.cos(-b.ang),sa=Math.sin(-b.ang);
+    var lx=dx*ca-dz*sa, lz=dx*sa+dz*ca;
+    if(Math.abs(lx)<b.hw+0.7&&Math.abs(lz)<b.hd+0.7) return true;
+  }
+  return false;
+}
+function buildParks(){
+  if(!OSM.ext||PRK.built) return; PRK.built=true;
+  var mat=new THREE.MeshLambertMaterial({color:0x4f8a3c});
+  for(var e=0;e<OSM.ext.length;e++){
+    var wy=OSM.ext[e];
+    if(wy.type!=='way'||!wy.geometry) continue;
+    var t=wy.tags||{};
+    if(t.building!==undefined||t.highway) continue;
+    if(!(t.leisure||t.landuse)) continue;
+    var G=wy.geometry; if(G.length<4) continue;
+    var sh=new THREE.Shape(),w0=ll2xz(G[0].lat,G[0].lon);
+    sh.moveTo(w0[0],-w0[1]);
+    for(var i=1;i<G.length;i++){var w=ll2xz(G[i].lat,G[i].lon);sh.lineTo(w[0],-w[1]);}
+    sh.closePath();
+    var g;
+    try{g=new THREE.ShapeGeometry(sh);}catch(err){continue;}
+    g.rotateX(-Math.PI/2);
+    var p=g.attributes.position;
+    for(var v=0;v<p.count;v++) p.setY(v,heightAt(p.getX(v),p.getZ(v))+0.35);
+    g.computeVertexNormals();
+    var mm=new THREE.Mesh(g,mat); mm.receiveShadow=true; scene.add(mm);
+    PRK.n++;
+  }
+}
+// ---- minimapa + nombre de calle ----
+var MM={base:null,ctx:null,S:158,sc:0,ok:false};
+function initMinimap(){
+  if(!NET.ok) return;
+  var cv=document.getElementById('mmap'); MM.ctx=cv.getContext('2d');
+  MM.sc=(MM.S/2-8)/1500;
+  var b=cnv(MM.S,MM.S),g=b.getContext('2d');
+  function mx(x){return MM.S/2+x*MM.sc;} function mz(z){return MM.S/2+z*MM.sc;}
+  g.fillStyle='rgba(12,19,36,0.92)'; g.fillRect(0,0,MM.S,MM.S);
+  g.fillStyle='rgba(70,150,80,0.85)';
+  var EXT=OSM.ext||[];
+  for(var e=0;e<EXT.length;e++){
+    var wy=EXT[e]; if(wy.type!=='way'||!wy.geometry) continue;
+    var t=wy.tags||{};
+    if(t.building!==undefined||t.highway||!(t.leisure||t.landuse)) continue;
+    g.beginPath();
+    for(var i=0;i<wy.geometry.length;i++){
+      var w=ll2xz(wy.geometry[i].lat,wy.geometry[i].lon);
+      if(i)g.lineTo(mx(w[0]),mz(w[1]));else g.moveTo(mx(w[0]),mz(w[1]));
+    }
+    g.closePath(); g.fill();
+  }
+  g.lineCap='round';
+  for(var e2=0;e2<NET.ways.length;e2++){
+    var wv=NET.ways[e2],P=wv.pts;
+    g.strokeStyle=(wv.cls==='primary'||wv.cls==='secondary')?'#c7d4e8':'#7e8ba3';
+    g.lineWidth=(wv.cls==='primary')?2.4:(wv.cls==='secondary'?2:1.2);
+    g.beginPath();
+    for(var i2=0;i2<P.length;i2++){if(i2)g.lineTo(mx(P[i2][0]),mz(P[i2][1]));else g.moveTo(mx(P[i2][0]),mz(P[i2][1]));}
+    g.stroke();
+  }
+  if(OSM.ok){
+    g.strokeStyle='#e8b04a'; g.lineWidth=2.2; g.beginPath();
+    for(var k=0;k<CFG.N;k+=4){var p=TRK.p[k];if(k)g.lineTo(mx(p[0]),mz(p[1]));else g.moveTo(mx(p[0]),mz(p[1]));}
+    g.closePath(); g.stroke();
+  }
+  g.fillStyle='#9fb4dd'; g.font='bold 10px sans-serif'; g.fillText('N',MM.S-14,14);
+  g.beginPath();g.moveTo(MM.S-10,17);g.lineTo(MM.S-13,24);g.lineTo(MM.S-7,24);g.closePath();g.fill();
+  MM.base=b; MM.ok=true;
+  cv.style.display='block';
+}
+function drawMinimap(){
+  if(!MM.ok) return;
+  var g=MM.ctx; g.clearRect(0,0,MM.S,MM.S); g.drawImage(MM.base,0,0);
+  if(MODE==='race') for(var i=0;i<AIs.length;i++){
+    var am=AIs[i].mesh.position;
+    g.fillStyle='#8fa3c7'; g.beginPath();
+    g.arc(MM.S/2+am.x*MM.sc,MM.S/2+am.z*MM.sc,2,0,TAU); g.fill();
+  }
+  var px=MM.S/2+player.x*MM.sc, pz=MM.S/2+player.z*MM.sc;
+  g.save(); g.translate(px,pz); g.rotate(Math.atan2(Math.sin(player.head),-Math.cos(player.head))+Math.PI);
+  g.fillStyle='#ff5044'; g.beginPath();
+  g.moveTo(0,-5);g.lineTo(-3.4,4);g.lineTo(3.4,4);g.closePath(); g.fill(); g.restore();
+}
+var MODE='race',streetEl=null,stT=0;
+function updateStreet(dt){
+  if(!streetEl||!NET.ok) return;
+  stT-=dt; if(stT>0) return; stT=0.5;
+  var q=distToStreet(player.x,player.z),txt;
+  if(q.d>q.h+14) txt='fuera de camino';
+  else {
+    var nm=NET.ways[q.w].name;
+    if(!nm){ // buscar via con nombre cercana
+      var q2=null,cx=Math.floor(player.x/NET.cell),cz=Math.floor(player.z/NET.cell),bd=1e18;
+      for(var a=-1;a<=1;a++)for(var b=-1;b<=1;b++){
+        var l=NET.sh[(cx+a)+'_'+(cz+b)]; if(!l) continue;
+        for(var i=0;i<l.length;i++){
+          var s=l[i]; if(!NET.ways[s.w].name) continue;
+          var d=(player.x-s.ax)*(player.x-s.ax)+(player.z-s.az)*(player.z-s.az);
+          if(d<bd){bd=d;q2=s.w;}
+        }
+      }
+      nm=(q2!==null&&bd<160*160)?('cerca de '+NET.ways[q2].name):'calle sin nombre';
+    }
+    txt=nm;
+  }
+  streetEl.textContent=txt+' \u00b7 Catemu';
+}
+// ---- fisica de paseo libre ----
+function spawnFree(){
+  var q=distToStreet(0,0),wv=NET.ways[q.w]||NET.ways[0],P=wv.pts;
+  var mi=0,bd=1e18;
+  for(var i=0;i<P.length;i++){var d=P[i][0]*P[i][0]+P[i][1]*P[i][1];if(d<bd){bd=d;mi=i;}}
+  var a=P[mi],b=P[Math.min(mi+1,P.length-1)];
+  if(a===b) b=P[Math.max(mi-1,0)];
+  player.x=a[0]; player.z=a[1];
+  player.head=Math.atan2(b[0]-a[0],b[1]-a[1])||0;
+  player.v=0; player.gear=0; player.slope=0;
+  player.y=heightAt(player.x,player.z)+0.34;
+  player.mesh.position.set(player.x,player.y,player.z);
+  player.mesh.rotation.set(0,player.head,0);
+  camPos.set(player.x-Math.sin(player.head)*9,player.y+4,player.z-Math.cos(player.head)*9);
+}
+function enterFree(){
+  MODE='free'; RACE.on=false; RACE.done=false;
+  for(var i=0;i<AIs.length;i++) AIs[i].mesh.visible=false;
+  document.getElementById('panel').style.display='none';
+  if(streetEl) streetEl.style.display='block';
+  spawnFree();
+  cenEl.textContent='PASEO LIBRE';
+  setTimeout(function(){if(MODE==='free')cenEl.textContent='';},1600);
+}
+function stepPlayerFree(dt){
+  var thr=(keys.KeyW||keys.ArrowUp||btn.acc)?1:0;
+  var brk=(keys.KeyS||keys.ArrowDown||btn.brk)?1:0;
+  var st=((keys.KeyA||keys.ArrowLeft||btn.l)?1:0)-((keys.KeyD||keys.ArrowRight||btn.r)?1:0);
+  player.steer=lerp(player.steer,st,clamp(8*dt,0,1));
+  var v=player.v;
+  if(player.gear<G.length-1&&v>G[player.gear].v*0.97) player.gear++;
+  else if(player.gear>0&&v<G[player.gear-1].v*0.72) player.gear--;
+  var gr=G[player.gear];
+  if(v<gr.v) v+=thr*gr.a*dt; else v-=(v-gr.v)*3.0*dt;
+  if(v>0.2) v=Math.max(0,v-brk*44*dt);
+  else if(brk&&thr===0) v=Math.max(-8,v-7*dt);
+  v-=v*0.006*dt;
+  if(thr||brk||Math.abs(v)>1.2) v-=9.81*(player.slope||0)*dt;
+  else v*=Math.exp(-8*dt);
+  var q=distToStreet(player.x,player.z);
+  var off=q.d>q.h+1.4;
+  if(off){ v-=v*1.4*dt; if(v>8.0) v=lerp(v,8.0,clamp(4.5*dt,0,1)); }
+  var tf=clamp(Math.abs(v)/10,0,1)*(34/(34+Math.abs(v)*0.5));
+  player.head+=player.steer*2.5*tf*dt*(v>=0?1:-1);
+  var px=player.x,pz=player.z;
+  player.x+=Math.sin(player.head)*v*dt;
+  player.z+=Math.cos(player.head)*v*dt;
+  if(hitBld(player.x,player.z)){ player.x=px; player.z=pz; v*=0.15; }
+  player.x=clamp(player.x,-3400,3400); player.z=clamp(player.z,-3050,2450);
+  // pendiente segun rumbo, sobre el terreno real
+  var sh2=Math.sin(player.head),ch2=Math.cos(player.head);
+  var hf=heightAt(player.x+sh2*7,player.z+ch2*7), hb=heightAt(player.x-sh2*7,player.z-ch2*7);
+  player.slope=clamp((hf-hb)/14,-0.35,0.35);
+  player.y=heightAt(player.x,player.z)+(off?0.10:0.34);
+  player.v=v;
+  player.mesh.position.set(player.x,player.y,player.z);
+  player.mesh.rotation.y=player.head+player.steer*clamp(Math.abs(v)/45,0,1)*0.22;
+  player.mesh.rotation.x=lerp(player.mesh.rotation.x,-Math.asin(clamp(player.slope,-0.3,0.3))*0.9,clamp(6*dt,0,1));
+  var ud=player.mesh.userData;
+  for(var wi=0;wi<4;wi++) ud.wheels[wi].rotation.x+=v*dt/0.42;
+  ud.fronts[0].rotation.y=player.steer*0.45; ud.fronts[1].rotation.y=player.steer*0.45;
+  ud.brakeM.color.setHex(brk?0xff2020:0x550000);
+}
+
+// ---- escena ----
+var scene,camera,renderer,sun;
+function initScene(){
+  scene=new THREE.Scene();
+  var sc=document.createElement('canvas'); sc.width=32; sc.height=256;
+  var sg=sc.getContext('2d');
+  var sgr=sg.createLinearGradient(0,0,0,256);
+  sgr.addColorStop(0,'#3f7fd4'); sgr.addColorStop(0.5,'#8fc1ec'); sgr.addColorStop(0.8,'#cfe6f5'); sgr.addColorStop(1,'#e6eef2');
+  sg.fillStyle=sgr; sg.fillRect(0,0,32,256);
+  scene.background=new THREE.Color(0xbcd9ef);
+  scene.fog=new THREE.Fog(0xcfdfeb,950,4300);
+  camera=new THREE.PerspectiveCamera(66,window.innerWidth/window.innerHeight,0.1,12000);
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.06;
+  if(renderer.shadowMap){renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;}
+  document.body.appendChild(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xcfe4ff,0x4a5c3a,0.95));
+  sun=new THREE.DirectionalLight(0xfff2d8,0.95);
+  sun.position.set(300,500,150);
+  sun.castShadow=true;
+  sun.shadow.mapSize.set(COARSE?1024:2048,COARSE?1024:2048);
+  sun.shadow.camera.left=-75; sun.shadow.camera.right=75;
+  sun.shadow.camera.top=75; sun.shadow.camera.bottom=-75;
+  sun.shadow.camera.near=60; sun.shadow.camera.far=900;
+  sun.shadow.bias=-0.0006;
+  scene.add(sun); scene.add(sun.target);
+  var halo=document.createElement('canvas'); halo.width=halo.height=128;
+  var hg=halo.getContext('2d');
+  var grd=hg.createRadialGradient(64,64,4,64,64,64);
+  grd.addColorStop(0,'rgba(255,244,214,1)'); grd.addColorStop(0.4,'rgba(255,226,160,0.55)'); grd.addColorStop(1,'rgba(255,226,160,0)');
+  hg.fillStyle=grd; hg.fillRect(0,0,128,128);
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(halo),fog:false,depthWrite:false}));
+  sp.scale.set(320,320,1); sp.position.set(1400,1500,700); scene.add(sp);
+  var dome=new THREE.Mesh(new THREE.SphereGeometry(8500,20,12),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc),side:THREE.BackSide,fog:false,depthWrite:false}));
+  scene.add(dome);
+  window.addEventListener('resize',function(){
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+}
+// ---- texturas canvas ----
+function cnv(w,h){var c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function texAsphalt(){
+  var c=cnv(256,256),g=c.getContext('2d');
+  g.fillStyle='#33363d';g.fillRect(0,0,256,256);
+  for(var i=0;i<2600;i++){g.fillStyle='rgba('+(40+Math.random()*50|0)+','+(40+Math.random()*50|0)+','+(45+Math.random()*50|0)+',0.5)';g.fillRect(Math.random()*256,Math.random()*256,2,2);}
+  g.fillStyle='rgba(232,232,232,0.85)';g.fillRect(6,0,4,256);g.fillRect(246,0,4,256);
+  var t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+}
+function texGrass(){
+  var c=cnv(256,256),g=c.getContext('2d');
+  g.fillStyle='#5e8a3c';g.fillRect(0,0,256,256);
+  for(var i=0;i<2200;i++){g.fillStyle='rgba('+(70+Math.random()*40|0)+','+(120+Math.random()*50|0)+','+(45+Math.random()*30|0)+',0.55)';g.fillRect(Math.random()*256,Math.random()*256,3,3);}
+  var t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(90,90);return t;
+}
+var MAT={},ENVMAP=null,SHADT=null;
+function makeEnv(){
+  if(ENVMAP) return;
+  var cols=[['#bfe0f6','#7fb2df'],['#bfe0f6','#7fb2df'],['#eef6fc','#bcd9ef'],
+            ['#5c6b52','#414d3a'],['#bfe0f6','#7fb2df'],['#bfe0f6','#7fb2df']],faces=[];
+  for(var i=0;i<6;i++){
+    var c=cnv(64,64),g=c.getContext('2d');
+    var gr=g.createLinearGradient(0,0,0,64);
+    gr.addColorStop(0,cols[i][0]); gr.addColorStop(1,cols[i][1]);
+    g.fillStyle=gr; g.fillRect(0,0,64,64); faces.push(c);
+  }
+  ENVMAP=new THREE.CubeTexture(faces); ENVMAP.needsUpdate=true;
+  if(THREE.sRGBEncoding!==undefined) ENVMAP.encoding=THREE.sRGBEncoding;
+}
+function shadowTex(){
+  if(SHADT) return SHADT;
+  var c=cnv(128,128),g=c.getContext('2d');
+  var gr=g.createRadialGradient(64,64,8,64,64,62);
+  gr.addColorStop(0,'rgba(0,0,0,0.42)');gr.addColorStop(0.65,'rgba(0,0,0,0.24)');gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr; g.fillRect(0,0,128,128);
+  SHADT=new THREE.CanvasTexture(c); return SHADT;
+}
+function initMaterials(){
+  makeEnv();
+  var ANISO=(renderer.capabilities&&renderer.capabilities.getMaxAnisotropy)?renderer.capabilities.getMaxAnisotropy():4;
+  var ta=texAsphalt(); ta.anisotropy=ANISO;
+  MAT.road=new THREE.MeshLambertMaterial({map:ta});
+  MAT.curbR=new THREE.MeshLambertMaterial({color:0xd23434});
+  MAT.curbW=new THREE.MeshLambertMaterial({color:0xf2f2f2});
+  MAT.line=new THREE.MeshBasicMaterial({color:0xf5f5f5});
+  MAT.rail=new THREE.MeshLambertMaterial({color:0xb9c2cc});
+  MAT.post=new THREE.MeshLambertMaterial({color:0x5c646e});
+  MAT.tyre=new THREE.MeshLambertMaterial({color:0x20232a});
+  MAT.trunk=new THREE.MeshLambertMaterial({color:0x6b4a2c});
+  MAT.leaf=new THREE.MeshLambertMaterial({color:0x3f7a34});
+  MAT.rock=new THREE.MeshLambertMaterial({color:0x8b8e94});
+  MAT.mount=new THREE.MeshLambertMaterial({color:0x7d94ad});
+  MAT.snow=new THREE.MeshLambertMaterial({color:0xf4f8fc});
+  MAT.stand=new THREE.MeshLambertMaterial({color:0x8f6d4a});
+  MAT.standR=new THREE.MeshLambertMaterial({color:0x304a7c});
+  MAT.dark=new THREE.MeshLambertMaterial({color:0x22262e});
+  MAT.glass=new THREE.MeshLambertMaterial({color:0x9fd2ea,transparent:true,opacity:0.8});
+  MAT.cloud=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.85,fog:false});
+}
+function box(w,h,d,m,parent,x,y,z){var o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);parent.add(o);return o;}
+function cyl(rt,rb,h,seg,m,parent,x,y,z){var o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);o.position.set(x,y,z);parent.add(o);return o;}
+function cone(r,h,seg,m,parent,x,y,z){var o=new THREE.Mesh(new THREE.ConeGeometry(r,h,seg),m);o.position.set(x,y,z);parent.add(o);return o;}
+
+// ---- construccion del mundo ----
+function buildRoad(){
+  var N=CFG.N, hw=CFG.roadHalf, h=TRK.h;
+  var pos=[],uv=[],idx=[];
+  for(var k=0;k<=N;k++){
+    var i=k%N, p=TRK.p[i], n=TRK.n[i], y=h[i]+ROADL;
+    pos.push(p[0]-n[0]*hw,y,p[1]-n[1]*hw, p[0]+n[0]*hw,y,p[1]+n[1]*hw);
+    uv.push(0,k*0.35, 1,k*0.35);
+  }
+  for(var k2=0;k2<N;k2++){var a=k2*2;idx.push(a,a+1,a+2, a+1,a+3,a+2);}
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx); g.computeVertexNormals();
+  var roadM=new THREE.Mesh(g,MAT.road); roadM.receiveShadow=true; scene.add(roadM);
+  function seg(w,hh,m,ax,ay,az,bx,by,bz){
+    var L=Math.hypot(bx-ax,by-ay,bz-az)+0.25;
+    var o=new THREE.Mesh(new THREE.BoxGeometry(w,hh,L),m);
+    o.position.set((ax+bx)/2,(ay+by)/2,(az+bz)/2);
+    o.lookAt(bx,by,bz);
+    scene.add(o); return o;
+  }
+  // linea central discontinua
+  for(var k3=0;k3<N;k3+=6){
+    var i3=k3, j3=(k3+1)%N;
+    var pa=TRK.p[i3],pb=TRK.p[j3];
+    seg(0.35,0.02,MAT.line,pa[0],h[i3]+ROADL+0.04,pa[1],pb[0],h[j3]+ROADL+0.04,pb[1]);
+  }
+  // linea de partida
+  var p0=TRK.p[0],n0=TRK.n[0];
+  seg(2.2,0.03,MAT.line,p0[0]-n0[0]*hw,h[0]+ROADL+0.05,p0[1]-n0[1]*hw,p0[0]+n0[0]*hw,h[0]+ROADL+0.05,p0[1]+n0[1]*hw);
+  // pianos
+  for(var k4=0;k4<N;k4++){
+    if(TRK.curv[k4]>0.006){
+      var t1=TRK.t[(k4+1)%N],tt=TRK.t[k4];
+      var side=(tt[0]*t1[1]-tt[1]*t1[0])>0?1:-1;
+      var na=TRK.n[k4],nb=TRK.n[(k4+1)%N];
+      var qa=TRK.p[k4],qb=TRK.p[(k4+1)%N];
+      seg(1.6,0.09,(k4%2)?MAT.curbR:MAT.curbW,
+        qa[0]+na[0]*(-side)*(hw+0.8),h[k4]+ROADL+0.01,qa[1]+na[1]*(-side)*(hw+0.8),
+        qb[0]+nb[0]*(-side)*(hw+0.8),h[(k4+1)%N]+ROADL+0.01,qb[1]+nb[1]*(-side)*(hw+0.8));
+    }
+  }
+  // postes + rieles de barrera
+  var postG=new THREE.CylinderGeometry(0.12,0.12,1.1,6);
+  var posts=new THREE.InstancedMesh(postG,MAT.post,N);
+  var M=new THREE.Matrix4(),P=new THREE.Vector3(),Q=new THREE.Quaternion(),S=new THREE.Vector3(1,1,1);
+  var pc=0;
+  for(var k5=0;k5<N;k5+=2){
+    var pp5=TRK.p[k5],nn5=TRK.n[k5];
+    for(var sgn=-1;sgn<=1;sgn+=2){
+      P.set(pp5[0]+nn5[0]*sgn*CFG.barrier,h[k5]+0.55,pp5[1]+nn5[1]*sgn*CFG.barrier);
+      M.compose(P,Q,S); posts.setMatrixAt(pc++,M);
+    }
+  }
+  posts.count=pc; scene.add(posts);
+  for(var k6=0;k6<N;k6++){
+    var a6=TRK.p[k6],b6=TRK.p[(k6+1)%N],n6=TRK.n[k6],n7=TRK.n[(k6+1)%N];
+    for(var sg=-1;sg<=1;sg+=2){
+      seg(0.08,0.28,MAT.rail,
+        a6[0]+n6[0]*sg*CFG.barrier,h[k6]+0.95,a6[1]+n6[1]*sg*CFG.barrier,
+        b6[0]+n7[0]*sg*CFG.barrier,h[(k6+1)%N]+0.95,b6[1]+n7[1]*sg*CFG.barrier);
+    }
+  }
+}
+function buildGround(){
+  var X0=-3600,X1=3600,Z0=-3200,Z1=2600,SX=200,SZ=160;
+  var cxm=(X0+X1)/2, czm=(Z0+Z1)/2;
+  var g=new THREE.PlaneGeometry(X1-X0,Z1-Z0,SX,SZ);
+  g.rotateX(-Math.PI/2);
+  var pos=g.attributes.position, uvs=g.attributes.uv, cols=new Float32Array(pos.count*3);
+  var c=new THREE.Color();
+  for(var i=0;i<pos.count;i++){
+    var wx=pos.getX(i)+cxm, wz=pos.getZ(i)+czm;
+    var hh=heightAt(wx,wz);
+    var q=distToTrack(wx,wz);
+    if(q.d<70) hh=lerp(TRK.h[q.i],hh,smoothstep(20,70,q.d));
+    pos.setY(i,hh);
+    var lonV=CFG.lon0+wx/CFG.mLon, latV=CFG.lat0+(-wz)/CFG.mLat;
+    uvs.setXY(i,(lonV-SAT.lonW)/(SAT.lonE-SAT.lonW),1-(mY(SAT.latN)-mY(latV))/(mY(SAT.latN)-mY(SAT.latS)));
+    var sx=(heightAt(wx+18,wz)-heightAt(wx-18,wz))/36;
+    var sz=(heightAt(wx,wz+18)-heightAt(wx,wz-18))/36;
+    var sl=Math.hypot(sx,sz), nz=fbm(wx*0.004,wz*0.004);
+    if(sl>0.55) c.setRGB(0.50+nz*0.08,0.48+nz*0.06,0.46);
+    else if(hh<12&&sl<0.20) c.setRGB(0.30+nz*0.12,0.52+nz*0.10,0.20+nz*0.05);
+    else if(hh<95) c.setRGB(0.64+nz*0.10,0.53+nz*0.08,0.29+nz*0.04);
+    else c.setRGB(0.50+nz*0.08,0.41+nz*0.06,0.25);
+    cols[i*3]=c.r;cols[i*3+1]=c.g;cols[i*3+2]=c.b;
+  }
+  g.setAttribute('color',new THREE.BufferAttribute(cols,3));
+  g.computeVertexNormals();
+  var mat=SAT.ok?new THREE.MeshLambertMaterial({map:SAT.tex}):new THREE.MeshLambertMaterial({vertexColors:true});
+  var t=new THREE.Mesh(g,mat);
+  t.position.set(cxm,0,czm);
+  t.receiveShadow=true;
+  scene.add(t);
+  TERR=t;
+}
+function buildArch(){
+  var p=TRK.p[0], n=TRK.n[0], t=TRK.t[0], ry=Math.atan2(t[0],t[1]);
+  var gp=new THREE.Group(); gp.position.set(p[0],TRK.h[0]+ROADL,p[1]); gp.rotation.y=ry; scene.add(gp);
+  box(1.4,11,1.4,MAT.dark,gp,-CFG.roadHalf-2.2,5.5,0);
+  box(1.4,11,1.4,MAT.dark,gp,CFG.roadHalf+2.2,5.5,0);
+  box(CFG.roadHalf*2+7.2,2.4,1.6,MAT.standR,gp,0,11.5,0);
+  var c=cnv(512,96),gx=c.getContext('2d');
+  gx.fillStyle='#22315a';gx.fillRect(0,0,512,96);
+  gx.fillStyle='#fff';gx.font='bold 56px sans-serif';gx.textAlign='center';gx.fillText('CIRCUITO GT',256,64);
+  var bn=new THREE.Mesh(new THREE.PlaneGeometry(16,2.2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));
+  bn.position.set(0,11.5,0.85); gp.add(bn);
+  var bn2=bn.clone(); bn2.rotation.y=Math.PI; bn2.position.z=-0.85; gp.add(bn2);
+}
+function buildStands(){
+  var idxs=[26,470];
+  for(var s2=0;s2<idxs.length;s2++){
+    var i2=idxs[s2], p=TRK.p[i2], n=TRK.n[i2], t=TRK.t[i2];
+    var side=(s2%2)?1:-1;
+    var gp=new THREE.Group();
+    gp.position.set(p[0]+n[0]*side*26,TRK.h[i2],p[1]+n[1]*side*26);
+    gp.rotation.y=Math.atan2(t[0],t[1]);
+    scene.add(gp);
+    box(34,2.4,16,MAT.post,gp,0,-1.1,side*4);
+    for(var r=0;r<4;r++) box(30,1.2,3,MAT.stand,gp,0,0.6+r*1.5,side*r*2.6);
+    box(32,0.8,13,MAT.standR,gp,0,8.4,side*4.5);
+    box(1,8,1,MAT.post,gp,-14,4,side*8.5); box(1,8,1,MAT.post,gp,14,4,side*8.5);
+    for(var c2=0;c2<26;c2++) box(0.9,0.9,0.9,new THREE.MeshLambertMaterial({color:[0xd0d4dc,0xc23b3b,0x2f5db8,0xd9b23a][c2%4]}),gp,-13+c2,1.7+(c2%4)*1.5,side*((c2%4)*2.6));
+  }
+}
+function buildNature(){
+  var alamoG=new THREE.ConeGeometry(1.7,9.5,7), espinoG=new THREE.ConeGeometry(3.1,4.6,7);
+  var trunkG=new THREE.CylinderGeometry(0.35,0.55,4,6), rockG=new THREE.DodecahedronGeometry(1.4,0);
+  var espM=new THREE.MeshLambertMaterial({color:0x4a5c30});
+  var alamos=new THREE.InstancedMesh(alamoG,MAT.leaf,240);
+  var espinos=new THREE.InstancedMesh(espinoG,espM,260);
+  var trunks=new THREE.InstancedMesh(trunkG,MAT.trunk,500);
+  var rocks=new THREE.InstancedMesh(rockG,MAT.rock,140);
+  var M=new THREE.Matrix4(),P=new THREE.Vector3(),Q=new THREE.Quaternion(),S=new THREE.Vector3();
+  Q.identity();
+  var nA=0,nE=0,nT=0,nR=0,tries=0;
+  while((nA<150||nE<170)&&tries<12000){
+    tries++;
+    var x=rand(-3400,3400),z=rand(-3000,2400);
+    if(distToTrack(x,z).d<78) continue;
+    var hh=heightAt(x,z);
+    var sx=(heightAt(x+16,z)-heightAt(x-16,z))/32;
+    var sz=(heightAt(x,z+16)-heightAt(x,z-16))/32;
+    var sl=Math.hypot(sx,sz);
+    if(hh<14&&sl<0.20&&nA<150){
+      var sc=rand(0.8,1.5);
+      P.set(x,2*sc,z);S.set(sc,sc,sc);M.compose(P,Q,S);trunks.setMatrixAt(nT++,M);
+      P.set(x,(4+4.4)*sc,z);S.set(sc,sc*rand(0.95,1.35),sc);M.compose(P,Q,S);alamos.setMatrixAt(nA++,M);
+    } else if(hh>=10&&hh<420&&sl<0.5&&nE<170&&Math.random()<0.5){
+      var se=rand(0.7,1.3);
+      P.set(x,1.6*se,z);S.set(se*0.8,se*0.8,se*0.8);M.compose(P,Q,S);trunks.setMatrixAt(nT++,M);
+      P.set(x,(3.2+1.9)*se,z);S.set(se,se,se);M.compose(P,Q,S);espinos.setMatrixAt(nE++,M);
+    }
+    if(nR<140&&sl>0.30&&Math.random()<0.3){
+      var rs=rand(0.7,2.6);
+      P.set(x+rand(-14,14),hh+0.5,z+rand(-14,14));S.set(rs,rs,rs);
+      M.compose(P,Q,S);rocks.setMatrixAt(nR++,M);
+    }
+  }
+  alamos.count=nA;espinos.count=nE;trunks.count=nT;rocks.count=nR;
+  alamos.castShadow=true;espinos.castShadow=true;trunks.castShadow=true;rocks.castShadow=true;
+  scene.add(alamos);scene.add(espinos);scene.add(trunks);scene.add(rocks);
+  for(var c3=0;c3<14;c3++){
+    var cg=new THREE.Group();
+    cg.position.set(rand(-3200,3200),rand(320,520),rand(-2800,2200));
+    for(var b3=0;b3<4;b3++){
+      var s3=rand(16,34);
+      var mm=new THREE.Mesh(new THREE.SphereGeometry(s3,7,6),MAT.cloud);
+      mm.position.set(b3*rand(14,24)-34,rand(-4,6),rand(-9,9));
+      mm.scale.y=0.55; cg.add(mm);
+    }
+    scene.add(cg);
+  }
+}
+function buildPueblo(){
+  var roofM=new THREE.MeshLambertMaterial({color:0x9a4a30});
+  var tonos=[0xe7e0d2,0xd9c9a8,0xcdb493,0xe2d3bd];
+  var placed=0,tries=0;
+  while(placed<34&&tries<900){
+    tries++;
+    var x=150+rand(-420,420), z=330+rand(-260,300);
+    if(distToTrack(x,z).d<34) continue;
+    var hh=heightAt(x,z);
+    var sl=Math.abs(heightAt(x+12,z)-heightAt(x-12,z))/24;
+    if(hh>26||sl>0.22) continue;
+    var w=rand(6,9),d=rand(5,7),ry=rand(0,3.14);
+    var casa=new THREE.Group(); casa.position.set(x,hh,z); casa.rotation.y=ry; scene.add(casa);
+    box(w,3.1,d,new THREE.MeshLambertMaterial({color:tonos[placed%4]}),casa,0,1.55,0);
+    box(w+0.7,0.9,d+0.7,roofM,casa,0,3.55,0);
+    box(1.1,2.1,0.15,MAT.dark,casa,0,1.05,d/2+0.03);
+    placed++;
+  }
+  // iglesia del pueblo
+  var ix=-95,iz=150,ih=heightAt(ix,iz);
+  if(distToTrack(ix,iz).d>30){
+    var ig=new THREE.Group(); ig.position.set(ix,ih,iz); scene.add(ig);
+    var blanco=new THREE.MeshLambertMaterial({color:0xf2ede2});
+    box(10,5,15,blanco,ig,0,2.5,0);
+    box(11,1.2,16,roofM,ig,0,5.6,0);
+    box(4.6,12.5,4.6,blanco,ig,0,6.25,9);
+    var cp=cone(3.4,3.6,4,roofM,ig,0,14.3,9); cp.rotation.y=Math.PI/4;
+    box(0.3,2.2,0.3,MAT.dark,ig,0,17.2,9); box(1.3,0.3,0.3,MAT.dark,ig,0,16.6,9);
+    ig.traverse(function(o){if(o.isMesh)o.castShadow=true;});
+  }
+}
+function buildMedialuna(){
+  var x=-460,z=640,hh=heightAt(x,z);
+  if(distToTrack(x,z).d<82) return;
+  var g=new THREE.Group(); g.position.set(x,hh,z); scene.add(g);
+  var arena=new THREE.Mesh(new THREE.CircleGeometry(19,26),new THREE.MeshLambertMaterial({color:0xcdb083}));
+  arena.rotation.x=-Math.PI/2; arena.position.y=0.15; g.add(arena);
+  for(var i=0;i<24;i++){
+    var a=i/24*TAU;
+    cyl(0.14,0.16,2.2,6,MAT.trunk,g,Math.cos(a)*19,1.1,Math.sin(a)*19);
+  }
+  for(var r=0;r<2;r++){
+    var ring=new THREE.Mesh(new THREE.TorusGeometry(19,0.07,6,40),MAT.trunk);
+    ring.rotation.x=Math.PI/2; ring.position.y=0.85+r*0.75; g.add(ring);
+  }
+}
+
+// ---- autos ----
+function carShape(){
+  // perfil lateral: x = largo (adelante +), y = altura; pasos de rueda en el contorno
+  var s=new THREE.Shape();
+  s.moveTo(-2.30,0.30);
+  s.lineTo(-2.17,0.30);
+  s.absarc(-1.45,0.30,0.72,Math.PI,0,true);   // paso trasero
+  s.lineTo(0.73,0.30);
+  s.absarc(1.45,0.30,0.72,Math.PI,0,true);    // paso delantero
+  s.lineTo(2.34,0.30);
+  s.quadraticCurveTo(2.52,0.38,2.50,0.55);    // trompa
+  s.quadraticCurveTo(2.18,0.74,1.30,0.80);    // capo
+  s.lineTo(-1.60,0.84);                       // cintura
+  s.quadraticCurveTo(-2.10,0.86,-2.30,0.66);  // cola
+  s.quadraticCurveTo(-2.36,0.42,-2.30,0.30);
+  s.closePath();
+  return s;
+}
+function canopyShape(){
+  var s=new THREE.Shape();
+  s.moveTo(1.28,0.80);
+  s.quadraticCurveTo(0.82,1.18,0.30,1.24);    // parabrisas
+  s.lineTo(-0.55,1.22);                       // techo
+  s.quadraticCurveTo(-1.28,1.00,-1.58,0.84);  // fastback
+  s.lineTo(1.28,0.80);
+  s.closePath();
+  return s;
+}
+function buildCarMesh(color){
+  var g=new THREE.Group();
+  var paint=new THREE.MeshPhysicalMaterial({color:color,metalness:0.5,roughness:0.34,
+    clearcoat:1,clearcoatRoughness:0.14,envMap:ENVMAP,envMapIntensity:0.9});
+  var glassM=new THREE.MeshStandardMaterial({color:0x0e1722,metalness:0.9,roughness:0.08,
+    envMap:ENVMAP,envMapIntensity:1.1});
+  var rimM=new THREE.MeshStandardMaterial({color:0xd8dde4,metalness:0.95,roughness:0.25,
+    envMap:ENVMAP,envMapIntensity:0.9});
+  var tyreM=new THREE.MeshStandardMaterial({color:0x191c22,roughness:0.95,metalness:0});
+  // carroceria
+  var bg=new THREE.ExtrudeGeometry(carShape(),{depth:1.55,bevelEnabled:true,
+    bevelThickness:0.18,bevelSize:0.17,bevelSegments:4,steps:1,curveSegments:14});
+  bg.translate(0,0,-0.775); bg.rotateY(-Math.PI/2);
+  var body=new THREE.Mesh(bg,paint); g.add(body);
+  // canopy de vidrio
+  var cg=new THREE.ExtrudeGeometry(canopyShape(),{depth:1.22,bevelEnabled:true,
+    bevelThickness:0.10,bevelSize:0.09,bevelSegments:3,steps:1,curveSegments:12});
+  cg.translate(0,0,-0.61); cg.rotateY(-Math.PI/2);
+  g.add(new THREE.Mesh(cg,glassM));
+  // aleron
+  box(0.10,0.30,0.10,paint,g,-0.62,0.94,-2.00);
+  box(0.10,0.30,0.10,paint,g,0.62,0.94,-2.00);
+  box(1.72,0.05,0.44,paint,g,0,1.10,-2.10);
+  // splitter, espejos, escapes
+  box(1.70,0.06,0.34,MAT.dark,g,0,0.16,2.42);
+  box(0.20,0.10,0.16,paint,g,-0.97,0.94,0.70);
+  box(0.20,0.10,0.16,paint,g,0.97,0.94,0.70);
+  var ex1=cyl(0.07,0.07,0.18,10,MAT.dark,g,-0.36,0.26,-2.44); ex1.rotation.x=Math.PI/2;
+  var ex2=cyl(0.07,0.07,0.18,10,MAT.dark,g,0.36,0.26,-2.44); ex2.rotation.x=Math.PI/2;
+  // luces
+  var hl=new THREE.MeshBasicMaterial({color:0xfff3c0});
+  box(0.46,0.12,0.08,hl,g,-0.58,0.62,2.44); box(0.46,0.12,0.08,hl,g,0.58,0.62,2.44);
+  var brake=new THREE.MeshBasicMaterial({color:0x550000});
+  box(0.52,0.11,0.08,brake,g,-0.56,0.66,-2.40); box(0.52,0.11,0.08,brake,g,0.56,0.66,-2.40);
+  // ruedas: neumatico + rin + tapa
+  var tg=new THREE.CylinderGeometry(0.42,0.42,0.30,18);
+  var rg=new THREE.CylinderGeometry(0.27,0.27,0.31,12);
+  var hg=new THREE.CylinderGeometry(0.09,0.09,0.32,8);
+  var wheels=[],fronts=[];
+  var wp=[[-0.82,1.45],[0.82,1.45],[-0.82,-1.45],[0.82,-1.45]];
+  for(var i=0;i<4;i++){
+    var pv=new THREE.Group(); pv.position.set(wp[i][0],0.42,wp[i][1]); g.add(pv);
+    var w=new THREE.Group();
+    var ty=new THREE.Mesh(tg,tyreM); w.add(ty);
+    var ri=new THREE.Mesh(rg,rimM); w.add(ri);
+    var hb=new THREE.Mesh(hg,MAT.dark); w.add(hb);
+    w.rotation.z=Math.PI/2; pv.add(w);
+    wheels.push(w); if(i<2) fronts.push(pv);
+  }
+  g.traverse(function(o){if(o.isMesh&&!o.userData.noSh)o.castShadow=true;});
+  // sombra de contacto
+  var sh=new THREE.Mesh(new THREE.PlaneGeometry(2.6,5.2),
+    new THREE.MeshBasicMaterial({map:shadowTex(),transparent:true,depthWrite:false}));
+  sh.rotation.x=-Math.PI/2; sh.position.y=0.03; sh.renderOrder=1; sh.userData.noSh=1;
+  g.add(sh);
+  g.userData={wheels:wheels,fronts:fronts,brakeM:brake};
+  return g;
+}
+var G=[{v:14,a:17},{v:24,a:13.5},{v:35,a:10.5},{v:46,a:8.5},{v:58,a:6.6},{v:72.5,a:5.4}];
+var PAUSED=false;
+function gearUp(){if(player&&player.gear<G.length-1)player.gear++;}
+function gearDown(){if(player&&player.gear>0)player.gear--;}
+var player=null, AIs=[], RACE={on:false,t:0,lap:1,best:0,lapT:0,done:false,cd:3.5};
+function initCars(){
+  player={mesh:buildCarMesh(0xc23b3b),x:0,z:0,head:0,v:0,steer:0,idx:0,lap:1,prog:0,lapStart:0,gear:0,y:0,slope:0,name:'T\u00fa'};
+  player.mesh.rotation.order='YXZ';
+  scene.add(player.mesh);
+  var cols=[0x2f5db8,0xd9b23a,0x3d9b52,0xe0e4ea];
+  var lanes=[-4.4,-1.6,1.6,4.4];
+  for(var i=0;i<4;i++){
+    var a={mesh:buildCarMesh(cols[i]),s:0,v:0,prog:0,lane:lanes[i],per:rand(0.86,0.985),lap:1,name:'Rival '+(i+1),wob:rand(0,6)};
+    scene.add(a.mesh); AIs.push(a);
+  }
+  gridStart();
+}
+function gridStart(){
+  // grilla: jugador ultimo (P5)
+  var order=[AIs[0],AIs[1],AIs[2],AIs[3],player];
+  for(var i=0;i<order.length;i++){
+    var back=TRK.len-14-i*7, li=sampleAt(back);
+    var p=TRK.p[li], n=TRK.n[li], t=TRK.t[li];
+    var off=(i%2?2.9:-2.9);
+    var o=order[i];
+    if(o===player){
+      player.x=p[0]+n[0]*off; player.z=p[1]+n[1]*off;
+      player.head=Math.atan2(t[0],t[1]); player.v=0; player.idx=li; player.lap=1;
+      player.y=TRK.h[li]+ROADL; player.slope=0;
+    } else {
+      o.s=back; o.v=0; o.lap=1;
+      o.mesh.position.set(p[0]+n[0]*o.lane*0.6,TRK.h[li]+ROADL,p[1]+n[1]*o.lane*0.6);
+    }
+  }
+}
+// ---- fisica jugador ----
+var keys={},btn={};
+function stepPlayer(dt){
+  var thr=(keys.KeyW||keys.ArrowUp||btn.acc)?1:0;
+  var brk=(keys.KeyS||keys.ArrowDown||btn.brk)?1:0;
+  var st=((keys.KeyA||keys.ArrowLeft||btn.l)?1:0)-((keys.KeyD||keys.ArrowRight||btn.r)?1:0);
+  if(!RACE.on){player.v=0;thr=0;brk=0;}
+  player.steer=lerp(player.steer,st,clamp(8*dt,0,1));
+  var v=player.v;
+  if(player.gear<G.length-1 && v>G[player.gear].v*0.97) player.gear++;
+  else if(player.gear>0 && v<G[player.gear-1].v*0.72) player.gear--;
+  var gr=G[player.gear];
+  if(v<gr.v) v+=thr*gr.a*dt;
+  else v-=(v-gr.v)*3.0*dt;                     // corte por tope de marcha
+  if(v>0.2) v=Math.max(0,v-brk*44*dt);
+  else if(brk&&thr===0) v=Math.max(-8,v-7*dt);      // reversa solo detenido
+  v-=v*0.006*dt;
+  if(thr||brk||Math.abs(v)>1.2) v-=9.81*(player.slope||0)*dt;   // gravedad en pendiente
+  else v*=Math.exp(-8*dt);                                      // freno de mano automatico detenido
+  // giro dependiente de velocidad
+  var tf=clamp(Math.abs(v)/10,0,1)*(34/(34+Math.abs(v)*0.5));
+  player.head+=player.steer*2.5*tf*dt*(v>=0?1:-1);
+  // avance
+  player.x+=Math.sin(player.head)*v*dt;
+  player.z+=Math.cos(player.head)*v*dt;
+  // indice mas cercano (busqueda local)
+  var best=1e9,bi=player.idx,N=CFG.N;
+  for(var w=-16;w<=26;w++){
+    var i=(player.idx+w+N)%N, p=TRK.p[i];
+    var d=(player.x-p[0])*(player.x-p[0])+(player.z-p[1])*(player.z-p[1]);
+    if(d<best){best=d;bi=i;}
+  }
+  var prevIdx=player.idx; player.idx=bi;
+  var pc=TRK.p[bi], nc=TRK.n[bi];
+  var lat=(player.x-pc[0])*nc[0]+(player.z-pc[1])*nc[1];
+  // pasto
+  if(Math.abs(lat)>CFG.roadHalf+1.2){
+    v-=v*1.5*dt; if(v>24) v=lerp(v,24,clamp(2.2*dt,0,1));
+  }
+  // barrera: clamp lateral
+  var lim=CFG.barrier-1.2;
+  if(Math.abs(lat)>lim){
+    var nl=clamp(lat,-lim,lim);
+    player.x+=nc[0]*(nl-lat); player.z+=nc[1]*(nl-lat);
+    v*=Math.max(0,1-2.5*dt);
+  }
+  // altura sobre el trazado + pendiente relativa al rumbo
+  var N2=CFG.N, j2=(bi+1)%N2;
+  var segL=((TRK.arc[j2]-TRK.arc[bi]+TRK.len)%TRK.len)||7;
+  var al=clamp(((player.x-pc[0])*TRK.t[bi][0]+(player.z-pc[1])*TRK.t[bi][1])/segL,0,1);
+  player.y=lerp(TRK.h[bi],TRK.h[j2],al)+ROADL;
+  var hF=TRK.h[(bi+3)%N2], hB=TRK.h[(bi-3+N2)%N2];
+  var dss=((TRK.arc[(bi+3)%N2]-TRK.arc[(bi-3+N2)%N2]+TRK.len)%TRK.len)||20;
+  var dirDot=Math.sin(player.head)*TRK.t[bi][0]+Math.cos(player.head)*TRK.t[bi][1];
+  player.slope=clamp((hF-hB)/dss,-0.30,0.30)*(dirDot>=0?1:-1);
+  player.x=clamp(player.x,-3400,3400); player.z=clamp(player.z,-3050,2450);
+  player.v=v;
+  // vuelta: cruce del arco (idx alto -> bajo)
+  if(prevIdx>CFG.N*0.9&&bi<CFG.N*0.1&&RACE.on){
+    var lt=RACE.t-player.lapStart;
+    if(player.lap>0&&lt>10){ if(!RACE.best||lt<RACE.best) RACE.best=lt; }
+    player.lapStart=RACE.t; player.lap++;
+    if(player.lap>CFG.laps&&!RACE.done) finishRace();
+  }
+  if(bi>CFG.N*0.9&&prevIdx<CFG.N*0.1) player.lap--;   // retroceso cruza al reves
+  player.prog=(player.lap-1)*TRK.len+TRK.arc[bi];
+  // mesh
+  player.mesh.position.set(player.x,player.y,player.z);
+  player.mesh.rotation.y=player.head+player.steer*clamp(Math.abs(v)/45,0,1)*0.22;
+  player.mesh.rotation.x=lerp(player.mesh.rotation.x,-Math.asin(clamp(player.slope||0,-0.3,0.3))*0.9,clamp(6*dt,0,1));
+  var ud=player.mesh.userData;
+  for(var wi=0;wi<4;wi++) ud.wheels[wi].rotation.x+=v*dt/0.42;
+  ud.fronts[0].rotation.y=player.steer*0.45; ud.fronts[1].rotation.y=player.steer*0.45;
+  ud.brakeM.color.setHex(brk?0xff2020:0x550000);
+}
+// ---- IA ----
+function stepAI(a,dt){
+  if(!RACE.on){a.v=0;return;}
+  var N=CFG.N, i=sampleAt(a.s);
+  var rb=clamp(1-(a.prog-player.prog)/1400,0.86,1.07);
+  var per=a.per*rb;
+  var target=CFG.maxV*per;
+  var look=Math.max(30,a.v*a.v/26);
+  for(var w=0;w<look;w+=8){
+    var j=sampleAt(a.s+w);
+    var vm=Math.min(TRK.vmax[j],TRK.vmax[j]*per);
+    var allow=Math.sqrt(vm*vm+2*24*w);
+    if(allow<target) target=allow;
+  }
+  if(a.v<target) a.v=Math.min(target,a.v+24*dt);
+  else a.v=Math.max(target,a.v-30*dt);
+  var pv=a.s; a.s+=a.v*dt;
+  if(pv%TRK.len>a.s%TRK.len&&a.v>0&&pv>TRK.len*0.5) a.lap++;
+  var i2=sampleAt(a.s), p=TRK.p[i2], n=TRK.n[i2], t=TRK.t[i2];
+  var off=a.lane+Math.sin(a.s*0.01+a.wob)*1.1;
+  off=clamp(off,-CFG.roadHalf+1.4,CFG.roadHalf-1.4);
+  a.mesh.position.set(p[0]+n[0]*off,TRK.h[i2]+ROADL,p[1]+n[1]*off);
+  a.mesh.rotation.order='YXZ';
+  a.mesh.rotation.y=Math.atan2(t[0],t[1]);
+  var hf=TRK.h[(i2+3)%N], hb2=TRK.h[(i2-3+N)%N];
+  a.mesh.rotation.x=-Math.asin(clamp((hf-hb2)/20,-0.3,0.3))*0.9;
+  var ud=a.mesh.userData;
+  for(var wi=0;wi<4;wi++) ud.wheels[wi].rotation.x+=a.v*dt/0.42;
+  a.prog=(a.lap-1)*TRK.len+(a.s%TRK.len);
+}
+function rankPlayer(){
+  var r=1;
+  for(var i=0;i<AIs.length;i++) if(AIs[i].prog>player.prog) r++;
+  return r;
+}
+function finishRace(){
+  RACE.done=true; RACE.on=false;
+  var rows=[[rankPlayer(),'T\u00fa']];
+  for(var i=0;i<AIs.length;i++){
+    var r=1;
+    if(player.prog>AIs[i].prog) r++;
+    for(var j=0;j<AIs.length;j++) if(j!==i&&AIs[j].prog>AIs[i].prog) r++;
+    rows.push([r,AIs[i].name]);
+  }
+  rows.sort(function(a,b){return a[0]-b[0];});
+  var html='<h1>Resultado: P'+rankPlayer()+'</h1><table>';
+  for(var k=0;k<rows.length;k++) html+='<tr><td>P'+rows[k][0]+'</td><td>'+rows[k][1]+'</td></tr>';
+  html+='</table><p>Mejor vuelta: '+fmtT(RACE.best)+'</p><button id="go">OTRA CARRERA</button>';
+  var card=document.querySelector('.card'); card.innerHTML=html;
+  document.getElementById('panel').style.display='flex';
+  document.getElementById('go').addEventListener('click',restart);
+}
+function restart(){
+  if(MODE==='free'){spawnFree();return;}
+  RACE={on:false,t:0,lap:1,best:RACE.best,lapT:0,done:false,cd:3.5};
+  player.lap=1;player.lapStart=0;player.v=0;player.prog=0;player.gear=0;
+  for(var i=0;i<AIs.length;i++){AIs[i].lap=1;AIs[i].v=0;}
+  gridStart();
+  document.getElementById('panel').style.display='none';
+}
+function fmtT(t){
+  if(!t) return '\u2014';
+  var m=Math.floor(t/60), s=t-m*60;
+  return m+':'+(s<10?'0':'')+s.toFixed(1);
+}
+
+// ---- camara chase ----
+var camPos=new THREE.Vector3(), camLook=new THREE.Vector3();
+function stepCamera(dt){
+  var fx=Math.sin(player.head), fz=Math.cos(player.head);
+  var d=8.5+clamp(player.v/CFG.maxV,0,1)*3.5;
+  var tx=player.x-fx*d, tz=player.z-fz*d;
+  var ty=player.y+3.4+clamp(player.v/CFG.maxV,0,1)*0.8;
+  var k=clamp(4.2*dt,0,1);
+  camPos.x=lerp(camPos.x,tx,k); camPos.y=lerp(camPos.y,ty,k); camPos.z=lerp(camPos.z,tz,k);
+  var gcam=heightAt(camPos.x,camPos.z)+1.2;
+  if(camPos.y<gcam) camPos.y=gcam;
+  camera.position.copy(camPos);
+  camLook.set(player.x+fx*7,player.y+1.2,player.z+fz*7);
+  camera.lookAt(camLook);
+}
+// ---- controles ----
+function initControls(){
+  window.addEventListener('keydown',function(e){
+    keys[e.code]=true;
+    if(e.code==='KeyR') restart();
+    if(e.code==='Escape'){e.preventDefault();togglePause();}
+  });
+  window.addEventListener('keyup',function(e){keys[e.code]=false;});
+  var isTouch=(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window);
+  if(isTouch) document.getElementById('touch').style.display='flex';
+  function bind(id,flag){
+    var b=document.getElementById(id);
+    function on(e){btn[flag]=true;b.classList.add('on');e.preventDefault();}
+    function off(){btn[flag]=false;b.classList.remove('on');}
+    b.addEventListener('pointerdown',on);
+    b.addEventListener('pointerup',off);
+    b.addEventListener('pointercancel',off);
+    b.addEventListener('pointerleave',off);
+  }
+  bind('btnL','l');bind('btnR','r');bind('acc','acc');bind('brk','brk');
+  document.getElementById('resume').addEventListener('click',togglePause);
+  document.getElementById('rest2').addEventListener('click',function(){PAUSED=false;document.getElementById('pause').style.display='none';restart();});
+  document.getElementById('go').addEventListener('click',function(){
+    MODE='race';
+    document.getElementById('panel').style.display='none';
+  });
+  var fg=document.getElementById('freego');
+  if(!NET.ok) fg.textContent='OSM: '+(OSM.err||'sin red')+' \u00b7 REINTENTAR';
+  fg.addEventListener('click',function(){
+    if(NET.ok){enterFree();return;}
+    if(fg.dataset.busy) return;
+    fg.dataset.busy='1'; fg.textContent='BUSCANDO OSM\u2026';
+    loadOSM(function(ok){
+      delete fg.dataset.busy;
+      if(!ok){fg.textContent='OSM: '+(OSM.err||'sin red')+' \u00b7 REINTENTAR';return;}
+      buildStreetNet(); initMinimap(); loadExtras();
+      if(OSM.ext) addExtras();
+      fg.textContent='PASEO LIBRE';
+    });
+  });
+  if(COARSE&&streetEl) streetEl.style.bottom='112px';
+  document.addEventListener('contextmenu',function(e){e.preventDefault();});
+}
+function togglePause(){
+  if(document.getElementById('panel').style.display!=='none') return;
+  PAUSED=!PAUSED;
+  document.getElementById('pause').style.display=PAUSED?'flex':'none';
+}
+// ---- HUD ----
+var posEl,lapEl,timeEl,spdEl,cenEl,gearEl,hudT=0;
+function updateHUD(dt){
+  hudT-=dt; if(hudT>0) return; hudT=0.12;
+  spdEl.textContent=Math.max(0,Math.round(player.v*3.6));
+  gearEl.textContent='M'+(player.gear+1);
+  if(MODE==='free'){
+    posEl.textContent=''; lapEl.textContent='Paseo libre'; timeEl.textContent='';
+  } else {
+    posEl.textContent='P'+rankPlayer();
+    lapEl.textContent='Vuelta '+Math.min(player.lap,CFG.laps)+' / '+CFG.laps;
+    timeEl.textContent=fmtT(RACE.on?RACE.t-player.lapStart:0)+' \u00b7 mejor '+fmtT(RACE.best);
+  }
+}
+// ---- loop ----
+var lastT=0;
+function loop(ts){
+  requestAnimationFrame(loop);
+  var t=ts*0.001, dt=Math.min(0.05,t-lastT); lastT=t;
+  if(dt<=0) dt=0.016;
+  if(PAUSED){renderer.render(scene,camera);return;}
+  if(MODE==='race'&&!RACE.done&&document.getElementById('panel').style.display==='none'){
+    if(RACE.cd>0){
+      RACE.cd-=dt;
+      cenEl.textContent=RACE.cd>0.6?Math.ceil(RACE.cd-0.5):'\u00a1VAMOS!';
+      if(RACE.cd<=0){RACE.on=true;cenEl.textContent='';player.lapStart=0;RACE.t=0;}
+    } else if(RACE.on){
+      RACE.t+=dt;
+      if(cenEl.textContent&&RACE.t>1.2) cenEl.textContent='';
+    }
+  }
+  if(MODE==='free'){
+    if(document.getElementById('panel').style.display==='none') stepPlayerFree(dt);
+  } else {
+    stepPlayer(dt);
+    for(var i=0;i<AIs.length;i++) stepAI(AIs[i],dt);
+  }
+  stepCamera(dt);
+  sun.position.set(player.x+150,player.y+300,player.z+80);
+  sun.target.position.set(player.x,player.y,player.z);
+  updateHUD(dt);
+  updateStreet(dt);
+  if(hudT===0.12) drawMinimap();
+  renderer.render(scene,camera);
+}
+// ---- boot ----
+function boot(){
+  initScene();
+  initMaterials();
+  var lo=document.getElementById('loading');
+  lo.textContent='Descargando relieve, sat\u00e9lite y calles de Catemu\u2026';
+  loadSAT();
+  var pend=2, demok=false;
+  function step(){
+    if(--pend>0) return;
+    if(OSM.ok){CFG.roadHalf=4.6;CFG.barrier=8.4;}
+    lo.textContent=(demok?'':'Sin conexi\u00f3n al DEM \u2014 relieve sint\u00e9tico. ')+
+      (OSM.ok?'Trazando el circuito por las calles reales\u2026':
+       (OSM.net?'Calles OSM listas (paseo) \u2014 circuito fallback\u2026':
+        'Sin calles OSM ('+(OSM.err||'?')+') \u2014 trazado original\u2026'));
+    setTimeout(function(){
+      try{buildAll();}catch(err){
+        lo.textContent='Error al construir: '+err.message; lo.style.color='#ff9a7a';
+        throw err;
+      }
+    },40);
+  }
+  loadDEM(function(ok){demok=ok;step();});
+  loadOSM(function(){step();});
+  loadExtras();
+}
+function buildAll(){
+  buildTrackData();
+  H0=heightRaw(TRK.p[0][0],TRK.p[0][1]);
+  buildTrackHeights();
+  buildBuckets();
+  buildGround();
+  buildRoad();
+  buildStreetNet();
+  buildBlocks();
+  buildParks();
+  buildArch();
+  if(!OSM.ok) buildStands();
+  if(!OSM.net) buildPueblo();
+  buildMedialuna();
+  buildNature();
+  initCars();
+  initControls();
+  posEl=document.getElementById('pos');lapEl=document.getElementById('lap');
+  timeEl=document.getElementById('time');spdEl=document.getElementById('spd');
+  cenEl=document.getElementById('center');gearEl=document.getElementById('gearbox');
+  streetEl=document.getElementById('street');
+  initMinimap();
+  WORLD_READY=true;
+  if(OSM.ext&&!BLD.built) addExtras();
+  var tl=document.getElementById('tlen');
+  if(tl) tl.textContent=(OSM.ok?'Circuito urbano de ':'Circuito de monta\u00f1a de ')+(TRK.len/1000).toFixed(1).replace('.',',')+
+    (OSM.ok?' km por las calles reales de Catemu (OSM)':' km sobre el valle real \u00b7 trazado original');
+  camPos.set(player.x-Math.sin(player.head)*9,player.y+4,player.z-Math.cos(player.head)*9);
+  document.getElementById('loading').style.display='none';
+  requestAnimationFrame(loop);
+}
+window.addEventListener('error',function(e){
+  var l=document.getElementById('loading');
+  if(l&&l.style.display!=='none'){l.textContent='Error al construir: '+(e.message||'?');l.style.color='#ff9a7a';}
+});
+function waitThree(){
+  if(typeof THREE!=='undefined'){
+    try{boot();}catch(err){
+      var l=document.getElementById('loading');
+      l.textContent='Error al construir: '+err.message;l.style.color='#ff9a7a';
+      throw err;
+    }
+    return;
+  }
+  setTimeout(waitThree,120);
+}
+waitThree();
+</script>
+</body>
+</html>
