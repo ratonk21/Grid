@@ -2,8 +2,18 @@
 <!--
 ESTADO ------------------------------------------------------
 herramienta : circuito-gt
-version     : v10
+version     : v11
 fecha       : 2026-07-08
+hecho v11   : proxy VERIFICADO en produccion: la funcion quedo en
+              https://www.griddata.cl/api/api-osm (nombre de archivo
+              api/api-osm.js; logs Vercel con 200 ejecutando Overpass)
+              => escalera actualizada: 1) www.griddata.cl/api/api-osm
+              (ruta real, www directo sin el 308 del apex),
+              2) www.griddata.cl/api/osm (por si RK renombra el archivo
+              a api/osm.js), 3-7) mirrors publicos; presupuesto Q1 de
+              vias sube a 8 s por intento / 16 s global para absorber
+              el primer hit frio del proxy (despues queda en cache de
+              borde 7 dias y carga al tiro).
 hecho v10   : dos causas de "no funciona": (a) la escalera v9 podia
               colgar el boot hasta ~50 s (5 mirrors x 10 s si el error
               es de red muda) => fetchOP ahora tiene DEADLINE GLOBAL:
@@ -164,7 +174,7 @@ notas       : sin nada de franquicias; nombre y estetica genericos.
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Circuito GT 3D · Catemu · v10</title>
+<title>Circuito GT 3D · Catemu · v11</title>
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:#0c1220;font-family:system-ui,Segoe UI,Roboto,sans-serif;-webkit-user-select:none;user-select:none;touch-action:none}
   canvas{display:block}
@@ -407,7 +417,8 @@ function distToTrack(x,z){
 var OSM={ok:false,net:false,pts:null,raw:null,ext:null,extBusy:false,err:null};
 function ll2xz(lat,lon){return [(lon-CFG.lon0)*CFG.mLon,-(lat-CFG.lat0)*CFG.mLat];}
 var OPMIRRORS=[
-  'https://griddata.cl/api/osm',
+  'https://www.griddata.cl/api/api-osm',
+  'https://www.griddata.cl/api/osm',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
   'https://z.overpass-api.de/api/interpreter',
@@ -455,7 +466,7 @@ function fetchOP(q,tmo,total,cb){                    // escalera con plazo globa
 }
 function loadOSM(done){                              // Q1: solo vias (critico)
   var q='[out:json][timeout:20];way["highway"~"^(primary|secondary|tertiary|residential|unclassified|living_street)$"]('+opBBox()+');out geom;';
-  fetchOP(q,6000,13000,function(ok,js,err){
+  fetchOP(q,8000,16000,function(ok,js,err){
     if(!ok){OSM.err=err;done(false);return;}
     var el=js.elements,nhw=0;
     for(var i=0;i<el.length;i++) if(el[i].type==='way'&&el[i].tags&&el[i].tags.highway) nhw++;
