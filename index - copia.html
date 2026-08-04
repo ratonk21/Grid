@@ -3,7 +3,7 @@
 <head>
 <!-- ═══ ESTADO ═══
 herramienta : Landing griddata.cl (tour cinemático, base v3 elegida por terceros)
-version     : v11 (anterior: v10)
+version     : v9 (anterior: v8)
 motor       : proyección Mercator + cámara fly-to + tour ordenado (funciones puras);
               datos agregados estáticos (cc+admin1) del export UbicquiaMaster 2026-07-06
 ultima      : 2026-07-06 · modo kiosco (?kiosk=1 o #kiosk): oculta header/CTA/controles,
@@ -16,11 +16,6 @@ datos_fuente: export UbicquiaMaster 2026-07-06 (16 países) + El Salvador agrega
               (presencia sin cifras) · 54 puntos-región · ninguna cifra se muestra en pantalla
 no_tocar    : agregado DATA (regenerar solo desde nuevo export)
 pendientes  : puntos siguen en regiones reales (v3); probar kiosk en la pantalla del stand
-intro       : v10 · animación Fourier del wordmark "ubicquia" (epiciclos, un contorno por
-              letra, huecos por evenodd) sobre overlay; al terminar revela el tour del mapa.
-              Se salta en kiosk y en reduced-motion. Motor: labelAndTrace + dft (reconstrucción
-              exacta, verificado con contornos sintéticos). No toca el motor del mapa: solo
-              expone window.__bootTour y arranca la intro delante.
 ═══ -->
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-K73HD7MSR4"></script>
@@ -426,185 +421,7 @@ window.addEventListener('error',ev=>{
   const b=el('errBanner');
   if(b.style.display!=='block'){ b.textContent='Error en la página: '+(ev.message||'desconocido'); b.style.display='block'; }
 });
-/* arranque expuesto: la intro Fourier decide cuándo llamar boot() (ver script FOURIER-INTRO) */
-window.__bootTour=function(){ if(window.__tourStarted) return; window.__tourStarted=true;
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot(); };
-</script>
-<script>
-/* FOURIER-INTRO — apertura: dibuja el wordmark "ubicquia" con epiciclos y revela el tour */
-(function(){
-"use strict";
-
-/* ---- motor Fourier (puro; renderTextGrid usa canvas del navegador) ---- */
-function renderTextGrid(text){
-  const H=240, pad=36, cv=document.createElement("canvas");
-  let g=cv.getContext("2d");
-  const font='900 200px Lato, "Arial Black", system-ui, sans-serif';
-  g.font=font;
-  const W=Math.ceil(g.measureText(text).width)+pad*2;
-  const splitX=pad+g.measureText("ubi").width;
-  cv.width=W; cv.height=H; g=cv.getContext("2d");
-  g.font=font; g.textBaseline="alphabetic"; g.fillStyle="#fff";
-  g.fillText(text, pad, H-26);
-  const d=g.getImageData(0,0,W,H).data, grid=new Uint8Array(W*H);
-  for(let i=0;i<W*H;i++) grid[i]= d[i*4+3]>128?1:0;
-  return {grid, w:W, h:H, splitX};
-}
-function traceBoundary(inside, sx, sy, maxIt){
-  const D=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
-  const out=[]; let cx=sx, cy=sy, back=4, it=0;
-  do{ out.push({x:cx, y:cy}); let found=false;
-    for(let i=1;i<=8;i++){ const d=(back+i)%8, nx=cx+D[d][0], ny=cy+D[d][1];
-      if(inside(nx,ny)){ back=(d+4)%8; cx=nx; cy=ny; found=true; break; } }
-    if(!found) break; it++;
-  } while((cx!==sx || cy!==sy) && it<maxIt);
-  return out;
-}
-function labelAndTrace(grid, w, h){
-  const idx=(x,y)=>y*w+x, inB=(x,y)=>x>=0&&y>=0&&x<w&&y<h, ink=(x,y)=>inB(x,y)&&grid[idx(x,y)]===1;
-  const maxIt=w*h*4, N8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-  const comp=new Int32Array(w*h).fill(-1); let nc=0;
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){ if(grid[idx(x,y)]===1 && comp[idx(x,y)]<0){ const st=[[x,y]]; comp[idx(x,y)]=nc;
-    while(st.length){ const [px,py]=st.pop(); for(const[dx,dy]of N8){ const nx=px+dx, ny=py+dy;
-      if(ink(nx,ny)&&comp[idx(nx,ny)]<0){ comp[idx(nx,ny)]=nc; st.push([nx,ny]); } } } nc++; } }
-  const seen=new Uint8Array(w*h), N4=[[1,0],[-1,0],[0,1],[0,-1]], q=[];
-  for(let x=0;x<w;x++){ q.push([x,0]); q.push([x,h-1]); } for(let y=0;y<h;y++){ q.push([0,y]); q.push([w-1,y]); }
-  while(q.length){ const [px,py]=q.pop(); if(!inB(px,py)||seen[idx(px,py)]||grid[idx(px,py)]===1)continue;
-    seen[idx(px,py)]=1; for(const[dx,dy]of N4) q.push([px+dx,py+dy]); }
-  const holeId=new Int32Array(w*h).fill(-1); let nh=0; const holeOwner=[];
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){ if(grid[idx(x,y)]===0 && !seen[idx(x,y)] && holeId[idx(x,y)]<0){
-    const st=[[x,y]]; holeId[idx(x,y)]=nh; let owner=-1;
-    while(st.length){ const [px,py]=st.pop(); for(const[dx,dy]of N8){ const nx=px+dx, ny=py+dy; if(!inB(nx,ny))continue;
-      if(grid[idx(nx,ny)]===1) owner=comp[idx(nx,ny)];
-      else if(!seen[idx(nx,ny)]&&holeId[idx(nx,ny)]<0){ holeId[idx(nx,ny)]=nh; st.push([nx,ny]); } } }
-    holeOwner.push(owner); nh++; } }
-  const letters=[];
-  for(let c=0;c<nc;c++){ let sx=-1,sy=-1; for(let y=0;y<h&&sx<0;y++)for(let x=0;x<w;x++){ if(comp[idx(x,y)]===c){sx=x;sy=y;break;} }
-    const ext=traceBoundary((x,y)=>ink(x,y)&&comp[idx(x,y)]===c, sx, sy, maxIt); const loops=[ext];
-    for(let hh=0;hh<nh;hh++){ if(holeOwner[hh]!==c) continue; let hx=-1,hy=-1;
-      for(let y=0;y<h&&hx<0;y++)for(let x=0;x<w;x++){ if(holeId[idx(x,y)]===hh){hx=x;hy=y;break;} }
-      const hole=traceBoundary((x,y)=>inB(x,y)&&holeId[idx(x,y)]===hh, hx, hy, maxIt); if(hole.length>8) loops.push(hole); }
-    let cxs=0; for(const p of ext) cxs+=p.x; letters.push({loops, cx:cxs/ext.length}); }
-  letters.sort((a,b)=>a.cx-b.cx); return letters;
-}
-function resampleLoop(loop, n){ const m=loop.length; if(m<2) return loop.slice();
-  const cum=[0]; let per=0; for(let i=1;i<=m;i++){ const a=loop[i-1], b=loop[i%m]; per+=Math.hypot(b.x-a.x,b.y-a.y); cum.push(per); }
-  const out=[]; let j=0; for(let i=0;i<n;i++){ const t=per*i/n; while(j<m && cum[j+1]<t) j++;
-    const a=loop[j%m], b=loop[(j+1)%m], seg=cum[j+1]-cum[j]||1, f=(t-cum[j])/seg; out.push({x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f}); }
-  return out; }
-function smoothLoop(loop, passes){ let p=loop; const n=p.length;
-  for(let s=0;s<passes;s++){ const q=new Array(n); for(let i=0;i<n;i++){ const a=p[(i-1+n)%n], b=p[i], c=p[(i+1)%n];
-    q[i]={x:(a.x+2*b.x+c.x)/4, y:(a.y+2*b.y+c.y)/4}; } p=q; } return p; }
-function dft(x){ const N=x.length, out=[];
-  for(let k=0;k<N;k++){ let re=0, im=0; for(let n=0;n<N;n++){ const a=-2*Math.PI*k*n/N, c=Math.cos(a), s=Math.sin(a);
-    re+=x[n].re*c - x[n].im*s; im+=x[n].re*s + x[n].im*c; } re/=N; im/=N;
-    out.push({freq:(k<=N/2?k:k-N), amp:Math.hypot(re,im), phase:Math.atan2(im,re)}); }
-  out.sort((a,b)=>b.amp-a.amp); return out; }
-function idft(ep, t, K){ let re=0, im=0, m=K?Math.min(K,ep.length):ep.length;
-  for(let i=0;i<m;i++){ const e=ep[i], a=2*Math.PI*e.freq*t+e.phase; re+=e.amp*Math.cos(a); im+=e.amp*Math.sin(a); } return {re, im}; }
-function colorFor(cx, splitX){ return cx < splitX ? "blue" : "white"; }
-if (typeof module!=="undefined") module.exports={labelAndTrace,traceBoundary,resampleLoop,smoothLoop,dft,idft,colorFor};
-
-if (typeof window==="undefined") return;   // node: solo exporta el motor
-
-/* ---- decisión de arranque ---- */
-const KIOSK = new URLSearchParams(location.search).has('kiosk')||location.hash==='#kiosk';
-const REDUCE = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const startTour = ()=>{ if(window.__bootTour) window.__bootTour(); };
-
-function runIntro(){
-  const BLUE={fill:"rgba(34,176,225,", stroke:"#3ec6f2"}, WHITE={fill:"rgba(233,241,255,", stroke:"#ffffff"};
-  const K=48;
-  const ov=document.createElement("canvas");
-  Object.assign(ov.style,{position:"fixed",inset:"0",zIndex:"60",width:"100%",height:"100%",
-    background:"radial-gradient(120% 120% at 50% 40%, #16204a 0%, #0d1330 55%, #080B1C 100%)",
-    transition:"opacity .55s ease", touchAction:"manipulation", cursor:"pointer"});
-  document.body.appendChild(ov);
-  const ctx=ov.getContext("2d");
-
-  let W=0,H=0,DPR=1,scale=1,cx0=0,cy0=0,bbox=null, LOOPS=[];
-  try{
-    const {grid,w,h,splitX}=renderTextGrid("ubicquia");
-    labelAndTrace(grid,w,h).forEach(L=>{ const col=colorFor(L.cx,splitX)==="blue"?BLUE:WHITE;
-      L.loops.forEach(loop=>{ const per=perim(loop), n=Math.max(28,Math.min(360,Math.round(per/2)));
-        const pts=smoothLoop(resampleLoop(loop,n),2); LOOPS.push({raw:pts.map(p=>({re:p.x,im:p.y})), col, trail:[]}); }); });
-    let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
-    LOOPS.forEach(o=>o.raw.forEach(p=>{ if(p.re<mnx)mnx=p.re; if(p.re>mxx)mxx=p.re; if(p.im<mny)mny=p.im; if(p.im>mxy)mxy=p.im; }));
-    cx0=(mnx+mxx)/2; cy0=(mny+mxy)/2; bbox={mnx,mny,mxx,mxy};
-    LOOPS.forEach(o=>{ const c=o.raw.map(p=>({re:p.re-cx0, im:p.im-cy0})); o.contour=c; o.ep=dft(c); o.n=c.length; delete o.raw; });
-  }catch(e){ ov.remove(); startTour(); return; }
-  function perim(l){ let p=0; for(let i=0;i<l.length;i++){ const a=l[i], b=l[(i+1)%l.length]; p+=Math.hypot(b.x-a.x,b.y-a.y);} return p; }
-
-  function resize(){ DPR=Math.min(window.devicePixelRatio||1,2); W=ov.clientWidth; H=ov.clientHeight;
-    ov.width=W*DPR; ov.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
-    if(bbox){ const bw=bbox.mxx-bbox.mnx, bh=bbox.mxy-bbox.mny; scale=Math.min(W*0.80/bw, H*0.44/bh); } }
-  window.addEventListener("resize", resize); resize();
-
-  function paintFill(alpha, useContour){
-    for(const set of [BLUE,WHITE]){ ctx.beginPath(); let any=false;
-      for(const o of LOOPS){ if(o.col!==set) continue; const src=useContour?o.contour:o.trail; if(src.length<2) continue;
-        const f=src[0]; ctx.moveTo(f.re!==undefined?f.re:f.x, f.re!==undefined?f.im:f.y);
-        for(let i=1;i<src.length;i++){ const q=src[i]; ctx.lineTo(q.re!==undefined?q.re:q.x, q.im!==undefined?q.im:q.y); }
-        ctx.closePath(); any=true; }
-      if(!any) continue;
-      ctx.shadowColor="rgba(34,176,225,.6)"; ctx.shadowBlur=14;
-      ctx.fillStyle=set.fill+alpha+")"; ctx.fill("evenodd");
-      ctx.strokeStyle=set.stroke; ctx.lineJoin="round"; ctx.lineCap="round"; ctx.lineWidth=1.4/scale; ctx.stroke();
-      ctx.shadowBlur=0; } }
-
-  let t=0, settle=0, phase="drawing", raf=0, last=performance.now(), fading=false;
-  function draw(){
-    ctx.clearRect(0,0,W,H); ctx.save(); ctx.translate(W/2,H/2); ctx.scale(scale,scale);
-    if(phase==="done"){ paintFill(0.92, true); }
-    else{ const cA = phase==="settling" ? (1-settle) : 1;
-      for(const o of LOOPS){ let x=0,y=0; const kk=Math.min(K,o.n);
-        if(cA>0.02){ ctx.lineWidth=1/scale;
-          for(let i=0;i<kk;i++){ const e=o.ep[i], a=2*Math.PI*e.freq*t+e.phase; const nx=x+e.amp*Math.cos(a), ny=y+e.amp*Math.sin(a);
-            if(e.amp*scale>0.7){ ctx.strokeStyle="rgba(255,255,255,"+(0.09*cA)+")"; ctx.beginPath(); ctx.arc(x,y,e.amp,0,Math.PI*2); ctx.stroke(); }
-            ctx.strokeStyle="rgba(255,255,255,"+(0.30*cA)+")"; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(nx,ny); ctx.stroke(); x=nx; y=ny; } }
-        else { for(let i=0;i<kk;i++){ const e=o.ep[i], a=2*Math.PI*e.freq*t+e.phase; x+=e.amp*Math.cos(a); y+=e.amp*Math.sin(a); } }
-        if(phase==="drawing") o.trail.push({x,y}); }
-      paintFill(phase==="settling" ? (0.28+0.64*settle) : 0.28, phase==="settling");
-      ctx.fillStyle="#eafff6"; ctx.shadowColor="rgba(34,176,225,1)"; ctx.shadowBlur=8;
-      for(const o of LOOPS){ const p=o.trail[o.trail.length-1]; if(!p||cA<0.1)continue; ctx.beginPath(); ctx.arc(p.x,p.y,2/scale,0,Math.PI*2); ctx.fill(); }
-      ctx.shadowBlur=0; }
-    ctx.restore();
-  }
-  function finish(){ if(fading) return; fading=true; phase="done";
-    const stage=document.getElementById('stage');
-    ov.style.transition="opacity .9s ease, transform .9s ease";
-    setTimeout(()=>{                        // freeze breve del wordmark nítido, luego disuelve
-      if(stage){ stage.style.transition="opacity .9s ease"; stage.style.opacity="0"; }
-      startTour();                          // el mapa arranca detrás (invisible aún)
-      requestAnimationFrame(()=>{           // cross-dissolve: overlay baja, mapa sube
-        if(stage) stage.style.opacity="1";
-        ov.style.opacity="0"; ov.style.transform="scale(1.05)";
-      });
-    }, 240);
-    setTimeout(()=>{ cancelAnimationFrame(raf); window.removeEventListener("resize",resize);
-      ov.remove(); if(stage) stage.style.transition=""; }, 1200);
-  }
-  ov.addEventListener("pointerdown", finish);   // tap = saltar la intro
-  function loop(now){ const dt=Math.min(now-last,50)/1000; last=now;
-    if(phase==="drawing"){ t+=dt*0.32; if(t>=1){ t=1; phase="settling"; settle=0; } }
-    else if(phase==="settling"){ settle+=dt/0.6; if(settle>=1){ settle=1; finish(); } }
-    try{ draw(); }catch(e){ finish(); }
-    raf=requestAnimationFrame(loop);
-  }
-  raf=requestAnimationFrame(loop);
-}
-
-function begin(){
-  setTimeout(()=>{ if(!window.__tourStarted) startTour(); }, 8000);   // red de seguridad: el mapa arranca sí o sí
-  if(KIOSK||REDUCE){ startTour(); return; }        // stand / accesibilidad: sin intro
-  const go=()=>runIntro();
-  if(document.fonts && document.fonts.load){
-    Promise.race([ Promise.all([document.fonts.load('900 200px Lato'), document.fonts.ready]),
-      new Promise(r=>setTimeout(r,1400)) ]).then(go, go);
-  } else go();
-}
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',begin,{once:true}); else begin();
-})();
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 </script>
 </body>
 </html>
