@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<!-- ═══ ESTADO ═══
+herramienta : Referencia UbiGrid — Insights Accionables y Alertas de Dispositivo
+version     : v1
+motor       : n/a — página estática de referencia (sin capa de cálculo)
+ultima      : 2026-08-18 · traducción ES completa del deck oficial ene-2026 (16 insights + tabla de alertas)
+arquitectura: single-file · band+container · sin librerías CDN · sin localStorage
+marca       : Ubicquia (--ubi-*)
+verificacion: hopper — node --check · paridad anclas/ids · conteo de cards · filtro
+fuente      : UbiGrid_Actionable_Insights_and_Device_Alerts (ene-2026, Ubicquia Confidencial)
+no_tocar    : cifras de umbral (25 PSIA±2 · >20 PSIA · 95°C/203°F · ≥5%/≥1h · FP<0.8 · >10° · >2G · ~90 días · 8%/0.5 · 99%/3600 · 130 muestras/ciclo)
+pendientes  : toggle ES|EN · capturas normal/abnormal por insight · cruce con Explorador DTM
+═══ -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UbiGrid — Insights Accionables y Alertas de Dispositivo | griddata</title>
+<meta name="description" content="Referencia en español de los Insights Accionables y Alertas de Dispositivo de UbiGrid DTM+ (UbiVu, enero 2026): predicción de falla de transformador, integridad física, calidad de energía, confiabilidad de red y alertas configurables.">
+<meta property="og:title" content="UbiGrid — Insights Accionables y Alertas de Dispositivo">
+<meta property="og:description" content="16 insights de UbiVu para flotas UbiGrid DTM+: condición de disparo, qué significa y por qué importa, más el catálogo de alertas en tiempo real.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* principal */ --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;--ubi-black:#000;
+  /* secundaria */ --ubi-deep:#464D63;--ubi-gray2:#99A0B4;
+  /* verde (sostenibilidad) */ --ubi-lime:#AECC53;--ubi-darkgreen:#005B59;--ubi-matte:#2E2B2A;
+  /* extendida (estados) */ --ubi-orange:#EA561B;--ubi-gold:#FAB512;--ubi-royal:#3466AF;--ubi-violet:#59509D;--ubi-green:#4EB270;
+  /* helpers */ --ubi-surface:#fff;--ubi-line:rgba(30,36,69,.10);--ubi-row:#F5F8F9;
+  --ubi-ink:var(--ubi-navy);--ubi-muted:var(--ubi-gray2);
+  --ubi-maxw:1200px;--ubi-maxw-read:860px;--ubi-maxw-wide:1440px;
+  --ubi-pad:clamp(16px,5vw,48px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:auto}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{font-family:'Lato',-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ubi-deep);background:var(--ubi-surface);font-size:15.5px;line-height:1.55;-webkit-text-size-adjust:100%}
+.mono{font-family:'JetBrains Mono',SFMono-Regular,Consolas,monospace}
+
+/* bandas + contenedores */
+.band{width:100%}
+.band--navy{background:var(--ubi-navy);color:#fff}
+.band--gray{background:var(--ubi-gray)}
+.container,.container--read,.container--wide{width:100%;margin-inline:auto;padding-inline:var(--ubi-pad)}
+.container{max-width:var(--ubi-maxw)}
+.container--read{max-width:var(--ubi-maxw-read)}
+.container--wide{max-width:var(--ubi-maxw-wide)}
+
+/* topbar */
+.topbar .container{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.brand{font-weight:900;font-size:1.28rem;letter-spacing:.2px;white-space:nowrap}
+.brand .b1{color:var(--ubi-blue)}.brand .b2{color:#fff}
+.brand sup{font-size:.5em;font-weight:400;color:var(--ubi-gray2);margin-left:1px}
+.topmeta{display:flex;align-items:center;gap:12px;min-width:0}
+.topmeta .tag{font-size:.78rem;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{appearance:none;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:8px;padding:7px 13px;font:700 .8rem 'Lato',sans-serif;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ubi-blue);color:var(--ubi-blue)}
+
+/* hero compacto */
+.hero .container--read{padding-block:clamp(16px,2.6vh,26px)}
+.kicker{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ubi-blue);font-weight:700;margin-bottom:6px}
+.hero h1{color:#fff;font-weight:900;font-size:clamp(1.35rem,3.4vw,2rem);line-height:1.18}
+.hero .meta{margin-top:8px;font-size:.82rem;color:rgba(255,255,255,.72)}
+
+/* nav pegajosa + filtro */
+.navbar{position:sticky;top:0;z-index:50;background:var(--ubi-surface);border-bottom:1px solid var(--ubi-line);box-shadow:0 1px 0 var(--ubi-line)}
+.navbar .container{display:flex;align-items:center;gap:10px;padding-block:9px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;text-decoration:none;color:var(--ubi-navy);background:var(--ubi-gray);border:1px solid transparent;border-radius:999px;padding:6px 13px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.chip:hover{border-color:var(--ubi-blue);color:var(--ubi-blue)}
+.chip .n{color:var(--ubi-gray2);font-weight:400;margin-left:4px}
+.search{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:1px solid var(--ubi-line);border-radius:8px;padding:5px 10px;background:var(--ubi-surface)}
+.search:focus-within{border-color:var(--ubi-blue)}
+.search input{border:0;outline:0;font:400 .84rem 'Lato',sans-serif;color:var(--ubi-deep);width:130px;background:transparent}
+.search .ic{color:var(--ubi-gray2);font-size:.85rem}
+#count{font-size:.74rem;color:var(--ubi-gray2);white-space:nowrap}
+
+/* cuerpo */
+.lead{padding-block:22px 4px}
+.lead p{max-width:var(--ubi-maxw-read);color:var(--ubi-deep)}
+section.cat{padding-block:26px 8px;scroll-margin-top:64px}
+.cat-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.cat-num{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--ubi-blue);font-weight:600}
+.cat h2{color:var(--ubi-navy);font-weight:900;font-size:clamp(1.15rem,2.6vw,1.5rem)}
+.cat .cdesc{width:100%;color:var(--ubi-gray2);font-size:.88rem;max-width:var(--ubi-maxw-read)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:16px;padding-block:14px 10px}
+
+/* card de insight */
+.card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:12px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;break-inside:avoid}
+.card.hide{display:none}
+.card h3{color:var(--ubi-navy);font-weight:900;font-size:1.06rem;line-height:1.25}
+.card .en{display:block;font-weight:400;font-size:.76rem;color:var(--ubi-gray2);margin-top:2px}
+.trig{align-self:flex-start;font-family:'JetBrains Mono',monospace;font-size:.74rem;font-weight:600;color:var(--ubi-navy);background:var(--ubi-gray);border-left:3px solid var(--ubi-blue);border-radius:0 6px 6px 0;padding:5px 9px}
+.card p{font-size:.9rem}
+.mm{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--ubi-line);border:1px solid var(--ubi-line);border-radius:8px;overflow:hidden;margin-top:auto}
+.mm>div{background:var(--ubi-row);padding:10px 12px;font-size:.84rem}
+.mm b.lab{display:block;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:#fff;background:var(--ubi-navy);margin:-10px -12px 8px;padding:6px 12px;font-weight:700}
+.variants{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:.72rem;font-weight:700;color:var(--ubi-navy);background:var(--ubi-gray);border-radius:999px;padding:3px 10px}
+
+/* tabla de alertas */
+.tablewrap{overflow-x:auto;border:1px solid var(--ubi-line);border-radius:12px;background:var(--ubi-surface);margin-block:14px}
+table.data{border-collapse:collapse;width:100%;min-width:680px;font-size:.87rem}
+table.data th{background:var(--ubi-navy);color:#fff;text-align:left;padding:10px 14px;font-size:.76rem;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+table.data td{padding:10px 14px;border-top:1px solid var(--ubi-line);vertical-align:top}
+table.data tr:nth-child(even) td{background:var(--ubi-row)}
+table.data td.v{font-family:'JetBrains Mono',monospace;font-size:.8rem;white-space:nowrap}
+.callouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px;padding-block:4px 26px}
+.callout{border-left:4px solid var(--ubi-blue);background:var(--ubi-surface);border-radius:0 10px 10px 0;border-top:1px solid var(--ubi-line);border-right:1px solid var(--ubi-line);border-bottom:1px solid var(--ubi-line);padding:13px 15px;font-size:.88rem}
+.callout b{color:var(--ubi-navy)}
+.callout.lime{border-left-color:var(--ubi-lime)}
+
+.nores{display:none;padding:26px 0 34px;color:var(--ubi-gray2);font-size:.92rem}
+.nores.on{display:block}
+
+/* footer */
+footer .container{padding-block:22px;display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
+footer .fnote{font-size:.74rem;color:rgba(255,255,255,.6)}
+
+/* banner de errores */
+#errband{display:none;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:99;background:var(--ubi-navy);color:#fff;border-left:4px solid var(--ubi-orange);border-radius:8px;padding:10px 14px;font-size:.8rem;max-width:min(92vw,560px);box-shadow:0 6px 24px rgba(30,36,69,.35)}
+#errband button{float:right;margin-left:12px;background:none;border:0;color:var(--ubi-gray2);cursor:pointer;font-size:1rem;line-height:1}
+
+@media (max-width:640px){
+  .mm{grid-template-columns:1fr}
+  .topmeta .tag{display:none}
+  .search input{width:96px}
+}
+@media print{
+  .navbar,.btn,#errband{display:none!important}
+  body{font-size:12px}
+  .band--navy{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .card,.callout,.tablewrap{break-inside:avoid;box-shadow:none}
+  section.cat{padding-block:12px 2px}
+}
+</style>
+</head>
+<body>
+
+<header class="band band--navy topbar">
+  <div class="container">
+    <div class="brand"><span class="b1">ubi</span><span class="b2">cquia</span><sup>®</sup></div>
+    <div class="topmeta">
+      <span class="tag">UbiGrid DTM+ · Plataforma UbiVu · Enero 2026</span>
+      <button class="btn" onclick="window.print()">Exportar PDF</button>
+    </div>
+  </div>
+</header>
+
+<section class="band band--navy hero">
+  <div class="container--read">
+    <div class="kicker">UbiGrid · Insights accionables y alertas de dispositivo</div>
+    <h1>Del dato a la decisión: qué vigila UbiVu en cada transformador</h1>
+    <div class="meta">Referencia técnica en español · Fuente: material oficial Ubicquia, enero 2026 · Confidencial y propietario</div>
+  </div>
+</section>
+
+<nav class="navbar" aria-label="Categorías">
+  <div class="container">
+    <div class="chips">
+      <a class="chip" href="#prediccion">Predicción de falla<span class="n">8</span></a>
+      <a class="chip" href="#integridad">Integridad física<span class="n">2</span></a>
+      <a class="chip" href="#calidad">Calidad de energía<span class="n">4</span></a>
+      <a class="chip" href="#confiabilidad">Confiabilidad de red<span class="n">2</span></a>
+      <a class="chip" href="#alertas">Alertas de dispositivo</a>
+    </div>
+    <label class="search"><span class="ic">⌕</span><input id="q" type="search" placeholder="Filtrar insights…" aria-label="Filtrar insights"></label>
+    <span id="count"></span>
+  </div>
+</nav>
+
+<main class="band band--gray">
+  <div class="container lead">
+    <p><b>16 insights accionables</b> de la plataforma UbiVu para flotas UbiGrid DTM+, agrupados en cuatro familias. Cada tarjeta trae la <b>condición de disparo</b>, <b>qué significa</b> y <b>por qué importa</b> — el mismo contenido del material oficial, traducido. Al final, el catálogo de <b>alertas de dispositivo</b> en tiempo real y sus umbrales configurables.</p>
+  </div>
+
+  <!-- ══════════ 1 · PREDICCIÓN DE FALLA ══════════ -->
+  <section class="cat container" id="prediccion">
+    <div class="cat-head">
+      <span class="cat-num mono">01</span>
+      <h2>Predicción de falla del transformador</h2>
+      <p class="cdesc">Correlaciones de presión, temperatura, carga y voltaje que anticipan la falla del activo antes de que ocurra.</p>
+    </div>
+    <div class="grid">
+
+      <article class="card">
+        <h3>Sello roto<span class="en">Broken Seal · La presión no sigue a la temperatura</span></h3>
+        <div class="trig">Presión ⇹ curva de temperatura</div>
+        <p>El insight analiza la correlación entre presión y temperatura. En condiciones normales la presión sigue de cerca la curva de temperatura del transformador; si la presión <b>no acompaña a la temperatura como se espera</b>, puede ser indicio de un sello roto.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>La presión <b>no se correlaciona</b> con la temperatura como se espera, indicando una potencial falla del sello.</div>
+          <div><b class="lab">Por qué importa</b>Un sello roto puede derivar en pérdida de aceite e ingreso de humedad, con degradación acelerada — fallas evitables y reemplazos de emergencia.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Dispositivo de alivio de presión<span class="en">Pressure Release Device · Cambios súbitos de presión</span></h3>
+        <div class="trig">Eventos de válvula ≈ 25 PSIA ± 2 PSIG</div>
+        <p>Monitorea los cambios de nivel de presión para detectar <b>presión peligrosa acumulada</b> en el transformador y los <b>eventos de alivio</b> asociados a través de la válvula de alivio, para prevenir condiciones peligrosas.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Cambios súbitos de presión consistentes con acumulación peligrosa y eventos de válvula de alivio disparados en, o cerca de, <b>25 PSIA ± 2 PSIG</b>.</div>
+          <div><b class="lab">Por qué importa</b>Detecta temprano un comportamiento peligroso de presión interna, para prevenir condiciones de riesgo y la falla catastrófica.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Alta presión<span class="en">High Pressure · Correlación de sobrecarga y temperatura/presión</span></h3>
+        <div class="trig">Presión de aceite &gt; 20 PSIA</div>
+        <p>Identifica transformadores cuya <b>presión de aceite observada supera 20 PSIA</b>, típicamente asociada a operación sobrecargada con exceso de temperatura y presión, que puede terminar en falla si no se atiende.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Presión de aceite observada <b>sobre 20 PSIA</b>.</div>
+          <div><b class="lab">Por qué importa</b>Uno de los indicadores más fuertes de <b>«actuar ahora»</b>: falla de corto plazo si se deja sin atender.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Alta temperatura de aceite<span class="en">High Oil Temperature · Condición de sobrecalentamiento</span></h3>
+        <div class="trig">&gt; 95 °C / 203 °F</div>
+        <p>Detecta temperaturas de aceite que <b>superan 95 °C / 203 °F</b>, posible sobrecalentamiento. El sobrecalentamiento <b>acelera el desgaste de los componentes internos</b> del transformador y reduce su vida útil.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>La temperatura del aceite excede <b>95 °C / 203 °F</b>, indicando sobrecalentamiento.</div>
+          <div><b class="lab">Por qué importa</b>El sobrecalentamiento acelera el desgaste interno y reduce la vida útil — sube el riesgo de falla, la exposición a cortes y el costo de reemplazo.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Sobrecargado y caliente<span class="en">Overloaded and Hot · Sobrecarga correlacionada con temperatura/presión</span></h3>
+        <div class="trig">Sobrecarga + alza de T° / presión</div>
+        <p>Monitorea la carga del transformador en correlación con sobrecalentamiento o alza de presión: la unidad opera <b>en condición de sobrecarga que está generando temperatura y presión excesivas</b>, y puede terminar en falla si no se atiende.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Sobrecarga correlacionada con sobrecalentamiento o alza de presión — la carga está <b>estresando activamente</b> la unidad.</div>
+          <div><b class="lab">Por qué importa</b>Uno de los indicadores más fuertes de <b>«actuar ahora»</b>: falla de corto plazo si se deja sin atender.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Sobrecargado<span class="en">Overloaded · kVA operativo excede el rating en el tiempo</span></h3>
+        <div class="trig">kVA operativo &gt; kVA rating (sostenido)</div>
+        <p>Entrega el histórico de carga y resalta gráficamente cuándo el transformador <b>opera sobre el kVA soportado</b>. Seguir la sobrecarga es crítico: la sobrecarga constante <b>reduce la vida útil de forma exponencial</b> y puede indicar un transformador mal dimensionado para la carga.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>El kVA operativo <b>excede el rating</b> del transformador de forma sostenida; puede indicar un equipo subdimensionado.</div>
+          <div><b class="lab">Por qué importa</b>La sobrecarga constante disminuye la vida útil exponencialmente — soporta priorizar upgrades para prevenir fallas prematuras y problemas repetidos.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Escalón de voltaje al alza<span class="en">Voltage Step Up · Aumento sostenido del nivel de voltaje</span></h3>
+        <div class="trig">↑ V sostenido · falla en ~90 días</div>
+        <p>Algoritmo que monitorea cambios sostenidos de voltaje, temperatura y presión para <b>detectar problemas de calidad de energía</b> que pueden ser <b>indicativos de cortocircuito en el devanado primario</b>. Sin resolver, puede llevar a falla del transformador dentro de ~90 días.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Aumento sostenido del voltaje; el patrón se vincula a problemas de calidad de energía y fallas internas en desarrollo.</div>
+          <div><b class="lab">Por qué importa</b>Se asocia a cortocircuitos, falla de aislación o saturación del núcleo; puede llevar a falla dentro de <b>~90 días</b>.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Escalón de voltaje a la baja<span class="en">Voltage Step Down · Caídas de voltaje que persisten</span></h3>
+        <div class="trig">↓ V persistente · 1, 2 o 3 piernas</div>
+        <p>Monitorea cambios de nivel de voltaje que <b>persisten como una caída</b> en una o varias piernas del transformador, lo que puede ser <b>indicativo de cortocircuito en el devanado secundario</b>.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Caída de voltaje persistente en una, dos o las tres piernas (según el tipo de transformador), posible cortocircuito de devanado secundario.</div>
+          <div><b class="lab">Por qué importa</b>Identifica temprano una falla seria en desarrollo — reduce la exposición a cortes y enfoca el diagnóstico más rápido.</div>
+        </div>
+        <div class="variants"><span class="pill">Variante: una pierna</span><span class="pill">Variante: dos piernas</span></div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 2 · INTEGRIDAD FÍSICA ══════════ -->
+  <section class="cat container" id="integridad">
+    <div class="cat-head">
+      <span class="cat-num mono">02</span>
+      <h2>Integridad física</h2>
+      <p class="cdesc">Sensórica de inclinación e impacto del nodo: el estado mecánico del transformador y de su poste o pad.</p>
+    </div>
+    <div class="grid">
+
+      <article class="card">
+        <h3>Inclinación sostenida<span class="en">Sustained Tilt · Cambio de inclinación que persiste</span></h3>
+        <div class="trig">&gt; 10° persistente · poste y pad</div>
+        <p>Indica cambios en nodos que experimentan una <b>inclinación mayor a 10° que persiste indefinidamente</b>. Incluye la inclinación de transformadores montados en pad y en poste, para señalar potenciales desplazamientos estructurales.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Cambio de inclinación <b>&gt; 10 grados</b> que persiste (montaje pad o poste), indicando desplazamiento estructural.</div>
+          <div><b class="lab">Por qué importa</b>La detección temprana de inestabilidad previene daño a equipos, riesgos de seguridad y cortes por estrés mecánico creciente.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Impacto repetido<span class="en">Repeated Impact · Múltiples impactos sobre 2G</span></h3>
+        <div class="trig">Impactos &gt; 2 G</div>
+        <p>Rastrea nodos que han experimentado <b>impactos sobre 2G</b>: eventos súbitos detectados por el DTM causados por una fuerza externa. Pueden afectar tanto al transformador como al poste o pad donde está montado.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Múltiples impactos detectados <b>sobre 2G</b>, causados por fuerza externa sobre el transformador y/o el poste o pad.</div>
+          <div><b class="lab">Por qué importa</b>Los impactos crean daño oculto y fallas futuras — esto da conocimiento inmediato para reducir el riesgo de seguridad y prevenir cortes.</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 3 · CALIDAD DE ENERGÍA ══════════ -->
+  <section class="cat container" id="calidad">
+    <div class="cat-head">
+      <span class="cat-num mono">03</span>
+      <h2>Monitoreo de calidad de energía</h2>
+      <p class="cdesc">Desviaciones, desbalance, factor de potencia y penetración DER que degradan la red y los equipos del cliente.</p>
+    </div>
+    <div class="grid">
+
+      <article class="card">
+        <h3>Desviación de voltaje<span class="en">Voltage Deviation · Persistente &gt; 5 % del nominal</span></h3>
+        <div class="trig">≥ 5 % del nominal · ≥ 1 hora</div>
+        <p>Rastrea <b>desviaciones de voltaje de 5 % o más respecto del nominal que persisten al menos 1 hora</b>. Normalmente son síntoma de mala calidad de energía y pueden derivar en mayor consumo, daño a equipos y energía desperdiciada. También pueden indicar <b>ajustes de tap incorrectos</b>.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>El voltaje se desvía <b>≥ 5 % del nominal por ≥ 1 hora</b>, señal de calidad de energía persistente o taps mal ajustados.</div>
+          <div><b class="lab">Por qué importa</b>Genera impacto en clientes (estrés de equipos, reclamos), energía desperdiciada, y puede revelar problemas de configuración del sistema que requieren corrección.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Factor de potencia bajo<span class="en">Power Factor Low · Factor de potencia bajo 0.8</span></h3>
+        <div class="trig">FP &lt; 0.8</div>
+        <p>Ocurre cuando la energía se usa de forma ineficiente porque una porción significativa de la potencia que fluye por el sistema es <b>reactiva</b> en vez de realizar trabajo útil. Detectarlo permite identificar dónde aplicar corrección de factor de potencia o gestión de carga para mejorar la eficiencia y proteger los activos.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>El factor de potencia cae bajo niveles aceptables: uso ineficiente por carga reactiva de motores, HVAC o equipos industriales.</div>
+          <div><b class="lab">Por qué importa</b>Aumenta las pérdidas del sistema, reduce la capacidad del alimentador y del transformador, y contribuye a sobrecalentamiento y mayores costos operativos.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Desbalance de voltaje<span class="en">Voltage Imbalance</span></h3>
+        <div class="trig">ΔV entre fases &gt; límites aceptables</div>
+        <p>Ocurre cuando los voltajes de las tres fases no son iguales, usualmente por <b>carga despareja, mala distribución de fases, conexiones sueltas o problemas del alimentador</b>. Sin corregir, lleva a falla prematura de equipos, reclamos de clientes y mayores costos de mantenimiento.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>La diferencia entre voltajes de fase excede los límites aceptables, indicando carga despareja o problemas de fase.</div>
+          <div><b class="lab">Por qué importa</b>Aumenta el calentamiento del transformador, reduce la eficiencia de motores y acelera el envejecimiento — potencial falla prematura del activo e impacto en equipos del cliente.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>DER detectado<span class="en">DER Detected · Flujo inverso de potencia</span></h3>
+        <div class="trig">Exportación hacia la red (flujo inverso)</div>
+        <p>Identifica cuándo recursos energéticos distribuidos — <b>solar en techo, baterías u otra generación del cliente</b> — producen más de lo que se consume localmente, haciendo que la electricidad <b>fluya en reversa</b> hacia el transformador de distribución y la red aguas arriba. Permite ajustar proactivamente regulación de voltaje, protecciones y gestión de carga.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Un recurso energético distribuido (DER), como solar residencial u otra generación del cliente, está <b>exportando potencia</b> a la red de distribución local.</div>
+          <div><b class="lab">Por qué importa</b>DER no planificado o sin gestión causa subidas de voltaje, flujo inverso y desafíos de coordinación de protecciones — impacto potencial en la vida del transformador y la calidad de energía.</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 4 · CONFIABILIDAD DE RED ══════════ -->
+  <section class="cat container" id="confiabilidad">
+    <div class="cat-head">
+      <span class="cat-num mono">04</span>
+      <h2>Monitoreo de confiabilidad de red</h2>
+      <p class="cdesc">Interrupciones de servicio: distinguir el corte real del transitorio, priorizar cuadrillas y atacar la causa antes de que escale.</p>
+    </div>
+    <div class="grid">
+
+      <article class="card">
+        <h3>Cortes sostenidos<span class="en">Sustained Outages · Pérdida persistente de servicio</span></h3>
+        <div class="trig">Pérdida de voltaje que persiste</div>
+        <p>Interrupción del servicio eléctrico por un período extendido, más allá de las perturbaciones momentáneas — típicamente por falla de equipos, operación de protecciones, clima o daño físico a la infraestructura. A diferencia de las interrupciones cortas que se despejan solas, <b>requiere intervención de la empresa</b> para ubicar y reparar la falla. Detectarlo rápido prioriza el despacho de cuadrillas, reduce el tiempo sin servicio y acelera la identificación de la causa raíz.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>La pérdida de voltaje persiste más allá de las interrupciones momentáneas normales: es un <b>corte de servicio real</b>.</div>
+          <div><b class="lab">Por qué importa</b>Los cortes prolongados impactan a los clientes, las métricas de confiabilidad y los costos operacionales.</div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Cortes momentáneos<span class="en">Momentary Outages · Identificar la causa para evitar cortes sostenidos</span></h3>
+        <div class="trig">Segundos · despeje automático</div>
+        <p>Interrupción de corta duración, típicamente de solo segundos. Aunque el servicio vuelve rápido, los cortes momentáneos frecuentes <b>afectan equipos sensibles del cliente, delatan problemas de infraestructura en desarrollo y marcan zonas de la red con estrés repetido</b>. Rastrearlos permite identificar circuitos problemáticos y corregir causas recurrentes antes de que se vuelvan cortes sostenidos.</p>
+        <div class="mm">
+          <div><b class="lab">Qué significa</b>Pérdida breve de voltaje, de solo segundos, por fallas temporales despejadas automáticamente por los dispositivos de protección.</div>
+          <div><b class="lab">Por qué importa</b>Los cortes momentáneos frecuentes afectan equipos sensibles e indican circuitos con estrés repetido que después puede derivar en cortes sostenidos.</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 5 · ALERTAS DE DISPOSITIVO ══════════ -->
+  <section class="cat container--wide" id="alertas">
+    <div class="cat-head">
+      <span class="cat-num mono">05</span>
+      <h2>Alertas de dispositivo</h2>
+      <p class="cdesc">Alertamiento en tiempo real por umbrales, directo desde el nodo. Todos los umbrales son configurables por el administrador.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table class="data">
+        <thead>
+          <tr><th>Alerta</th><th>Umbral mín.</th><th>Umbral máx.</th><th>Notas</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Voltage Swell</b> (sobretensión transitoria)</td><td class="v">8 % · 0,5</td><td class="v">99 % · 3.600</td><td>% del voltaje nominal · duración en ciclos</td></tr>
+          <tr><td><b>Voltage Sag</b> (hueco de tensión)</td><td class="v">8 % · 0,5</td><td class="v">99 % · 3.600</td><td>% del voltaje nominal · duración en ciclos</td></tr>
+          <tr><td><b>Power Status</b> (estado de energía)</td><td class="v">N/A</td><td class="v">N/A</td><td>LOSS · RESTORED · incluye los últimos valores conocidos</td></tr>
+          <tr><td><b>Captura de forma de onda bajo demanda</b></td><td class="v">N/A</td><td class="v">N/A</td><td>Requiere waveform habilitado · 130 muestras por ciclo</td></tr>
+          <tr><td><b>Puerta abierta</b> (Open Door)</td><td class="v">N/A</td><td class="v">N/A</td><td>DOOR OPEN · DOOR CLOSED · solo montaje en pad</td></tr>
+          <tr><td><b>AUS (S&amp;C EdgeRestore)</b></td><td class="v">N/A</td><td class="v">N/A</td><td>ABNORMAL · NORMAL · conteo de operaciones del dispositivo</td></tr>
+          <tr><td><b>Todos los Insights Accionables</b></td><td class="v">N/A</td><td class="v">N/A</td><td>Cualquier insight puede además configurarse para enviarse como alerta de dispositivo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callouts">
+      <div class="callout"><b>Canales de envío.</b> Todas las alertas pueden enviarse por <b>correo electrónico</b>, <b>mensaje de texto (SMS)</b> y dentro de la <b>cuenta UbiVu</b>.</div>
+      <div class="callout lime"><b>Totalmente configurables.</b> Los administradores definen el <b>Quién</b> (destinatarios), <b>Cómo</b> (canal), <b>Qué</b> (variables y columnas de la tabla de alerta), <b>Cuándo</b> (p. ej. solo la primera alerta) y el <b>Layout</b> mediante plantillas de notificación (Notification Templates) en UbiVu.</div>
+    </div>
+  </section>
+
+  <div class="container nores" id="nores">Sin resultados para ese filtro. Prueba con otro término (p. ej. «presión», «voltaje», «DER»).</div>
+</main>
+
+<footer class="band band--navy">
+  <div class="container">
+    <div class="brand"><span class="b1">ubi</span><span class="b2">cquia</span><sup>®</sup></div>
+    <div class="fnote">© 2026 Ubicquia — Confidencial y propietario · Referencia interna en español · griddata.cl</div>
+  </div>
+</footer>
+
+<div id="errband" role="alert"><button onclick="this.parentNode.style.display='none'" aria-label="Cerrar">×</button><span id="errmsg"></span></div>
+
+<script>
+(function(){
+  "use strict";
+  /* ── índice de búsqueda por card (una vez) ── */
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  var TOTAL = cards.length;
+  cards.forEach(function(c){ c.dataset.search = (c.textContent || "").toLowerCase(); });
+  var secs = Array.prototype.slice.call(document.querySelectorAll("section.cat"));
+  var q = document.getElementById("q");
+  var count = document.getElementById("count");
+  var nores = document.getElementById("nores");
+
+  function applyFilter(){
+    var term = (q.value || "").trim().toLowerCase();
+    var visible = 0;
+    cards.forEach(function(c){
+      var show = !term || c.dataset.search.indexOf(term) !== -1;
+      c.classList.toggle("hide", !show);
+      if (show) visible++;
+    });
+    secs.forEach(function(s){
+      var inSec = s.querySelectorAll(".card:not(.hide)").length;
+      var isAlertas = s.id === "alertas";
+      /* la sección de alertas (sin cards) solo se oculta si hay filtro y no calza */
+      var showSec = isAlertas ? (!term || (s.textContent || "").toLowerCase().indexOf(term) !== -1)
+                              : (inSec > 0 || !term);
+      s.style.display = showSec ? "" : "none";
+    });
+    count.textContent = term ? (visible + " de " + TOTAL) : (TOTAL + " insights");
+    var alertasVisible = document.getElementById("alertas").style.display !== "none";
+    nores.classList.toggle("on", term !== "" && visible === 0 && !alertasVisible);
+  }
+  if (q){ q.addEventListener("input", applyFilter); applyFilter(); }
+
+  /* ── banner discreto de errores (máx 3) ── */
+  var errN = 0;
+  window.onerror = function(msg){
+    if (++errN > 3) return;
+    var b = document.getElementById("errband"), m = document.getElementById("errmsg");
+    if (b && m){ m.textContent = "Aviso: " + msg; b.style.display = "block"; }
+  };
+})();
+</script>
+</body>
+</html>
