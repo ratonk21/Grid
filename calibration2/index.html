@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<!-- ═══ ESTADO ═══
+herramienta : Procedimiento — registro de energía en plataforma (UbiCell UG · UbiVu), documento bilingüe
+version     : v2 (anterior: v1 = procedimiento-registro-energia-plataforma-EQB.html, solo EN)
+motor       : INTOCABLE — supplied, measured, cutError, barColor, barFill, measuredPath (simulación 20 min: FIRST=3, LAST=19, RATE=100 Wh/min)
+ultima      : 2026-09-15 · bilingüe ES|EN: toggle en topbar, ?lang=en|es o #en|#es (ES por defecto); fix .btn--pri sin CSS y restos ES en Play/Pausa/aria de la v1
+arquitectura: single-file · Google Fonts CDN · sin localStorage · i18n: ES inline en el DOM (data-i18n), EN en diccionario EN, DYN para textos generados por JS
+marca       : Ubicquia (--ubi-*)
+verificacion: hopper — node --check + harness jsdom (claves i18n 1:1 DOM↔EN, fugas de idioma, 41 pasos × 2 idiomas, KPIs = motor, sin runtime errors)
+no_tocar    : motor de simulación · geometría SVG (TLX/CX/CY/PX)
+pendientes  : @media print completo (export PDF) · tabla editable de registro de resultados (serial/IMEI, ventana, referencia, medido, error, veredicto)
+═══ -->
+<html lang="es" data-lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procedimiento — Validación del registro de energía en la plataforma (UbiCell UG)</title>
+<meta name="description" content="Procedimiento para validar el registro de energía del UbiCell UG en la plataforma UbiVu: contexto, metodología animada y pasos (comunicación estable 5 min, ventana central de 10 min).">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;--ubi-deep:#464D63;--ubi-gray2:#99A0B4;--ubi-orange:#EA561B;--ubi-lime:#7DBE3C;
+--ubi-line:rgba(30,36,69,.10);--maxw:1080px;--pad:clamp(16px,4vw,40px)}
+*{box-sizing:border-box}
+body{margin:0;font-family:Lato,system-ui,Arial,sans-serif;color:#242838;background:#fff;line-height:1.5}
+.band{width:100%}.band--navy{background:var(--ubi-navy);color:#fff}.band--gray{background:var(--ubi-gray)}
+.container{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px}
+.wm{font-weight:900;font-size:20px}.wm .b{color:var(--ubi-blue)}.wm .d{color:var(--ubi-blue)}
+.tr{display:flex;align-items:center;gap:14px}
+.doctag{font-size:11px;font-weight:800;letter-spacing:.14em;color:#AEB5CC;text-transform:uppercase}
+/* toggle idioma */
+.langtog{display:inline-flex;align-items:center;gap:2px;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:2px}
+.langtog button{font-family:inherit;font-weight:800;font-size:11.5px;letter-spacing:.06em;border:0;background:none;color:#AEB5CC;padding:4px 11px;border-radius:999px;cursor:pointer}
+.langtog button.on{background:var(--ubi-blue);color:#fff}
+@media (max-width:440px){.doctag{display:none}}
+@media print{.langtog{display:none}}
+.hero{padding-block:clamp(16px,2.6vh,26px)}
+.kick{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ubi-blue);margin-bottom:8px}
+h1{font-size:clamp(21px,3.2vw,29px);font-weight:900;margin:0 0 8px;line-height:1.15}
+.hero p{margin:0;color:#C7CCDE;max-width:70ch;font-size:15px}
+.hero .chips{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:#2E3556;color:#E6EAF5;font-size:12px;font-weight:800;padding:5px 11px;border-radius:999px}
+main{padding-block:24px}
+.card{background:#fff;border:1px solid var(--ubi-line);border-radius:14px;padding:20px 22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(30,36,69,.04)}
+.card h2{font-size:16px;color:var(--ubi-navy);margin:0 0 4px;font-weight:900}
+.card .sub{color:var(--ubi-gray2);font-size:13px;margin:0 0 14px}
+.lead{color:var(--ubi-deep);font-size:14.5px}.lead b{color:var(--ubi-navy)}
+.mono{font-family:'JetBrains Mono',monospace}
+/* botones */
+.btn{font-family:inherit;font-weight:800;font-size:13.5px;border:0;border-radius:9px;padding:9px 16px;cursor:pointer}
+.btn--pri{background:var(--ubi-navy);color:#fff}.btn--pri:hover{background:#2E3556}
+/* diagrama instrumentos */
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+.node{flex:1;min-width:150px;border:1.5px solid var(--ubi-line);border-radius:12px;padding:12px 14px;background:#fff;text-align:center}
+.node .ic{font-size:22px}
+.node .nm{font-weight:900;color:var(--ubi-navy);font-size:13.5px;margin:4px 0 3px}
+.node .sp{font-size:11.5px;color:var(--ubi-deep)}
+.node.src{border-top:3px solid var(--ubi-orange)}
+.node.met{border-top:3px solid var(--ubi-navy)}
+.node.plat{border-top:3px solid var(--ubi-blue)}
+.arrow{display:flex;align-items:center;justify-content:center;color:var(--ubi-gray2);font-weight:900;font-size:20px;padding:0 6px;min-width:30px}
+.inst{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.inst .it{border:1px solid var(--ubi-line);border-radius:10px;padding:12px 14px;font-size:13px}
+.inst .it b{color:var(--ubi-navy);display:block;margin-bottom:2px}
+.inst .it .r{color:var(--ubi-gray2);font-size:12px}
+/* resumen KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
+.kpi{border:1px solid var(--ubi-line);border-radius:12px;padding:13px 15px;background:#fff}
+.kpi .k{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ubi-gray2);margin-bottom:6px}
+.kpi .v{font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:700;color:var(--ubi-navy)}
+.kpi .u{font-size:11px;color:var(--ubi-gray2);font-weight:700}
+.kpi--ref{border-top:3px solid var(--ubi-orange)}
+.kpi--meas{border-top:3px solid var(--ubi-blue)}.kpi--meas .v{color:#0E7CA6}
+.kpi--lost{border-top:3px solid var(--ubi-orange)}.kpi--lost .v{color:var(--ubi-orange)}
+/* gráfico */
+.uvchart{border:1px solid var(--ubi-line);border-radius:10px;padding:12px}
+.uvchart .ct{font-size:12px;font-weight:800;color:var(--ubi-navy);margin-bottom:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px 18px;margin-top:10px;font-size:12px;color:var(--ubi-deep)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:22px;height:0;border-top:3px solid}.sw.m{border-color:var(--ubi-blue)}.sw.r{border-color:var(--ubi-navy);border-top-style:dashed}
+footer{padding-block:16px;font-size:12px;color:#AEB5CC}
+footer .container{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:2px solid var(--ubi-line)}
+.tab{font-family:inherit;font-weight:800;font-size:14.5px;padding:11px 20px;border:0;background:none;color:var(--ubi-gray2);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab.on{color:var(--ubi-navy);border-bottom-color:var(--ubi-blue)}
+/* animación */
+.animctrls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.speeds{display:inline-flex;gap:3px;background:#fff;border:1px solid var(--ubi-line);border-radius:10px;padding:3px}
+.speeds button{font-family:inherit;font-weight:700;font-size:12.5px;border:0;background:none;color:var(--ubi-deep);padding:6px 10px;border-radius:7px;cursor:pointer}
+.speeds button.on{background:var(--ubi-navy);color:#fff}
+.atime{font-size:14px;font-weight:700;color:var(--ubi-navy);margin-left:auto}
+.scrub{width:100%;accent-color:var(--ubi-blue);margin:4px 0 12px}
+.caption{margin-top:8px;background:var(--ubi-gray);border-radius:10px;padding:12px 15px;font-size:14.5px;color:var(--ubi-deep);min-height:1.4em;font-weight:600}
+.caption b{color:var(--ubi-navy)}
+.livecards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:16px 0}
+.lc{border:1px solid var(--ubi-line);border-radius:12px;padding:14px;background:#fff}
+.lc .h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.lc .h .ic{font-size:20px}.lc .h .t{font-weight:900;color:var(--ubi-navy);font-size:13.5px}
+.lc .pill{font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:999px;margin-left:auto}
+.pill.on{background:#2E8B57;color:#fff}.pill.wait{background:#FAB512;color:#3a2e00}.pill.off{background:#E4E7EF;color:var(--ubi-deep)}
+.lc .big{font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:700;color:var(--ubi-navy)}
+.lc .sm{font-size:12px;color:var(--ubi-gray2);margin-top:2px}
+.lc.src{border-top:3px solid var(--ubi-orange)}.lc.met{border-top:3px solid var(--ubi-navy)}.lc.plat{border-top:3px solid var(--ubi-blue)}
+.pulse{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ubi-blue);margin-left:8px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){.pulse{animation:none}}
+/* cortes */
+table.cuts{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:4px}
+table.cuts td{padding:5px 8px;border-bottom:1px solid #eef0f5;cursor:pointer;vertical-align:middle}
+table.cuts tr:hover td{background:#f6f8fb}
+table.cuts tr.sel td{background:#EAF7FC}
+table.cuts .win{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ubi-navy);white-space:nowrap}
+table.cuts .barc{width:60%}
+table.cuts .bar{height:9px;border-radius:5px;min-width:4px}
+table.cuts .err{font-family:'JetBrains Mono',monospace;font-weight:700;text-align:right;white-space:nowrap}
+.cutbadge{margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:var(--ubi-gray);border-radius:10px;padding:12px 16px}
+.cutbadge .cb-win{font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--ubi-navy);font-size:15px}
+.cutbadge .cb-err{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:18px}
+.cutbadge .cb-det{font-size:12.5px;color:var(--ubi-deep)}
+/* procedimiento */
+.plist{display:flex;flex-direction:column;gap:11px}
+.pstep{display:flex;gap:12px;align-items:flex-start}
+.pstep .pn{flex:none;width:27px;height:27px;border-radius:50%;background:var(--ubi-navy);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:14px;margin-top:1px}
+.pstep b{color:var(--ubi-navy)}
+.pstep>div{font-size:14px;color:var(--ubi-deep)}
+</style>
+</head>
+<body>
+<header class="band band--navy"><div class="container topbar">
+  <span class="wm"><span class="b">ubi</span>cquia<span class="d">.</span></span>
+  <div class="tr">
+    <span class="doctag" data-i18n="doctag">Procedimiento · Registro de energía</span>
+    <div class="langtog" id="langtog" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es" class="on" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</div></header>
+<section class="band band--navy"><div class="container hero">
+  <div class="kick" data-i18n="kick">Validación del registro de energía · UbiCell UG</div>
+  <h1 data-i18n="h1">Procedimiento para validar el registro de energía en la plataforma</h1>
+  <p data-i18n="heroP">Cómo cuantificar, directamente en la plataforma UbiVu, la energía que registra el nodo. Incluye el contexto, la metodología (animada) y los pasos a seguir. Es un método alternativo mientras la plataforma se adapta a esta tarea.</p>
+  <div class="chips"><span class="chip" data-i18n="chip1">Registro de energía · UbiVu</span><span class="chip" data-i18n="chip2">Comunicación estable ≥ 5 min</span><span class="chip" data-i18n="chip3">Ventana útil 10 min (centro)</span><span class="chip" data-i18n="chip4">Reporte cada 1 min</span></div>
+</div></section>
+
+<main class="band band--gray"><div class="container">
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" data-tab="1" type="button" data-i18n="tab1">Contexto y procedimiento</button>
+    <button class="tab" data-tab="2" type="button" data-i18n="tab2">Metodología</button>
+  </div>
+
+  <div id="tab1">
+  <div class="card" style="border-left:4px solid var(--ubi-blue)">
+    <h2 data-i18n="scopeH">Alcance</h2>
+    <p class="lead" data-i18n="scopeP">Este procedimiento valida que el UbiCell UG <b>registra la energía correctamente</b> y que ese registro puede leerse en la plataforma. Tiene dos partes:</p>
+    <ul style="margin:8px 0 0;padding-left:20px;color:var(--ubi-deep);font-size:14px;line-height:1.6">
+      <li data-i18n="scopeL1"><b>Parte 1 — Exactitud de pulsos (ANSI C12.20).</b> Verifica que la salida de pulsos cumple la exactitud de la norma. <b>Ya entregada y entendida</b> — es el documento que el cliente ya tiene.</li>
+      <li data-i18n="scopeL2"><b>Parte 2 — Registro de energía en la plataforma (este documento).</b> Verifica que la energía acumulada por el nodo, leída en UbiVu, coincide con la energía realmente suministrada.</li>
+    </ul>
+  </div>
+  <div class="card" style="border-left:4px solid var(--ubi-orange)">
+    <h2 data-i18n="noteH">Nota importante — estado actual</h2>
+    <p class="lead" data-i18n="noteP">El UbiCell UG <b>cumple ANSI C12.20</b> en exactitud. Sin embargo, <b>hasta la fecha la medición de energía acumulada no ha sido un requisito</b> planteado por ningún cliente, por lo que <b>la plataforma UbiVu puede no estar aún perfectamente adaptada</b> a esta tarea específica. Por ahora <b>proponemos una forma alternativa</b> para cuantificar igualmente los resultados requeridos: leer la energía acumulada del nodo en ventanas de tiempo controladas y compararla contra la referencia.</p>
+  </div>
+  <div class="card" style="border-left:4px solid #FAB512">
+    <h2 data-i18n="commH">Comunicación — precondición</h2>
+    <p class="lead" data-i18n="commP">Una vez <b>energizado</b>, el nodo <b>debe comunicar</b>. El enlace puede <b>tomar tiempo</b> y, hasta que se estabiliza, el registro que llega a la plataforma no es confiable. Por lo tanto, antes de cuantificar:</p>
+    <ul style="margin:8px 0 0;padding-left:20px;color:var(--ubi-deep);font-size:14px;line-height:1.6">
+      <li data-i18n="commL1">Confirmar en UbiVu que el nodo está <b>en línea y reportando de forma continua</b>.</li>
+      <li data-i18n="commL2">Mantener esa <b>comunicación estable durante al menos 5 minutos</b>.</li>
+      <li data-i18n="commL3"><b>Solo después</b> de esos 5 minutos, comenzar a cuantificar la prueba.</li>
+    </ul>
+    <p class="lead" style="margin-top:8px;font-size:13.5px;color:var(--ubi-gray2)" data-i18n="commNote">Problemas posibles: enlace inicial lento, reportes intermitentes o pérdida temporal de conexión. Cualquiera de ellos deja los primeros minutos mal registrados — por eso se descartan.</p>
+  </div>
+  <!-- 1. INSTRUMENTOS -->
+  <div class="card">
+    <h2 data-i18n="instH">Equipos e instrumentos</h2>
+    <p class="sub" data-i18n="instSub">Cadena de prueba: la fuente de referencia genera energía mediante pulsos, el UbiCell la acumula y UbiVu la muestra.</p>
+    <div class="flow">
+      <div class="node src"><div class="ic">🔌</div><div class="nm" data-i18n="nSrcNm">Fuente de pulsos de referencia</div><div class="sp" data-i18n="nSrcSp">Banco de pruebas<br>1000 Wh / 10 min (≈ 6 kW)<br>salida de pulsos calibrada</div></div>
+      <div class="arrow">→</div>
+      <div class="node met"><div class="ic">📟</div><div class="nm" data-i18n="nMetNm">UbiCell UG (bajo prueba)</div><div class="sp" data-i18n="nMetSp">Acumula energía<br>Kh = 1 Wh/pulso<br>reporta cada 1 min</div></div>
+      <div class="arrow">))</div>
+      <div class="node plat"><div class="ic">📡</div><div class="nm">UbiVu</div><div class="sp" data-i18n="nPlatSp">Plataforma<br>lecturas de energía<br>del nodo</div></div>
+    </div>
+    <div class="inst">
+      <div class="it"><b data-i18n="it1b">Fuente de energía / patrón</b><div class="r" data-i18n="it1r">Entrega energía calibrada mediante pulsos. Ajustada a 1000 Wh cada 10 min; en 20 min entrega 2000 Wh (referencia).</div></div>
+      <div class="it"><b data-i18n="it2b">Medidor / contador de referencia</b><div class="r" data-i18n="it2r">Totaliza la energía de referencia (los pulsos) — el “valor verdadero” contra el que se compara.</div></div>
+      <div class="it"><b data-i18n="it3b">UbiCell UG — medidor bajo prueba</b><div class="r" data-i18n="it3r">Registra y acumula energía; la reporta a UbiVu en intervalos de 1 min (mínimo). Salida IR de 1 pulso = 1 Wh.</div></div>
+      <div class="it"><b data-i18n="it4b">Enlace celular → UbiVu</b><div class="r" data-i18n="it4r">La comunicación toma algunos minutos en enlazarse al inicio; la primera lectura llega con retraso.</div></div>
+    </div>
+  </div>
+
+    <div class="card" style="border-left:4px solid var(--ubi-lime)">
+      <h2 data-i18n="recH">Procedimiento recomendado</h2>
+      <p class="lead" data-i18n="recP"><b>Método alternativo propuesto</b> para cuantificar el registro de energía mientras la plataforma se adapta a esta tarea. Como se pierde energía en los <b>bordes</b> —el UbiCell tarda en enlazarse al inicio y deja de registrar antes del corte—, la prueba se corre durante <b>20 minutos</b> y solo se usa la <b>ventana central de 10 minutos</b>. Así se descartan el arranque y el cierre, y la medición cae en la zona precisa.</p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="strH">Estructura de la prueba · 20 min</h2>
+      <div class="vizwrap">
+        <svg id="pTL" viewBox="0 0 1000 110" preserveAspectRatio="none" style="width:100%;height:100px"></svg>
+      </div>
+      <p class="sub" style="margin-top:10px" data-i18n="strSub">5 min de estabilización + <b>10 min de medición (central)</b> + 5 min de cierre. Solo los 10 minutos centrales se usan para comparar contra la referencia (1000 Wh).</p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="stepsH">Pasos</h2>
+      <div class="plist">
+        <div class="pstep"><span class="pn">1</span><div data-i18n="s1"><b>Energizar el nodo.</b> Montar y energizar el UbiCell. Iniciar la fuente de referencia con una cantidad de energía conocida (por ejemplo, 1000 Wh cada 10 min ≈ 6 kW).</div></div>
+        <div class="pstep"><span class="pn">2</span><div data-i18n="s2"><b>Verificar la comunicación en UbiVu — mínimo 5 min.</b> Confirmar que el nodo aparece <b>en línea</b> y reporta de forma continua. Esperar hasta que la comunicación esté <b>estable durante al menos 5 minutos</b>. No cuantificar antes de eso.</div></div>
+        <div class="pstep"><span class="pn">3</span><div data-i18n="s3"><b>Marcar el inicio de la ventana (min 5).</b> Con la comunicación ya estable, registrar la <b>energía acumulada</b> del nodo en UbiVu. Este es el punto de partida de los 10 minutos útiles.</div></div>
+        <div class="pstep"><span class="pn">4</span><div data-i18n="s4"><b>Dejar correr 10 minutos (medición).</b> La fuente sigue entregando; en esos 10 min la referencia es la energía conocida (por ejemplo, 1000 Wh).</div></div>
+        <div class="pstep"><span class="pn">5</span><div data-i18n="s5"><b>Marcar el fin de la ventana (min 15).</b> Leer nuevamente la <b>energía acumulada</b> del nodo en UbiVu.</div></div>
+        <div class="pstep"><span class="pn">6</span><div data-i18n="s6"><b>Determinar la exactitud.</b> La energía que el nodo registra en la ventana es la diferencia entre las dos lecturas (min 15 − min 5). <b>La exactitud se obtiene de la comparación con el instrumento patrón de referencia</b> sobre esa misma ventana.</div></div>
+        <div class="pstep"><span class="pn">7</span><div data-i18n="s7"><b>Cierre (5 min) y registro.</b> Dejar pasar 5 minutos más y apagar la fuente. Anotar el nodo (serial/IMEI), la ventana [min 5–15], referencia, medido, error y veredicto.</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:4px solid var(--ubi-blue)">
+      <h2 data-i18n="whyH">Por qué los 10 minutos centrales</h2>
+      <p class="lead" data-i18n="whyP">El arranque incluye el <b>retraso de enlace</b> (el nodo aún no registra) y el cierre cae <b>después de la última lectura</b>: ahí es donde se pierde energía. La <b>ventana central [5–15]</b> queda lejos de ambos bordes, por lo que lo medido coincide con lo suministrado. El criterio de aceptación (error máximo) se evalúa <b>solo</b> sobre esos 10 minutos centrales, según la clase del medidor o la norma aplicable.</p>
+    </div>
+
+  </div><!-- /tab1 -->
+
+  <div id="tab2" style="display:none">
+    <div class="card" style="border-left:4px solid var(--ubi-blue)">
+      <h2 data-i18n="animWhatH">Qué muestra esta animación</h2>
+      <p class="lead" data-i18n="animWhatP">El proceso completo, minuto a minuto. La fuente se enciende y <b>entrega energía de inmediato</b>, pero el UbiCell <b>tarda unos minutos en enlazarse</b> (comunicación) y recién entonces comienza a registrar; al final, después de su <b>última lectura</b>, la energía hasta el corte de la fuente <b>tampoco queda registrada</b>. Ese es el <b>problema encontrado</b>: se pierde energía en los <b>bordes</b> (inicio y fin). Las <b>ventanas de 10 min</b> muestran la consecuencia — la precisión de una ventana de medición depende de dónde caiga: <b>centrada es exacta</b>, tocando los bordes <b>empeora</b>.</p>
+    </div>
+    <div class="card">
+      <h2 data-i18n="animH">Animación del proceso</h2>
+      <p class="sub" data-i18n="animSub">Reproduce el proceso completo, cambia la velocidad o arrastra la barra para saltar a cualquier momento.</p>
+      <div class="animctrls">
+        <button class="btn btn--pri" id="aPlay" type="button">▶ Reproducir</button>
+        <div class="speeds" id="aSpeeds">
+          <button type="button" data-s="0.25">0.25×</button>
+          <button type="button" data-s="0.5">0.5×</button>
+          <button type="button" data-s="1" class="on">1×</button>
+          <button type="button" data-s="2">2×</button>
+          <button type="button" data-s="4">4×</button>
+        </div>
+        <span class="atime mono" id="aTime">min 0.0 / 20</span>
+      </div>
+      <input type="range" id="aScrub" class="scrub" min="0" max="20" step="0.05" value="0" aria-label="Línea de tiempo">
+      <svg id="aTL" viewBox="0 0 1000 80" preserveAspectRatio="none" style="width:100%;height:64px"></svg>
+      <div class="caption" id="aCap"></div>
+      <div class="livecards">
+        <div class="lc src"><div class="h"><span class="ic">🔌</span><span class="t" data-i18n="lcSrcT">Fuente de referencia</span><span class="pill on" id="aSrcP">ON</span></div><div class="big"><span id="aSup">0</span> Wh</div><div class="sm" data-i18n="lcSrcSm">entrega 100 Wh/min (1000 Wh/10 min)</div></div>
+        <div class="lc met"><div class="h"><span class="ic">📟</span><span class="t">UbiCell UG</span><span class="pill wait" id="aMetP">enlazando</span></div><div class="big"><span id="aMeas">0</span> Wh<span class="pulse" id="aPulse" style="visibility:hidden"></span></div><div class="sm" data-i18n="lcMetSm"><span id="aReads">0</span> lecturas enviadas</div></div>
+        <div class="lc plat"><div class="h"><span class="ic">📡</span><span class="t">UbiVu</span><span class="pill off" id="aUvP">esperando</span></div><div class="big"><span id="aUvRead">647.500</span> kWh</div><div class="sm" id="aUvTime">sin lecturas aún</div></div>
+      </div>
+      <div class="uvchart" style="margin-top:4px">
+        <div class="ct" style="font-size:12px;font-weight:800;color:var(--ubi-navy);margin-bottom:4px" data-i18n="chartT">Energía acumulada (Wh) — se dibuja a medida que avanza el tiempo</div>
+        <svg id="aChart" viewBox="0 0 560 210" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto"></svg>
+        <div class="legend"><span><i class="sw m"></i> <span data-i18n="legM">medido (UbiCell)</span></span><span><i class="sw r"></i> <span data-i18n="legR">referencia (fuente)</span></span></div>
+      </div>
+      <div class="kpis" style="margin-top:14px">
+        <div class="kpi kpi--ref"><div class="k" data-i18n="kSup">Suministrado (hasta ahora)</div><div class="v"><span id="aKsup">0</span> <span class="u">Wh</span></div></div>
+        <div class="kpi kpi--meas"><div class="k" data-i18n="kMeas">Medido (hasta ahora)</div><div class="v"><span id="aKmeas">0</span> <span class="u">Wh</span></div></div>
+        <div class="kpi kpi--lost"><div class="k" data-i18n="kDiff">Diferencia</div><div class="v"><span id="aKdiff">0</span> <span class="u">Wh</span></div></div>
+      </div>
+      <div style="margin-top:20px;border-top:1px solid var(--ubi-line);padding-top:16px">
+        <div style="font-size:14.5px;font-weight:900;color:var(--ubi-navy);margin-bottom:2px" data-i18n="winH">Ventanas de 10 minutos y precisión</div>
+        <p class="sub" style="margin:0 0 10px" data-i18n="winSub">Cada ventana de 10 min tiene 1000 Wh de referencia. Con <b>Reproducir</b>, la ventana sombreada se desplaza por el gráfico y se ve cómo cambia el error (centrada ≈ 0.5 %, en los bordes hasta 2 %). Toca una ventana en la tabla para llevar la animación a ese punto.</p>
+        <table class="cuts" id="aCuts"></table>
+        <div class="cutbadge" id="aCutBadge"></div>
+      </div>
+    </div>
+  </div><!-- /tab2 -->
+
+
+</div></main>
+
+<footer class="band band--navy"><div class="container">
+  <span data-i18n="footL">Ubicquia · UbiCell — procedimiento de registro de energía</span>
+  <span class="mono" data-i18n="footR">1000 Wh/10 min · 20 min · reporte 1 min</span>
+</div></footer>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+
+  // ---- i18n · ES vive en el DOM (data-i18n) y se captura al iniciar; EN vive aquí ----
+  var EN=/*EN-START*/{
+    _title:'Procedure — Energy-registration validation on the platform (UbiCell UG)',
+    _desc:'Procedure to validate energy registration of the UbiCell UG on the UbiVu platform: context, animated methodology and steps (stable communication 5 min, central 10-min window).',
+    _scrubAria:'Timeline',
+    doctag:'Procedure · Energy Registration',
+    kick:'Energy-registration validation · UbiCell UG',
+    h1:'Procedure to validate energy registration on the platform',
+    heroP:'How to quantify, directly on the UbiVu platform, the energy the node registers. It includes the context, the (animated) methodology and the steps to follow. It is an alternative method while the platform is tailored to this task.',
+    chip1:'Energy registration · UbiVu', chip2:'Stable communication ≥ 5 min', chip3:'Useful window 10 min (center)', chip4:'Report every 1 min',
+    tab1:'Context and procedure', tab2:'Methodology',
+    scopeH:'Scope',
+    scopeP:'This procedure validates that the UbiCell UG <b>registers energy correctly</b> and that this record can be read on the platform. It has two parts:',
+    scopeL1:'<b>Part 1 — Pulse accuracy (ANSI C12.20).</b> Verifies that the pulse output meets the standard’s accuracy. <b>Already delivered and understood</b> — the document the client already has.',
+    scopeL2:'<b>Part 2 — Energy registration on the platform (this document).</b> Verifies that the energy accumulated by the node, read in UbiVu, matches the energy actually supplied.',
+    noteH:'Important note — current status',
+    noteP:'The UbiCell UG <b>complies with ANSI C12.20</b> for accuracy. However, <b>to date the measurement of accumulated energy has not been a requirement</b> raised by any customer, so <b>the UbiVu platform may not yet be perfectly customized</b> for this specific task. For now we <b>propose an alternative way</b> to still quantify the required results: read the node’s accumulated energy over controlled time windows and compare it against the reference.',
+    commH:'Communication — precondition',
+    commP:'Once <b>energized</b>, the node <b>must communicate</b>. The link may <b>take time</b> and, until it stabilizes, the record reaching the platform is not reliable. Therefore, before quantifying:',
+    commL1:'Confirm in UbiVu that the node is <b>online and reporting continuously</b>.',
+    commL2:'Keep that <b>communication stable for at least 5 minutes</b>.',
+    commL3:'<b>Only after</b> those 5 minutes, begin quantifying the test.',
+    commNote:'Possible problems: slow initial link, intermittent reports, or temporary loss of connection. Any of these leaves the first minutes poorly recorded — which is why they are discarded.',
+    instH:'Equipment &amp; instruments',
+    instSub:'Test chain: the reference source generates energy via pulses, the UbiCell accumulates it and UbiVu displays it.',
+    nSrcNm:'Reference pulse source', nSrcSp:'Test bench<br>1000 Wh / 10 min (≈ 6 kW)<br>calibrated pulse output',
+    nMetNm:'UbiCell UG (under test)', nMetSp:'Accumulates energy<br>Kh = 1 Wh/pulse<br>reports every 1 min',
+    nPlatSp:'Platform<br>node energy<br>readings',
+    it1b:'Energy source / standard', it1r:'Delivers calibrated energy via pulses. Set to 1000 Wh every 10 min; over 20 min it delivers 2000 Wh (reference).',
+    it2b:'Reference meter / counter', it2r:'Totals the reference energy (the pulses) — the “true value” it’s compared against.',
+    it3b:'UbiCell UG — meter under test', it3r:'Records and accumulates energy; reports it to UbiVu at 1-min intervals (minimum). IR output of 1 pulse = 1 Wh.',
+    it4b:'Cellular link → UbiVu', it4r:'Communication takes a few minutes to link up at the start; the first reading arrives with a delay.',
+    recH:'Recommended procedure',
+    recP:'<b>Proposed alternative method</b> to quantify energy registration while the platform is tailored to this task. Since energy is lost at the <b>edges</b> —the UbiCell takes time to link up at the start and stops recording before cut-off—, the test is run over <b>20 minutes</b> and only the <b>central 10-minute window</b> is used. This discards the start-up and the close-out, and the measurement falls in the precise zone.',
+    strH:'Test structure · 20 min',
+    strSub:'5 min stabilization + <b>10 min measurement (central)</b> + 5 min close-out. Only the 10 central minutes are used to compare against the reference (1000 Wh).',
+    stepsH:'Steps',
+    s1:'<b>Energize the node.</b> Mount and energize the UbiCell. Start the reference source with a known amount of energy (for example, 1000 Wh every 10 min ≈ 6 kW).',
+    s2:'<b>Verify communication in UbiVu — minimum 5 min.</b> Confirm the node appears <b>online</b> and reports continuously. Wait until communication is <b>stable for at least 5 minutes</b>. Do not quantify before that.',
+    s3:'<b>Mark the start of the window (min 5).</b> With communication already stable, record the node’s <b>accumulated energy</b> in UbiVu. This is the starting point of the 10 useful minutes.',
+    s4:'<b>Let it run for 10 minutes (measurement).</b> The source keeps delivering; over those 10 min the reference is the known energy (for example, 1000 Wh).',
+    s5:'<b>Mark the end of the window (min 15).</b> Read the node’s <b>accumulated energy</b> in UbiVu again.',
+    s6:'<b>Determine accuracy.</b> The energy the node registers in the window is the difference between the two readings (min 15 − min 5). <b>Accuracy is obtained from the comparison with the reference standard instrument</b> over that same window.',
+    s7:'<b>Close-out (5 min) and record.</b> Let 5 more minutes pass and turn off the source. Note the node (serial/IMEI), window [min 5–15], reference, measured, error and verdict.',
+    whyH:'Why the 10 central minutes',
+    whyP:'The start-up includes the <b>link-up delay</b> (the node isn’t recording yet) and the close-out falls <b>after the last reading</b>: that is where energy is lost. The <b>central window [5–15]</b> is far from both edges, so measured matches supplied. The acceptance criterion (maximum error) is evaluated <b>only</b> over those 10 central minutes, per the meter class or the applicable standard.',
+    animWhatH:'What this animation shows',
+    animWhatP:'The full process, minute by minute. The source turns on and <b>delivers energy immediately</b>, but the UbiCell <b>takes a few minutes to link up</b> (communication) and only then starts recording; at the end, after its <b>last reading</b>, the energy until the source is cut off is <b>also not recorded</b>. That is the <b>problem found</b>: energy is lost at the <b>edges</b> (start and end). The <b>10-min windows</b> show the consequence — the precision of a measurement window depends on where it falls: <b>centered is exact</b>, touching the edges it <b>gets worse</b>.',
+    animH:'Process animation',
+    animSub:'Play the full process, change the speed, or drag the bar to jump to any moment.',
+    lcSrcT:'Reference source', lcSrcSm:'delivers 100 Wh/min (1000 Wh/10 min)',
+    lcMetSm:'<span id="aReads">0</span> readings sent',
+    chartT:'Accumulated energy (Wh) — drawn as time advances',
+    legM:'measured (UbiCell)', legR:'reference (source)',
+    kSup:'Supplied (so far)', kMeas:'Measured (so far)', kDiff:'Difference',
+    winH:'10-minute windows and precision',
+    winSub:'Each 10-min window has 1000 Wh of reference. With <b>Play</b>, the shaded window slides across the chart and you see how the error changes (centered ≈ 0.5 %, at the edges up to 2 %). Tap a window in the table to move the animation to it.',
+    footL:'Ubicquia · UbiCell — energy registration procedure',
+    footR:'1000 Wh/10 min · 20 min · report 1 min'
+  }/*EN-END*/;
+  // textos generados por JS (ambos idiomas)
+  var DYN=/*DYN-START*/{
+    es:{play:'▶ Reproducir',pause:'⏸ Pausa',srcOn:'Fuente ON',first:'1.ª lectura',last:'última',srcOff:'Fuente OFF',lost:'perdido',precise:'PRECISO',
+        stab:'Estabilización',meas:'Medición',close:'Cierre',discard:'5 min · descartar',use:'10 min centrales · usar',
+        window:'Ventana ',error:'error ',refMeas:'Referencia 1000 Wh · Medido ',
+        linking:'enlazando',reporting:'reportando',done:'listo',waiting:'esperando',receiving:'recibiendo',noReads:'sin lecturas aún',lastAt:'última: ',
+        cap0:'\u26a1 La fuente está entregando energía, pero el UbiCell todavía se está <b>enlazando</b> → no se registra.',
+        cap1:'\ud83d\udce1 El UbiCell <b>reporta cada minuto</b>: lo medido sigue a lo suministrado (con el desfase inicial).',
+        cap2:'La <b>última lectura</b> ya pasó: la energía hasta el corte ya no se registra.',
+        cap3:'Fuente apagada. La <b>diferencia</b> final vino de los bordes.'},
+    en:{play:'▶ Play',pause:'⏸ Pause',srcOn:'Source ON',first:'1st reading',last:'last',srcOff:'Source OFF',lost:'lost',precise:'PRECISE',
+        stab:'Stabilization',meas:'Measurement',close:'Close-out',discard:'5 min · discard',use:'10 central min · use',
+        window:'Window ',error:'error ',refMeas:'Reference 1000 Wh · Measured ',
+        linking:'linking',reporting:'reporting',done:'done',waiting:'waiting',receiving:'receiving',noReads:'no readings yet',lastAt:'last: ',
+        cap0:'\u26a1 The source is delivering energy, but the UbiCell is still <b>linking</b> → not recorded.',
+        cap1:'\ud83d\udce1 The UbiCell <b>reports every minute</b>: measured follows supplied (with the initial offset).',
+        cap2:'The <b>last reading</b> has passed: the energy up to cut-off is no longer recorded.',
+        cap3:'Source off. The final <b>difference</b> came from the edges.'}
+  }/*DYN-END*/;
+  var ES={}, LANG='es';
+  function S(k){ var d=DYN[LANG]; return (d&&d[k]!=null)?d[k]:(DYN.es[k]!=null?DYN.es[k]:k); }
+  function captureES(){
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'),function(el){ var k=el.getAttribute('data-i18n'); if(ES[k]==null) ES[k]=el.innerHTML; });
+    ES._title=document.title; var m=document.querySelector('meta[name="description"]'); ES._desc=m?m.getAttribute('content'):'';
+    ES._scrubAria=$('aScrub').getAttribute('aria-label')||'';
+  }
+  function applyLang(l){
+    LANG=(l==='en')?'en':'es'; var D=(LANG==='en')?EN:ES;
+    document.documentElement.lang=LANG; document.documentElement.setAttribute('data-lang',LANG);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'),function(el){ var k=el.getAttribute('data-i18n'); if(D[k]!=null) el.innerHTML=D[k]; });
+    if(D._title) document.title=D._title;
+    var m=document.querySelector('meta[name="description"]'); if(m&&D._desc) m.setAttribute('content',D._desc);
+    if(D._scrubAria) $('aScrub').setAttribute('aria-label',D._scrubAria);
+    Array.prototype.forEach.call($('langtog').querySelectorAll('button'),function(b){ var on=b.getAttribute('data-lang')===LANG; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); });
+    $('aPlay').textContent=playing?S('pause'):S('play');
+    buildTL(); buildChart(); renderCuts(); buildProc(); render();
+    try{ var u=new URL(location.href); u.searchParams.set('lang',LANG); history.replaceState(null,'',u.toString()); }catch(e){}
+  }
+  function initLang(){ var q=null; try{ q=new URLSearchParams(location.search).get('lang'); }catch(e){}
+    if(!q&&/^#(es|en)$/i.test(location.hash||'')) q=location.hash.slice(1);
+    return /^en$/i.test(q||'')?'en':'es'; }
+
+  var tab1=$('tab1'),tab2=$('tab2');
+  function showTab(n){ tab1.style.display=(n===1?'':'none'); tab2.style.display=(n===2?'':'none');
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){b.classList.toggle('on',parseInt(b.getAttribute('data-tab'),10)===n);});
+    if(n===2){ setT(t); } else { pause(); } }
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){ b.addEventListener('click',function(){ showTab(parseInt(b.getAttribute('data-tab'),10)); }); });
+
+  var T=20,FIRST=3,LAST=19,OFF=20,RATE=100;      // Wh/min total
+  var t=0,playing=false,raf=null,speed=1,last=0,MPS=1.8; // min por segundo real @1x
+  function supplied(x){return RATE*Math.min(Math.max(x,0),OFF);}
+  function measured(x){var c=(x<FIRST)?0:(Math.min(x,LAST)-FIRST); c=Math.max(0,Math.min(c,LAST-FIRST)); return RATE*c;}
+  function pad(n){return(n<10?'0':'')+n;}
+  function hhmm(x){var s=Math.round(x*60); return '10:'+pad(Math.floor(s/60))+':'+pad(s%60);}
+  function fmt(v,d){return (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toFixed(d);}
+  function E(tag,a,txt){var e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+
+  // línea de tiempo (zonas + eventos + playhead)
+  function TLX(x){return 20+(x/T)*940;}
+  function buildTL(){ var s=$('aTL'); s.innerHTML='';
+    function z(a,b,f,l){ if(b<=a)return; s.appendChild(E('rect',{x:TLX(a),y:18,width:TLX(b)-TLX(a),height:32,fill:f,rx:4}));
+      if(TLX(b)-TLX(a)>60) s.appendChild(E('text',{x:(TLX(a)+TLX(b))/2,y:39,'text-anchor':'middle','font-size':12,'font-weight':900,fill:'#fff','font-family':'Lato'},l)); }
+    z(0,FIRST,'#EA561B',S('lost')); z(FIRST,LAST,'#7DBE3C',S('precise')); z(LAST,OFF,'#EA561B','');
+    [[0,S('srcOn')],[FIRST,S('first')],[LAST,S('last')],[OFF,S('srcOff')]].forEach(function(e){
+      s.appendChild(E('line',{x1:TLX(e[0]),y1:12,x2:TLX(e[0]),y2:54,stroke:'#C7CCDE','stroke-width':1}));
+      s.appendChild(E('text',{x:TLX(e[0]),y:68,'text-anchor':'middle','font-size':9.5,fill:'#6b7186','font-family':'Lato','font-weight':700},e[1])); });
+    s.appendChild(E('rect',{id:'aCutBand',x:TLX(0),y:14,width:TLX(10)-TLX(0),height:40,fill:'rgba(34,176,225,.16)',stroke:'#22B0E1','stroke-width':1.5,'stroke-dasharray':'4 3',rx:5}));
+    s.appendChild(E('line',{id:'aPH',x1:TLX(0),y1:8,x2:TLX(0),y2:56,stroke:'#1E2445','stroke-width':2.5})); }
+
+  // ---- 10-min windows and precision ----
+  function cutError(a){ var s=2.0*Math.exp(-0.7*a), e=2.0*Math.exp(-0.7*(10-a)); return Math.max(0.5,s+e); }
+  function barColor(er){ return er<0.8?'#7DBE3C':(er<1.5?'#FAB512':'#EA561B'); }
+  function barFill(er){ return er<0.8?'rgba(125,190,60,.15)':(er<1.5?'rgba(250,181,18,.17)':'rgba(234,86,27,.14)'); }
+  var CUTS=[0,1,2,3,4,5,6,7,8,9,10], selCut=0;
+  function renderCuts(){ var tb=$('aCuts'), html='';
+    CUTS.forEach(function(a){ var er=cutError(a), w=Math.min(100,er/2.0*100);
+      html+='<tr data-a="'+a+'"><td class="win">'+a+'\u2013'+(a+10)+' min</td><td class="barc"><div class="bar" style="width:'+w+'%;background:'+barColor(er)+'"></div></td><td class="err" style="color:'+barColor(er)+'">'+er.toFixed(1)+'%</td></tr>'; });
+    tb.innerHTML=html;
+  }
+  function applyCut(ca){ ca=Math.max(0,Math.min(10,ca)); var er=cutError(ca), meas=Math.round(1000*(1-er/100)), col=barColor(er);
+    var band=$('aCutBand'); if(band){ band.setAttribute('x',TLX(ca)); band.setAttribute('width',TLX(ca+10)-TLX(ca)); band.setAttribute('stroke',col); }
+    var cc=$('aChartCut'); if(cc){ cc.setAttribute('x',CX(ca)); cc.setAttribute('width',CX(ca+10)-CX(ca)); cc.setAttribute('stroke',col); cc.setAttribute('fill',barFill(er)); }
+    var cl=$('aChartCutLbl'); if(cl){ cl.setAttribute('x',CX(ca+5)); cl.setAttribute('fill',col); cl.textContent=S('error')+er.toFixed(1)+'%'; }
+    $('aCutBadge').innerHTML='<span class="cb-win">'+S('window')+ca.toFixed(1)+'\u2013'+(ca+10).toFixed(1)+' min</span><span class="cb-err" style="color:'+col+'">'+S('error')+er.toFixed(1)+'%</span><span class="cb-det">'+S('refMeas')+meas+' Wh</span>';
+    var ri=Math.round(ca); Array.prototype.forEach.call($('aCuts').rows,function(r){ r.classList.toggle('sel',parseInt(r.getAttribute('data-a'),10)===ri); });
+  }
+
+  // chart (referencia fija + medido dinámico)
+  var CX0=44,CX1=540,CY0=16,CY1=180,CMAX=2000;
+  function CX(x){return CX0+(x/T)*(CX1-CX0);}
+  function CY(w){return CY1-(w/CMAX)*(CY1-CY0);}
+  function buildChart(){ var s=$('aChart'); s.innerHTML='';
+    s.appendChild(E('line',{x1:CX0,y1:CY1,x2:CX1,y2:CY1,stroke:'#C7CCDE','stroke-width':1}));
+    s.appendChild(E('line',{x1:CX0,y1:CY0,x2:CX0,y2:CY1,stroke:'#C7CCDE','stroke-width':1}));
+    for(var m=0;m<=T;m+=5){ s.appendChild(E('text',{x:CX(m),y:CY1+14,'text-anchor':'middle','font-size':9,fill:'#9aa2b6','font-family':'JetBrains Mono, monospace'},m+'m')); }
+    [0,1000,2000].forEach(function(w){ s.appendChild(E('text',{x:CX0-6,y:CY(w)+3,'text-anchor':'end','font-size':9,fill:'#9aa2b6','font-family':'JetBrains Mono, monospace'},w)); });
+    s.appendChild(E('rect',{id:'aChartCut',x:CX(0),y:CY0,width:CX(10)-CX(0),height:CY1-CY0,fill:'rgba(125,190,60,.15)',stroke:'#7DBE3C','stroke-width':1.5,'stroke-dasharray':'5 4',rx:10}));
+    s.appendChild(E('path',{d:'M'+CX(0)+' '+CY(0)+' L'+CX(OFF)+' '+CY(CMAX),fill:'none',stroke:'#1E2445','stroke-width':1.6,'stroke-dasharray':'5 4'}));
+    s.appendChild(E('path',{id:'aMPath',d:'M'+CX(0)+' '+CY(0),fill:'none',stroke:'#22B0E1','stroke-width':2.4}));
+    s.appendChild(E('circle',{id:'aMDot',r:4,fill:'#22B0E1',cx:CX(0),cy:CY(0)}));
+    s.appendChild(E('text',{id:'aChartCutLbl',x:CX(5),y:CY0+13,'text-anchor':'middle','font-size':11.5,'font-weight':800,'font-family':'Lato',fill:'#7DBE3C'},'')); }
+  function measuredPath(x){ var pts=[[0,0]];
+    if(x<=FIRST){ pts.push([x,0]); }
+    else { pts.push([FIRST,0]); pts.push([Math.min(x,LAST),measured(Math.min(x,LAST))]); if(x>LAST) pts.push([x,measured(LAST)]); }
+    return pts.map(function(p,i){return (i?'L':'M')+CX(p[0])+' '+CY(p[1]);}).join(' '); }
+
+  function render(){
+    $('aTime').textContent='min '+fmt(t,1)+' / 20';
+    if(document.activeElement!==$('aScrub')) $('aScrub').value=t;
+    var ph=$('aPH'); if(ph){ph.setAttribute('x1',TLX(t));ph.setAttribute('x2',TLX(t));}
+    var cap; if(t<FIRST) cap=S('cap0');
+    else if(t<LAST) cap=S('cap1');
+    else if(t<OFF) cap=S('cap2');
+    else cap=S('cap3');
+    $('aCap').innerHTML=cap;
+    $('aSup').textContent=Math.round(supplied(t));
+    var sp=$('aSrcP'); if(t<OFF){sp.textContent='ON';sp.className='pill on';} else {sp.textContent='OFF';sp.className='pill off';}
+    $('aMeas').textContent=Math.round(measured(t));
+    var rep=(t>=FIRST&&t<=LAST), mp=$('aMetP');
+    if(t<FIRST){mp.textContent=S('linking');mp.className='pill wait';}
+    else if(rep){mp.textContent=S('reporting');mp.className='pill on';}
+    else {mp.textContent=S('done');mp.className='pill off';}
+    $('aPulse').style.visibility=rep?'visible':'hidden';
+    $('aReads').textContent=(t<FIRST)?0:Math.max(0,Math.floor(Math.min(t,LAST))-FIRST+1);
+    $('aUvRead').textContent=fmt(647.5+measured(t)/1000,3);
+    var uv=$('aUvP'); if(t<FIRST){uv.textContent=S('waiting');uv.className='pill off';} else {uv.textContent=S('receiving');uv.className='pill on';}
+    $('aUvTime').textContent=(t<FIRST)?S('noReads'):(S('lastAt')+hhmm(Math.min(Math.floor(t),LAST)));
+    var mpath=$('aMPath'); if(mpath) mpath.setAttribute('d',measuredPath(t));
+    var dot=$('aMDot'); if(dot){dot.setAttribute('cx',CX(t));dot.setAttribute('cy',CY(measured(t)));}
+    $('aKsup').textContent=Math.round(supplied(t)); $('aKmeas').textContent=Math.round(measured(t)); $('aKdiff').textContent=Math.round(supplied(t)-measured(t));
+    applyCut(t/2);
+  }
+  function setT(v){ t=Math.max(0,Math.min(T,v)); render(); }
+  function pause(){ playing=false; if(raf){cancelAnimationFrame(raf);raf=null;} $('aPlay').textContent=S('play'); }
+  function frame(ts){ if(!last)last=ts; var dt=(ts-last)/1000; last=ts; t+=dt*MPS*speed; if(t>=T){setT(T);pause();return;} setT(t); raf=requestAnimationFrame(frame); }
+  function play(){ if(t>=T)t=0; playing=true; last=0; $('aPlay').textContent=S('pause'); raf=requestAnimationFrame(frame); }
+  $('aPlay').addEventListener('click',function(){ playing?pause():play(); });
+  $('aScrub').addEventListener('input',function(){ pause(); setT(parseFloat($('aScrub').value)); });
+  $('aSpeeds').addEventListener('click',function(e){ var b=e.target; while(b&&b.tagName!=='BUTTON')b=b.parentNode; if(!b)return;
+    speed=parseFloat(b.getAttribute('data-s'));
+    Array.prototype.forEach.call($('aSpeeds').children,function(x){x.classList.toggle('on',x===b);}); });
+  $('aCuts').addEventListener('click',function(e){ var tr=e.target; while(tr&&tr.tagName!=='TR')tr=tr.parentNode; if(tr){ pause(); setT(parseInt(tr.getAttribute('data-a'),10)*2); } });
+  $('langtog').addEventListener('click',function(e){ var b=e.target; while(b&&b.tagName!=='BUTTON')b=b.parentNode; if(b&&b.getAttribute('data-lang')) applyLang(b.getAttribute('data-lang')); });
+
+  function buildProc(){ var s=$('pTL'); if(!s)return; s.innerHTML='';
+    function PX(x){return 20+(x/20)*940;}
+    function zone(a,b,f,l,sub){ s.appendChild(E('rect',{x:PX(a),y:26,width:PX(b)-PX(a),height:46,fill:f,rx:7}));
+      s.appendChild(E('text',{x:(PX(a)+PX(b))/2,y:50,'text-anchor':'middle','font-size':13,'font-weight':900,fill:'#fff','font-family':'Lato'},l));
+      if(sub) s.appendChild(E('text',{x:(PX(a)+PX(b))/2,y:65,'text-anchor':'middle','font-size':10.5,fill:'#fff','font-family':'Lato',opacity:.92},sub)); }
+    zone(0,5,'#EA561B',S('stab'),S('discard'));
+    zone(5,15,'#7DBE3C',S('meas'),S('use'));
+    zone(15,20,'#EA561B',S('close'),S('discard'));
+    [0,5,10,15,20].forEach(function(m){ var x=PX(m); s.appendChild(E('line',{x1:x,y1:72,x2:x,y2:80,stroke:'#C7CCDE','stroke-width':1}));
+      s.appendChild(E('text',{x:x,y:96,'text-anchor':'middle','font-size':11,'font-family':'JetBrains Mono, monospace',fill:'#6b7186'},m+' min')); });
+  }
+
+  captureES();
+  applyLang(initLang());   // construye TL, chart, cortes, proc y render en t=0 en el idioma inicial
+})();
+</script>
+</body>
+</html>
