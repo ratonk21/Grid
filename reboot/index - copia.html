@@ -110,7 +110,7 @@
       <div id="panelStep" hidden>
         <div class="field"><label>Panel</label><select id="panelSel" class="ctl"></select></div>
         <div class="field"><label>Subpanel</label>
-          <input id="subpanelInp" class="ctl" list="subOptions" autocomplete="off" placeholder="Busca por número o nombre">
+          <input id="subpanelInp" class="ctl" inputmode="numeric" list="subOptions" placeholder="437">
           <datalist id="subOptions"></datalist></div>
       </div>
       <div class="banner err" id="gateBanner"></div>
@@ -181,7 +181,7 @@
   // login
   $('codeShow').onclick=()=>{ const c=$('code'); c.type=c.type==='password'?'text':'password'; };
   function fillPanels(){ const ps=$('panelSel'); if(!PANELS.length){ps.innerHTML='';return;} ps.innerHTML=PANELS.map((p,i)=>`<option value="${i}">${p.name} · ${p.id}</option>`).join(''); onPanelChange(); }
-  function onPanelChange(){ PANEL=PANELS[+$('panelSel').value||0]; if(!PANEL)return; const subs=PANEL.subpanels||[]; $('subOptions').innerHTML=subs.map(s=>`<option value="${s.id}">${s.id} · ${s.name}</option>`).join(''); $('subpanelInp').value=''; }
+  function onPanelChange(){ PANEL=PANELS[+$('panelSel').value||0]; if(!PANEL)return; const subs=PANEL.subpanels||[]; $('subOptions').innerHTML=subs.map(s=>`<option value="${s.id}">${s.id} · ${s.name}</option>`).join(''); $('subpanelInp').value=subs[0]?subs[0].id:''; }
   function subName(id){ const subs=(PANEL&&PANEL.subpanels)||[]; const s=subs.find(x=>x.id===String(id)); return s?s.name:''; }
   function subLabel(id){ const n=subName(id); return (n&&n!==String(id))?(id+' · '+n):String(id); }
   $('panelSel').onchange=onPanelChange;
