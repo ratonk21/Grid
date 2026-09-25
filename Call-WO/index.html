@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<!-- ═══ ESTADO ═══
+herramienta : Referencia API UbiVu — Work Orders · POST /work-orders
+version     : v2 (anterior: v1)
+motor       : WO.parseIds · WO.buildPayloads · WO.combos · WO.toCurl/toFetch/toPython (puras, sin DOM) — v2 solo reescribe el texto de 2 warnings; lógica idéntica a v1
+ultima      : 2026-09-25 · v2 reescrita como documentación de integración estilo Swagger (descripción, auth, parámetros, esquema, respuestas, límites, ejemplos, constructor de request); v1 era bitácora de verificación
+arquitectura: referencia de lectura + constructor de request · single-file · sin librerías JS · sin localStorage · sin credenciales
+marca       : Ubicquia (--ubi-*)
+verificacion: hopper — node --check + harness jsdom (lotes de 25, combos 31, DOM = motor, sin tokens en el fuente)
+fuentes     : Swagger vivo Ubi Api (25-sep-2026) · Guía Práctica APIs Ubicquia (auth) · as-built Work Order Automation (may-2026)
+no_tocar    : WO.REF (request/response de referencia)
+pendientes  : confirmar catálogo de reason por API · endpoints GET/PUT de work orders · comportamiento con WO activa en el mismo poste
+═══ -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grid Data | API UbiVu — Work Orders: POST /work-orders</title>
+<meta name="description" content="Referencia de integración del endpoint POST /work-orders de la API Ubicquia/UbiVu: autenticación OAuth2, parámetros, esquema del cuerpo, respuestas 200/4xx/422, límites, ejemplos en curl, JavaScript y Python, y constructor de request.">
+<meta property="og:title" content="API UbiVu — Crear orden de trabajo (POST /work-orders)">
+<meta property="og:description" content="Autenticación, parámetros, esquema, respuestas, límites y ejemplos de código para integrar la creación de órdenes de trabajo en UbiVu.">
+<meta property="og:url" content="https://www.griddata.cl/guia-work-orders-api/">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ubi-navy:#1E2445;--ubi-blue:#22B0E1;--ubi-gray:#EEF0F5;--ubi-black:#000;
+  --ubi-deep:#464D63;--ubi-gray2:#99A0B4;
+  --ubi-lime:#AECC53;--ubi-darkgreen:#005B59;--ubi-matte:#2E2B2A;
+  --ubi-orange:#EA561B;--ubi-gold:#FAB512;--ubi-royal:#3466AF;--ubi-violet:#59509D;--ubi-green:#4EB270;
+  --ubi-surface:#fff;--ubi-line:rgba(30,36,69,.10);--ubi-ink:var(--ubi-navy);--ubi-muted:var(--ubi-gray2);
+  --ubi-alt:#F5F8F9;
+  --ubi-maxw:1200px;--ubi-maxw-read:860px;--ubi-maxw-wide:1440px;--ubi-pad:clamp(16px,5vw,48px);
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;font-family:Lato,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.55;color:var(--ubi-deep);background:var(--ubi-gray)}
+a{color:var(--ubi-blue)}
+h1,h2,h3{color:var(--ubi-navy);line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(24px,3.4vw,34px);font-weight:900}
+h2{font-size:22px;font-weight:700;padding-top:4px}
+h3{font-size:16px;font-weight:700;margin-top:1.3em}
+p{margin:.55em 0}
+code,kbd{font-family:var(--mono);font-size:.88em;background:var(--ubi-gray);color:var(--ubi-navy);padding:1px 5px;border-radius:4px}
+.band{width:100%}
+.band--navy{background:var(--ubi-navy);color:#fff}
+.band--gray{background:var(--ubi-gray)}
+.container,.container--read,.container--wide{width:100%;margin-inline:auto;padding-inline:var(--ubi-pad)}
+.container{max-width:var(--ubi-maxw)}
+.container--read{max-width:var(--ubi-maxw-read)}
+.container--wide{max-width:var(--ubi-maxw-wide)}
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.wordmark{font-weight:900;font-size:22px;letter-spacing:-.02em;text-decoration:none}
+.wordmark .a{color:var(--ubi-blue)}.wordmark .b{color:#fff}.wordmark sup{font-size:.45em;color:#fff;font-weight:400}
+.topbar nav{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:700;font-size:14px;border-radius:6px;padding:8px 14px;cursor:pointer;border:1px solid transparent;text-decoration:none;display:inline-block;line-height:1.2}
+.btn-primary{background:var(--ubi-blue);color:#fff}
+.btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+.btn-outline{background:#fff;color:var(--ubi-navy);border-color:var(--ubi-line)}
+.btn:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--ubi-blue);outline-offset:2px}
+/* hero compacto */
+.hero{padding-block:clamp(16px,2.6vh,26px)}
+.hero .kicker{color:var(--ubi-blue);font-weight:700;font-size:14px;margin:0 0 4px}
+.hero h1{color:#fff;margin-bottom:8px}
+.endpoint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:15px;color:#fff;margin:0 0 6px}
+.method{display:inline-block;font-weight:600;font-size:13px;letter-spacing:.02em;padding:3px 10px;border-radius:4px;background:var(--ubi-green);color:#fff}
+.hero .meta{color:rgba(255,255,255,.75);font-size:14px;margin:0}
+.hero .meta b{color:#fff}
+/* cuerpo */
+main{padding-block:28px 40px}
+.sec{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:10px;padding:22px 24px;margin-bottom:18px}
+.sec > h2:first-child{margin-top:0}
+.toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;margin:0;padding:0;list-style:none}
+.toc a{text-decoration:none;color:var(--ubi-navy);border-bottom:1px solid var(--ubi-line)}
+.toc a:hover{border-color:var(--ubi-blue)}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14.5px;margin:10px 0}
+.kv dt{color:var(--ubi-navy);font-weight:700}
+.kv dd{margin:0}
+/* código */
+.code{position:relative;background:var(--ubi-alt);border:1px solid var(--ubi-line);border-left:3px solid var(--ubi-blue);border-radius:8px;margin:10px 0}
+.code pre{margin:0;padding:14px 14px 14px 16px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--ubi-navy);white-space:pre}
+.code.pad-top pre{padding-top:30px}
+.code .lab{position:absolute;top:6px;right:8px;display:flex;gap:6px;align-items:center}
+.code .tag{font-size:11px;color:var(--ubi-gray2);font-weight:700;letter-spacing:.02em}
+.copy{font:inherit;font-size:12px;font-weight:700;padding:3px 9px;border-radius:5px;border:1px solid var(--ubi-line);background:#fff;color:var(--ubi-navy);cursor:pointer}
+.copy.done{background:var(--ubi-lime);border-color:var(--ubi-lime);color:var(--ubi-navy)}
+.code.ok{border-left-color:var(--ubi-lime)}
+.code.err{border-left-color:var(--ubi-orange)}
+/* tablas */
+.tw{overflow-x:auto;margin:10px 0}
+table.data{border-collapse:collapse;width:100%;font-size:14px}
+table.data th,table.data td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ubi-line);vertical-align:top}
+table.data th{background:var(--ubi-gray);color:var(--ubi-navy);font-weight:700;white-space:nowrap}
+table.data tbody tr:nth-child(even){background:var(--ubi-alt)}
+table.data code{white-space:nowrap}
+.req{color:var(--ubi-orange);font-weight:700;font-size:12px}
+.opt{color:var(--ubi-gray2);font-size:12px}
+/* estados */
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:rgba(174,204,83,.28);color:var(--ubi-darkgreen)}
+.pill.warn{background:rgba(234,86,27,.14);color:#B53F10}
+.pill.info{background:rgba(34,176,225,.15);color:#0B6E92}
+.pill.dim{background:var(--ubi-gray);color:var(--ubi-deep)}
+.callout{border-radius:8px;padding:12px 14px;margin:12px 0;font-size:14.5px;background:rgba(234,86,27,.08);border-left:4px solid var(--ubi-orange)}
+.callout.info{background:rgba(34,176,225,.10);border-left-color:var(--ubi-blue)}
+.callout.ok{background:rgba(174,204,83,.16);border-left-color:var(--ubi-lime)}
+.callout b{color:var(--ubi-navy)}
+/* pasos (inicio rápido) */
+.seq{list-style:none;padding:0;margin:12px 0 0;counter-reset:s}
+.seq li{position:relative;padding:0 0 14px 44px;counter-increment:s}
+.seq li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--ubi-navy);color:#fff;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center}
+.seq li::after{content:"";position:absolute;left:14px;top:32px;bottom:0;border-left:2px solid var(--ubi-line)}
+.seq li:last-child::after{display:none}
+.seq b{color:var(--ubi-navy)}
+.seq .exp{display:block;font-size:13.5px;color:var(--ubi-deep);margin-top:2px}
+/* pestañas */
+.tabs{display:flex;gap:4px;margin:8px 0 0;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:6px 6px 0 0;border:1px solid var(--ubi-line);border-bottom:none;background:var(--ubi-gray);color:var(--ubi-deep);cursor:pointer}
+.tabs button[aria-selected=true]{background:#fff;color:var(--ubi-navy);border-color:var(--ubi-blue)}
+.tabpanel{display:none}.tabpanel.on{display:block}
+.tabpanel .code{margin-top:0;border-top-left-radius:0}
+/* constructor */
+.builder{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:18px;align-items:start}
+@media (max-width:900px){.builder{grid-template-columns:1fr}}
+.form label{display:block;font-size:13px;font-weight:700;color:var(--ubi-navy);margin:12px 0 4px}
+.form label:first-child{margin-top:0}
+.form .chk{font-weight:400}
+.form input[type=text],.form textarea,.form select{width:100%;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--ubi-line);border-radius:6px;background:#fff;color:var(--ubi-navy)}
+.form textarea{font-family:var(--mono);font-size:13px;min-height:110px;resize:vertical}
+.form .hint{font-size:12.5px;color:var(--ubi-gray2);margin:3px 0 0}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ubi-deep);margin:4px 0;padding:4px 0}
+.chk input{accent-color:var(--ubi-blue);width:16px;height:16px;margin:0}
+.chk .pill{margin-left:auto}
+.form .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.out .stat{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.out .stat span{font-family:var(--mono);font-size:12.5px;background:#fff;border:1px solid var(--ubi-line);border-radius:6px;padding:4px 8px;color:var(--ubi-navy)}
+.out .stat span b{color:var(--ubi-blue)}
+.msgs{list-style:none;padding:0;margin:0 0 10px}
+.msgs li{font-size:13.5px;padding:6px 10px;border-radius:6px;margin:4px 0}
+.msgs li.err{background:rgba(234,86,27,.12);color:#8C300B}
+.msgs li.warn{background:rgba(250,181,18,.16);color:#7A5300}
+.msgs li.ok{background:rgba(174,204,83,.22);color:var(--ubi-darkgreen)}
+.batch{margin:10px 0 14px}
+.batch h4{margin:0 0 4px;font-size:14px;color:var(--ubi-navy)}
+.combos{margin-top:12px}
+.empty{color:var(--ubi-gray2);font-size:14px;padding:14px;border:1px dashed var(--ubi-line);border-radius:8px}
+/* banner onerror */
+#errbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;display:none;background:#fff;border:1px solid var(--ubi-orange);border-left:5px solid var(--ubi-orange);border-radius:8px;padding:10px 40px 10px 14px;font-size:13px;color:var(--ubi-navy);box-shadow:0 6px 24px rgba(30,36,69,.15)}
+#errbar button{position:absolute;right:8px;top:6px;border:none;background:none;font-size:18px;cursor:pointer;color:var(--ubi-deep)}
+/* footer */
+footer{padding-block:18px;font-size:13px;color:rgba(255,255,255,.75)}
+footer a{color:#fff}
+@media print{
+  body{background:#fff;font-size:12px}
+  .band--navy{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .topbar nav,.copy,.form .row,#errbar,.toc{display:none!important}
+  .sec{break-inside:avoid;border:none;padding:0 0 14px;margin:0}
+  .code pre{white-space:pre-wrap;word-break:break-all;font-size:11px}
+  .tabpanel{display:block}
+  main{padding-block:12px}
+}
+</style>
+</head>
+<body>
+<header class="band band--navy"><div class="container topbar">
+  <a class="wordmark" href="https://www.griddata.cl/"><span class="a">ubi</span><span class="b">cquia</span><sup>®</sup></a>
+  <nav>
+    <a class="btn btn-ghost" href="#request">Referencia</a>
+    <a class="btn btn-ghost" href="#samples">Ejemplos</a>
+    <a class="btn btn-ghost" href="#try">Construir request</a>
+    <button class="btn btn-ghost" type="button" onclick="window.print()">PDF</button>
+  </nav>
+</div></header>
+
+<section class="band band--navy hero"><div class="container--read">
+  <p class="kicker">API UbiVu · Work Orders</p>
+  <h1>Crear orden de trabajo</h1>
+  <p class="endpoint"><span class="method">POST</span><span>/work-orders</span></p>
+  <p class="meta">Base URL <b>https://api.ubicquia.com/api</b> · Autenticación <b>Bearer</b> (OAuth2 client_credentials) · Cuerpo <b>application/json</b></p>
+</div></section>
+
+<main class="band band--gray"><div class="container--read">
+
+<div class="sec">
+  <ul class="toc">
+    <li><a href="#overview">Descripción</a></li>
+    <li><a href="#quick">Inicio rápido</a></li>
+    <li><a href="#auth">Autenticación</a></li>
+    <li><a href="#request">Parámetros y cuerpo</a></li>
+    <li><a href="#responses">Respuestas</a></li>
+    <li><a href="#reasons">Valores de reason</a></li>
+    <li><a href="#devices">Identificador del dispositivo</a></li>
+    <li><a href="#rules">Reglas y límites</a></li>
+    <li><a href="#samples">Ejemplos de código</a></li>
+    <li><a href="#try">Construir request</a></li>
+    <li><a href="#troubleshooting">Errores frecuentes</a></li>
+  </ul>
+</div>
+
+<section class="sec" id="overview">
+  <h2>Descripción</h2>
+  <p>Crea una orden de trabajo (Work Order, WO) para uno o más dispositivos del cliente. La WO se crea en estado <code>new</code>, con tipo <code>restoration</code>, severidad <code>minor</code> y <code>automation_rule_id: 0</code> (creación manual, no generada por una regla de automatización). La respuesta devuelve la etiqueta visible en UbiVu (<code>work_order_label</code>, p. ej. <code>WO-14</code>) y el <code>id</code> numérico.</p>
+  <dl class="kv">
+    <dt>Método</dt><dd><code>POST</code></dd>
+    <dt>Ruta</dt><dd><code>https://api.ubicquia.com/api/work-orders</code></dd>
+    <dt>Autenticación</dt><dd><code>Authorization: Bearer &lt;access_token&gt;</code>; el cliente API requiere permiso de gestión de órdenes de trabajo</dd>
+    <dt>Límite</dt><dd>25 dispositivos por orden de trabajo</dd>
+    <dt>Idempotencia</dt><dd>No. Cada llamada exitosa crea una WO nueva</dd>
+  </dl>
+</section>
+
+<section class="sec" id="quick">
+  <h2>Inicio rápido</h2>
+  <ol class="seq">
+    <li><b>Obtén un token</b><span class="exp">POST al endpoint de token del realm <code>ubivu-prd</code> con <code>client_id</code> y <code>client_secret</code> (ver <a href="#auth">Autenticación</a>). Exporta el <code>access_token</code> como <code>UBI_TOKEN</code>.</span></li>
+    <li><b>Identifica el dispositivo</b><span class="exp">Toma el Node ID del nodo (16 caracteres hexadecimales, p. ej. <code>44179354ce28576f</code>) desde UbiVu o desde <code>POST /v2/nodes/light</code> (ver <a href="#devices">Identificador del dispositivo</a>).</span></li>
+    <li><b>Crea la orden</b><span class="exp">Envía el cuerpo con <code>reason</code> y <code>device_id</code> como arrays. Respuesta <code>200</code> con <code>data.work_order_label</code>.</span></li>
+  </ol>
+  <div class="code ok"><div class="lab"><span class="tag">curl</span><button class="copy" type="button" data-copy="c-quick">Copiar</button></div><pre id="c-quick">curl -X POST 'https://api.ubicquia.com/api/work-orders' \
+  -H 'accept: */*' \
+  -H "Authorization: Bearer $UBI_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "type": "cell",
+    "urgent": 0,
+    "reason": ["Other"],
+    "notes": "Work order created via API",
+    "device_id": ["44179354ce28576f"]
+  }'</pre></div>
+</section>
+
+<section class="sec" id="auth">
+  <h2>Autenticación</h2>
+  <p>OAuth2 con flujo <code>client_credentials</code> contra Keycloak (realm <code>ubivu-prd</code>). El <code>access_token</code> se envía en el header <code>Authorization</code> de todas las llamadas a <code>api.ubicquia.com</code>.</p>
+  <dl class="kv">
+    <dt>Token URL</dt><dd><code>POST https://auth.ubihub.ubicquia.com/auth/realms/ubivu-prd/protocol/openid-connect/token</code></dd>
+    <dt>Content-Type</dt><dd><code>application/x-www-form-urlencoded</code></dd>
+    <dt>Vigencia</dt><dd><code>expires_in</code> en la respuesta (6 h en el entorno de referencia). Renovar antes del vencimiento; un token vencido responde <code>401</code></dd>
+  </dl>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Parámetro (form)</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td><code>grant_type</code></td><td><code>client_credentials</code></td></tr>
+      <tr><td><code>scope</code></td><td><code>openid</code></td></tr>
+      <tr><td><code>client_id</code></td><td>Cliente API del cliente UbiVu</td></tr>
+      <tr><td><code>client_secret</code></td><td>Secreto del cliente API</td></tr>
+    </tbody>
+  </table></div>
+  <div class="code"><div class="lab"><span class="tag">bash</span><button class="copy" type="button" data-copy="c-token">Copiar</button></div><pre id="c-token"># obtiene el token y lo deja en UBI_TOKEN (requiere jq)
+export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms/ubivu-prd/protocol/openid-connect/token' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'grant_type=client_credentials' \
+  -d 'scope=openid' \
+  -d "client_id=$UBI_CLIENT_ID" \
+  -d "client_secret=$UBI_CLIENT_SECRET" | jq -r .access_token)</pre></div>
+  <h3>Gestión del cliente API (sección User del Swagger)</h3>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Método</th><th>Ruta</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST</code></td><td><code>/generate-api-user-client-keycloak</code></td><td>Crea el cliente API en Keycloak</td></tr>
+      <tr><td><code>GET</code></td><td><code>/get-api-user-client-access</code></td><td>Devuelve <code>client_id</code> y <code>client_secret</code></td></tr>
+      <tr><td><code>GET</code></td><td><code>/v2/regenerate-client-secret</code></td><td>Rota el secreto (usar si se expuso un token o el secret)</td></tr>
+      <tr><td><code>DELETE</code></td><td><code>/delete-api-user-client-keycloak</code></td><td>Elimina el cliente API</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout info">El token es un JWT: su payload (base64, no cifrado) expone <code>client_id</code>, roles e IP de origen. Trátalo como una credencial. Nunca lo incluyas en front-ends públicos; en integraciones web usa un backend o función serverless que guarde las credenciales.</div>
+</section>
+
+<section class="sec" id="request">
+  <h2>Parámetros y cuerpo de la petición</h2>
+  <h3>Headers</h3>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Header</th><th>Valor</th><th></th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>Authorization</code></td><td><code>Bearer &lt;access_token&gt;</code></td><td><span class="req">requerido</span></td><td>Token OAuth2 vigente</td></tr>
+      <tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td><span class="req">requerido</span></td><td>Cuerpo JSON</td></tr>
+      <tr><td><code>accept</code></td><td><code>*/*</code></td><td><span class="opt">opcional</span></td><td>La respuesta es siempre <code>application/json</code></td></tr>
+      <tr><td><code>current-subpanel-id</code></td><td>string</td><td><span class="opt">opcional</span></td><td>Solo para clientes con subpanel habilitado. En blanco devuelve todos los datos del cliente</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Cuerpo (application/json)</h3>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Campo</th><th>Tipo</th><th></th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>type</code></td><td>string</td><td><span class="opt">recomendado</span></td><td>Tipo de dispositivo. Valor documentado: <code>"cell"</code> (nodo UbiCell). Otros valores no documentados</td></tr>
+      <tr><td><code>urgent</code></td><td>integer</td><td><span class="opt">opcional</span></td><td><code>0</code> normal · <code>1</code> urgente. Se devuelve como número en <code>data.urgent</code></td></tr>
+      <tr><td><code>reason</code></td><td>array[string]</td><td><span class="req">requerido</span></td><td>Una o más razones de la orden. Debe ser array aunque haya una sola razón; un string devuelve <code>422</code>. Ver <a href="#reasons">Valores de reason</a></td></tr>
+      <tr><td><code>notes</code></td><td>string</td><td><span class="opt">opcional</span></td><td>Nota original de la WO. No se edita ni se borra después; se puede fijar y aparece en el PDF de la orden</td></tr>
+      <tr><td><code>device_id</code></td><td>array[string]</td><td><span class="req">requerido</span></td><td>Identificadores de dispositivo (Node ID, 16 hex). 1 a 25 elementos. Ver <a href="#devices">Identificador del dispositivo</a></td></tr>
+    </tbody>
+  </table></div>
+  <div class="tabs" role="tablist" aria-label="Cuerpo">
+    <button role="tab" aria-selected="true" data-tab="r-example">Ejemplo</button>
+    <button role="tab" aria-selected="false" data-tab="r-schema">Esquema</button>
+  </div>
+  <div class="tabpanel on" id="r-example"><div class="code"><div class="lab"><span class="tag">request body</span><button class="copy" type="button">Copiar</button></div><pre id="ref-request">{
+  "type": "cell",
+  "urgent": 0,
+  "reason": ["Other"],
+  "notes": "Work order created via API",
+  "device_id": ["44179354ce28576f"]
+}</pre></div></div>
+  <div class="tabpanel" id="r-schema"><div class="code"><div class="lab"><span class="tag">JSON Schema (derivado de la validación del backend)</span><button class="copy" type="button">Copiar</button></div><pre>{
+  "type": "object",
+  "required": ["reason", "device_id"],
+  "properties": {
+    "type":      { "type": "string", "enum": ["cell"] },
+    "urgent":    { "type": "integer", "enum": [0, 1], "default": 0 },
+    "reason":    { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "notes":     { "type": "string" },
+    "device_id": { "type": "array", "minItems": 1, "maxItems": 25,
+                   "items": { "type": "string", "pattern": "^[0-9a-fA-F]{16}$" } }
+  }
+}</pre></div></div>
+</section>
+
+<section class="sec" id="responses">
+  <h2>Respuestas</h2>
+  <h3>200 · Orden creada</h3>
+  <div class="code ok"><div class="lab"><span class="tag">200 · application/json</span><button class="copy" type="button" data-copy="ref-response">Copiar</button></div><pre id="ref-response">{
+  "data": {
+    "urgent": 0,
+    "status": "new",
+    "status_updated_at": "2026-09-25T19:17:16.000000Z",
+    "resolution": null,
+    "causes": null,
+    "reason": ["Other"],
+    "created_by": "<uuid-usuario-api>",
+    "updated_by": "<uuid-usuario-api>",
+    "group_wo_id": null,
+    "severity": "minor",
+    "wo_type": "restoration",
+    "vendor_assigned": null,
+    "assigned_to": null,
+    "node_id": 35,
+    "automation_rule_id": 0,
+    "updated_at": "2026-09-25T19:17:16.000000Z",
+    "created_at": "2026-09-25T19:17:16.000000Z",
+    "id": 14,
+    "active": true,
+    "notes": "Work order created via API",
+    "work_order_label": "WO-14"
+  },
+  "status": "success",
+  "message": "Success! You opened work order WO-14.",
+  "code": "200",
+  "version": "2",
+  "notifications": [
+    {
+      "type": "success",
+      "title": "",
+      "message": {
+        "en": "Success! You opened work order WO-14.",
+        "es": "Success! You opened work order WO-14."
+      },
+      "timeout": 8000
+    }
+  ]
+}</pre></div>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Campo (data)</th><th>Tipo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td>Clave numérica de la WO</td></tr>
+      <tr><td><code>work_order_label</code></td><td>string</td><td>Etiqueta visible en UbiVu (<code>WO-&lt;id&gt;</code>)</td></tr>
+      <tr><td><code>status</code></td><td>string</td><td>Estado inicial <code>new</code>. Ciclo: <code>new</code> → in progress → completed → [pending validation] → closed</td></tr>
+      <tr><td><code>status_updated_at</code></td><td>datetime (UTC)</td><td>Último cambio de estado</td></tr>
+      <tr><td><code>reason</code></td><td>array[string]</td><td>Razones enviadas. El ejemplo de esquema del Swagger indica <code>string</code>; el valor real es array</td></tr>
+      <tr><td><code>notes</code></td><td>string</td><td>Nota original</td></tr>
+      <tr><td><code>urgent</code></td><td>integer</td><td>0 / 1</td></tr>
+      <tr><td><code>severity</code></td><td>string</td><td>Asignada por el backend (<code>minor</code> en creación manual)</td></tr>
+      <tr><td><code>wo_type</code></td><td>string</td><td>Asignado por el backend (<code>restoration</code>)</td></tr>
+      <tr><td><code>node_id</code></td><td>integer</td><td>Clave interna del nodo. No es el <code>device_id</code>; no reutilizar como identificador de dispositivo</td></tr>
+      <tr><td><code>automation_rule_id</code></td><td>integer</td><td><code>0</code> = creación manual; distinto de 0 = generada por regla de automatización</td></tr>
+      <tr><td><code>group_wo_id</code></td><td>integer | null</td><td>Group WO padre, si la orden pertenece a un grupo</td></tr>
+      <tr><td><code>resolution</code>, <code>causes</code></td><td>string | null</td><td>Se completan al cerrar la orden</td></tr>
+      <tr><td><code>vendor_assigned</code>, <code>assigned_to</code></td><td>string | null</td><td>Asignación de proveedor y cuadrilla</td></tr>
+      <tr><td><code>created_by</code>, <code>updated_by</code></td><td>uuid</td><td>Usuario asociado al cliente API</td></tr>
+      <tr><td><code>active</code></td><td>boolean</td><td>Orden activa</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Errores</h3>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Código</th><th>Descripción</th><th>Cuerpo</th></tr></thead>
+    <tbody>
+      <tr><td><code>400</code></td><td>Bad Request — JSON malformado</td><td>Sin ejemplo en el Swagger</td></tr>
+      <tr><td><code>401</code></td><td>Unauthenticated — token ausente, inválido o vencido</td><td>Sin ejemplo en el Swagger</td></tr>
+      <tr><td><code>403</code></td><td>Forbidden — el cliente API no tiene permiso de órdenes de trabajo</td><td><code>{"status":"failed","code":403,"message":"You don't have permission for this.","version":"number"}</code></td></tr>
+      <tr><td><code>404</code></td><td>Record not found</td><td><code>{"status":"failed","code":404,"message":"Operation failed"}</code></td></tr>
+      <tr><td><code>422</code></td><td>Validación del cuerpo (no listado en el Swagger). Los mensajes vienen en <code>message</code> y en <code>errors[]</code></td><td>Ver ejemplo</td></tr>
+    </tbody>
+  </table></div>
+  <div class="code err"><div class="lab"><span class="tag">422 · application/json</span><button class="copy" type="button">Copiar</button></div><pre>{
+  "status": "failed",
+  "code": 422,
+  "message": "The reason field must be an array.",
+  "version": "2",
+  "notifications": [
+    {
+      "type": "warning",
+      "title": "",
+      "message": {
+        "en": "The reason field must be an array.",
+        "es": "The reason field must be an array."
+      },
+      "timeout": 8000
+    }
+  ],
+  "errors": [
+    "The reason field must be an array."
+  ]
+}</pre></div>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Mensaje en <code>errors[]</code></th><th>Causa</th><th>Corrección</th></tr></thead>
+    <tbody>
+      <tr><td>The reason field is required.</td><td><code>reason</code> ausente, vacío o array vacío</td><td>Enviar al menos una razón</td></tr>
+      <tr><td>The reason field must be an array.</td><td><code>reason</code> enviado como string</td><td><code>"reason": ["Other"]</code></td></tr>
+      <tr><td>The device ID field is required.</td><td><code>device_id</code> ausente o array vacío</td><td>Enviar al menos un identificador</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout info"><b>Prueba de credenciales sin efectos.</b> Un cuerpo vacío (<code>{"reason":[],"device_id":[]}</code>) responde <code>422</code> de validación cuando token y permisos son correctos, sin crear ninguna orden. Sirve para validar la integración antes de operar sobre dispositivos reales.</div>
+</section>
+
+<section class="sec" id="reasons">
+  <h2>Valores de <code>reason</code></h2>
+  <p>Las razones se guardan como lista y pueden combinarse en una misma orden (razones de distinto tipo coexisten en la WO).</p>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Valor</th><th>Origen</th><th>Aceptación por el endpoint</th></tr></thead>
+    <tbody>
+      <tr><td><code>Other</code></td><td>Razón genérica</td><td><span class="pill ok">aceptado</span></td></tr>
+      <tr><td><code>Defective Lamp</code></td><td rowspan="5">Razones de automatización (Pluggable Analytics) definidas en el producto</td><td rowspan="5"><span class="pill dim">por confirmar</span> — validar en el entorno del cliente antes de integrarlas; si el catálogo es cerrado el endpoint responde <code>422</code></td></tr>
+      <tr><td><code>Light Off at Night</code></td></tr>
+      <tr><td><code>Flickering Luminaire</code></td></tr>
+      <tr><td><code>Power Loss &gt; 24H</code></td></tr>
+      <tr><td><code>Day Burner</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="sec" id="devices">
+  <h2>Identificador del dispositivo</h2>
+  <p><code>device_id</code> lleva el Node ID del dispositivo: 16 caracteres hexadecimales (formato EUI-64), el mismo identificador que usa el parámetro <code>{dev_eui}</code> en otros endpoints (<code>/v2/notifications/{dev_eui}</code>, <code>/v2/thresholds/nodes/{dev_eui}</code>).</p>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Identificador</th><th>Ejemplo</th><th>Uso en <code>device_id</code></th></tr></thead>
+    <tbody>
+      <tr><td>Node ID (dev_eui)</td><td><code>44179354ce28576f</code></td><td><span class="pill ok">sí</span></td></tr>
+      <tr><td><code>node_id</code> de la respuesta</td><td><code>35</code></td><td><span class="pill warn">no</span> — clave interna</td></tr>
+      <tr><td>Pole ID (activo)</td><td><code>POLE-12345</code></td><td><span class="pill warn">no</span> — es la llave de apilamiento de la WO, no el dispositivo</td></tr>
+      <tr><td>IMEI / ICCID</td><td>15–20 dígitos</td><td><span class="pill dim">no documentado</span></td></tr>
+    </tbody>
+  </table></div>
+  <h3>Obtener los identificadores por API</h3>
+  <div class="code"><div class="lab"><span class="tag">curl</span><button class="copy" type="button" data-copy="c-nodes">Copiar</button></div><pre id="c-nodes">curl -X POST 'https://api.ubicquia.com/api/v2/nodes/light' \
+  -H "Authorization: Bearer $UBI_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"filter": [], "page": 1, "per_page": 10000}'</pre></div>
+  <p>Devuelve la lista de nodos de iluminación con identificadores (ID, dev_eui), ubicación y estado. Ajusta <code>per_page</code> si el cliente supera 10.000 nodos.</p>
+</section>
+
+<section class="sec" id="rules">
+  <h2>Reglas y límites</h2>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Regla</th><th>Detalle</th><th>Efecto en la integración</th></tr></thead>
+    <tbody>
+      <tr><td>Máximo 25 dispositivos por WO</td><td>Límite del Panel API. Grupos mayores se procesan en lotes (60 → 25 + 25 + 10)</td><td>Partir <code>device_id</code> en lotes de 25 y hacer una llamada por lote</td></tr>
+      <tr><td>Razones acumulativas</td><td>Las razones se apilan en la lista de la WO; una WO cierra cuando todas sus razones están resueltas</td><td>Enviar todas las razones conocidas en una sola llamada</td></tr>
+      <tr><td>Apilamiento por poste</td><td>Llave: Pole ID. Una WO activa por poste; nuevas razones dentro de la ventana de 24 h se agregan a la WO existente</td><td>Comportamiento para creaciones por API sobre un poste con WO activa: no documentado; verificar en el entorno</td></tr>
+      <tr><td>Ciclo de vida</td><td>[Pending Review] → New → In Progress → Completed → [Pending Validation, 48 h] → Closed</td><td>La WO creada por API entra en <code>new</code>. Pending Validation aplica solo a WO automatizadas</td></tr>
+      <tr><td>Cancelación</td><td>Para cerrar sin trabajo en terreno: Resolution = Cancelled y cerrar</td><td>Desde UbiVu; el endpoint de actualización no está cubierto en esta referencia</td></tr>
+      <tr><td>Nota original</td><td>No editable ni eliminable; fijable; incluida en el PDF</td><td><code>notes</code> es permanente</td></tr>
+      <tr><td>Subpanel</td><td>Las reglas de automatización se definen por subpanel</td><td>Clientes con subpanel: enviar <code>current-subpanel-id</code></td></tr>
+      <tr><td>Notificaciones</td><td>No se envía email al crear la WO; sí en actualizaciones posteriores</td><td>No esperar correo de confirmación</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="sec" id="samples">
+  <h2>Ejemplos de código</h2>
+  <div class="tabs" role="tablist" aria-label="Lenguaje">
+    <button role="tab" aria-selected="true" data-tab="t-curl">curl</button>
+    <button role="tab" aria-selected="false" data-tab="t-fetch">JavaScript (Node 18+)</button>
+    <button role="tab" aria-selected="false" data-tab="t-py">Python</button>
+  </div>
+  <div class="tabpanel on" id="t-curl"><div class="code"><div class="lab"><span class="tag">curl</span><button class="copy" type="button" data-copy="c-curl">Copiar</button></div><pre id="c-curl">curl -X POST 'https://api.ubicquia.com/api/work-orders' \
+  -H 'accept: */*' \
+  -H "Authorization: Bearer $UBI_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"cell","urgent":0,"reason":["Other"],"notes":"Work order created via API","device_id":["44179354ce28576f"]}'</pre></div></div>
+  <div class="tabpanel" id="t-fetch"><div class="code"><div class="lab"><span class="tag">javascript</span><button class="copy" type="button" data-copy="c-fetch">Copiar</button></div><pre id="c-fetch">const payload = {
+  type: "cell",
+  urgent: 0,
+  reason: ["Other"],
+  notes: "Work order created via API",
+  device_id: ["44179354ce28576f"]
+};
+const r = await fetch("https://api.ubicquia.com/api/work-orders", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer " + process.env.UBI_TOKEN,
+    "Content-Type": "application/json",
+    "accept": "*/*"
+  },
+  body: JSON.stringify(payload)
+});
+const j = await r.json();
+if (r.status === 200) console.log("creada", j.data.work_order_label, j.data.id);
+else console.error(r.status, j.message, j.errors || "");</pre></div>
+  <div class="callout info">Ejecutar desde servidor, script o función serverless. El endpoint no está pensado para llamadas directas desde el navegador (CORS) y el token no debe vivir en el cliente.</div></div>
+  <div class="tabpanel" id="t-py"><div class="code"><div class="lab"><span class="tag">python</span><button class="copy" type="button" data-copy="c-py">Copiar</button></div><pre id="c-py">import os, requests
+
+payload = {
+    "type": "cell",
+    "urgent": 0,
+    "reason": ["Other"],
+    "notes": "Work order created via API",
+    "device_id": ["44179354ce28576f"],
+}
+r = requests.post(
+    "https://api.ubicquia.com/api/work-orders",
+    headers={
+        "Authorization": f"Bearer {os.environ['UBI_TOKEN']}",
+        "Content-Type": "application/json",
+        "accept": "*/*",
+    },
+    json=payload,
+    timeout=30,
+)
+j = r.json()
+if r.status_code == 200:
+    print("creada", j["data"]["work_order_label"], j["data"]["id"])
+else:
+    print(r.status_code, j.get("message"), j.get("errors"))</pre></div></div>
+</section>
+
+<section class="sec" id="try">
+  <h2>Construir request</h2>
+  <p>Genera el cuerpo y el comando listos para pegar; con más de 25 dispositivos produce un lote por llamada. Se ejecuta en el navegador y no envía nada: el token se referencia como variable de entorno <code>UBI_TOKEN</code>.</p>
+  <div class="builder">
+    <div class="form">
+      <label for="f-type">type</label>
+      <select id="f-type"><option value="cell">cell</option></select>
+      <label class="chk" style="margin-top:12px"><input type="checkbox" id="f-urgent"> urgent = 1</label>
+      <label>reason</label>
+      <div id="f-reasons"></div>
+      <input type="text" id="f-reason-custom" placeholder="Otro valor" aria-label="Razón adicional">
+      <p class="hint">Una o varias. Los valores por confirmar se advierten, no se bloquean.</p>
+      <label for="f-notes">notes</label>
+      <input type="text" id="f-notes" value="Work order created via API" maxlength="500">
+      <label for="f-ids">device_id (uno por línea, coma o espacio)</label>
+      <textarea id="f-ids" spellcheck="false">44179354ce28576f</textarea>
+      <p class="hint">Se quitan duplicados y espacios. Más de 25 → lotes automáticos.</p>
+      <label for="f-subpanel">current-subpanel-id (opcional)</label>
+      <input type="text" id="f-subpanel" placeholder="vacío = sin header">
+      <div class="row">
+        <button class="btn btn-primary" type="button" id="b-gen">Generar</button>
+        <button class="btn btn-outline" type="button" id="b-combos">Combinaciones de reason</button>
+        <button class="btn btn-outline" type="button" id="b-reset">Ejemplo de referencia</button>
+      </div>
+    </div>
+    <div class="out" id="out"><div class="empty">Presiona Generar para ver el JSON, el curl, el fetch y el Python de cada lote.</div></div>
+  </div>
+</section>
+
+<section class="sec" id="troubleshooting">
+  <h2>Errores frecuentes</h2>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead>
+    <tbody>
+      <tr><td><code>401 Unauthenticated</code></td><td>Token vencido (vigencia ~6 h) o header <code>Authorization</code> ausente</td><td>Renovar el token con <code>client_credentials</code>; enviar <code>Bearer &lt;token&gt;</code></td></tr>
+      <tr><td><code>403 You don't have permission for this.</code></td><td>El cliente API no tiene el permiso de gestión de órdenes de trabajo</td><td>Solicitar el rol de work orders para el cliente API (Panel Administration / soporte Ubicquia)</td></tr>
+      <tr><td><code>422 The reason field must be an array.</code></td><td><code>reason</code> enviado como string</td><td>Usar array: <code>["Other"]</code></td></tr>
+      <tr><td><code>422 The reason field is required.</code></td><td>Array vacío o campo ausente</td><td>Incluir al menos una razón</td></tr>
+      <tr><td><code>422 The device ID field is required.</code></td><td><code>device_id</code> vacío o ausente</td><td>Incluir al menos un Node ID</td></tr>
+      <tr><td><code>404 Operation failed</code></td><td>Identificador que no pertenece al cliente o formato incorrecto (Pole ID, <code>node_id</code> numérico)</td><td>Usar el Node ID de 16 hex del dispositivo</td></tr>
+      <tr><td>Más de 25 dispositivos</td><td>Límite del Panel API</td><td>Lotear en llamadas de hasta 25</td></tr>
+      <tr><td>La respuesta muestra <code>"reason": "string"</code> en el Swagger</td><td>El ejemplo de esquema del Swagger está desactualizado</td><td>Tomar como referencia la validación del backend: <code>reason</code> es array en request y response</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</div></main>
+
+<footer class="band band--navy"><div class="container--read">
+  Grid Data · <a href="https://www.griddata.cl/">griddata.cl</a> · referencia work-orders-api v2 · fuentes: Swagger Ubi Api (api.ubicquia.com), Guía Práctica de APIs Ubicquia, documento as-built de Work Order Automation (may-2026). Sin credenciales en este archivo.
+</div></footer>
+
+<div id="errbar" role="alert"><span id="errtxt"></span><button type="button" aria-label="Cerrar" onclick="document.getElementById('errbar').style.display='none'">×</button></div>
+
+<script>
+/* ═══════════ MOTOR (puro, sin DOM) ═══════════ */
+var WO = (function(){
+  var ENDPOINT = 'https://api.ubicquia.com/api/work-orders';
+  var MAX_PER_WO = 25;
+  var REASONS_VERIFIED = ['Other'];
+  var REASONS_DOC = ['Defective Lamp','Light Off at Night','Flickering Luminaire','Power Loss > 24H','Day Burner'];
+  var EUI_RE = /^[0-9a-f]{16}$/i;
+  var REF = {
+    request: {type:'cell', urgent:0, reason:['Other'], notes:'Work order created via API', device_id:['44179354ce28576f']},
+    response: {id:14, work_order_label:'WO-14', status:'new', node_id:35, severity:'minor', wo_type:'restoration', automation_rule_id:0, created_at:'2026-09-25T19:17:16.000000Z'}
+  };
+
+  function parseIds(text){
+    var raw = String(text||'').split(/[\s,;]+/);
+    var seen = {}, ids = [], dupes = 0, badFormat = [];
+    for (var i=0;i<raw.length;i++){
+      var t = raw[i].trim();
+      if(!t) continue;
+      if(seen[t]){ dupes++; continue; }
+      seen[t] = 1; ids.push(t);
+      if(!EUI_RE.test(t)) badFormat.push(t);
+    }
+    return {ids:ids, dupes:dupes, badFormat:badFormat};
+  }
+
+  function chunk(arr, n){
+    var out = [];
+    for (var i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n));
+    return out;
+  }
+
+  /* cfg: {type, urgent, reasons[], notes, ids[]} → {batches[], errors[], warnings[], totals} */
+  function buildPayloads(cfg){
+    cfg = cfg || {};
+    var errors = [], warnings = [];
+    var reasons = (cfg.reasons||[]).map(function(r){return String(r).trim();}).filter(Boolean);
+    var ids = (cfg.ids||[]).map(function(s){return String(s).trim();}).filter(Boolean);
+    if(!reasons.length) errors.push('reason vacío: el backend responde 422 «The reason field is required.»');
+    if(!ids.length) errors.push('device_id vacío: el backend responde 422 «The device ID field is required.»');
+    var unverified = reasons.filter(function(r){ return REASONS_VERIFIED.indexOf(r) < 0; });
+    if(unverified.length) warnings.push('reason por confirmar en el catálogo del backend: ' + unverified.join(', ') + ' (puede responder 422).');
+    var bad = ids.filter(function(s){ return !EUI_RE.test(s); });
+    if(bad.length) warnings.push('device_id fuera del formato esperado (16 hex): ' + bad.slice(0,5).join(', ') + (bad.length>5?' …':'') + '. Verifica que no sea Pole ID ni node_id numérico.');
+    var batches = [];
+    if(!errors.length){
+      var groups = chunk(ids, MAX_PER_WO);
+      if(groups.length > 1) warnings.push(ids.length + ' dispositivos superan el límite de ' + MAX_PER_WO + ' por WO: se generan ' + groups.length + ' llamadas (' + groups.map(function(g){return g.length;}).join(' + ') + ').');
+      batches = groups.map(function(g){
+        return {type: cfg.type || 'cell', urgent: cfg.urgent ? 1 : 0, reason: reasons.slice(), notes: String(cfg.notes||''), device_id: g};
+      });
+    }
+    return {batches:batches, errors:errors, warnings:warnings, totals:{ids:ids.length, reasons:reasons.length, batches:batches.length, max:MAX_PER_WO}};
+  }
+
+  /* todas las combinaciones no vacías, por tamaño y orden de aparición */
+  function combos(list){
+    var n = list.length, out = [];
+    for (var size=1; size<=n; size++){
+      for (var mask=1; mask < (1<<n); mask++){
+        var c = [];
+        for (var i=0;i<n;i++) if(mask & (1<<i)) c.push(list[i]);
+        if(c.length === size) out.push(c);
+      }
+    }
+    return out;
+  }
+
+  function shq(s){ return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
+  function pretty(p){ return JSON.stringify(p, null, 2); }
+
+  function toCurl(payload, opts){
+    opts = opts || {};
+    var lines = ["curl -X POST '" + ENDPOINT + "' \\",
+                 "  -H 'accept: */*' \\",
+                 "  -H \"Authorization: Bearer $UBI_TOKEN\" \\",
+                 "  -H 'Content-Type: application/json' \\"];
+    if(opts.subpanel) lines.push("  -H " + shq('current-subpanel-id: ' + opts.subpanel) + " \\");
+    lines.push("  -d " + shq(JSON.stringify(payload)));
+    return lines.join('\n');
+  }
+
+  function toFetch(payload, opts){
+    opts = opts || {};
+    var h = ['    "Authorization": "Bearer " + process.env.UBI_TOKEN,','    "Content-Type": "application/json",','    "accept": "*/*"' + (opts.subpanel ? ',' : '')];
+    if(opts.subpanel) h.push('    "current-subpanel-id": ' + JSON.stringify(String(opts.subpanel)));
+    return 'const payload = ' + pretty(payload) + ';\n' +
+      'const r = await fetch("' + ENDPOINT + '", {\n  method: "POST",\n  headers: {\n' + h.join('\n') + '\n  },\n  body: JSON.stringify(payload)\n});\n' +
+      'const j = await r.json();\nconsole.log(r.status, j.data && j.data.work_order_label, j.errors || "");';
+  }
+
+  function toPython(payload, opts){
+    opts = opts || {};
+    var h = ['        "Authorization": f"Bearer {os.environ[\'UBI_TOKEN\']}",','        "Content-Type": "application/json",','        "accept": "*/*",'];
+    if(opts.subpanel) h.push('        "current-subpanel-id": ' + JSON.stringify(String(opts.subpanel)) + ',');
+    return 'import os, requests\n\npayload = ' + pretty(payload) + '\nr = requests.post(\n    "' + ENDPOINT + '",\n    headers={\n' + h.join('\n') + '\n    },\n    json=payload,\n    timeout=30,\n)\nj = r.json()\nprint(r.status_code, j.get("data", {}).get("work_order_label"), j.get("errors"))';
+  }
+
+  return {ENDPOINT:ENDPOINT, MAX_PER_WO:MAX_PER_WO, REASONS_VERIFIED:REASONS_VERIFIED, REASONS_DOC:REASONS_DOC, REF:REF,
+          parseIds:parseIds, buildPayloads:buildPayloads, combos:combos, toCurl:toCurl, toFetch:toFetch, toPython:toPython, pretty:pretty};
+})();
+
+/* ═══════════ RENDER ═══════════ */
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  /* banner onerror (máx 3) */
+  var errCount = 0;
+  window.onerror = function(msg){
+    if(errCount++ >= 3) return;
+    var bar = $('errbar'); if(!bar) return;
+    $('errtxt').textContent = 'Error en la página: ' + msg;
+    bar.style.display = 'block';
+  };
+
+  /* copiar */
+  function copyText(text, btn){
+    var done = function(){ btn.classList.add('done'); btn.textContent = 'Copiado'; setTimeout(function(){ btn.classList.remove('done'); btn.textContent = 'Copiar'; }, 1400); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, function(){ fallback(text, done); }); }
+    else fallback(text, done);
+  }
+  function fallback(text, done){
+    var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){}
+    document.body.removeChild(ta);
+  }
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest && ev.target.closest('.copy'); if(!b) return;
+    var pre = b.getAttribute('data-copy') ? $(b.getAttribute('data-copy')) : b.closest('.code').querySelector('pre');
+    if(pre) copyText(pre.textContent, b);
+  });
+
+  /* pestañas estáticas (cuerpo, ejemplos): el grupo .tabs y sus .tabpanel comparten padre */
+  function wireTabs(root){
+    root.querySelectorAll('.tabs [role=tab]').forEach(function(t){
+      t.addEventListener('click', function(){
+        var group = t.parentNode, scope = group.parentNode;
+        group.querySelectorAll('[role=tab]').forEach(function(x){ x.setAttribute('aria-selected', x===t ? 'true' : 'false'); });
+        Array.prototype.forEach.call(scope.children, function(p){ if(p.classList.contains('tabpanel')) p.classList.toggle('on', p.id === t.getAttribute('data-tab')); });
+      });
+    });
+  }
+  wireTabs(document);
+
+  /* formulario de razones */
+  var box = $('f-reasons');
+  function reasonRow(r, accepted, checked){
+    var lab = document.createElement('label'); lab.className = 'chk';
+    var inp = document.createElement('input'); inp.type = 'checkbox'; inp.value = r; inp.checked = !!checked; inp.className = 'r';
+    lab.appendChild(inp); lab.appendChild(document.createTextNode(' ' + r + ' '));
+    var pill = document.createElement('span'); pill.className = 'pill ' + (accepted ? 'ok' : 'dim'); pill.textContent = accepted ? 'aceptado' : 'por confirmar';
+    lab.appendChild(pill); return lab;
+  }
+  WO.REASONS_VERIFIED.forEach(function(r){ box.appendChild(reasonRow(r, true, true)); });
+  WO.REASONS_DOC.forEach(function(r){ box.appendChild(reasonRow(r, false, false)); });
+
+  function readForm(){
+    var reasons = Array.prototype.map.call(box.querySelectorAll('input.r:checked'), function(i){ return i.value; });
+    var custom = $('f-reason-custom').value.trim(); if(custom) reasons.push(custom);
+    var parsed = WO.parseIds($('f-ids').value);
+    return {cfg:{type:$('f-type').value, urgent:$('f-urgent').checked, reasons:reasons, notes:$('f-notes').value, ids:parsed.ids}, parsed:parsed, subpanel:$('f-subpanel').value.trim()};
+  }
+
+  function codeBlock(tag, text, cls){
+    return '<div class="code' + (cls?' '+cls:'') + '"><div class="lab"><span class="tag">' + esc(tag) + '</span><button class="copy" type="button">Copiar</button></div><pre>' + esc(text) + '</pre></div>';
+  }
+
+  function renderOut(res, parsed, subpanel){
+    var out = $('out'), h = '';
+    h += '<div class="stat"><span>dispositivos <b>' + res.totals.ids + '</b></span><span>lotes <b>' + res.totals.batches + '</b></span><span>reason <b>' + res.totals.reasons + '</b></span><span>máx/WO <b>' + res.totals.max + '</b></span>' + (parsed.dupes ? '<span>duplicados quitados <b>' + parsed.dupes + '</b></span>' : '') + '</div>';
+    var msgs = res.errors.map(function(e){ return '<li class="err">' + esc(e) + '</li>'; }).concat(res.warnings.map(function(w){ return '<li class="warn">' + esc(w) + '</li>'; }));
+    if(!res.errors.length && !res.warnings.length) msgs.push('<li class="ok">Cuerpo válido según el esquema del endpoint.</li>');
+    h += '<ul class="msgs">' + msgs.join('') + '</ul>';
+    var opts = {subpanel: subpanel};
+    res.batches.forEach(function(p, i){
+      var name = res.batches.length > 1 ? ('Lote ' + (i+1) + ' de ' + res.batches.length + ' · ' + p.device_id.length + ' dispositivos') : ('Una llamada · ' + p.device_id.length + ' dispositivo' + (p.device_id.length>1?'s':''));
+      var id = 'b' + i;
+      h += '<div class="batch"><h4>' + esc(name) + '</h4>' +
+        '<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="' + id + '-json">JSON</button><button role="tab" aria-selected="false" data-tab="' + id + '-curl">curl</button><button role="tab" aria-selected="false" data-tab="' + id + '-fetch">fetch</button><button role="tab" aria-selected="false" data-tab="' + id + '-py">Python</button></div>' +
+        '<div class="tabpanel on" id="' + id + '-json">' + codeBlock('body · application/json', WO.pretty(p), 'ok') + '</div>' +
+        '<div class="tabpanel" id="' + id + '-curl">' + codeBlock('curl', WO.toCurl(p, opts)) + '</div>' +
+        '<div class="tabpanel" id="' + id + '-fetch">' + codeBlock('javascript', WO.toFetch(p, opts)) + '</div>' +
+        '<div class="tabpanel" id="' + id + '-py">' + codeBlock('python', WO.toPython(p, opts)) + '</div>' +
+        '</div>';
+    });
+    out.innerHTML = h;
+    wireTabs(out);
+  }
+
+  function generate(){
+    try{
+      var f = readForm();
+      renderOut(WO.buildPayloads(f.cfg), f.parsed, f.subpanel);
+    }catch(e){
+      $('out').innerHTML = '<div class="callout"><b>No se pudo generar.</b> ' + esc(e.message || e) + '</div>';
+    }
+  }
+  $('b-gen').addEventListener('click', generate);
+
+  $('b-combos').addEventListener('click', function(){
+    var f = readForm(), list = f.cfg.reasons;
+    var out = $('out');
+    if(!list.length){ out.innerHTML = '<div class="callout">Marca al menos una razón para combinar.</div>'; return; }
+    if(list.length > 6){ out.innerHTML = '<div class="callout">Máximo 6 razones para listar combinaciones (' + (Math.pow(2,list.length)-1) + ' resultarían).</div>'; return; }
+    var cs = WO.combos(list);
+    out.innerHTML = '<div class="stat"><span>razones <b>' + list.length + '</b></span><span>combinaciones <b>' + cs.length + '</b></span><span>2ⁿ − 1</span></div>' +
+      '<div class="combos">' + codeBlock('reason · ' + cs.length + ' arrays', JSON.stringify(cs, null, 1)) + '</div>' +
+      '<div class="callout info">Cada array es un valor de <code>reason</code> válido en forma; la aceptación de cada texto depende del catálogo del backend (ver <a href="#reasons">Valores de reason</a>).</div>';
+  });
+
+  $('b-reset').addEventListener('click', function(){
+    box.querySelectorAll('input.r').forEach(function(i){ i.checked = (i.value === 'Other'); });
+    $('f-reason-custom').value = ''; $('f-urgent').checked = false;
+    $('f-notes').value = WO.REF.request.notes; $('f-ids').value = WO.REF.request.device_id.join('\n'); $('f-subpanel').value = '';
+    generate();
+  });
+
+  /* reconciliación: todos los ejemplos de la página nacen del mismo WO.REF */
+  try{
+    var refJson = JSON.stringify(WO.REF.request);
+    [['c-quick', /-d '([\s\S]*)'$/], ['c-curl', /-d '([\s\S]*)'$/], ['ref-request', /^([\s\S]*)$/]].forEach(function(pair){
+      var m = $(pair[0]).textContent.match(pair[1]);
+      if(!m || JSON.stringify(JSON.parse(m[1])) !== refJson) window.onerror('El ejemplo #' + pair[0] + ' no coincide con WO.REF.');
+    });
+  }catch(e){ window.onerror('Reconciliación de ejemplos: ' + (e.message||e)); }
+})();
+</script>
+</body>
+</html>
