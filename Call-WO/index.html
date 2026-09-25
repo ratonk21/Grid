@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!-- ═══ ESTADO ═══
 herramienta : Referencia API UbiVu — Work Orders · POST /work-orders
-version     : v4 (anterior: v3)
-motor       : WO.parseIds · WO.buildPayloads · WO.combos · WO.toCurl/toFetch/toPython (puras, sin DOM) — byte-idéntico a v2/v3
-ultima      : 2026-09-25 · v4 contenido por pestaña: rail = tablist (9 paneles, uno visible), hash sincronizado (#respuestas abre su pestaña, #quick abre la pestaña que lo contiene), pager anterior/siguiente, teclado ↑↓, strip horizontal sticky en móvil; grids de v3 intactas dentro de cada panel
+version     : v5 (anterior: v4)
+motor       : WO.parseIds · WO.buildPayloads · WO.combos · WO.toCurl/toFetch/toPython (puras, sin DOM) — byte-idéntico a v2/v3/v4
+ultima      : 2026-09-25 · v5 banner estrecho: hero de una fila (kicker + título + endpoint | 4 facts en una sola fila), sin descripción en el hero (vive en la pestaña Descripción), padding reducido, topbar más bajo; header+hero ~150 px en escritorio vs ~250 px en v4. Contenido por pestaña de v4 intacto
 arquitectura: referencia estilo Swagger por pestañas + constructor de request · single-file · sin librerías JS · sin localStorage · sin credenciales
 marca       : Ubicquia (--ubi-*)
 verificacion: hopper — node --check + harness jsdom (lotes de 25, combos 31, DOM = motor, sin tokens en el fuente)
@@ -90,30 +90,30 @@ code,kbd{font-family:var(--mono);font-size:.88em;background:var(--ubi-gray);colo
 .card .eff{margin-top:8px;padding-top:8px;border-top:1px dashed var(--ubi-line);color:var(--ubi-navy)}
 .prose{max-width:78ch}
 .batches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:14px}
-.hero-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:end}
-@media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:14px}}
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
-.fact{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 12px;min-width:0}
-.fact .k{font-size:11.5px;color:rgba(255,255,255,.65);font-weight:700;margin:0}
-.fact .v{font-family:var(--mono);font-size:12.5px;color:#fff;margin:2px 0 0;overflow-wrap:anywhere}
+.hero-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:24px;align-items:center}
+@media (max-width:1100px){.hero-grid{grid-template-columns:1fr;gap:10px}}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:1100px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fact{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:6px 10px;min-width:0}
+.fact .k{font-size:11px;color:rgba(255,255,255,.65);font-weight:700;margin:0}
+.fact .v{font-family:var(--mono);font-size:11.5px;line-height:1.35;color:#fff;margin:1px 0 0;overflow-wrap:anywhere}
 /* topbar */
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
-.wordmark{font-weight:900;font-size:22px;letter-spacing:-.02em;text-decoration:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:8px}
+.wordmark{font-weight:900;font-size:20px;letter-spacing:-.02em;text-decoration:none}
 .wordmark .a{color:var(--ubi-blue)}.wordmark .b{color:#fff}.wordmark sup{font-size:.45em;color:#fff;font-weight:400}
 .topbar nav{display:flex;gap:8px;flex-wrap:wrap}
-.btn{font:inherit;font-weight:700;font-size:14px;border-radius:6px;padding:8px 14px;cursor:pointer;border:1px solid transparent;text-decoration:none;display:inline-block;line-height:1.2}
+.btn{font:inherit;font-weight:700;font-size:14px;border-radius:6px;padding:7px 13px;cursor:pointer;border:1px solid transparent;text-decoration:none;display:inline-block;line-height:1.2}
 .btn-primary{background:var(--ubi-blue);color:#fff}
 .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
 .btn-outline{background:#fff;color:var(--ubi-navy);border-color:var(--ubi-line)}
 .btn:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--ubi-blue);outline-offset:2px}
 /* hero compacto */
-.hero{padding-block:clamp(16px,2.6vh,26px)}
-.hero .kicker{color:var(--ubi-blue);font-weight:700;font-size:14px;margin:0 0 4px}
-.hero h1{color:#fff;margin-bottom:8px}
-.endpoint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:15px;color:#fff;margin:0 0 6px}
-.method{display:inline-block;font-weight:600;font-size:13px;letter-spacing:.02em;padding:3px 10px;border-radius:4px;background:var(--ubi-green);color:#fff}
-.hero .meta{color:rgba(255,255,255,.75);font-size:14px;margin:0}
-.hero .meta b{color:#fff}
+.hero{padding-block:clamp(10px,1.4vh,14px)}
+.hero .kicker{color:var(--ubi-blue);font-weight:700;font-size:12.5px;margin:0 0 1px}
+.hero h1{color:#fff;font-size:clamp(20px,2.1vw,26px);margin:0 0 5px}
+.endpoint{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:14px;color:#fff;margin:0}
+.method{display:inline-block;font-weight:600;font-size:12px;letter-spacing:.02em;padding:2px 9px;border-radius:4px;background:var(--ubi-green);color:#fff}
+
 /* cuerpo */
 main{padding-block:22px 40px}
 .sec{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:10px;padding:22px 24px;margin-bottom:18px;min-width:0}
@@ -121,9 +121,10 @@ main{padding-block:22px 40px}
 .toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;margin:0;padding:0;list-style:none}
 .toc a{text-decoration:none;color:var(--ubi-navy);border-bottom:1px solid var(--ubi-line)}
 .toc a:hover{border-color:var(--ubi-blue)}
-.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14.5px;margin:10px 0}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;font-size:14.5px;margin:10px 0}
 .kv dt{color:var(--ubi-navy);font-weight:700}
-.kv dd{margin:0}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media (max-width:520px){.kv{grid-template-columns:1fr;gap:2px 0}.kv dd{margin-bottom:6px}}
 /* código */
 .code{position:relative;background:var(--ubi-alt);border:1px solid var(--ubi-line);border-left:3px solid var(--ubi-blue);border-radius:8px;margin:10px 0}
 .code pre{margin:0;padding:14px 14px 14px 16px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--ubi-navy);white-space:pre}
@@ -231,11 +232,10 @@ footer a{color:#fff}
     <p class="kicker">API UbiVu · Work Orders</p>
     <h1>Crear orden de trabajo</h1>
     <p class="endpoint"><span class="method">POST</span><span>/work-orders</span></p>
-    <p class="meta">Crea una orden de trabajo para uno o más dispositivos del cliente y devuelve su etiqueta (<b>WO-&lt;id&gt;</b>).</p>
   </div>
   <div class="facts">
     <div class="fact"><p class="k">Base URL</p><p class="v">https://api.ubicquia.com/api</p></div>
-    <div class="fact"><p class="k">Autenticación</p><p class="v">Bearer · OAuth2 client_credentials</p></div>
+    <div class="fact"><p class="k">Autenticación</p><p class="v">Bearer · OAuth2</p></div>
     <div class="fact"><p class="k">Cuerpo</p><p class="v">application/json</p></div>
     <div class="fact"><p class="k">Límite</p><p class="v">25 device_id por WO</p></div>
   </div>
@@ -698,7 +698,7 @@ else:
 </div></main>
 
 <footer class="band band--navy"><div class="shell">
-  Grid Data · <a href="https://www.griddata.cl/">griddata.cl</a> · referencia work-orders-api v4 · fuentes: Swagger Ubi Api (api.ubicquia.com), Guía Práctica de APIs Ubicquia, documento as-built de Work Order Automation (may-2026). Sin credenciales en este archivo.
+  Grid Data · <a href="https://www.griddata.cl/">griddata.cl</a> · referencia work-orders-api v5 · fuentes: Swagger Ubi Api (api.ubicquia.com), Guía Práctica de APIs Ubicquia, documento as-built de Work Order Automation (may-2026). Sin credenciales en este archivo.
 </div></footer>
 
 <div id="errbar" role="alert"><span id="errtxt"></span><button type="button" aria-label="Cerrar" onclick="document.getElementById('errbar').style.display='none'">×</button></div>
