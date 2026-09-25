@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!-- ═══ ESTADO ═══
 herramienta : Referencia API UbiVu — Work Orders · POST /work-orders
-version     : v4 (anterior: v3)
-motor       : WO.parseIds · WO.buildPayloads · WO.combos · WO.toCurl/toFetch/toPython (puras, sin DOM) — byte-idéntico a v2/v3
-ultima      : 2026-09-25 · v4 contenido por pestaña: rail = tablist (9 paneles, uno visible), hash sincronizado (#respuestas abre su pestaña, #quick abre la pestaña que lo contiene), pager anterior/siguiente, teclado ↑↓, strip horizontal sticky en móvil; grids de v3 intactas dentro de cada panel
-arquitectura: referencia estilo Swagger por pestañas + constructor de request · single-file · sin librerías JS · sin localStorage · sin credenciales
+version     : v2 (anterior: v1)
+motor       : WO.parseIds · WO.buildPayloads · WO.combos · WO.toCurl/toFetch/toPython (puras, sin DOM) — v2 solo reescribe el texto de 2 warnings; lógica idéntica a v1
+ultima      : 2026-09-25 · v2 reescrita como documentación de integración estilo Swagger (descripción, auth, parámetros, esquema, respuestas, límites, ejemplos, constructor de request); v1 era bitácora de verificación
+arquitectura: referencia de lectura + constructor de request · single-file · sin librerías JS · sin localStorage · sin credenciales
 marca       : Ubicquia (--ubi-*)
 verificacion: hopper — node --check + harness jsdom (lotes de 25, combos 31, DOM = motor, sin tokens en el fuente)
 fuentes     : Swagger vivo Ubi Api (25-sep-2026) · Guía Práctica APIs Ubicquia (auth) · as-built Work Order Automation (may-2026)
@@ -49,53 +49,10 @@ code,kbd{font-family:var(--mono);font-size:.88em;background:var(--ubi-gray);colo
 .band{width:100%}
 .band--navy{background:var(--ubi-navy);color:#fff}
 .band--gray{background:var(--ubi-gray)}
-.container,.container--read,.container--wide,.shell{width:100%;margin-inline:auto;padding-inline:var(--ubi-pad)}
+.container,.container--read,.container--wide{width:100%;margin-inline:auto;padding-inline:var(--ubi-pad)}
 .container{max-width:var(--ubi-maxw)}
 .container--read{max-width:var(--ubi-maxw-read)}
 .container--wide{max-width:var(--ubi-maxw-wide)}
-.shell{max-width:1920px}
-/* layout pantalla completa: rail + contenido */
-.layout{display:grid;grid-template-columns:224px minmax(0,1fr);gap:26px;align-items:start}
-.content{min-width:0}
-.nav{position:sticky;top:14px;background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:10px;padding:10px 8px;font-size:14px}
-.nav [role=tablist]{display:block}
-.nav [role=tab]{display:block;width:100%;text-align:left;font:inherit;font-size:14px;padding:7px 10px;border-radius:6px;color:var(--ubi-deep);background:none;border:none;border-left:3px solid transparent;cursor:pointer;line-height:1.3}
-.nav [role=tab]:hover{color:var(--ubi-navy)}
-.nav [role=tab][aria-selected=true]{color:var(--ubi-navy);font-weight:700;border-left-color:var(--ubi-blue);background:var(--ubi-alt)}
-.nav .nt{font-size:11.5px;font-weight:700;color:var(--ubi-gray2);padding:4px 10px 6px;margin:0}
-.panel{display:none}
-.panel.active{display:block}
-.pager{display:flex;justify-content:space-between;gap:12px;margin:0 0 18px}
-.pager button{font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:6px;border:1px solid var(--ubi-line);background:#fff;color:var(--ubi-navy);cursor:pointer}
-.pager button:hover{border-color:var(--ubi-blue)}
-.pager .next{margin-left:auto}
-@media (max-width:1100px){
-  .layout{grid-template-columns:1fr}
-  html{scroll-padding-top:64px}
-  .nav{position:sticky;top:0;z-index:5;padding:6px 8px;border-radius:0 0 10px 10px}
-  .nav .nt{display:none}
-  .nav [role=tablist]{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .nav [role=tab]{width:auto;white-space:nowrap;border-left:none;border-bottom:3px solid transparent;border-radius:6px 6px 0 0;padding:6px 10px}
-  .nav [role=tab][aria-selected=true]{border-bottom-color:var(--ubi-blue);background:none}
-}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:18px;align-items:start}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:18px;align-items:start}
-.grid2 > .sec,.grid3 > .sec{margin:0}
-.grid2 > *,.grid3 > *,.cards > *,.builder > *,.layout > *,.panel{min-width:0}
-.grid2 > div > h3:first-child,.grid3 > div > h3:first-child{margin-top:0}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px;margin-top:10px}
-.card{background:var(--ubi-alt);border:1px solid var(--ubi-line);border-radius:8px;padding:12px 14px;font-size:14px}
-.card h4{margin:0 0 4px;color:var(--ubi-navy);font-size:14px}
-.card p{margin:0}
-.card .eff{margin-top:8px;padding-top:8px;border-top:1px dashed var(--ubi-line);color:var(--ubi-navy)}
-.prose{max-width:78ch}
-.batches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:14px}
-.hero-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:end}
-@media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:14px}}
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
-.fact{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 12px;min-width:0}
-.fact .k{font-size:11.5px;color:rgba(255,255,255,.65);font-weight:700;margin:0}
-.fact .v{font-family:var(--mono);font-size:12.5px;color:#fff;margin:2px 0 0;overflow-wrap:anywhere}
 /* topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
 .wordmark{font-weight:900;font-size:22px;letter-spacing:-.02em;text-decoration:none}
@@ -115,8 +72,8 @@ code,kbd{font-family:var(--mono);font-size:.88em;background:var(--ubi-gray);colo
 .hero .meta{color:rgba(255,255,255,.75);font-size:14px;margin:0}
 .hero .meta b{color:#fff}
 /* cuerpo */
-main{padding-block:22px 40px}
-.sec{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:10px;padding:22px 24px;margin-bottom:18px;min-width:0}
+main{padding-block:28px 40px}
+.sec{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:10px;padding:22px 24px;margin-bottom:18px}
 .sec > h2:first-child{margin-top:0}
 .toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;margin:0;padding:0;list-style:none}
 .toc a{text-decoration:none;color:var(--ubi-navy);border-bottom:1px solid var(--ubi-line)}
@@ -137,12 +94,10 @@ main{padding-block:22px 40px}
 /* tablas */
 .tw{overflow-x:auto;margin:10px 0}
 table.data{border-collapse:collapse;width:100%;font-size:14px}
-@media (max-width:640px){.tw table.data{min-width:560px}}
 table.data th,table.data td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ubi-line);vertical-align:top}
 table.data th{background:var(--ubi-gray);color:var(--ubi-navy);font-weight:700;white-space:nowrap}
 table.data tbody tr:nth-child(even){background:var(--ubi-alt)}
 table.data code{white-space:nowrap}
-table.data code.wrap{white-space:normal;overflow-wrap:anywhere}
 .req{color:var(--ubi-orange);font-weight:700;font-size:12px}
 .opt{color:var(--ubi-gray2);font-size:12px}
 /* estados */
@@ -203,20 +158,16 @@ footer a{color:#fff}
 @media print{
   body{background:#fff;font-size:12px}
   .band--navy{print-color-adjust:exact;-webkit-print-color-adjust:exact}
-  .topbar nav,.copy,.form .row,#errbar,.toc,.nav,.pager{display:none!important}
-  .panel{display:block!important}
-  .layout,.grid2,.grid3,.batches{display:block}
-  .grid2 > *,.grid3 > *{margin-bottom:12px}
+  .topbar nav,.copy,.form .row,#errbar,.toc{display:none!important}
   .sec{break-inside:avoid;border:none;padding:0 0 14px;margin:0}
   .code pre{white-space:pre-wrap;word-break:break-all;font-size:11px}
   .tabpanel{display:block}
   main{padding-block:12px}
 }
 </style>
-<noscript><style>.panel{display:block}</style></noscript>
 </head>
 <body>
-<header class="band band--navy"><div class="shell topbar">
+<header class="band band--navy"><div class="container topbar">
   <a class="wordmark" href="https://www.griddata.cl/"><span class="a">ubi</span><span class="b">cquia</span><sup>®</sup></a>
   <nav>
     <a class="btn btn-ghost" href="#request">Referencia</a>
@@ -226,45 +177,34 @@ footer a{color:#fff}
   </nav>
 </div></header>
 
-<section class="band band--navy hero"><div class="shell hero-grid">
-  <div>
-    <p class="kicker">API UbiVu · Work Orders</p>
-    <h1>Crear orden de trabajo</h1>
-    <p class="endpoint"><span class="method">POST</span><span>/work-orders</span></p>
-    <p class="meta">Crea una orden de trabajo para uno o más dispositivos del cliente y devuelve su etiqueta (<b>WO-&lt;id&gt;</b>).</p>
-  </div>
-  <div class="facts">
-    <div class="fact"><p class="k">Base URL</p><p class="v">https://api.ubicquia.com/api</p></div>
-    <div class="fact"><p class="k">Autenticación</p><p class="v">Bearer · OAuth2 client_credentials</p></div>
-    <div class="fact"><p class="k">Cuerpo</p><p class="v">application/json</p></div>
-    <div class="fact"><p class="k">Límite</p><p class="v">25 device_id por WO</p></div>
-  </div>
+<section class="band band--navy hero"><div class="container--read">
+  <p class="kicker">API UbiVu · Work Orders</p>
+  <h1>Crear orden de trabajo</h1>
+  <p class="endpoint"><span class="method">POST</span><span>/work-orders</span></p>
+  <p class="meta">Base URL <b>https://api.ubicquia.com/api</b> · Autenticación <b>Bearer</b> (OAuth2 client_credentials) · Cuerpo <b>application/json</b></p>
 </div></section>
 
-<main class="band band--gray"><div class="shell layout">
+<main class="band band--gray"><div class="container--read">
 
-<nav class="nav" aria-label="Secciones">
-  <p class="nt">POST /work-orders</p>
-  <div role="tablist" aria-orientation="vertical">
-    <button type="button" role="tab" id="tab-overview" data-panel="p-overview" aria-controls="p-overview" aria-selected="true">Descripción e inicio rápido</button>
-    <button type="button" role="tab" id="tab-auth" data-panel="p-auth" aria-controls="p-auth" aria-selected="false" tabindex="-1">Autenticación</button>
-    <button type="button" role="tab" id="tab-request" data-panel="p-request" aria-controls="p-request" aria-selected="false" tabindex="-1">Parámetros y cuerpo</button>
-    <button type="button" role="tab" id="tab-responses" data-panel="p-responses" aria-controls="p-responses" aria-selected="false" tabindex="-1">Respuestas</button>
-    <button type="button" role="tab" id="tab-values" data-panel="p-values" aria-controls="p-values" aria-selected="false" tabindex="-1">reason y device_id</button>
-    <button type="button" role="tab" id="tab-rules" data-panel="p-rules" aria-controls="p-rules" aria-selected="false" tabindex="-1">Reglas y límites</button>
-    <button type="button" role="tab" id="tab-samples" data-panel="p-samples" aria-controls="p-samples" aria-selected="false" tabindex="-1">Ejemplos de código</button>
-    <button type="button" role="tab" id="tab-try" data-panel="p-try" aria-controls="p-try" aria-selected="false" tabindex="-1">Construir request</button>
-    <button type="button" role="tab" id="tab-troubleshooting" data-panel="p-troubleshooting" aria-controls="p-troubleshooting" aria-selected="false" tabindex="-1">Errores frecuentes</button>
-  </div>
-</nav>
+<div class="sec">
+  <ul class="toc">
+    <li><a href="#overview">Descripción</a></li>
+    <li><a href="#quick">Inicio rápido</a></li>
+    <li><a href="#auth">Autenticación</a></li>
+    <li><a href="#request">Parámetros y cuerpo</a></li>
+    <li><a href="#responses">Respuestas</a></li>
+    <li><a href="#reasons">Valores de reason</a></li>
+    <li><a href="#devices">Identificador del dispositivo</a></li>
+    <li><a href="#rules">Reglas y límites</a></li>
+    <li><a href="#samples">Ejemplos de código</a></li>
+    <li><a href="#try">Construir request</a></li>
+    <li><a href="#troubleshooting">Errores frecuentes</a></li>
+  </ul>
+</div>
 
-<div class="content">
-
-<div class="panel active" id="p-overview" role="tabpanel" aria-labelledby="tab-overview">
-<div class="grid2">
 <section class="sec" id="overview">
   <h2>Descripción</h2>
-  <p class="prose">Crea una orden de trabajo (Work Order, WO) para uno o más dispositivos del cliente. La WO se crea en estado <code>new</code>, con tipo <code>restoration</code>, severidad <code>minor</code> y <code>automation_rule_id: 0</code> (creación manual, no generada por una regla de automatización). La respuesta devuelve la etiqueta visible en UbiVu (<code>work_order_label</code>, p. ej. <code>WO-14</code>) y el <code>id</code> numérico.</p>
+  <p>Crea una orden de trabajo (Work Order, WO) para uno o más dispositivos del cliente. La WO se crea en estado <code>new</code>, con tipo <code>restoration</code>, severidad <code>minor</code> y <code>automation_rule_id: 0</code> (creación manual, no generada por una regla de automatización). La respuesta devuelve la etiqueta visible en UbiVu (<code>work_order_label</code>, p. ej. <code>WO-14</code>) y el <code>id</code> numérico.</p>
   <dl class="kv">
     <dt>Método</dt><dd><code>POST</code></dd>
     <dt>Ruta</dt><dd><code>https://api.ubicquia.com/api/work-orders</code></dd>
@@ -293,15 +233,10 @@ footer a{color:#fff}
     "device_id": ["44179354ce28576f"]
   }'</pre></div>
 </section>
-</div>
-</div>
 
-<div class="panel" id="p-auth" role="tabpanel" aria-labelledby="tab-auth">
 <section class="sec" id="auth">
   <h2>Autenticación</h2>
-  <p class="prose">OAuth2 con flujo <code>client_credentials</code> contra Keycloak (realm <code>ubivu-prd</code>). El <code>access_token</code> se envía en el header <code>Authorization</code> de todas las llamadas a <code>api.ubicquia.com</code>.</p>
-  <div class="grid2">
-  <div>
+  <p>OAuth2 con flujo <code>client_credentials</code> contra Keycloak (realm <code>ubivu-prd</code>). El <code>access_token</code> se envía en el header <code>Authorization</code> de todas las llamadas a <code>api.ubicquia.com</code>.</p>
   <dl class="kv">
     <dt>Token URL</dt><dd><code>POST https://auth.ubihub.ubicquia.com/auth/realms/ubivu-prd/protocol/openid-connect/token</code></dd>
     <dt>Content-Type</dt><dd><code>application/x-www-form-urlencoded</code></dd>
@@ -316,8 +251,6 @@ footer a{color:#fff}
       <tr><td><code>client_secret</code></td><td>Secreto del cliente API</td></tr>
     </tbody>
   </table></div>
-  </div>
-  <div>
   <div class="code"><div class="lab"><span class="tag">bash</span><button class="copy" type="button" data-copy="c-token">Copiar</button></div><pre id="c-token"># obtiene el token y lo deja en UBI_TOKEN (requiere jq)
 export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms/ubivu-prd/protocol/openid-connect/token' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -325,9 +258,6 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
   -d 'scope=openid' \
   -d "client_id=$UBI_CLIENT_ID" \
   -d "client_secret=$UBI_CLIENT_SECRET" | jq -r .access_token)</pre></div>
-  <div class="callout info">El token es un JWT: su payload (base64, no cifrado) expone <code>client_id</code>, roles e IP de origen. Trátalo como una credencial. Nunca lo incluyas en front-ends públicos; en integraciones web usa un backend o función serverless que guarde las credenciales.</div>
-  </div>
-  </div>
   <h3>Gestión del cliente API (sección User del Swagger)</h3>
   <div class="tw"><table class="data">
     <thead><tr><th>Método</th><th>Ruta</th><th>Uso</th></tr></thead>
@@ -338,14 +268,11 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
       <tr><td><code>DELETE</code></td><td><code>/delete-api-user-client-keycloak</code></td><td>Elimina el cliente API</td></tr>
     </tbody>
   </table></div>
+  <div class="callout info">El token es un JWT: su payload (base64, no cifrado) expone <code>client_id</code>, roles e IP de origen. Trátalo como una credencial. Nunca lo incluyas en front-ends públicos; en integraciones web usa un backend o función serverless que guarde las credenciales.</div>
 </section>
-</div>
 
-<div class="panel" id="p-request" role="tabpanel" aria-labelledby="tab-request">
 <section class="sec" id="request">
   <h2>Parámetros y cuerpo de la petición</h2>
-  <div class="grid2">
-  <div>
   <h3>Headers</h3>
   <div class="tw"><table class="data">
     <thead><tr><th>Header</th><th>Valor</th><th></th><th>Descripción</th></tr></thead>
@@ -356,8 +283,6 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
       <tr><td><code>current-subpanel-id</code></td><td>string</td><td><span class="opt">opcional</span></td><td>Solo para clientes con subpanel habilitado. En blanco devuelve todos los datos del cliente</td></tr>
     </tbody>
   </table></div>
-  </div>
-  <div>
   <h3>Cuerpo (application/json)</h3>
   <div class="tw"><table class="data">
     <thead><tr><th>Campo</th><th>Tipo</th><th></th><th>Descripción</th></tr></thead>
@@ -369,42 +294,33 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
       <tr><td><code>device_id</code></td><td>array[string]</td><td><span class="req">requerido</span></td><td>Identificadores de dispositivo (Node ID, 16 hex). 1 a 25 elementos. Ver <a href="#devices">Identificador del dispositivo</a></td></tr>
     </tbody>
   </table></div>
+  <div class="tabs" role="tablist" aria-label="Cuerpo">
+    <button role="tab" aria-selected="true" data-tab="r-example">Ejemplo</button>
+    <button role="tab" aria-selected="false" data-tab="r-schema">Esquema</button>
   </div>
-  </div>
-  <div class="grid2">
-  <div id="r-example"><h3>Ejemplo</h3><div class="code"><div class="lab"><span class="tag">request body</span><button class="copy" type="button">Copiar</button></div><pre id="ref-request">{
+  <div class="tabpanel on" id="r-example"><div class="code"><div class="lab"><span class="tag">request body</span><button class="copy" type="button">Copiar</button></div><pre id="ref-request">{
   "type": "cell",
   "urgent": 0,
   "reason": ["Other"],
   "notes": "Work order created via API",
   "device_id": ["44179354ce28576f"]
 }</pre></div></div>
-  <div id="r-schema"><h3>Esquema</h3><div class="code pad-top"><div class="lab"><span class="tag">JSON Schema (derivado de la validación del backend)</span><button class="copy" type="button">Copiar</button></div><pre>{
+  <div class="tabpanel" id="r-schema"><div class="code"><div class="lab"><span class="tag">JSON Schema (derivado de la validación del backend)</span><button class="copy" type="button">Copiar</button></div><pre>{
   "type": "object",
   "required": ["reason", "device_id"],
   "properties": {
-    "type": { "type": "string", "enum": ["cell"] },
-    "urgent": { "type": "integer", "enum": [0, 1], "default": 0 },
-    "reason": {
-      "type": "array", "minItems": 1,
-      "items": { "type": "string" }
-    },
-    "notes": { "type": "string" },
-    "device_id": {
-      "type": "array", "minItems": 1, "maxItems": 25,
-      "items": { "type": "string", "pattern": "^[0-9a-fA-F]{16}$" }
-    }
+    "type":      { "type": "string", "enum": ["cell"] },
+    "urgent":    { "type": "integer", "enum": [0, 1], "default": 0 },
+    "reason":    { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "notes":     { "type": "string" },
+    "device_id": { "type": "array", "minItems": 1, "maxItems": 25,
+                   "items": { "type": "string", "pattern": "^[0-9a-fA-F]{16}$" } }
   }
 }</pre></div></div>
-  </div>
 </section>
-</div>
 
-<div class="panel" id="p-responses" role="tabpanel" aria-labelledby="tab-responses">
 <section class="sec" id="responses">
   <h2>Respuestas</h2>
-  <div class="grid2">
-  <div>
   <h3>200 · Orden creada</h3>
   <div class="code ok"><div class="lab"><span class="tag">200 · application/json</span><button class="copy" type="button" data-copy="ref-response">Copiar</button></div><pre id="ref-response">{
   "data": {
@@ -414,8 +330,8 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
     "resolution": null,
     "causes": null,
     "reason": ["Other"],
-    "created_by": "&lt;uuid-usuario-api&gt;",
-    "updated_by": "&lt;uuid-usuario-api&gt;",
+    "created_by": "<uuid-usuario-api>",
+    "updated_by": "<uuid-usuario-api>",
     "group_wo_id": null,
     "severity": "minor",
     "wo_type": "restoration",
@@ -446,11 +362,8 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
     }
   ]
 }</pre></div>
-  </div>
-  <div>
-  <h3>Campos de <code>data</code></h3>
   <div class="tw"><table class="data">
-    <thead><tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr></thead>
+    <thead><tr><th>Campo (data)</th><th>Tipo</th><th>Descripción</th></tr></thead>
     <tbody>
       <tr><td><code>id</code></td><td>integer</td><td>Clave numérica de la WO</td></tr>
       <tr><td><code>work_order_label</code></td><td>string</td><td>Etiqueta visible en UbiVu (<code>WO-&lt;id&gt;</code>)</td></tr>
@@ -470,32 +383,17 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
       <tr><td><code>active</code></td><td>boolean</td><td>Orden activa</td></tr>
     </tbody>
   </table></div>
-  </div>
-  </div>
-  <div class="grid2">
-  <div>
   <h3>Errores</h3>
   <div class="tw"><table class="data">
     <thead><tr><th>Código</th><th>Descripción</th><th>Cuerpo</th></tr></thead>
     <tbody>
       <tr><td><code>400</code></td><td>Bad Request — JSON malformado</td><td>Sin ejemplo en el Swagger</td></tr>
       <tr><td><code>401</code></td><td>Unauthenticated — token ausente, inválido o vencido</td><td>Sin ejemplo en el Swagger</td></tr>
-      <tr><td><code>403</code></td><td>Forbidden — el cliente API no tiene permiso de órdenes de trabajo</td><td><code class="wrap">{"status":"failed","code":403,"message":"You don't have permission for this.","version":"number"}</code></td></tr>
-      <tr><td><code>404</code></td><td>Record not found</td><td><code class="wrap">{"status":"failed","code":404,"message":"Operation failed"}</code></td></tr>
+      <tr><td><code>403</code></td><td>Forbidden — el cliente API no tiene permiso de órdenes de trabajo</td><td><code>{"status":"failed","code":403,"message":"You don't have permission for this.","version":"number"}</code></td></tr>
+      <tr><td><code>404</code></td><td>Record not found</td><td><code>{"status":"failed","code":404,"message":"Operation failed"}</code></td></tr>
       <tr><td><code>422</code></td><td>Validación del cuerpo (no listado en el Swagger). Los mensajes vienen en <code>message</code> y en <code>errors[]</code></td><td>Ver ejemplo</td></tr>
     </tbody>
   </table></div>
-  <div class="tw"><table class="data">
-    <thead><tr><th>Mensaje en <code>errors[]</code></th><th>Causa</th><th>Corrección</th></tr></thead>
-    <tbody>
-      <tr><td>The reason field is required.</td><td><code>reason</code> ausente, vacío o array vacío</td><td>Enviar al menos una razón</td></tr>
-      <tr><td>The reason field must be an array.</td><td><code>reason</code> enviado como string</td><td><code>"reason": ["Other"]</code></td></tr>
-      <tr><td>The device ID field is required.</td><td><code>device_id</code> ausente o array vacío</td><td>Enviar al menos un identificador</td></tr>
-    </tbody>
-  </table></div>
-  </div>
-  <div>
-  <h3>422 · Validación</h3>
   <div class="code err"><div class="lab"><span class="tag">422 · application/json</span><button class="copy" type="button">Copiar</button></div><pre>{
   "status": "failed",
   "code": 422,
@@ -516,14 +414,17 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
     "The reason field must be an array."
   ]
 }</pre></div>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Mensaje en <code>errors[]</code></th><th>Causa</th><th>Corrección</th></tr></thead>
+    <tbody>
+      <tr><td>The reason field is required.</td><td><code>reason</code> ausente, vacío o array vacío</td><td>Enviar al menos una razón</td></tr>
+      <tr><td>The reason field must be an array.</td><td><code>reason</code> enviado como string</td><td><code>"reason": ["Other"]</code></td></tr>
+      <tr><td>The device ID field is required.</td><td><code>device_id</code> ausente o array vacío</td><td>Enviar al menos un identificador</td></tr>
+    </tbody>
+  </table></div>
   <div class="callout info"><b>Prueba de credenciales sin efectos.</b> Un cuerpo vacío (<code>{"reason":[],"device_id":[]}</code>) responde <code>422</code> de validación cuando token y permisos son correctos, sin crear ninguna orden. Sirve para validar la integración antes de operar sobre dispositivos reales.</div>
-  </div>
-  </div>
 </section>
-</div>
 
-<div class="panel" id="p-values" role="tabpanel" aria-labelledby="tab-values">
-<div class="grid2">
 <section class="sec" id="reasons">
   <h2>Valores de <code>reason</code></h2>
   <p>Las razones se guardan como lista y pueden combinarse en una misma orden (razones de distinto tipo coexisten en la WO).</p>
@@ -559,41 +460,37 @@ export UBI_TOKEN=$(curl -s -X POST 'https://auth.ubihub.ubicquia.com/auth/realms
   -d '{"filter": [], "page": 1, "per_page": 10000}'</pre></div>
   <p>Devuelve la lista de nodos de iluminación con identificadores (ID, dev_eui), ubicación y estado. Ajusta <code>per_page</code> si el cliente supera 10.000 nodos.</p>
 </section>
-</div>
-</div>
 
-<div class="panel" id="p-rules" role="tabpanel" aria-labelledby="tab-rules">
 <section class="sec" id="rules">
   <h2>Reglas y límites</h2>
-  <div class="cards">
-    <div class="card"><h4>Máximo 25 dispositivos por WO</h4><p>Límite del Panel API. Grupos mayores se procesan en lotes (60 → 25 + 25 + 10).</p><p class="eff">Partir <code>device_id</code> en lotes de 25 y hacer una llamada por lote.</p></div>
-    <div class="card"><h4>Razones acumulativas</h4><p>Las razones se apilan en la lista de la WO; una WO cierra cuando todas sus razones están resueltas.</p><p class="eff">Enviar todas las razones conocidas en una sola llamada.</p></div>
-    <div class="card"><h4>Apilamiento por poste</h4><p>Llave: Pole ID. Una WO activa por poste; nuevas razones dentro de la ventana de 24 h se agregan a la WO existente.</p><p class="eff">Creación por API sobre un poste con WO activa: no documentado; verificar en el entorno.</p></div>
-    <div class="card"><h4>Ciclo de vida</h4><p>[Pending Review] → New → In Progress → Completed → [Pending Validation, 48 h] → Closed.</p><p class="eff">La WO creada por API entra en <code>new</code>. Pending Validation aplica solo a WO automatizadas.</p></div>
-    <div class="card"><h4>Cancelación</h4><p>Para cerrar sin trabajo en terreno: Resolution = Cancelled y cerrar.</p><p class="eff">Desde UbiVu; el endpoint de actualización no está cubierto en esta referencia.</p></div>
-    <div class="card"><h4>Nota original</h4><p>No editable ni eliminable; fijable; incluida en el PDF de la orden.</p><p class="eff"><code>notes</code> es permanente.</p></div>
-    <div class="card"><h4>Subpanel</h4><p>Las reglas de automatización se definen por subpanel.</p><p class="eff">Clientes con subpanel: enviar <code>current-subpanel-id</code>.</p></div>
-    <div class="card"><h4>Notificaciones</h4><p>No se envía email al crear la WO; sí en actualizaciones posteriores.</p><p class="eff">No esperar correo de confirmación.</p></div>
-  </div>
+  <div class="tw"><table class="data">
+    <thead><tr><th>Regla</th><th>Detalle</th><th>Efecto en la integración</th></tr></thead>
+    <tbody>
+      <tr><td>Máximo 25 dispositivos por WO</td><td>Límite del Panel API. Grupos mayores se procesan en lotes (60 → 25 + 25 + 10)</td><td>Partir <code>device_id</code> en lotes de 25 y hacer una llamada por lote</td></tr>
+      <tr><td>Razones acumulativas</td><td>Las razones se apilan en la lista de la WO; una WO cierra cuando todas sus razones están resueltas</td><td>Enviar todas las razones conocidas en una sola llamada</td></tr>
+      <tr><td>Apilamiento por poste</td><td>Llave: Pole ID. Una WO activa por poste; nuevas razones dentro de la ventana de 24 h se agregan a la WO existente</td><td>Comportamiento para creaciones por API sobre un poste con WO activa: no documentado; verificar en el entorno</td></tr>
+      <tr><td>Ciclo de vida</td><td>[Pending Review] → New → In Progress → Completed → [Pending Validation, 48 h] → Closed</td><td>La WO creada por API entra en <code>new</code>. Pending Validation aplica solo a WO automatizadas</td></tr>
+      <tr><td>Cancelación</td><td>Para cerrar sin trabajo en terreno: Resolution = Cancelled y cerrar</td><td>Desde UbiVu; el endpoint de actualización no está cubierto en esta referencia</td></tr>
+      <tr><td>Nota original</td><td>No editable ni eliminable; fijable; incluida en el PDF</td><td><code>notes</code> es permanente</td></tr>
+      <tr><td>Subpanel</td><td>Las reglas de automatización se definen por subpanel</td><td>Clientes con subpanel: enviar <code>current-subpanel-id</code></td></tr>
+      <tr><td>Notificaciones</td><td>No se envía email al crear la WO; sí en actualizaciones posteriores</td><td>No esperar correo de confirmación</td></tr>
+    </tbody>
+  </table></div>
 </section>
-</div>
 
-<div class="panel" id="p-samples" role="tabpanel" aria-labelledby="tab-samples">
 <section class="sec" id="samples">
   <h2>Ejemplos de código</h2>
-  <div class="grid2">
-  <div id="t-curl" style="grid-column:1/-1"><h3>curl</h3><div class="code"><div class="lab"><span class="tag">curl</span><button class="copy" type="button" data-copy="c-curl">Copiar</button></div><pre id="c-curl">curl -X POST 'https://api.ubicquia.com/api/work-orders' \
+  <div class="tabs" role="tablist" aria-label="Lenguaje">
+    <button role="tab" aria-selected="true" data-tab="t-curl">curl</button>
+    <button role="tab" aria-selected="false" data-tab="t-fetch">JavaScript (Node 18+)</button>
+    <button role="tab" aria-selected="false" data-tab="t-py">Python</button>
+  </div>
+  <div class="tabpanel on" id="t-curl"><div class="code"><div class="lab"><span class="tag">curl</span><button class="copy" type="button" data-copy="c-curl">Copiar</button></div><pre id="c-curl">curl -X POST 'https://api.ubicquia.com/api/work-orders' \
   -H 'accept: */*' \
   -H "Authorization: Bearer $UBI_TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "type": "cell",
-    "urgent": 0,
-    "reason": ["Other"],
-    "notes": "Work order created via API",
-    "device_id": ["44179354ce28576f"]
-  }'</pre></div></div>
-  <div id="t-fetch"><h3>JavaScript (Node 18+)</h3><div class="code"><div class="lab"><span class="tag">javascript</span><button class="copy" type="button" data-copy="c-fetch">Copiar</button></div><pre id="c-fetch">const payload = {
+  -d '{"type":"cell","urgent":0,"reason":["Other"],"notes":"Work order created via API","device_id":["44179354ce28576f"]}'</pre></div></div>
+  <div class="tabpanel" id="t-fetch"><div class="code"><div class="lab"><span class="tag">javascript</span><button class="copy" type="button" data-copy="c-fetch">Copiar</button></div><pre id="c-fetch">const payload = {
   type: "cell",
   urgent: 0,
   reason: ["Other"],
@@ -610,12 +507,10 @@ const r = await fetch("https://api.ubicquia.com/api/work-orders", {
   body: JSON.stringify(payload)
 });
 const j = await r.json();
-if (r.status === 200) {
-  console.log("creada", j.data.work_order_label, j.data.id);
-} else {
-  console.error(r.status, j.message, j.errors || "");
-}</pre></div></div>
-  <div id="t-py"><h3>Python</h3><div class="code"><div class="lab"><span class="tag">python</span><button class="copy" type="button" data-copy="c-py">Copiar</button></div><pre id="c-py">import os, requests
+if (r.status === 200) console.log("creada", j.data.work_order_label, j.data.id);
+else console.error(r.status, j.message, j.errors || "");</pre></div>
+  <div class="callout info">Ejecutar desde servidor, script o función serverless. El endpoint no está pensado para llamadas directas desde el navegador (CORS) y el token no debe vivir en el cliente.</div></div>
+  <div class="tabpanel" id="t-py"><div class="code"><div class="lab"><span class="tag">python</span><button class="copy" type="button" data-copy="c-py">Copiar</button></div><pre id="c-py">import os, requests
 
 payload = {
     "type": "cell",
@@ -639,12 +534,8 @@ if r.status_code == 200:
     print("creada", j["data"]["work_order_label"], j["data"]["id"])
 else:
     print(r.status_code, j.get("message"), j.get("errors"))</pre></div></div>
-  </div>
-  <div class="callout info">Ejecutar desde servidor, script o función serverless. El endpoint no está pensado para llamadas directas desde el navegador (CORS) y el token no debe vivir en el cliente.</div>
 </section>
-</div>
 
-<div class="panel" id="p-try" role="tabpanel" aria-labelledby="tab-try">
 <section class="sec" id="try">
   <h2>Construir request</h2>
   <p>Genera el cuerpo y el comando listos para pegar; con más de 25 dispositivos produce un lote por llamada. Se ejecuta en el navegador y no envía nada: el token se referencia como variable de entorno <code>UBI_TOKEN</code>.</p>
@@ -673,9 +564,7 @@ else:
     <div class="out" id="out"><div class="empty">Presiona Generar para ver el JSON, el curl, el fetch y el Python de cada lote.</div></div>
   </div>
 </section>
-</div>
 
-<div class="panel" id="p-troubleshooting" role="tabpanel" aria-labelledby="tab-troubleshooting">
 <section class="sec" id="troubleshooting">
   <h2>Errores frecuentes</h2>
   <div class="tw"><table class="data">
@@ -692,13 +581,11 @@ else:
     </tbody>
   </table></div>
 </section>
-</div>
 
-</div>
 </div></main>
 
-<footer class="band band--navy"><div class="shell">
-  Grid Data · <a href="https://www.griddata.cl/">griddata.cl</a> · referencia work-orders-api v4 · fuentes: Swagger Ubi Api (api.ubicquia.com), Guía Práctica de APIs Ubicquia, documento as-built de Work Order Automation (may-2026). Sin credenciales en este archivo.
+<footer class="band band--navy"><div class="container--read">
+  Grid Data · <a href="https://www.griddata.cl/">griddata.cl</a> · referencia work-orders-api v2 · fuentes: Swagger Ubi Api (api.ubicquia.com), Guía Práctica de APIs Ubicquia, documento as-built de Work Order Automation (may-2026). Sin credenciales en este archivo.
 </div></footer>
 
 <div id="errbar" role="alert"><span id="errtxt"></span><button type="button" aria-label="Cerrar" onclick="document.getElementById('errbar').style.display='none'">×</button></div>
@@ -879,7 +766,6 @@ var WO = (function(){
     if(!res.errors.length && !res.warnings.length) msgs.push('<li class="ok">Cuerpo válido según el esquema del endpoint.</li>');
     h += '<ul class="msgs">' + msgs.join('') + '</ul>';
     var opts = {subpanel: subpanel};
-    if(res.batches.length) h += '<div class="batches">';
     res.batches.forEach(function(p, i){
       var name = res.batches.length > 1 ? ('Lote ' + (i+1) + ' de ' + res.batches.length + ' · ' + p.device_id.length + ' dispositivos') : ('Una llamada · ' + p.device_id.length + ' dispositivo' + (p.device_id.length>1?'s':''));
       var id = 'b' + i;
@@ -891,7 +777,6 @@ var WO = (function(){
         '<div class="tabpanel" id="' + id + '-py">' + codeBlock('python', WO.toPython(p, opts)) + '</div>' +
         '</div>';
     });
-    if(res.batches.length) h += '</div>';
     out.innerHTML = h;
     wireTabs(out);
   }
@@ -923,61 +808,6 @@ var WO = (function(){
     $('f-notes').value = WO.REF.request.notes; $('f-ids').value = WO.REF.request.device_id.join('\n'); $('f-subpanel').value = '';
     generate();
   });
-
-  /* pestañas de contenido: rail = tablist, un panel visible; hash sincronizado */
-  (function(){
-    var tabs = Array.prototype.slice.call(document.querySelectorAll('.nav [role=tab]'));
-    var panels = Array.prototype.slice.call(document.querySelectorAll('.content > .panel'));
-    var main = document.querySelector('main');
-    if(!tabs.length || !panels.length) return;
-    var keys = tabs.map(function(t){ return t.getAttribute('data-panel'); });
-    function label(t){ return t.textContent.trim(); }
-    /* centra la pestaña activa solo dentro del strip (scrollLeft del tablist), nunca mueve la página */
-    function revealTab(t){ var list = t.parentNode; if(!list || list.scrollWidth <= list.clientWidth) return; setTimeout(function(){ try{ list.scrollLeft = Math.max(0, t.offsetLeft - (list.clientWidth - t.offsetWidth) / 2); }catch(e){} }, 0); }
-    window.addEventListener('load', function(){ tabs.forEach(function(t){ if(t.getAttribute('aria-selected') === 'true') revealTab(t); }); });
-    function show(key, opts){
-      opts = opts || {};
-      if(keys.indexOf(key) < 0) return false;
-      tabs.forEach(function(t){ var on = t.getAttribute('data-panel') === key; t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; if(on) revealTab(t); });
-      panels.forEach(function(p){ p.classList.toggle('active', p.id === key); });
-      if(opts.hash !== false && history.replaceState){ try{ history.replaceState(null, '', '#' + key.replace(/^p-/, '')); }catch(e){} }
-      if(opts.scroll !== false){ var top = main.getBoundingClientRect().top + window.pageYOffset - 6; if(window.pageYOffset > top) window.scrollTo(0, top); }
-      return true;
-    }
-    function resolveHash(){
-      var h = (location.hash || '').slice(1);
-      if(!h) return false;
-      if(show('p-' + h)) return true;
-      var el = document.getElementById(h);
-      var panel = el && el.closest && el.closest('.panel');
-      if(!panel) return false;
-      show(panel.id, {hash:false});
-      if(el.scrollIntoView) el.scrollIntoView({block:'start'});
-      return true;
-    }
-    tabs.forEach(function(t, i){
-      t.addEventListener('click', function(){ show(t.getAttribute('data-panel')); });
-      t.addEventListener('keydown', function(ev){
-        var j = null;
-        if(ev.key === 'ArrowDown' || ev.key === 'ArrowRight') j = (i + 1) % tabs.length;
-        else if(ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
-        else if(ev.key === 'Home') j = 0;
-        else if(ev.key === 'End') j = tabs.length - 1;
-        if(j === null) return;
-        ev.preventDefault(); show(tabs[j].getAttribute('data-panel')); tabs[j].focus();
-      });
-    });
-    /* pager anterior / siguiente al pie de cada panel */
-    panels.forEach(function(p){
-      var i = keys.indexOf(p.id); if(i < 0) return;
-      var pg = document.createElement('div'); pg.className = 'pager';
-      if(i > 0){ var b = document.createElement('button'); b.type = 'button'; b.className = 'prev'; b.textContent = '← ' + label(tabs[i-1]); b.addEventListener('click', function(){ show(keys[i-1]); }); pg.appendChild(b); }
-      if(i < keys.length - 1){ var b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'next'; b2.textContent = label(tabs[i+1]) + ' →'; b2.addEventListener('click', function(){ show(keys[i+1]); }); pg.appendChild(b2); }
-      p.appendChild(pg);
-    });
-    window.addEventListener('hashchange', resolveHash);
-    if(!resolveHash()) show(keys[0], {hash:false, scroll:false});
-  })();
 
   /* reconciliación: todos los ejemplos de la página nacen del mismo WO.REF */
   try{
