@@ -1,0 +1,25 @@
+UT Ilumina Pereira — panel 779337
+Vercel → Settings → Environment Variables (un cambio solo aplica tras un NUEVO deploy)
+
+OBLIGATORIAS
+  UBICQUIA_779337_CLIENT_ID        = 779337.<usuario>@ubicquia.com   (Sensitive)
+  UBICQUIA_779337_CLIENT_SECRET    = <secret del panel 779337>       (Sensitive)
+  APP_ACCESS_CODE_779337           = <código del gate, sin espacios ni salto de línea>
+
+  Si APP_ACCESS_CODE_779337 no existe, la función cae al APP_ACCESS_CODE global que ya
+  tienes desplegado — es decir, Pereira quedaría con el mismo código que la otra app.
+  Define APP_ACCESS_CODE_779337 si quieres códigos separados.
+
+OPCIONALES (valor por defecto entre paréntesis)
+  UBICQUIA_779337_NAME       (UT Ilumina Pereira)  nombre mostrado en el header
+  UBICQUIA_779337_BIG_LIMIT  (300)  sobre este nº de nodos no se pide estado en vivo
+  UBICQUIA_779337_STATE_CAP  (60)   máx. lecturas de estado por llamada
+  UBICQUIA_779337_PAGE_CAP   (80)   80 x 250 = 20.000 nodos por barrido
+
+ARCHIVOS (descomprimir en la raíz del repo)
+  pereira/index.html          → https://griddata.cl/pereira/
+  api/control-pereira.js      → https://griddata.cl/api/control-pereira
+
+CLONAR A OTRO PANEL
+  Copiar api/control-pereira.js, cambiar PANEL_ID y TENANT en las primeras líneas,
+  y crear UBICQUIA_<nuevoId>_CLIENT_ID / _CLIENT_SECRET / APP_ACCESS_CODE_<nuevoId>.
