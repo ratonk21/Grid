@@ -1,0 +1,4261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Bill · Escáner de facturas — RatonK</title>
+<meta name="description" content="Escáner de facturas y boletas: saca una foto o adjunta una imagen y extrae los datos automáticamente.">
+<meta property="og:title" content="Bill · Escáner de facturas">
+<meta property="og:description" content="Saca una foto de tu factura o boleta y extrae los datos al instante.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#143B2B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,900;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --ubi-navy:#143B2B;          /* Verde Tara — fondos oscuros, titulares */
+  --ubi-blue:#2D6A4F;          /* Verde Trébol — acciones, datos, foco */
+  --ubi-lime:#7FC79E;          /* Verde Brote — bien/resalte */
+  --ubi-orange:#B0602F;        /* Cobre — EL SALTO (uso mínimo) */
+  --ubi-gray:#F1EBDD;          /* Arena claro — fondo página / ghost */
+  --ubi-ink:#211E19;           /* Carbón — texto */
+  --ubi-muted:#6E7E72;         /* verde-gris — secundario */
+  --ubi-surface:#fff;
+  --ubi-line:rgba(20,59,43,.12);
+  --ubi-row:#F4F1E7;           /* crema cálida — filas alternas / totales */
+  --cobre:#B0602F; --crema:#F5EFE2; --arena:#E6CDA3; --brote:#7FC79E;
+  --trebol:#2D6A4F; --tara:#143B2B; --niebla:#C7D2C8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ubi-ink);background:var(--ubi-gray);
+  line-height:1.5;padding-bottom:env(safe-area-inset-bottom)}
+.mono{font-family:'JetBrains Mono',monospace}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select{font-family:inherit}
+
+.app-header{background:var(--ubi-navy);color:#fff;padding:16px 18px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:20;padding-top:calc(16px + env(safe-area-inset-top))}
+.logo{font-size:22px;font-weight:400;letter-spacing:-.5px}
+.logo b{font-weight:900}.logo .dot{color:var(--ubi-blue)}
+.app-title{font-size:12px;color:#A9B4C6;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.status-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:#A9B4C6}
+.status-pill .d{width:8px;height:8px;border-radius:50%;background:var(--ubi-blue)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:18px}
+.card.form{max-width:720px;margin-left:auto;margin-right:auto}
+.card{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-radius:14px;padding:20px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--ubi-navy)}
+.card .sub{margin:0 0 16px;font-size:13px;color:var(--ubi-muted)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:11px;
+  font-weight:700;font-size:15px;background:var(--ubi-blue);color:#fff;transition:filter .15s,transform .05s}
+.btn:active{transform:scale(.98)}.btn:hover{filter:brightness(1.05)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn.ghost{background:var(--ubi-gray);color:var(--ubi-navy);border:1px solid var(--ubi-line)}
+.btn.full{width:100%}.btn.lime{background:var(--ubi-lime);color:var(--ubi-navy)}
+.btn.danger{background:#FDECE4;color:#9c3206;border:1px solid #f6c4ab}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn-row .btn{flex:1;min-width:150px}
+/* Fix: base de .btn-ico fuera de cualquier @media. Antes solo existía dentro de
+   @media (max-width:820px), así que en viewports más anchos el SVG caía al
+   fill:black por defecto del navegador y los íconos multi-forma (cámara, clip)
+   se veían como manchas negras sólidas. Los bloques @media de abajo solo
+   ajustan tamaño/grosor por breakpoint; el trazo base queda garantizado siempre. */
+.btn-ico{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+#lock{position:fixed;inset:0;background:var(--ubi-navy);z-index:50;display:flex;align-items:center;
+  justify-content:center;padding:24px;flex-direction:column}
+#lock .box{background:#fff;border-radius:18px;padding:30px 26px;width:100%;max-width:360px;text-align:center}
+#lock .logo{color:var(--ubi-navy);font-size:30px;margin-bottom:6px}
+#lock h1{font-size:18px;color:var(--ubi-navy);margin:8px 0 4px}
+#lock p{font-size:13px;color:var(--ubi-muted);margin:0 0 20px}
+#lock input{width:100%;padding:14px;font-size:18px;text-align:center;letter-spacing:3px;border:2px solid var(--ubi-line);
+  border-radius:11px;outline:none;font-family:'JetBrains Mono',monospace;margin-bottom:14px}
+#lock input:focus{border-color:var(--ubi-blue)}
+#lockErr{color:var(--ubi-orange);font-size:13px;font-weight:700;min-height:18px;margin-bottom:10px}
+
+.drop{border:2px dashed var(--ubi-line);border-radius:14px;padding:26px 18px;text-align:center;
+  background:var(--ubi-row);transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--ubi-blue);background:#EAF7FD}
+.drop .icon{font-size:38px;line-height:1}
+.drop p{margin:10px 0 16px;color:var(--ubi-muted);font-size:14px}
+.preview-wrap{position:relative;margin-top:4px}
+.preview{width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid var(--ubi-line);background:#000}
+.preview-x{position:absolute;top:8px;right:8px;background:rgba(30,36,69,.85);color:#fff;width:34px;height:34px;
+  border-radius:50%;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+.pdfbox{display:flex;align-items:center;gap:12px;padding:26px 18px;border:1px solid var(--ubi-line);
+  border-radius:12px;background:var(--ubi-row);font-weight:700;color:var(--ubi-navy);word-break:break-all}
+.pdfbox .pdficon{font-size:30px}
+
+.spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.banner{border-radius:11px;padding:13px 15px;font-size:14px;margin-bottom:14px;display:none}
+.banner.err{background:#FDECE4;color:#9c3206;border:1px solid #f6c4ab}
+.banner.ok{background:#F0F6DD;color:#5a6e1f;border:1px solid #cfe08f}
+.banner.info{background:#EAF7FD;color:#0b5a78;border:1px solid #bce6f6}
+.banner.show{display:block}
+
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ubi-muted);font-weight:700}
+.field input,.field select{padding:11px 12px;border:1px solid var(--ubi-line);border-radius:9px;font-size:15px;background:var(--ubi-surface)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--ubi-blue)}
+.field input.mono{font-family:'JetBrains Mono',monospace}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.totals{background:var(--ubi-row);border-radius:11px;padding:14px;margin-top:6px}
+.totals .row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:15px}
+.totals .row.big{font-size:20px;font-weight:900;color:var(--ubi-navy);border-top:1px solid var(--ubi-line);margin-top:4px;padding-top:12px}
+.totals input{font-family:'JetBrains Mono',monospace;text-align:right;border:none;background:transparent;width:140px}
+.totals input:focus{outline:none}
+.tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  padding:4px 10px;border-radius:20px;background:var(--ubi-blue);color:#fff}
+.tag.paper{background:var(--ubi-orange)}
+.tag.digital{background:var(--ubi-blue)}
+details.raw{margin-top:14px}
+details.raw summary{cursor:pointer;font-size:13px;color:var(--ubi-muted);font-weight:700}
+details.raw pre{white-space:pre-wrap;word-break:break-word;font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:var(--ubi-row);border-radius:9px;padding:12px;margin-top:8px;max-height:240px;overflow:auto}
+
+/* tasas */
+.rate-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--ubi-line)}
+.rate-row:last-child{border-bottom:none}
+.rate-row .lbl{font-weight:700;color:var(--ubi-navy);font-size:14px}
+.rate-row .lbl small{display:block;color:var(--ubi-muted);font-weight:400;font-size:12px}
+.rate-row .eq{font-size:13px;color:var(--ubi-muted);white-space:nowrap}
+.rate-row input{width:120px;padding:9px 10px;border:1px solid var(--ubi-line);border-radius:8px;
+  font-family:'JetBrains Mono',monospace;text-align:right;font-size:14px}
+.rate-row input:focus{outline:none;border-color:var(--ubi-blue)}
+
+.tbl-wrap{overflow-x:auto;margin-top:6px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--ubi-line);white-space:nowrap}
+td.cellwrap{white-space:normal;max-width:220px;min-width:120px}
+.editable{display:inline-block;min-width:90px;cursor:text;border-radius:4px;padding:1px 3px}
+.editable:hover{background:#eef6fb}
+.editable:focus{outline:2px solid var(--ubi-blue);background:#fff}
+.editable:empty:before{content:'—';color:var(--ubi-muted)}
+th{background:var(--ubi-navy);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0}
+tr:nth-child(even) td{background:var(--ubi-row)}
+td .num{font-family:'JetBrains Mono',monospace}
+th.usd,td.usd{background:#0f3d51;color:#fff}
+tr:nth-child(even) td.usd{background:#0f3d51}
+td.usd .num{color:#fff}
+tfoot td{font-weight:700;border-top:2px solid var(--ubi-navy);background:var(--ubi-row)}
+tfoot td.usd{background:#0f3d51}
+.pill-mini{font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;color:#fff;text-transform:uppercase;letter-spacing:.4px}
+.pill-mini.paper{background:var(--ubi-orange)}
+.pill-mini.digital{background:var(--ubi-blue)}
+.empty{text-align:center;color:var(--ubi-muted);padding:24px;font-size:14px}
+tr.refhit td{background:#E4F5DC!important}
+.usd-sum{text-align:right;font-weight:900;color:var(--ubi-navy);font-size:16px;margin-top:12px}
+.usd-sum span{font-family:'JetBrains Mono',monospace;color:#0f3d51}
+/* ---- vista de tarjetas (móvil) ---- */
+.hist-cards{display:none;margin-top:10px}
+.bcard{border:1px solid var(--ubi-line);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--ubi-surface)}
+.bcard .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.bcard .n{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ubi-navy);background:var(--ubi-gray);padding:3px 11px;border-radius:20px;font-size:13px}
+.bcard .emisor{font-weight:700;color:var(--ubi-navy);font-size:15px}
+.bcard .meta{font-size:13px;color:var(--ubi-muted);margin-bottom:10px}
+.bcard .rowline{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:5px 0;border-top:1px solid var(--ubi-line)}
+.bcard .rowline .lab{color:var(--ubi-muted)}
+.bcard .rowline .val{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ubi-navy)}
+.bcard .rowline .val.usd{color:#0f3d51}
+.bcard .desc{margin-top:10px}
+.bcard .desc .lab{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ubi-muted);font-weight:700;display:block;margin-bottom:4px}
+.bcard .desc .editable{display:block;border:1px solid var(--ubi-line);border-radius:8px;padding:9px;min-height:20px}
+.btot{background:var(--ubi-navy);color:#fff;border-radius:12px;padding:16px}
+.btot h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#A9B4C6}
+.btot .rowline{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
+.btot .rowline .val{font-family:'JetBrains Mono',monospace}
+.btot .rowline.usd{border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:8px}
+.btot .rowline.usd .val{color:var(--ubi-lime);font-weight:700}
+@media (max-width:820px){
+  .wrap{padding:12px}
+  .tbl-wrap{display:none}
+  .hist-cards{display:block}
+  .usd-sum{display:none}
+}
+.hidden{display:none!important}
+.foot{text-align:center;color:var(--ubi-muted);font-size:12px;padding:8px 0 28px}
+.foot .logo{font-size:14px;color:var(--ubi-navy)}
+/* ===================== Piel RatonK ===================== */
+h1,h2,h3,.card h2,#lock h1,.app-title{font-family:'Fraunces',Georgia,serif}
+.card h2{font-size:19px;font-weight:900;color:var(--tara)}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Fraunces',serif;font-weight:900;font-size:22px;color:#fff;letter-spacing:.2px}
+.logo svg{flex:none}
+#lock .logo{justify-content:center;margin-bottom:10px}
+.foot .logo{color:var(--tara);justify-content:center}
+.app-title{font-weight:600;font-style:italic}
+/* El salto: cobre, un único punto por pantalla */
+.btn.salto{background:var(--cobre);color:#fff}
+/* Destructivo discreto (sin rojo de alarma) */
+.btn.danger{background:#fff;color:var(--cobre);border:1px solid var(--niebla)}
+/* Estado/tipo SIEMPRE en verde (anti-Bati) */
+.pill-mini.paper,.tag.paper{background:var(--trebol)}
+.pill-mini.digital,.tag.digital{background:var(--tara)}
+.status-pill .d{background:var(--brote)}
+/* USD en verde, no azul */
+th.usd,td.usd,tr:nth-child(even) td.usd,tfoot td.usd{background:var(--trebol)}
+.usd-sum span,.bcard .rowline .val.usd{color:var(--trebol)}
+/* Foco y arrastre en verde */
+.drop.over{border-color:var(--trebol);background:#ECF4EE}
+.banner.info{background:#ECF4EE;color:#1f5138;border:1px solid #c9e2d3}
+.field input:focus,.field select:focus,#lock input:focus,.editable:focus{border-color:var(--trebol);outline-color:var(--trebol)}
+/* Fila coincidente: verde brote */
+tr.refhit td{background:#E4F3DC!important}
+/* ===== Móvil grande (S26 Ultra): texto y toques más amplios ===== */
+/* Se aplica por media query (max-width:820) Y por .m (forzado por JS según el ancho real del equipo, por si el viewport no se respeta) */
+@media (max-width:820px){
+  body{font-size:18px}
+  .card{padding:18px 16px}
+  .card h2{font-size:23px}
+  .card .sub{font-size:15px}
+  .btn{font-size:18px;padding:17px 20px;border-radius:13px}
+  .field label{font-size:12.5px}
+  .field input,.field select{font-size:18px;padding:15px 13px}
+  #lock .box{max-width:none;padding:32px 22px}
+  #lock h1{font-size:24px}
+  #lock p{font-size:15px}
+  #lock input{font-size:24px;padding:17px}
+  .totals .row{font-size:17px}
+  .totals .row.big{font-size:25px}
+  .bcard .emisor{font-size:18px}
+  .bcard .meta{font-size:14.5px}
+  .bcard .rowline{font-size:17px}
+  .bcard .desc .editable{font-size:17px}
+  .app-title{font-size:13px}
+  .logo{font-size:24px}
+}
+html.m .wrap{padding:12px}
+html.m .tbl-wrap{display:none}
+html.m .hist-cards{display:block}
+html.m .usd-sum{display:none}
+html.m body,body.m{font-size:18px}
+html.m .card{padding:18px 16px}
+html.m .card h2{font-size:23px}
+html.m .card .sub{font-size:15px}
+html.m .btn{font-size:18px;padding:17px 20px;border-radius:13px}
+html.m .field label{font-size:12.5px}
+html.m .field input,html.m .field select{font-size:18px;padding:15px 13px}
+html.m #lock .box{max-width:none;padding:32px 22px}
+html.m #lock h1{font-size:24px}
+html.m #lock p{font-size:15px}
+html.m #lock input{font-size:24px;padding:17px}
+html.m .totals .row{font-size:17px}
+html.m .totals .row.big{font-size:25px}
+html.m .bcard .emisor{font-size:18px}
+html.m .bcard .meta{font-size:14.5px}
+html.m .bcard .rowline{font-size:17px}
+html.m .bcard .desc .editable{font-size:17px}
+html.m .app-title{font-size:13px}
+html.m .logo{font-size:24px}
+/* ===== Lock a pantalla completa en móvil ===== */
+@media (max-width:820px){
+  #lock{padding:0;align-items:stretch}
+  #lock .box{max-width:none;width:100%;min-height:100dvh;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;padding:0 32px}
+  #lock .logo svg{width:66px;height:66px}
+  #lock h1{font-size:27px}
+  #lock p{font-size:16px}
+  #lock input{font-size:26px;padding:19px}
+  #lock .btn{font-size:19px;padding:19px}
+}
+html.m #lock{padding:0;align-items:stretch}
+html.m #lock .box{max-width:none;width:100%;min-height:100dvh;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;padding:0 32px}
+html.m #lock .logo svg{width:66px;height:66px}
+html.m #lock h1{font-size:27px}
+html.m #lock p{font-size:16px}
+html.m #lock input{font-size:26px;padding:19px}
+html.m #lock .btn{font-size:19px;padding:19px}
+
+
+
+/* ===== Adaptación S26 Ultra / móvil-first con pestañas ===== */
+.app-tabs{display:none}
+.tab-section{scroll-margin-top:118px}
+.phone-hint{display:none}
+@media (max-width:820px){
+  html,body{min-height:100%;overscroll-behavior-y:none;background:#F7F3EA}
+  body{padding-bottom:calc(18px + env(safe-area-inset-bottom));}
+  .app-header{display:grid;grid-template-columns:1fr auto;gap:10px 12px;padding:12px 12px 10px;box-shadow:0 8px 24px rgba(20,59,43,.14)}
+  .app-header .logo svg{width:34px;height:34px}
+  .status-pill{align-self:center;background:rgba(245,239,226,.12);border:1px solid rgba(245,239,226,.18);border-radius:999px;padding:7px 10px;color:#F5EFE2}
+  .app-title{font-size:12px;letter-spacing:.9px;color:#D8DDDA;margin-top:0;text-transform:none;line-height:1.15}
+  .app-tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:rgba(245,239,226,.10);border:1px solid rgba(245,239,226,.16);padding:6px;border-radius:18px}
+  .tab-btn{min-height:50px;border-radius:14px;background:transparent;color:#F5EFE2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:800;line-height:1;border:1px solid transparent}
+  .tab-btn span{font-size:17px;line-height:1}
+  .tab-btn b{font-weight:800;font-size:10.5px;letter-spacing:.05px}
+  .tab-btn.active{background:#F5EFE2;color:var(--tara);border-color:rgba(255,255,255,.45);box-shadow:0 8px 18px rgba(0,0,0,.12)}
+  .wrap{max-width:520px;margin:0 auto;padding:12px 12px calc(28px + env(safe-area-inset-bottom))}
+  .banner{font-size:15px;border-radius:14px;margin-bottom:12px}
+  .card{border-radius:22px;box-shadow:0 10px 26px rgba(20,59,43,.08);margin-bottom:14px;border-color:rgba(20,59,43,.10)}
+  .card.form{max-width:520px}
+  .tab-section{display:none!important}
+  .tab-section.active-tab{display:block!important;animation:tabIn .18s ease-out}
+  .tab-section.hidden{display:none!important}
+  @keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .drop{padding:22px 14px;border-radius:20px;background:#F9F5EC}
+  .drop .icon{font-size:44px}
+  .btn-row{display:grid;grid-template-columns:1fr;gap:10px}
+  .btn-row .btn{min-width:0;width:100%}
+  .grid2{grid-template-columns:1fr;gap:0}
+  .preview{max-height:42dvh;border-radius:18px}
+  .preview-x{width:42px;height:42px;font-size:22px;top:10px;right:10px}
+  .totals{border-radius:18px;padding:16px}
+  .totals input{width:160px;max-width:55vw}
+  details.raw pre{max-height:32dvh;font-size:12.5px;border-radius:14px}
+  .hist-cards{margin-top:2px}
+  .bcard{border-radius:18px;padding:16px;box-shadow:0 8px 22px rgba(20,59,43,.06)}
+  .btot{border-radius:18px;background:var(--tara)}
+  #ratesBody .rate-row{background:#fff;border:1px solid var(--ubi-line);border-radius:16px;margin-bottom:10px;padding:12px}
+  .rate-row input{width:130px;font-size:16px;padding:12px}
+  #refTableWrap{display:none!important}
+  .foot{display:none}
+}
+@media (max-width:390px){
+  .tab-btn b{font-size:9.5px}
+  .tab-btn span{font-size:16px}
+  .app-tabs{gap:4px;padding:5px}
+}
+html.m .app-header{display:grid;grid-template-columns:1fr auto;gap:10px 12px;padding:12px 12px 10px;box-shadow:0 8px 24px rgba(20,59,43,.14)}
+html.m .app-tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:rgba(245,239,226,.10);border:1px solid rgba(245,239,226,.16);padding:6px;border-radius:18px}
+html.m .tab-btn{min-height:50px;border-radius:14px;background:transparent;color:#F5EFE2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:800;line-height:1;border:1px solid transparent}
+html.m .tab-btn span{font-size:17px;line-height:1}
+html.m .tab-btn b{font-weight:800;font-size:10.5px;letter-spacing:.05px}
+html.m .tab-btn.active{background:#F5EFE2;color:var(--tara);border-color:rgba(255,255,255,.45);box-shadow:0 8px 18px rgba(0,0,0,.12)}
+html.m .wrap{max-width:520px;margin:0 auto;padding:12px 12px calc(28px + env(safe-area-inset-bottom))}
+html.m .tab-section{display:none!important}
+html.m .tab-section.active-tab{display:block!important;animation:tabIn .18s ease-out}
+html.m .tab-section.hidden{display:none!important}
+html.m .grid2{grid-template-columns:1fr;gap:0}
+html.m .btn-row{display:grid;grid-template-columns:1fr;gap:10px}
+html.m .btn-row .btn{min-width:0;width:100%}
+html.m .drop{padding:22px 14px;border-radius:20px;background:#F9F5EC}
+html.m .preview{max-height:42dvh;border-radius:18px}
+html.m .foot{display:none}
+
+
+/* ===== Full-space mobile layout override (S26 Ultra and similar) ===== */
+@media (max-width:820px){
+  :root{--phone-pad:12px;}
+  body{background:#F3EEE4;}
+  .app-header{padding:calc(10px + env(safe-area-inset-top)) var(--phone-pad) 10px;gap:8px 10px}
+  .app-header > div:first-child{min-width:0}
+  .logo{font-size:20px;gap:8px}
+  .app-title{font-size:11px;letter-spacing:.6px;white-space:normal}
+  .status-pill{padding:6px 9px;font-size:11px;justify-self:end}
+  .app-tabs{gap:5px;padding:5px;border-radius:16px}
+  .tab-btn{min-height:48px;padding:4px 2px}
+  .tab-btn span{font-size:16px}
+  .tab-btn b{font-size:10px}
+  .wrap{width:100%;max-width:none;padding:10px var(--phone-pad) calc(18px + env(safe-area-inset-bottom));margin:0}
+  .card,.card.form{width:100%;max-width:none;margin:0 0 12px 0;border-radius:18px;padding:16px 14px}
+  .card h2{font-size:18px}
+  .card .sub{font-size:12.5px;line-height:1.4}
+  .banner{width:100%;margin:0 0 10px 0;padding:12px 13px}
+  .drop{padding:18px 12px;border-radius:16px}
+  .drop p{font-size:13px;margin:8px 0 12px}
+  .btn{min-height:52px;padding:14px 16px;font-size:16px;border-radius:12px}
+  #captureCard .btn-row{grid-template-columns:1fr}
+  #histCard .btn-row,#refCard .btn-row{grid-template-columns:1fr 1fr}
+  #histCard .btn-row .btn,#refCard .btn-row .btn{min-width:0}
+  #histCard .btn-row .btn:nth-child(1),#refCard .btn-row .btn:nth-child(1){grid-column:1/-1}
+  .preview{max-height:44dvh}
+  .pdfbox{padding:18px 14px;border-radius:14px}
+  .grid2{grid-template-columns:1fr 1fr;gap:10px}
+  .field{margin-bottom:10px}
+  .field label{font-size:10.5px}
+  .field input,.field select{font-size:15px;padding:12px 11px}
+  .totals{padding:12px;border-radius:14px}
+  .totals .row{font-size:14px}
+  .totals .row.big{font-size:20px}
+  .totals input{width:120px;max-width:42vw}
+  .tag{font-size:10px;padding:4px 8px}
+  details.raw pre{max-height:26dvh;font-size:11.5px;padding:10px}
+  .bcard{padding:14px;border-radius:14px;margin-bottom:10px}
+  .bcard .emisor{font-size:16px}
+  .bcard .meta,.bcard .rowline{font-size:13px}
+  .btot{padding:14px;border-radius:14px}
+  #lock{background:#F7F7F7;align-items:stretch;justify-content:flex-start;padding:0}
+  #lock .box{width:100%;max-width:none;min-height:100dvh;border-radius:0;padding:clamp(26px,10vh,90px) 12px 24px;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;background:#F7F7F7}
+  #lock .logo{justify-content:center;margin:0 auto 8px;font-size:26px}
+  #lock .logo svg{width:56px;height:56px}
+  #lock h1{font-size:20px;margin:4px 0}
+  #lock p{font-size:14px;margin:0 0 16px}
+  #lock input{margin:0 0 12px;padding:16px 12px;font-size:24px;border-radius:12px}
+  #lock .btn{width:100%}
+}
+@media (max-width:430px){
+  #histCard .btn-row,#refCard .btn-row{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+html.m .wrap{width:100%;max-width:none;padding:10px 12px calc(18px + env(safe-area-inset-bottom));margin:0}
+html.m .card,html.m .card.form{width:100%;max-width:none;margin:0 0 12px 0;border-radius:18px;padding:16px 14px}
+html.m #histCard .btn-row,html.m #refCard .btn-row{grid-template-columns:1fr 1fr}
+html.m #histCard .btn-row .btn:nth-child(1),html.m #refCard .btn-row .btn:nth-child(1){grid-column:1/-1}
+html.m .grid2{grid-template-columns:1fr 1fr;gap:10px}
+html.m #lock{background:#F7F7F7;align-items:stretch;justify-content:flex-start;padding:0}
+html.m #lock .box{width:100%;max-width:none;min-height:100dvh;border-radius:0;padding:clamp(26px,10vh,90px) 12px 24px;display:flex;flex-direction:column;justify-content:flex-start;text-align:center;background:#F7F7F7}
+@media (max-width:430px){
+  html.m #histCard .btn-row,html.m #refCard .btn-row{grid-template-columns:1fr}
+  html.m .grid2{grid-template-columns:1fr}
+}
+
+
+/* ===== Modo app móvil: bloquear zoom/pinch accidental y ocupar ancho real ===== */
+html, body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+  touch-action:pan-y;
+}
+#app{
+  width:100%;
+  max-width:100%;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+button,.btn,.tab-btn{
+  touch-action:manipulation;
+}
+input,select,textarea{
+  font-size:16px;
+}
+@media (max-width:820px){
+  input,select,textarea{
+    font-size:16px!important;
+  }
+}
+
+
+/* ===== BIG4 mobile app override: versión realmente táctil para Galaxy Ultra ===== */
+@media (max-width:820px){
+  :root{
+    --phone-pad:14px;
+  }
+
+  html,body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+    background:#F3EEE4;
+    font-size:28px!important;
+    touch-action:pan-y;
+  }
+
+  #app{
+    width:100%;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+
+  .app-header{
+    position:sticky;
+    top:0;
+    z-index:40;
+    padding:calc(14px + env(safe-area-inset-top)) 14px 14px!important;
+    gap:12px!important;
+    box-shadow:0 10px 30px rgba(20,59,43,.22);
+  }
+
+  .logo{
+    font-size:34px!important;
+    gap:12px!important;
+  }
+
+  .logo svg{
+    width:40px!important;
+    height:40px!important;
+  }
+
+  .app-title{
+    font-size:18px!important;
+    line-height:1.2!important;
+    letter-spacing:.9px!important;
+    margin-top:4px!important;
+  }
+
+  .status-pill{
+    font-size:17px!important;
+    padding:10px 12px!important;
+    border-radius:999px!important;
+  }
+
+  .status-pill .d{
+    width:11px!important;
+    height:11px!important;
+  }
+
+  .app-tabs{
+    grid-template-columns:repeat(5,1fr)!important;
+    gap:8px!important;
+    padding:8px!important;
+    border-radius:22px!important;
+  }
+
+  .tab-btn{
+    min-height:78px!important;
+    border-radius:18px!important;
+    padding:8px 4px!important;
+    gap:5px!important;
+  }
+
+  .tab-btn span{
+    font-size:29px!important;
+  }
+
+  .tab-btn b{
+    font-size:15px!important;
+    line-height:1.05!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:14px 14px calc(24px + env(safe-area-inset-bottom))!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 14px!important;
+    padding:18px 18px!important;
+    font-size:22px!important;
+    line-height:1.32!important;
+    border-radius:20px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 16px!important;
+    padding:24px 20px!important;
+    border-radius:26px!important;
+    box-shadow:0 12px 30px rgba(20,59,43,.10)!important;
+  }
+
+  .card h2{
+    font-size:34px!important;
+    line-height:1.05!important;
+    margin-bottom:12px!important;
+  }
+
+  .card .sub{
+    font-size:22px!important;
+    line-height:1.35!important;
+    margin-bottom:20px!important;
+  }
+
+  .drop{
+    padding:30px 18px!important;
+    border-radius:24px!important;
+  }
+
+  .drop .icon{
+    font-size:68px!important;
+  }
+
+  .drop p{
+    font-size:22px!important;
+    line-height:1.3!important;
+    margin:14px 0 20px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:82px!important;
+    padding:20px 22px!important;
+    font-size:25px!important;
+    line-height:1.12!important;
+    border-radius:20px!important;
+    font-weight:900!important;
+  }
+
+  .btn-row{
+    gap:14px!important;
+  }
+
+  #captureCard .btn-row,
+  #histCard .btn-row,
+  #refCard .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:18px!important;
+    gap:8px!important;
+  }
+
+  .field label{
+    font-size:18px!important;
+    line-height:1.1!important;
+    letter-spacing:.8px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:26px!important;
+    min-height:72px!important;
+    padding:18px 16px!important;
+    border-radius:18px!important;
+  }
+
+  .preview{
+    max-height:48dvh!important;
+    border-radius:22px!important;
+  }
+
+  .preview-x{
+    width:58px!important;
+    height:58px!important;
+    font-size:34px!important;
+  }
+
+  .pdfbox{
+    padding:24px 20px!important;
+    font-size:24px!important;
+    border-radius:20px!important;
+  }
+
+  .pdfbox .pdficon{
+    font-size:44px!important;
+  }
+
+  .totals{
+    padding:22px!important;
+    border-radius:22px!important;
+  }
+
+  .totals .row{
+    font-size:24px!important;
+    padding:12px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:34px!important;
+    padding-top:18px!important;
+  }
+
+  .totals input{
+    width:52vw!important;
+    max-width:52vw!important;
+    font-size:30px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:16px!important;
+    padding:7px 12px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw summary{
+    font-size:22px!important;
+  }
+
+  details.raw pre{
+    font-size:19px!important;
+    line-height:1.35!important;
+    padding:18px!important;
+    max-height:32dvh!important;
+    border-radius:20px!important;
+  }
+
+  .hist-cards{
+    margin-top:8px!important;
+  }
+
+  .bcard{
+    padding:22px!important;
+    border-radius:24px!important;
+    margin-bottom:16px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:14px!important;
+  }
+
+  .bcard .n{
+    font-size:19px!important;
+    padding:7px 14px!important;
+  }
+
+  .bcard .emisor{
+    font-size:27px!important;
+    line-height:1.15!important;
+  }
+
+  .bcard .meta{
+    font-size:21px!important;
+    margin-bottom:16px!important;
+  }
+
+  .bcard .rowline{
+    font-size:23px!important;
+    padding:12px 0!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:17px!important;
+    margin-bottom:8px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:23px!important;
+    line-height:1.25!important;
+    padding:16px!important;
+    border-radius:18px!important;
+  }
+
+  .btot{
+    padding:22px!important;
+    border-radius:24px!important;
+  }
+
+  .btot h4{
+    font-size:18px!important;
+    margin-bottom:12px!important;
+  }
+
+  .btot .rowline{
+    font-size:22px!important;
+    padding:10px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:14px!important;
+    padding:22px!important;
+    border-radius:24px!important;
+    margin-bottom:16px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:28px!important;
+    line-height:1.1!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:20px!important;
+    margin-top:4px!important;
+  }
+
+  .rate-row .eq{
+    font-size:22px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:26px!important;
+    min-height:74px!important;
+  }
+
+  .empty{
+    font-size:22px!important;
+    line-height:1.35!important;
+    padding:26px 8px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+    padding:calc(70px + env(safe-area-inset-top)) 18px 24px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+  }
+
+  #lock .logo svg{
+    width:86px!important;
+    height:86px!important;
+  }
+
+  #lock h1{
+    font-size:34px!important;
+    line-height:1.1!important;
+    margin:14px 0 8px!important;
+  }
+
+  #lock p{
+    font-size:22px!important;
+    margin-bottom:24px!important;
+  }
+
+  #lockErr{
+    font-size:20px!important;
+    min-height:30px!important;
+  }
+}
+
+
+/* ===== X10 ULTRA: modo app gigante para Galaxy Ultra ===== */
+@media (max-width:820px){
+  :root{
+    --xpad:16px;
+  }
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    background:#F3EEE4!important;
+    font-size:38px!important;
+    line-height:1.18!important;
+    touch-action:pan-y!important;
+    -webkit-text-size-adjust:100%!important;
+    text-size-adjust:100%!important;
+  }
+
+  #app{
+    width:100%!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    padding:calc(16px + env(safe-area-inset-top)) var(--xpad) 16px!important;
+    gap:14px!important;
+    box-shadow:0 12px 34px rgba(20,59,43,.24)!important;
+  }
+
+  .app-header > div:first-child{
+    min-width:0!important;
+  }
+
+  .logo{
+    font-size:44px!important;
+    line-height:1!important;
+    gap:14px!important;
+  }
+
+  .logo svg{
+    width:54px!important;
+    height:54px!important;
+  }
+
+  .app-title{
+    font-size:24px!important;
+    line-height:1.15!important;
+    letter-spacing:.7px!important;
+    margin-top:8px!important;
+  }
+
+  .status-pill{
+    position:absolute!important;
+    right:16px!important;
+    top:calc(18px + env(safe-area-inset-top))!important;
+    font-size:19px!important;
+    padding:9px 12px!important;
+    border-radius:999px!important;
+    max-width:120px!important;
+  }
+
+  .status-pill .d{
+    width:12px!important;
+    height:12px!important;
+  }
+
+  .app-tabs{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:12px!important;
+    padding:12px!important;
+    border-radius:28px!important;
+  }
+
+  .tab-btn{
+    min-height:118px!important;
+    border-radius:24px!important;
+    padding:12px 8px!important;
+    gap:9px!important;
+  }
+
+  .tab-btn span{
+    font-size:44px!important;
+  }
+
+  .tab-btn b{
+    font-size:24px!important;
+    line-height:1.08!important;
+  }
+
+  .tab-btn:nth-child(5){
+    grid-column:1/-1!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:16px var(--xpad) calc(30px + env(safe-area-inset-bottom))!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 16px!important;
+    padding:24px 22px!important;
+    font-size:30px!important;
+    line-height:1.28!important;
+    border-radius:28px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 18px!important;
+    padding:32px 24px!important;
+    border-radius:34px!important;
+    box-shadow:0 14px 34px rgba(20,59,43,.12)!important;
+  }
+
+  .card h2{
+    font-size:46px!important;
+    line-height:1.04!important;
+    margin:0 0 18px!important;
+  }
+
+  .card .sub{
+    font-size:30px!important;
+    line-height:1.32!important;
+    margin:0 0 28px!important;
+  }
+
+  .drop{
+    padding:42px 22px!important;
+    border-radius:32px!important;
+    border-width:3px!important;
+  }
+
+  .drop .icon{
+    font-size:92px!important;
+  }
+
+  .drop p{
+    font-size:30px!important;
+    line-height:1.25!important;
+    margin:20px 0 28px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:118px!important;
+    padding:28px 26px!important;
+    font-size:34px!important;
+    line-height:1.08!important;
+    border-radius:28px!important;
+    font-weight:950!important;
+    gap:14px!important;
+  }
+
+  .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:18px!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:26px!important;
+    gap:12px!important;
+  }
+
+  .field label{
+    font-size:24px!important;
+    line-height:1.1!important;
+    letter-spacing:.8px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:36px!important;
+    min-height:104px!important;
+    padding:26px 22px!important;
+    border-radius:26px!important;
+    border-width:2px!important;
+  }
+
+  .preview{
+    max-height:52dvh!important;
+    border-radius:30px!important;
+  }
+
+  .preview-x{
+    width:82px!important;
+    height:82px!important;
+    font-size:50px!important;
+    top:14px!important;
+    right:14px!important;
+  }
+
+  .pdfbox{
+    padding:34px 26px!important;
+    font-size:34px!important;
+    border-radius:28px!important;
+    gap:18px!important;
+  }
+
+  .pdfbox .pdficon{
+    font-size:66px!important;
+  }
+
+  #scanBtn{
+    margin-top:22px!important;
+  }
+
+  .totals{
+    padding:30px!important;
+    border-radius:30px!important;
+  }
+
+  .totals .row{
+    font-size:34px!important;
+    padding:18px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:46px!important;
+    padding-top:24px!important;
+  }
+
+  .totals input{
+    width:55vw!important;
+    max-width:55vw!important;
+    font-size:40px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:22px!important;
+    padding:10px 16px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw{
+    margin-top:24px!important;
+  }
+
+  details.raw summary{
+    font-size:32px!important;
+  }
+
+  details.raw pre{
+    font-size:26px!important;
+    line-height:1.3!important;
+    padding:24px!important;
+    max-height:34dvh!important;
+    border-radius:28px!important;
+  }
+
+  .hist-cards{
+    margin-top:10px!important;
+  }
+
+  .bcard{
+    padding:30px!important;
+    border-radius:32px!important;
+    margin-bottom:20px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:20px!important;
+  }
+
+  .bcard .n{
+    font-size:26px!important;
+    padding:10px 18px!important;
+  }
+
+  .bcard .emisor{
+    font-size:38px!important;
+    line-height:1.08!important;
+  }
+
+  .bcard .meta{
+    font-size:30px!important;
+    margin-bottom:22px!important;
+  }
+
+  .bcard .rowline{
+    font-size:34px!important;
+    padding:18px 0!important;
+  }
+
+  .bcard .desc{
+    margin-top:22px!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:24px!important;
+    margin-bottom:12px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:33px!important;
+    line-height:1.18!important;
+    padding:24px!important;
+    border-radius:26px!important;
+  }
+
+  .btot{
+    padding:30px!important;
+    border-radius:32px!important;
+  }
+
+  .btot h4{
+    font-size:26px!important;
+    margin-bottom:18px!important;
+  }
+
+  .btot .rowline{
+    font-size:32px!important;
+    padding:16px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:20px!important;
+    padding:32px!important;
+    border-radius:32px!important;
+    margin-bottom:22px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:40px!important;
+    line-height:1.05!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:28px!important;
+    margin-top:8px!important;
+  }
+
+  .rate-row .eq{
+    font-size:30px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:36px!important;
+    min-height:108px!important;
+  }
+
+  .empty{
+    font-size:32px!important;
+    line-height:1.28!important;
+    padding:34px 8px!important;
+  }
+
+  table{
+    font-size:28px!important;
+  }
+
+  th,td{
+    padding:18px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+    padding:calc(84px + env(safe-area-inset-top)) 20px 28px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+  }
+
+  #lock .logo{
+    margin-bottom:20px!important;
+  }
+
+  #lock .logo svg{
+    width:122px!important;
+    height:122px!important;
+  }
+
+  #lock h1{
+    font-size:46px!important;
+    line-height:1.05!important;
+    margin:20px 0 12px!important;
+  }
+
+  #lock p{
+    font-size:32px!important;
+    line-height:1.25!important;
+    margin-bottom:32px!important;
+  }
+
+  #lockErr{
+    font-size:28px!important;
+    min-height:44px!important;
+  }
+
+  #lock .btn{
+    min-height:118px!important;
+  }
+}
+
+
+/* ===== X100 DEFINITIVO: iconos propios SVG + navegación app móvil gigante ===== */
+@media (max-width:820px){
+  :root{
+    --xpad:18px;
+    --ico-stroke:#F5EFE2;
+    --ico-active:#143B2B;
+  }
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    background:#F3EEE4!important;
+    font-size:42px!important;
+    line-height:1.16!important;
+    touch-action:pan-y!important;
+    -webkit-text-size-adjust:100%!important;
+    text-size-adjust:100%!important;
+  }
+
+  #app{
+    width:100%!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    padding:calc(18px + env(safe-area-inset-top)) var(--xpad) 18px!important;
+    gap:18px!important;
+    box-shadow:0 14px 36px rgba(20,59,43,.25)!important;
+  }
+
+  .app-header > div:first-child{
+    min-width:0!important;
+    padding-right:150px!important;
+  }
+
+  .logo{
+    font-size:46px!important;
+    line-height:1!important;
+    gap:16px!important;
+  }
+
+  .logo svg{
+    width:62px!important;
+    height:62px!important;
+  }
+
+  .app-title{
+    font-size:25px!important;
+    line-height:1.16!important;
+    letter-spacing:.7px!important;
+    margin-top:9px!important;
+  }
+
+  .status-pill{
+    position:absolute!important;
+    right:18px!important;
+    top:calc(20px + env(safe-area-inset-top))!important;
+    font-size:20px!important;
+    padding:10px 12px!important;
+    border-radius:999px!important;
+    max-width:132px!important;
+  }
+
+  .status-pill .d{
+    width:13px!important;
+    height:13px!important;
+  }
+
+  .app-tabs{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:16px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  .tab-btn{
+    width:100%!important;
+    min-height:168px!important;
+    border-radius:34px!important;
+    padding:24px 26px!important;
+    display:grid!important;
+    grid-template-columns:120px 1fr!important;
+    align-items:center!important;
+    justify-items:start!important;
+    gap:26px!important;
+    background:rgba(245,239,226,.11)!important;
+    border:2px solid rgba(245,239,226,.20)!important;
+    color:#F5EFE2!important;
+    box-shadow:none!important;
+  }
+
+  .tab-btn.active{
+    background:#F5EFE2!important;
+    color:#143B2B!important;
+    border-color:#F5EFE2!important;
+    box-shadow:0 16px 32px rgba(0,0,0,.18)!important;
+  }
+
+  .tab-btn b{
+    font-size:40px!important;
+    line-height:1.04!important;
+    font-weight:950!important;
+    letter-spacing:-.4px!important;
+  }
+
+  .tab-btn span{
+    display:none!important;
+  }
+
+  .app-ico{
+    width:112px!important;
+    height:112px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.7!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn-ico{
+    width:76px!important;
+    height:76px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.4!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .btn > span{
+    display:inline-block!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:18px var(--xpad) calc(34px + env(safe-area-inset-bottom))!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 18px!important;
+    padding:28px 24px!important;
+    font-size:34px!important;
+    line-height:1.25!important;
+    border-radius:34px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 22px!important;
+    padding:38px 28px!important;
+    border-radius:42px!important;
+    box-shadow:0 18px 42px rgba(20,59,43,.14)!important;
+  }
+
+  .card h2{
+    font-size:54px!important;
+    line-height:1.02!important;
+    margin:0 0 22px!important;
+    letter-spacing:-.9px!important;
+  }
+
+  .card .sub{
+    font-size:36px!important;
+    line-height:1.26!important;
+    margin:0 0 34px!important;
+  }
+
+  .drop{
+    padding:50px 26px!important;
+    border-radius:40px!important;
+    border-width:4px!important;
+  }
+
+  .drop .icon{
+    display:none!important;
+  }
+
+  .drop:before{
+    content:"";
+    display:block;
+    width:136px;
+    height:136px;
+    margin:0 auto 24px;
+    border-radius:36px;
+    background:rgba(45,106,79,.12);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .drop p{
+    font-size:36px!important;
+    line-height:1.22!important;
+    margin:0 0 34px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:152px!important;
+    padding:34px 30px!important;
+    font-size:42px!important;
+    line-height:1.04!important;
+    border-radius:36px!important;
+    font-weight:950!important;
+    gap:22px!important;
+  }
+
+  .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:24px!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:34px!important;
+    gap:16px!important;
+  }
+
+  .field label{
+    font-size:30px!important;
+    line-height:1.05!important;
+    letter-spacing:.8px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:44px!important;
+    min-height:132px!important;
+    padding:32px 26px!important;
+    border-radius:34px!important;
+    border-width:3px!important;
+  }
+
+  .preview{
+    max-height:56dvh!important;
+    border-radius:38px!important;
+  }
+
+  .preview-x{
+    width:104px!important;
+    height:104px!important;
+    font-size:64px!important;
+    top:18px!important;
+    right:18px!important;
+  }
+
+  .pdfbox{
+    padding:42px 32px!important;
+    font-size:42px!important;
+    border-radius:36px!important;
+    gap:24px!important;
+  }
+
+  .pdfbox .pdficon{
+    display:none!important;
+  }
+
+  #scanBtn{
+    margin-top:28px!important;
+  }
+
+  .totals{
+    padding:38px!important;
+    border-radius:38px!important;
+  }
+
+  .totals .row{
+    font-size:42px!important;
+    padding:22px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:56px!important;
+    padding-top:30px!important;
+  }
+
+  .totals input{
+    width:58vw!important;
+    max-width:58vw!important;
+    font-size:48px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:28px!important;
+    padding:14px 20px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw{
+    margin-top:32px!important;
+  }
+
+  details.raw summary{
+    font-size:40px!important;
+  }
+
+  details.raw pre{
+    font-size:32px!important;
+    line-height:1.24!important;
+    padding:30px!important;
+    max-height:38dvh!important;
+    border-radius:36px!important;
+  }
+
+  .hist-cards{
+    margin-top:12px!important;
+  }
+
+  .bcard{
+    padding:38px!important;
+    border-radius:40px!important;
+    margin-bottom:26px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:26px!important;
+  }
+
+  .bcard .n{
+    font-size:32px!important;
+    padding:14px 24px!important;
+  }
+
+  .bcard .emisor{
+    font-size:46px!important;
+    line-height:1.04!important;
+  }
+
+  .bcard .meta{
+    font-size:36px!important;
+    margin-bottom:30px!important;
+  }
+
+  .bcard .rowline{
+    font-size:42px!important;
+    padding:22px 0!important;
+  }
+
+  .bcard .desc{
+    margin-top:30px!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:30px!important;
+    margin-bottom:16px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:40px!important;
+    line-height:1.12!important;
+    padding:30px!important;
+    border-radius:34px!important;
+  }
+
+  .btot{
+    padding:38px!important;
+    border-radius:40px!important;
+  }
+
+  .btot h4{
+    font-size:32px!important;
+    margin-bottom:22px!important;
+  }
+
+  .btot .rowline{
+    font-size:40px!important;
+    padding:20px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:28px!important;
+    padding:40px!important;
+    border-radius:40px!important;
+    margin-bottom:28px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:52px!important;
+    line-height:1!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:34px!important;
+    margin-top:10px!important;
+  }
+
+  .rate-row .eq{
+    font-size:36px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:44px!important;
+    min-height:132px!important;
+  }
+
+  .empty{
+    font-size:40px!important;
+    line-height:1.2!important;
+    padding:42px 8px!important;
+  }
+
+  table{
+    font-size:36px!important;
+  }
+
+  th,td{
+    padding:24px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+    padding:calc(90px + env(safe-area-inset-top)) 24px 34px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+  }
+
+  #lock .logo{
+    margin-bottom:28px!important;
+  }
+
+  #lock .logo svg{
+    width:156px!important;
+    height:156px!important;
+  }
+
+  #lock h1{
+    font-size:56px!important;
+    line-height:1.02!important;
+    margin:24px 0 18px!important;
+  }
+
+  #lock p{
+    font-size:40px!important;
+    line-height:1.18!important;
+    margin-bottom:42px!important;
+  }
+
+  #lockErr{
+    font-size:34px!important;
+    min-height:54px!important;
+  }
+
+  #lock .btn{
+    min-height:152px!important;
+  }
+}
+
+
+/* ===== X65 MOBILE: punto medio entre X10 y X100, con iconos SVG personalizados ===== */
+@media (max-width:820px){
+  :root{
+    --xpad:16px;
+  }
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    background:#F3EEE4!important;
+    font-size:30px!important;
+    line-height:1.18!important;
+    touch-action:pan-y!important;
+    -webkit-text-size-adjust:100%!important;
+    text-size-adjust:100%!important;
+  }
+
+  #app{
+    width:100%!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:1fr auto!important;
+    padding:calc(14px + env(safe-area-inset-top)) var(--xpad) 14px!important;
+    gap:12px!important;
+    box-shadow:0 12px 32px rgba(20,59,43,.22)!important;
+  }
+
+  .app-header > div:first-child{
+    min-width:0!important;
+    padding-right:0!important;
+  }
+
+  .logo{
+    font-size:31px!important;
+    line-height:1!important;
+    gap:10px!important;
+  }
+
+  .logo svg{
+    width:42px!important;
+    height:42px!important;
+  }
+
+  .app-title{
+    font-size:17px!important;
+    line-height:1.14!important;
+    letter-spacing:.6px!important;
+    margin-top:6px!important;
+  }
+
+  .status-pill{
+    position:static!important;
+    align-self:start!important;
+    justify-self:end!important;
+    font-size:14px!important;
+    padding:8px 10px!important;
+    border-radius:999px!important;
+    max-width:none!important;
+  }
+
+  .status-pill .d{
+    width:9px!important;
+    height:9px!important;
+  }
+
+  .app-tabs{
+    grid-column:1/-1!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    gap:8px!important;
+    padding:8px!important;
+    border-radius:24px!important;
+    border:1px solid rgba(245,239,226,.18)!important;
+    background:rgba(245,239,226,.10)!important;
+  }
+
+  .tab-btn{
+    width:100%!important;
+    min-height:88px!important;
+    border-radius:20px!important;
+    padding:10px 4px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:7px!important;
+    background:transparent!important;
+    border:1px solid transparent!important;
+    color:#F5EFE2!important;
+    box-shadow:none!important;
+  }
+
+  .tab-btn.active{
+    background:#F5EFE2!important;
+    color:#143B2B!important;
+    border-color:#F5EFE2!important;
+    box-shadow:0 10px 22px rgba(0,0,0,.16)!important;
+  }
+
+  .tab-btn b{
+    font-size:15px!important;
+    line-height:1.05!important;
+    font-weight:950!important;
+    letter-spacing:-.1px!important;
+  }
+
+  .tab-btn span{
+    display:none!important;
+  }
+
+  .app-ico{
+    width:48px!important;
+    height:48px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn-ico{
+    width:52px!important;
+    height:52px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.6!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .btn > span{
+    display:inline-block!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:14px var(--xpad) calc(28px + env(safe-area-inset-bottom))!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 14px!important;
+    padding:18px 18px!important;
+    font-size:22px!important;
+    line-height:1.28!important;
+    border-radius:24px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 16px!important;
+    padding:26px 22px!important;
+    border-radius:28px!important;
+    box-shadow:0 14px 34px rgba(20,59,43,.12)!important;
+  }
+
+  .card h2{
+    font-size:35px!important;
+    line-height:1.03!important;
+    margin:0 0 14px!important;
+    letter-spacing:-.4px!important;
+  }
+
+  .card .sub{
+    font-size:23px!important;
+    line-height:1.28!important;
+    margin:0 0 22px!important;
+  }
+
+  .drop{
+    padding:32px 18px!important;
+    border-radius:26px!important;
+    border-width:3px!important;
+  }
+
+  .drop .icon{
+    display:none!important;
+  }
+
+  .drop:before{
+    content:"";
+    display:block;
+    width:88px;
+    height:88px;
+    margin:0 auto 18px;
+    border-radius:24px;
+    background:rgba(45,106,79,.12);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .drop p{
+    font-size:23px!important;
+    line-height:1.25!important;
+    margin:0 0 22px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:96px!important;
+    padding:24px 22px!important;
+    font-size:27px!important;
+    line-height:1.08!important;
+    border-radius:24px!important;
+    font-weight:950!important;
+    gap:15px!important;
+  }
+
+  .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:16px!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:22px!important;
+    gap:10px!important;
+  }
+
+  .field label{
+    font-size:20px!important;
+    line-height:1.05!important;
+    letter-spacing:.8px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:29px!important;
+    min-height:86px!important;
+    padding:22px 18px!important;
+    border-radius:22px!important;
+    border-width:2px!important;
+  }
+
+  .preview{
+    max-height:52dvh!important;
+    border-radius:26px!important;
+  }
+
+  .preview-x{
+    width:68px!important;
+    height:68px!important;
+    font-size:42px!important;
+    top:14px!important;
+    right:14px!important;
+  }
+
+  .pdfbox{
+    padding:28px 22px!important;
+    font-size:27px!important;
+    border-radius:24px!important;
+    gap:18px!important;
+  }
+
+  .pdfbox .pdficon{
+    display:none!important;
+  }
+
+  #scanBtn{
+    margin-top:20px!important;
+  }
+
+  .totals{
+    padding:24px!important;
+    border-radius:24px!important;
+  }
+
+  .totals .row{
+    font-size:27px!important;
+    padding:14px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:36px!important;
+    padding-top:20px!important;
+  }
+
+  .totals input{
+    width:55vw!important;
+    max-width:55vw!important;
+    font-size:32px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:18px!important;
+    padding:9px 14px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw{
+    margin-top:22px!important;
+  }
+
+  details.raw summary{
+    font-size:26px!important;
+  }
+
+  details.raw pre{
+    font-size:21px!important;
+    line-height:1.28!important;
+    padding:22px!important;
+    max-height:36dvh!important;
+    border-radius:24px!important;
+  }
+
+  .hist-cards{
+    margin-top:8px!important;
+  }
+
+  .bcard{
+    padding:25px!important;
+    border-radius:28px!important;
+    margin-bottom:18px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:18px!important;
+  }
+
+  .bcard .n{
+    font-size:21px!important;
+    padding:9px 16px!important;
+  }
+
+  .bcard .emisor{
+    font-size:30px!important;
+    line-height:1.07!important;
+  }
+
+  .bcard .meta{
+    font-size:23px!important;
+    margin-bottom:20px!important;
+  }
+
+  .bcard .rowline{
+    font-size:27px!important;
+    padding:14px 0!important;
+  }
+
+  .bcard .desc{
+    margin-top:20px!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:20px!important;
+    margin-bottom:10px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:26px!important;
+    line-height:1.18!important;
+    padding:20px!important;
+    border-radius:22px!important;
+  }
+
+  .btot{
+    padding:25px!important;
+    border-radius:28px!important;
+  }
+
+  .btot h4{
+    font-size:22px!important;
+    margin-bottom:14px!important;
+  }
+
+  .btot .rowline{
+    font-size:26px!important;
+    padding:12px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:18px!important;
+    padding:26px!important;
+    border-radius:28px!important;
+    margin-bottom:18px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:34px!important;
+    line-height:1!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:22px!important;
+    margin-top:7px!important;
+  }
+
+  .rate-row .eq{
+    font-size:23px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:29px!important;
+    min-height:86px!important;
+  }
+
+  .empty{
+    font-size:26px!important;
+    line-height:1.23!important;
+    padding:28px 8px!important;
+  }
+
+  table{
+    font-size:23px!important;
+  }
+
+  th,td{
+    padding:16px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+    padding:calc(58px + env(safe-area-inset-top)) 18px 28px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+  }
+
+  #lock .logo{
+    margin-bottom:18px!important;
+  }
+
+  #lock .logo svg{
+    width:102px!important;
+    height:102px!important;
+  }
+
+  #lock h1{
+    font-size:36px!important;
+    line-height:1.04!important;
+    margin:16px 0 12px!important;
+  }
+
+  #lock p{
+    font-size:26px!important;
+    line-height:1.22!important;
+    margin-bottom:26px!important;
+  }
+
+  #lockErr{
+    font-size:22px!important;
+    min-height:36px!important;
+  }
+
+  #lock .btn{
+    min-height:96px!important;
+  }
+}
+@media (max-width:390px){
+  .tab-btn b{font-size:13px!important}
+  .app-ico{width:42px!important;height:42px!important}
+  .tab-btn{min-height:80px!important}
+}
+
+
+/* ===== X30 MOBILE: iconos personalizados, escala más compacta para S26 Ultra ===== */
+@media (max-width:820px){
+  :root{
+    --xpad:14px;
+  }
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    background:#F3EEE4!important;
+    font-size:20px!important;
+    line-height:1.28!important;
+    touch-action:pan-y!important;
+    -webkit-text-size-adjust:100%!important;
+    text-size-adjust:100%!important;
+  }
+
+  #app{
+    width:100%!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:1fr auto!important;
+    padding:calc(10px + env(safe-area-inset-top)) var(--xpad) 10px!important;
+    gap:9px!important;
+    box-shadow:0 10px 26px rgba(20,59,43,.20)!important;
+  }
+
+  .app-header > div:first-child{
+    min-width:0!important;
+    padding-right:0!important;
+  }
+
+  .logo{
+    font-size:23px!important;
+    line-height:1!important;
+    gap:8px!important;
+  }
+
+  .logo svg{
+    width:30px!important;
+    height:30px!important;
+  }
+
+  .app-title{
+    font-size:12px!important;
+    line-height:1.15!important;
+    letter-spacing:.55px!important;
+    margin-top:4px!important;
+  }
+
+  .status-pill{
+    position:static!important;
+    align-self:start!important;
+    justify-self:end!important;
+    font-size:10px!important;
+    padding:6px 8px!important;
+    border-radius:999px!important;
+    max-width:none!important;
+  }
+
+  .status-pill .d{
+    width:7px!important;
+    height:7px!important;
+  }
+
+  .app-tabs{
+    grid-column:1/-1!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    gap:5px!important;
+    padding:5px!important;
+    border-radius:17px!important;
+    border:1px solid rgba(245,239,226,.18)!important;
+    background:rgba(245,239,226,.10)!important;
+  }
+
+  .tab-btn{
+    width:100%!important;
+    min-height:58px!important;
+    border-radius:14px!important;
+    padding:6px 2px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    background:transparent!important;
+    border:1px solid transparent!important;
+    color:#F5EFE2!important;
+    box-shadow:none!important;
+  }
+
+  .tab-btn.active{
+    background:#F5EFE2!important;
+    color:#143B2B!important;
+    border-color:#F5EFE2!important;
+    box-shadow:0 8px 18px rgba(0,0,0,.14)!important;
+  }
+
+  .tab-btn b{
+    font-size:10.5px!important;
+    line-height:1.02!important;
+    font-weight:900!important;
+    letter-spacing:-.05px!important;
+  }
+
+  .tab-btn span{
+    display:none!important;
+  }
+
+  .app-ico{
+    width:30px!important;
+    height:30px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:5!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn-ico{
+    width:34px!important;
+    height:34px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .btn > span{
+    display:inline-block!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:12px var(--xpad) calc(22px + env(safe-area-inset-bottom))!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 12px!important;
+    padding:13px 14px!important;
+    font-size:16px!important;
+    line-height:1.3!important;
+    border-radius:17px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 13px!important;
+    padding:18px 15px!important;
+    border-radius:21px!important;
+    box-shadow:0 10px 26px rgba(20,59,43,.10)!important;
+  }
+
+  .card h2{
+    font-size:24px!important;
+    line-height:1.06!important;
+    margin:0 0 9px!important;
+    letter-spacing:-.25px!important;
+  }
+
+  .card .sub{
+    font-size:16px!important;
+    line-height:1.35!important;
+    margin:0 0 16px!important;
+  }
+
+  .drop{
+    padding:22px 13px!important;
+    border-radius:20px!important;
+    border-width:2px!important;
+  }
+
+  .drop .icon{
+    display:none!important;
+  }
+
+  .drop:before{
+    content:"";
+    display:block;
+    width:58px;
+    height:58px;
+    margin:0 auto 12px;
+    border-radius:16px;
+    background:rgba(45,106,79,.12);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .drop p{
+    font-size:16px!important;
+    line-height:1.28!important;
+    margin:0 0 16px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:66px!important;
+    padding:15px 16px!important;
+    font-size:18px!important;
+    line-height:1.1!important;
+    border-radius:17px!important;
+    font-weight:900!important;
+    gap:10px!important;
+  }
+
+  .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:11px!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:15px!important;
+    gap:6px!important;
+  }
+
+  .field label{
+    font-size:13px!important;
+    line-height:1.05!important;
+    letter-spacing:.7px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:18px!important;
+    min-height:58px!important;
+    padding:14px 13px!important;
+    border-radius:16px!important;
+    border-width:1.5px!important;
+  }
+
+  .preview{
+    max-height:48dvh!important;
+    border-radius:20px!important;
+  }
+
+  .preview-x{
+    width:48px!important;
+    height:48px!important;
+    font-size:30px!important;
+    top:10px!important;
+    right:10px!important;
+  }
+
+  .pdfbox{
+    padding:19px 15px!important;
+    font-size:18px!important;
+    border-radius:17px!important;
+    gap:12px!important;
+  }
+
+  .pdfbox .pdficon{
+    display:none!important;
+  }
+
+  #scanBtn{
+    margin-top:14px!important;
+  }
+
+  .totals{
+    padding:17px!important;
+    border-radius:18px!important;
+  }
+
+  .totals .row{
+    font-size:18px!important;
+    padding:9px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:24px!important;
+    padding-top:14px!important;
+  }
+
+  .totals input{
+    width:52vw!important;
+    max-width:52vw!important;
+    font-size:21px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:12px!important;
+    padding:6px 10px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw{
+    margin-top:15px!important;
+  }
+
+  details.raw summary{
+    font-size:18px!important;
+  }
+
+  details.raw pre{
+    font-size:14px!important;
+    line-height:1.32!important;
+    padding:15px!important;
+    max-height:32dvh!important;
+    border-radius:17px!important;
+  }
+
+  .hist-cards{
+    margin-top:6px!important;
+  }
+
+  .bcard{
+    padding:18px!important;
+    border-radius:20px!important;
+    margin-bottom:13px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:13px!important;
+  }
+
+  .bcard .n{
+    font-size:14px!important;
+    padding:6px 11px!important;
+  }
+
+  .bcard .emisor{
+    font-size:20px!important;
+    line-height:1.12!important;
+  }
+
+  .bcard .meta{
+    font-size:16px!important;
+    margin-bottom:14px!important;
+  }
+
+  .bcard .rowline{
+    font-size:18px!important;
+    padding:9px 0!important;
+  }
+
+  .bcard .desc{
+    margin-top:14px!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:13px!important;
+    margin-bottom:7px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:17px!important;
+    line-height:1.22!important;
+    padding:14px!important;
+    border-radius:16px!important;
+  }
+
+  .btot{
+    padding:18px!important;
+    border-radius:20px!important;
+  }
+
+  .btot h4{
+    font-size:15px!important;
+    margin-bottom:10px!important;
+  }
+
+  .btot .rowline{
+    font-size:17px!important;
+    padding:8px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+    padding:18px!important;
+    border-radius:20px!important;
+    margin-bottom:13px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:23px!important;
+    line-height:1!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:15px!important;
+    margin-top:5px!important;
+  }
+
+  .rate-row .eq{
+    font-size:16px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:18px!important;
+    min-height:58px!important;
+  }
+
+  .empty{
+    font-size:17px!important;
+    line-height:1.28!important;
+    padding:20px 8px!important;
+  }
+
+  table{
+    font-size:15px!important;
+  }
+
+  th,td{
+    padding:11px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+    padding:calc(44px + env(safe-area-inset-top)) 16px 24px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+  }
+
+  #lock .logo{
+    margin-bottom:12px!important;
+  }
+
+  #lock .logo svg{
+    width:72px!important;
+    height:72px!important;
+  }
+
+  #lock h1{
+    font-size:25px!important;
+    line-height:1.08!important;
+    margin:12px 0 8px!important;
+  }
+
+  #lock p{
+    font-size:18px!important;
+    line-height:1.28!important;
+    margin-bottom:18px!important;
+  }
+
+  #lockErr{
+    font-size:15px!important;
+    min-height:25px!important;
+  }
+
+  #lock .btn{
+    min-height:66px!important;
+  }
+}
+@media (max-width:390px){
+  .tab-btn b{font-size:9.5px!important}
+  .app-ico{width:27px!important;height:27px!important}
+  .tab-btn{min-height:54px!important}
+}
+
+
+/* ===== X25 MOBILE + SCROLL: escala final más compacta y desplazamiento vertical habilitado ===== */
+@media (max-width:820px){
+  :root{
+    --xpad:13px;
+  }
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:100%!important;
+    height:auto!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    background:#F3EEE4!important;
+    font-size:18px!important;
+    line-height:1.30!important;
+    touch-action:pan-y!important;
+    -webkit-text-size-adjust:100%!important;
+    text-size-adjust:100%!important;
+  }
+
+  #app{
+    width:100%!important;
+    min-height:100dvh!important;
+    height:auto!important;
+    overflow-x:hidden!important;
+    overflow-y:visible!important;
+  }
+
+  .tab-section.active-tab{
+    display:block!important;
+    overflow:visible!important;
+  }
+
+  .app-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:50!important;
+    display:grid!important;
+    grid-template-columns:1fr auto!important;
+    padding:calc(9px + env(safe-area-inset-top)) var(--xpad) 9px!important;
+    gap:8px!important;
+    box-shadow:0 9px 24px rgba(20,59,43,.20)!important;
+  }
+
+  .app-header > div:first-child{
+    min-width:0!important;
+    padding-right:0!important;
+  }
+
+  .logo{
+    font-size:21px!important;
+    line-height:1!important;
+    gap:8px!important;
+  }
+
+  .logo svg{
+    width:28px!important;
+    height:28px!important;
+  }
+
+  .app-title{
+    font-size:11.5px!important;
+    line-height:1.15!important;
+    letter-spacing:.5px!important;
+    margin-top:3px!important;
+  }
+
+  .status-pill{
+    position:static!important;
+    align-self:start!important;
+    justify-self:end!important;
+    font-size:9.5px!important;
+    padding:5px 7px!important;
+    border-radius:999px!important;
+    max-width:none!important;
+  }
+
+  .status-pill .d{
+    width:7px!important;
+    height:7px!important;
+  }
+
+  .app-tabs{
+    grid-column:1/-1!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    gap:5px!important;
+    padding:5px!important;
+    border-radius:16px!important;
+    border:1px solid rgba(245,239,226,.18)!important;
+    background:rgba(245,239,226,.10)!important;
+  }
+
+  .tab-btn{
+    width:100%!important;
+    min-height:52px!important;
+    border-radius:13px!important;
+    padding:5px 2px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:3px!important;
+    background:transparent!important;
+    border:1px solid transparent!important;
+    color:#F5EFE2!important;
+    box-shadow:none!important;
+  }
+
+  .tab-btn.active{
+    background:#F5EFE2!important;
+    color:#143B2B!important;
+    border-color:#F5EFE2!important;
+    box-shadow:0 7px 16px rgba(0,0,0,.14)!important;
+  }
+
+  .tab-btn b{
+    font-size:9.5px!important;
+    line-height:1.02!important;
+    font-weight:900!important;
+    letter-spacing:-.05px!important;
+  }
+
+  .tab-btn span{
+    display:none!important;
+  }
+
+  .app-ico{
+    width:27px!important;
+    height:27px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:5!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn-ico{
+    width:30px!important;
+    height:30px!important;
+    stroke:currentColor!important;
+    fill:none!important;
+    stroke-width:4.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    flex:none!important;
+  }
+
+  .btn{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .btn > span{
+    display:inline-block!important;
+  }
+
+  .wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:11px var(--xpad) calc(24px + env(safe-area-inset-bottom))!important;
+    overflow:visible!important;
+  }
+
+  .banner{
+    width:100%!important;
+    margin:0 0 11px!important;
+    padding:12px 13px!important;
+    font-size:14.5px!important;
+    line-height:1.3!important;
+    border-radius:16px!important;
+  }
+
+  .card,.card.form{
+    width:100%!important;
+    max-width:none!important;
+    margin:0 0 12px!important;
+    padding:16px 14px!important;
+    border-radius:19px!important;
+    box-shadow:0 9px 24px rgba(20,59,43,.10)!important;
+  }
+
+  .card h2{
+    font-size:22px!important;
+    line-height:1.06!important;
+    margin:0 0 8px!important;
+    letter-spacing:-.2px!important;
+  }
+
+  .card .sub{
+    font-size:14.5px!important;
+    line-height:1.35!important;
+    margin:0 0 14px!important;
+  }
+
+  .drop{
+    padding:19px 12px!important;
+    border-radius:18px!important;
+    border-width:2px!important;
+  }
+
+  .drop .icon{
+    display:none!important;
+  }
+
+  .drop:before{
+    content:"";
+    display:block;
+    width:52px;
+    height:52px;
+    margin:0 auto 10px;
+    border-radius:14px;
+    background:rgba(45,106,79,.12);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 18h44v34H10zM22 18l5-8h10l5 8M32 44a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' fill='none' stroke='black' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  .drop p{
+    font-size:14.5px!important;
+    line-height:1.28!important;
+    margin:0 0 14px!important;
+  }
+
+  .btn,.btn.full,.btn.ghost,.btn.lime,.btn.salto,.btn.danger{
+    min-height:58px!important;
+    padding:13px 14px!important;
+    font-size:16.5px!important;
+    line-height:1.12!important;
+    border-radius:15px!important;
+    font-weight:900!important;
+    gap:9px!important;
+  }
+
+  .btn-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  .grid2{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+  }
+
+  .field{
+    margin-bottom:13px!important;
+    gap:5px!important;
+  }
+
+  .field label{
+    font-size:12px!important;
+    line-height:1.05!important;
+    letter-spacing:.7px!important;
+  }
+
+  input,select,textarea,
+  .field input,.field select,
+  #lock input{
+    font-size:16.5px!important;
+    min-height:52px!important;
+    padding:12px 12px!important;
+    border-radius:14px!important;
+    border-width:1.5px!important;
+  }
+
+  .preview{
+    max-height:52dvh!important;
+    border-radius:18px!important;
+  }
+
+  .preview-x{
+    width:44px!important;
+    height:44px!important;
+    font-size:27px!important;
+    top:9px!important;
+    right:9px!important;
+  }
+
+  .pdfbox{
+    padding:17px 14px!important;
+    font-size:16.5px!important;
+    border-radius:15px!important;
+    gap:10px!important;
+  }
+
+  .pdfbox .pdficon{
+    display:none!important;
+  }
+
+  #scanBtn{
+    margin-top:12px!important;
+  }
+
+  .totals{
+    padding:15px!important;
+    border-radius:16px!important;
+  }
+
+  .totals .row{
+    font-size:16.5px!important;
+    padding:8px 0!important;
+  }
+
+  .totals .row.big{
+    font-size:22px!important;
+    padding-top:12px!important;
+  }
+
+  .totals input{
+    width:52vw!important;
+    max-width:52vw!important;
+    font-size:19px!important;
+  }
+
+  .tag,.pill-mini{
+    font-size:11px!important;
+    padding:5px 9px!important;
+    border-radius:999px!important;
+  }
+
+  details.raw{
+    margin-top:13px!important;
+  }
+
+  details.raw summary{
+    font-size:16.5px!important;
+  }
+
+  details.raw pre{
+    font-size:13px!important;
+    line-height:1.32!important;
+    padding:13px!important;
+    max-height:none!important;
+    overflow:auto!important;
+    border-radius:15px!important;
+  }
+
+  .hist-cards{
+    margin-top:5px!important;
+  }
+
+  .bcard{
+    padding:16px!important;
+    border-radius:18px!important;
+    margin-bottom:12px!important;
+  }
+
+  .bcard .top{
+    margin-bottom:12px!important;
+  }
+
+  .bcard .n{
+    font-size:13px!important;
+    padding:5px 10px!important;
+  }
+
+  .bcard .emisor{
+    font-size:18px!important;
+    line-height:1.12!important;
+  }
+
+  .bcard .meta{
+    font-size:14.5px!important;
+    margin-bottom:12px!important;
+  }
+
+  .bcard .rowline{
+    font-size:16.5px!important;
+    padding:8px 0!important;
+  }
+
+  .bcard .desc{
+    margin-top:12px!important;
+  }
+
+  .bcard .desc .lab{
+    font-size:12px!important;
+    margin-bottom:6px!important;
+  }
+
+  .bcard .desc .editable{
+    font-size:15.5px!important;
+    line-height:1.22!important;
+    padding:12px!important;
+    border-radius:14px!important;
+  }
+
+  .btot{
+    padding:16px!important;
+    border-radius:18px!important;
+  }
+
+  .btot h4{
+    font-size:14px!important;
+    margin-bottom:8px!important;
+  }
+
+  .btot .rowline{
+    font-size:15.5px!important;
+    padding:7px 0!important;
+  }
+
+  .rate-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    padding:16px!important;
+    border-radius:18px!important;
+    margin-bottom:12px!important;
+  }
+
+  .rate-row .lbl{
+    font-size:21px!important;
+    line-height:1!important;
+  }
+
+  .rate-row .lbl small{
+    font-size:14px!important;
+    margin-top:4px!important;
+  }
+
+  .rate-row .eq{
+    font-size:14.5px!important;
+  }
+
+  .rate-row input{
+    width:100%!important;
+    font-size:16.5px!important;
+    min-height:52px!important;
+  }
+
+  .empty{
+    font-size:15.5px!important;
+    line-height:1.28!important;
+    padding:18px 8px!important;
+  }
+
+  table{
+    font-size:14px!important;
+  }
+
+  th,td{
+    padding:10px!important;
+  }
+
+  .foot{
+    display:none!important;
+  }
+
+  #lock{
+    background:#F7F7F7!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    padding:0!important;
+    overflow-y:auto!important;
+  }
+
+  #lock .box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    height:auto!important;
+    border-radius:0!important;
+    padding:calc(36px + env(safe-area-inset-top)) 14px 24px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    background:#F7F7F7!important;
+    overflow:visible!important;
+  }
+
+  #lock .logo{
+    margin-bottom:10px!important;
+  }
+
+  #lock .logo svg{
+    width:64px!important;
+    height:64px!important;
+  }
+
+  #lock h1{
+    font-size:23px!important;
+    line-height:1.08!important;
+    margin:10px 0 7px!important;
+  }
+
+  #lock p{
+    font-size:16px!important;
+    line-height:1.28!important;
+    margin-bottom:16px!important;
+  }
+
+  #lockErr{
+    font-size:14px!important;
+    min-height:22px!important;
+  }
+
+  #lock .btn{
+    min-height:58px!important;
+  }
+}
+@media (max-width:390px){
+  .tab-btn b{font-size:8.8px!important}
+  .app-ico{width:25px!important;height:25px!important}
+  .tab-btn{min-height:49px!important}
+}
+
+</style>
+<script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
+</head>
+<body>
+
+<div id="lock">
+  <div class="box">
+    <div class="logo"><svg viewBox="0 0 100 100" width="52" height="52" aria-label="RatonK"><path d="M30 78 V22 h16 c11 0 17 6 17 15 0 7-4 12-11 14 l13 27" fill="none" stroke="#143B2B" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 22 L48 50 L70 78" fill="none" stroke="#B0602F" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1>Bill · Escáner de facturas</h1>
+    <p>Ingresa el código de acceso para continuar.</p>
+    <input id="codeInput" type="password" inputmode="text" placeholder="• • • • • •" autocomplete="off">
+    <div id="lockErr"></div>
+    <button class="btn full salto" id="unlockBtn" onclick="doUnlock()">Entrar</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div>
+      <div class="logo"><svg viewBox="0 0 100 100" width="30" height="30" aria-label="RatonK"><path d="M30 78 V22 h16 c11 0 17 6 17 15 0 7-4 12-11 14 l13 27" fill="none" stroke="#F5EFE2" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 22 L48 50 L70 78" fill="none" stroke="#7FC79E" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Bill</span></div>
+      <div class="app-title">Bill · Escáner de facturas</div>
+    </div>
+    <div class="status-pill"><span class="d"></span><span id="modeLabel">en línea</span></div>
+    <nav class="app-tabs" aria-label="Secciones principales">
+      <button class="tab-btn active" type="button" data-tab="scan" onclick="switchTab('scan')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="18" width="44" height="32" rx="10"/><path d="M22 18l4-7h12l4 7"/><circle cx="32" cy="35" r="10"/><circle cx="32" cy="35" r="4"/><path d="M47 25h1"/></svg><b>Escanear</b></button>
+      <button class="tab-btn" type="button" data-tab="review" onclick="switchTab('review')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M15 49l4-15 26-26 11 11-26 26-15 4z"/><path d="M39 14l11 11"/><path d="M18 46l7-2-5-5z"/><path d="M12 56h40"/></svg><b>Revisar</b></button>
+      <button class="tab-btn" type="button" data-tab="history" onclick="switchTab('history')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 7h28l6 7v43l-5-3-5 3-5-3-5 3-5-3-5 3-5-3-5 3V12a5 5 0 0 1 5-5z"/><path d="M20 23h24"/><path d="M20 33h24"/><path d="M20 43h15"/></svg><b>Histórico</b></button>
+      <button class="tab-btn" type="button" data-tab="rates" onclick="switchTab('rates')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="24" cy="24" r="13"/><circle cx="42" cy="42" r="13"/><path d="M24 16v16"/><path d="M19 20h8a4 4 0 0 1 0 8h-8"/><path d="M42 34v16"/><path d="M37 38h8a4 4 0 0 1 0 8h-8"/><path d="M14 47l36-36"/></svg><b>Tasas</b></button>
+      <button class="tab-btn" type="button" data-tab="ref" onclick="switchTab('ref')"><svg class="app-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="14" y="10" width="36" height="46" rx="6"/><path d="M24 10h16l-2 8H26z"/><path d="M23 28h20"/><path d="M23 38h20"/><path d="M23 48h12"/></svg><b>Referencia</b></button>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div id="banner" class="banner"></div>
+
+    <div class="card form tab-section active-tab" id="captureCard" data-tab-section="scan">
+      <h2>1 · Captura la boleta</h2>
+      <p class="sub">Fotos e imágenes → <b>Papel</b> (entran al PDF de boletas). PDF → <b>Digital</b>.</p>
+      <div id="drop" class="drop">
+        <div class="icon">📄</div>
+        <p>Arrastra una imagen o PDF, o usa los botones</p>
+        <div class="btn-row">
+          <button class="btn salto" onclick="document.getElementById('camIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="34" rx="10"/><path d="M22 18l5-8h10l5 8"/><circle cx="32" cy="35" r="11"/><circle cx="32" cy="35" r="4"/></svg><span>Tomar foto</span></button>
+          <button class="btn ghost" onclick="document.getElementById('fileIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M24 34l17-17a10 10 0 0 1 14 14L29 57A15 15 0 0 1 8 36l27-27a8 8 0 0 1 11 11L20 46a5 5 0 0 1-7-7l23-23"/></svg><span>Adjuntar imagen o PDF</span></button>
+        </div>
+      </div>
+      <div id="previewWrap" class="preview-wrap hidden">
+        <img id="preview" class="preview" alt="Vista previa">
+        <div id="pdfPreview" class="pdfbox hidden"><span class="pdficon">📄</span><span id="pdfName"></span></div>
+        <button class="preview-x" onclick="clearImage()" title="Quitar">×</button>
+      </div>
+      <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
+      <input id="fileIn" type="file" accept="image/*,application/pdf" class="hidden">
+      <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
+        <span id="scanLabel"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span></span>
+      </button>
+    </div>
+
+    <div class="card form tab-section hidden" id="resultCard" data-tab-section="review">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">2 · Datos extraídos</h2>
+        <span class="tag" id="docTag">documento</span>
+      </div>
+      <p class="sub">Revisa y corrige si hace falta, luego guarda.</p>
+
+      <div class="grid2">
+        <div class="field"><label>Clasificación</label><input id="f_clase" placeholder="factura / boleta"></div>
+        <div class="field"><label>Descripción</label><input id="f_desc" placeholder="Ej: combustible, materiales…"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>País</label><select id="f_pais" onchange="onCountry()"></select></div>
+        <div class="field"><label>Moneda local</label><input id="f_moneda" class="mono" placeholder="CLP"></div>
+      </div>
+      <div class="field" id="f_pais_manual_wrap" style="display:none"><label>País (escríbelo)</label><input id="f_pais_manual" placeholder="Ej: Canadá — escribe la moneda en 'Moneda local' (ej: CAD)"></div>
+      <div class="grid2">
+        <div class="field"><label>Fecha</label><input id="f_fecha" class="mono" placeholder="AAAA-MM-DD"></div>
+        <div class="field"><label>Folio / N°</label><input id="f_folio" class="mono" placeholder="—"></div>
+      </div>
+      <div class="field"><label>Emisor</label><input id="f_emisor" placeholder="Nombre del emisor"></div>
+      <div class="field"><label>RUT / NIT / RUC</label><input id="f_rut" class="mono" placeholder="—"></div>
+
+      <div class="totals">
+        <div class="row"><span>Neto</span><span><input id="f_neto" class="mono" placeholder="0"></span></div>
+        <div class="row"><span>Impuesto / IVA</span><span><input id="f_iva" class="mono" placeholder="0"></span></div>
+        <div class="row big"><span>Total</span><span><input id="f_total" class="mono" style="width:160px;font-weight:900;font-size:20px;color:var(--ubi-navy)" placeholder="0"></span></div>
+      </div>
+
+      <details class="raw"><summary>Texto completo / detalle</summary><pre id="rawText"></pre></details>
+      <button class="btn full" style="margin-top:16px" onclick="saveCurrent()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 10h34l6 6v38H12z"/><path d="M20 10v16h24V10"/><path d="M21 42h22"/><path d="M21 50h22"/></svg><span>Guardar en histórico</span></button>
+    </div>
+
+    <div class="card form tab-section" id="ratesCard" data-tab-section="rates">
+      <h2>Tasas de cambio (a USD)</h2>
+      <p class="sub">Carga manualmente el valor del dólar para cada moneda. <b>USD = monto local ÷ tasa.</b></p>
+      <div id="ratesBody"><p class="empty" style="padding:8px">Agrega boletas para configurar las tasas.</p></div>
+    </div>
+
+    <div class="card tab-section" id="histCard" data-tab-section="history">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">3 · Histórico</h2>
+        <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
+      </div>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas.</p>
+      <div class="tbl-wrap">
+        <table id="histTbl">
+          <thead id="histHead"></thead>
+          <tbody id="histBody"><tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr></tbody>
+          <tfoot id="histFoot"></tfoot>
+        </table>
+      </div>
+      <div id="histCards" class="hist-cards"></div>
+      <div class="usd-sum" id="usdSum"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn" id="pdfBtn" onclick="exportPapelPDF()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M16 6h24l10 10v42H16z"/><path d="M40 6v12h10"/><path d="M22 44V31h7a4 4 0 0 1 0 8h-7"/><path d="M36 44V31h5a6.5 6.5 0 0 1 0 13z"/></svg><span>PDF boletas en papel</span></button>
+        <button class="btn" id="zipBtn" onclick="exportPdfZip()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 8h22l8 8v40H18z"/><path d="M40 8v10h8"/><path d="M28 10h8M28 16h8M28 22h8M28 28h8"/><rect x="25" y="36" width="14" height="12" rx="3"/></svg><span>ZIP de PDFs</span></button>
+        <button class="btn lime" id="xlsxBtn" onclick="exportXlsx()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M14 10h36v44H14z"/><path d="M14 22h36M14 34h36M14 46h36M26 10v44M38 10v44"/><path d="M22 42l8-12M30 42l-8-12"/></svg><span>Excel</span></button>
+        <button class="btn ghost" id="jsonBtn" onclick="exportJson()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v34"/><path d="M20 30l12 12 12-12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Exportar JSON</span></button>
+        <button class="btn ghost" onclick="document.getElementById('jsonIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 46V12"/><path d="M20 24l12-12 12 12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Importar JSON</span></button>
+        <button class="btn danger" id="clrBtn" onclick="clearAll()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 18h40"/><path d="M24 18v-6h16v6"/><path d="M18 18l3 38h22l3-38"/><path d="M28 28v18M36 28v18"/></svg><span>Limpiar todo</span></button>
+      </div>
+      <input id="jsonIn" type="file" accept=".json,application/json" class="hidden">
+    </div>
+
+    <div class="card tab-section" id="refCard" data-tab-section="ref">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">Lista de referencia</h2>
+        <span class="tag mono" id="refInfo" style="background:var(--ubi-lime);color:var(--ubi-navy)"></span>
+      </div>
+      <p class="sub">Sube tu Excel/CSV de gastos hecho a mano. <b>No se contabiliza</b>: solo se pinta en <span style="background:#E4F5DC;padding:1px 6px;border-radius:4px">verde</span> lo que ya cargaste como boleta (coincide monto + emisor/descripción).</p>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="document.getElementById('refIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="12" y="10" width="40" height="44" rx="6"/><path d="M12 24h40M12 38h40M26 10v44M40 10v44"/></svg><span>Subir Excel/CSV</span></button>
+        <button class="btn lime" id="refAiBtn" onclick="reconcileAI()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="14" y="14" width="36" height="36" rx="10"/><path d="M24 8v8M40 8v8M24 48v8M40 48v8M8 24h8M8 40h8M48 24h8M48 40h8"/><circle cx="26" cy="30" r="3"/><circle cx="38" cy="30" r="3"/><path d="M25 40h14"/></svg><span>Cuadrar con IA</span></button>
+        <button class="btn ghost" id="refExpBtn" onclick="exportRefJson()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8v34"/><path d="M20 30l12 12 12-12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Exportar JSON</span></button>
+        <button class="btn ghost" onclick="document.getElementById('refJsonIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 46V12"/><path d="M20 24l12-12 12 12"/><path d="M14 52h36"/><path d="M16 18l-8 14 8 14"/><path d="M48 18l8 14-8 14"/></svg><span>Importar JSON</span></button>
+        <button class="btn danger" id="refClrBtn" onclick="clearRefList()" disabled><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M12 18h40"/><path d="M24 18v-6h16v6"/><path d="M18 18l3 38h22l3-38"/><path d="M28 28v18M36 28v18"/></svg><span>Quitar lista</span></button>
+      </div>
+      <input id="refIn" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+      <input id="refJsonIn" type="file" accept=".json,application/json" class="hidden">
+      <div id="refTableWrap" class="tbl-wrap hidden" style="margin-top:14px">
+        <table><thead id="refHead"></thead><tbody id="refBody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="logo"><svg viewBox="0 0 100 100" width="26" height="26" aria-label="RatonK"><path d="M30 78 V22 h16 c11 0 17 6 17 15 0 7-4 12-11 14 l13 27" fill="none" stroke="#143B2B" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 22 L48 50 L70 78" fill="none" stroke="#B0602F" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>RatonK</span></div>
+      Procesamiento de imagen vía IA · histórico guardado en tu dispositivo
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================================================================
+   Bill · Escáner de facturas — Ubicquia  (v3)
+   - Papel (cámara) / Digital (adjuntar).
+   - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
+   - PDF de boletas en papel, empacando varias por hoja según tamaño.
+   - Histórico en localStorage; se limpia SOLO manualmente.
+   - Escaneo IA: proxy /api/scan-bill (producción) o directo (artifact).
+   ================================================================= */
+
+const DEMO = false;
+const DEMO_SEED = [];
+const DEMO_RATES = {};
+const DEMO_REF = [];
+
+const DEMO_CODE = 'BILL-2026';   // solo para pruebas sin servidor
+const MODEL     = 'claude-sonnet-4-6';
+const MAX_EDGE  = 1568;
+const LS_KEY    = 'bill_history_v3';
+const LS_RATES  = 'bill_rates_v3';
+const LS_REF    = 'bill_reflist_v3';
+
+const COUNTRIES = {
+  'Chile':{code:'CLP',sym:'$'},'Colombia':{code:'COP',sym:'$'},'Perú':{code:'PEN',sym:'S/'},
+  'Argentina':{code:'ARS',sym:'$'},'México':{code:'MXN',sym:'$'},'Ecuador':{code:'USD',sym:'$'},
+  'Bolivia':{code:'BOB',sym:'Bs'},'Brasil':{code:'BRL',sym:'R$'},'Uruguay':{code:'UYU',sym:'$'},
+  'Paraguay':{code:'PYG',sym:'₲'},'Panamá':{code:'USD',sym:'$'},'Estados Unidos':{code:'USD',sym:'$'},'Canadá':{code:'CAD',sym:'$'},'Otro':{code:'',sym:''}
+};
+const CUR_COUNTRY = {};
+Object.entries(COUNTRIES).forEach(([c,m])=>{ if(m.code && !CUR_COUNTRY[m.code]) CUR_COUNTRY[m.code]=c; });
+
+const PROMPT = `Eres un extractor de datos de facturas y boletas de Latinoamérica.
+Analiza el documento (imagen o PDF) y devuelve SOLO un objeto JSON válido, sin texto adicional ni markdown.
+Usa exactamente estos campos (si un dato no aparece usa null, NO inventes valores):
+{
+ "tipo_documento": "factura | boleta | recibo | nota de credito | otro",
+ "descripcion": "descripción tal como aparece en la boleta (glosa o detalle de los ítems); si hay varios resúmelos en una línea",
+ "pais": "país emisor (Chile, Colombia, Perú, Argentina, México, Ecuador, Bolivia, Brasil, Uruguay, Paraguay, Panamá, Estados Unidos, Canadá u Otro)",
+ "moneda": "código de moneda local (CLP, COP, PEN, ARS, MXN, USD, BOB, BRL...)",
+ "emisor": {"nombre": "", "rut": ""},
+ "folio": "",
+ "fecha_emision": "AAAA-MM-DD",
+ "neto": 0,
+ "iva": 0,
+ "total": 0,
+ "items": [{"descripcion":"", "cantidad":0, "total":0}],
+ "texto_completo": "transcripción legible de todo el documento"
+}
+Pistas de país por identificador: RUT=Chile, NIT=Colombia, RUC=Perú o Ecuador, CUIT=Argentina, RFC=México.
+Los montos como números sin separador de miles ni símbolo. Responde únicamente el JSON.`;
+
+let appCode = '';
+let curImg  = null;
+let history = [];
+let rates   = {USD:1};
+let refHeader = [], refRows = [];
+let lsOK    = true;
+let activeTab = 'scan';
+function switchTab(tab){
+  activeTab = tab || 'scan';
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===activeTab));
+  document.querySelectorAll('[data-tab-section]').forEach(sec=>sec.classList.toggle('active-tab', sec.dataset.tabSection===activeTab));
+  if(activeTab==='review' && document.getElementById('resultCard').classList.contains('hidden')){
+    banner('Primero escanea una boleta para revisar los datos.','info');
+  }
+  try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
+}
+function currentMobile(){ return document.documentElement.classList.contains('m') || matchMedia('(max-width:820px)').matches; }
+
+/* ---------- Banner ---------- */
+function banner(msg,type='err'){ const b=document.getElementById('banner');
+  b.textContent=msg; b.className='banner show '+type; if(type!=='err') setTimeout(()=>b.classList.remove('show'),4000); }
+function clearBanner(){ document.getElementById('banner').classList.remove('show'); }
+
+/* ---------- Storage ---------- */
+function byDateAsc(a,b){
+  const da=a.fecha||'', db=b.fecha||'';
+  if(!da&&!db) return (a.ts||0)-(b.ts||0);
+  if(!da) return 1; if(!db) return -1;        // sin fecha, al final
+  if(da<db) return -1; if(da>db) return 1;    // ISO AAAA-MM-DD ordena bien como texto
+  return (a.ts||0)-(b.ts||0);                 // desempate por orden de ingreso
+}
+function loadHistory(){ try{ const r=localStorage.getItem(LS_KEY); history=r?JSON.parse(r):[]; if(!Array.isArray(history)) history=[]; }
+  catch(e){ lsOK=false; history=[]; } history.sort(byDateAsc); }
+function persist(){ if(!lsOK) return; try{ localStorage.setItem(LS_KEY,JSON.stringify(history)); }
+  catch(e){ lsOK=false; banner('No se pudo guardar en el dispositivo (espacio lleno). El histórico durará solo esta sesión.','info'); } }
+function loadRates(){ try{ const r=localStorage.getItem(LS_RATES); rates=r?JSON.parse(r):{USD:1}; }catch(e){ rates={USD:1}; } if(!rates.USD) rates.USD=1; }
+function persistRates(){ if(!lsOK) return; try{ localStorage.setItem(LS_RATES,JSON.stringify(rates)); }catch(e){} }
+
+/* ---------- País ---------- */
+function buildCountrySelect(){ const sel=document.getElementById('f_pais');
+  sel.innerHTML='<option value="">—</option>'+Object.keys(COUNTRIES).map(c=>`<option value="${c}">${c}</option>`).join(''); }
+function onCountry(){ const c=document.getElementById('f_pais').value;
+  const wrap=document.getElementById('f_pais_manual_wrap'), mon=document.getElementById('f_moneda');
+  if(c==='Otro'){ wrap.style.display=''; mon.placeholder='Ej: CAD'; }
+  else { wrap.style.display='none'; document.getElementById('f_pais_manual').value=''; mon.placeholder='CLP';
+    if(c&&COUNTRIES[c]&&COUNTRIES[c].code) mon.value=COUNTRIES[c].code; } }
+function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function matchCountry(name){ const n=norm(name);
+  for(const k of Object.keys(COUNTRIES)){ if(norm(k)===n) return k; }
+  if(n.includes('chil'))return 'Chile'; if(n.includes('colomb'))return 'Colombia'; if(n.includes('peru'))return 'Perú';
+  if(n.includes('argentin'))return 'Argentina'; if(n.includes('mexic'))return 'México'; if(n.includes('ecuad'))return 'Ecuador';
+  if(n.includes('boliv'))return 'Bolivia'; if(n.includes('brasil')||n.includes('brazil'))return 'Brasil';
+  if(n.includes('urugu'))return 'Uruguay'; if(n.includes('paragu'))return 'Paraguay'; if(n.includes('panam'))return 'Panamá'; if(n.includes('canad'))return 'Canadá'; return ''; }
+
+/* ================= LOCK ================= */
+async function doUnlock(){
+  const code=document.getElementById('codeInput').value.trim();
+  const err=document.getElementById('lockErr'), btn=document.getElementById('unlockBtn');
+  err.textContent='';
+  if(!code){ err.textContent='Ingresa el código.'; return; }
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  let ok=false; try{ ok=await validateCode(code); }catch(e){ ok=false; }
+  btn.disabled=false; btn.textContent='Entrar';
+  if(ok){ appCode=code; enterApp(); } else { err.textContent='Código incorrecto.'; }
+}
+function enterApp(){
+  const lk=document.getElementById('lock'); if(lk) lk.classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  if(!lsOK) banner('Este entorno no guarda en disco: el histórico durará solo esta sesión.','info');
+}
+async function validateCode(code){
+  try{ const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({check:true,code})});
+    if(r.ok) return true; if(r.status===401) return false;
+  }catch(e){}
+  document.getElementById('modeLabel').textContent='modo demo';
+  return code===DEMO_CODE;
+}
+
+/* ================= IMAGEN ================= */
+let camIn,fileIn,drop;
+function wireInputs(){
+  camIn=document.getElementById('camIn'); fileIn=document.getElementById('fileIn'); drop=document.getElementById('drop');
+  camIn.addEventListener('change', e=>handleFile(e.target.files[0]));
+  fileIn.addEventListener('change', e=>handleFile(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+  drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  document.getElementById('refIn').addEventListener('change', e=>{ if(e.target.files[0]) handleRefFile(e.target.files[0]); e.target.value=''; });
+  document.getElementById('jsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=''; });
+  document.getElementById('refJsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importRefJson(e.target.files[0]); e.target.value=''; });
+  document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
+}
+function handleFile(file){
+  if(!file) return;
+  const isPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
+  const isImg = file.type.startsWith('image/');
+  if(!isPdf && !isImg){ banner('Sube una imagen o un PDF.'); return; }
+  const origen = isPdf ? 'Digital' : 'Papel';   // imagen/foto = Papel · PDF = Digital
+  clearBanner();
+  if(isPdf){
+    if(file.size > 3.3*1024*1024){ banner('El PDF supera ~3 MB (límite del servidor). Súbelo más liviano o tómale una foto.'); return; }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const dataUrl=reader.result;
+      curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'application/pdf',isPdf:true,w:0,h:0,origen,name:file.name||'documento.pdf'};
+      document.getElementById('preview').classList.add('hidden');
+      const pp=document.getElementById('pdfPreview'); pp.classList.remove('hidden');
+      document.getElementById('pdfName').textContent=curImg.name;
+      document.getElementById('previewWrap').classList.remove('hidden');
+      document.getElementById('scanBtn').disabled=false;
+    };
+    reader.onerror=()=>banner('No se pudo leer el PDF.');
+    reader.readAsDataURL(file);
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        let {width:w,height:h}=img;
+        const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
+        w=Math.round(w*scale); h=Math.round(h*scale);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl=cv.toDataURL('image/jpeg',0.85);
+        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
+      }catch(err){
+        const dataUrl=reader.result;
+        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:file.type,isPdf:false,w:0,h:0,origen};
+      }
+      const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
+      const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src=curImg.dataUrl;
+      document.getElementById('previewWrap').classList.remove('hidden');
+      document.getElementById('scanBtn').disabled=false;
+    };
+    img.onerror=()=>banner('No se pudo leer la imagen.');
+    img.src=reader.result;
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsDataURL(file);
+}
+function clearImage(){
+  curImg=null;
+  document.getElementById('previewWrap').classList.add('hidden');
+  const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src='';
+  const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
+  document.getElementById('scanBtn').disabled=true;
+  if(camIn) camIn.value=''; if(fileIn) fileIn.value='';
+}
+
+/* ================= ESCANEO ================= */
+async function runScan(){
+  if(!curImg){ banner('Primero captura o adjunta una imagen.'); return; }
+  clearBanner();
+  const btn=document.getElementById('scanBtn'), lbl=document.getElementById('scanLabel');
+  btn.disabled=true; lbl.innerHTML='<span class="spin"></span> Escaneando…';
+  try{
+    const raw=await scan(curImg.b64,curImg.mediaType);
+    const data=extractJSON(raw);
+    if(!data) throw new Error('La IA no devolvió datos legibles. Intenta otra foto con mejor luz.');
+    fillResult(data);
+    document.getElementById('resultCard').classList.remove('hidden');
+    switchTab('review');
+    if(!currentMobile()) document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+    banner('Datos extraídos. Revísalos antes de guardar.','ok');
+  }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
+  finally{ btn.disabled=false; lbl.textContent='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
+}
+async function scan(b64,mediaType){
+  try{
+    const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({image:b64,media_type:mediaType,code:appCode})});
+    if(r.ok){ const j=await r.json(); return j.raw||''; }
+    if(r.status===401) throw new Error('Código rechazado por el servidor.');
+  }catch(e){ if(/servidor/.test(e.message||'')) throw e; }
+  return await scanDirect(b64,mediaType);
+}
+async function scanDirect(b64,mediaType){
+  const fileBlock = mediaType==='application/pdf'
+    ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}
+    : {type:'image',source:{type:'base64',media_type:mediaType,data:b64}};
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:'user',content:[fileBlock,{type:'text',text:PROMPT}]}]})});
+  const data=await r.json();
+  if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+async function callClaudeText(prompt, maxTokens){
+  maxTokens = maxTokens||2000;
+  // proxy (producción) primero
+  try{
+    const r=await fetch('/api/scan-bill',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({prompt,code:appCode,max_tokens:maxTokens})});
+    if(r.ok){ const j=await r.json(); return j.raw||''; }
+    if(r.status===401) throw new Error('Código rechazado por el servidor.');
+  }catch(e){ if(/servidor|rechazado/.test(e.message||'')) throw e; }
+  // directo (artifact / Claude.ai)
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({model:MODEL,max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})});
+  const data=await r.json();
+  if(!r.ok) throw new Error((data&&data.error&&data.error.message)||('HTTP '+r.status));
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+function extractJSONArray(text){
+  if(!text) return null;
+  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const a=t.indexOf('['), b=t.lastIndexOf(']'); if(a>=0&&b>a) t=t.slice(a,b+1);
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
+function extractJSON(text){
+  if(!text) return null;
+  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const a=t.indexOf('{'), b=t.lastIndexOf('}'); if(a>=0&&b>a) t=t.slice(a,b+1);
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
+
+/* ================= RESULTADO ================= */
+function num(v){ const n=Number(String(v??'').replace(/[^\d.-]/g,'')); return isNaN(n)?'':n; }
+function setTag(origen){
+  const t=document.getElementById('docTag');
+  t.textContent=origen||'documento';
+  t.className='tag '+(origen==='Papel'?'paper':origen==='Digital'?'digital':'');
+}
+function fillResult(d){
+  const em=d.emisor||{};
+  setTag(curImg?curImg.origen:'');
+  document.getElementById('f_clase').value=d.tipo_documento||'';
+  document.getElementById('f_desc').value=d.descripcion||'';
+  document.getElementById('f_fecha').value=d.fecha_emision||'';
+  document.getElementById('f_emisor').value=em.nombre||'';
+  document.getElementById('f_rut').value=em.rut||'';
+  document.getElementById('f_folio').value=d.folio||'';
+  const pais=matchCountry(d.pais);
+  document.getElementById('f_pais').value=pais||(d.pais?'Otro':'');
+  document.getElementById('f_moneda').value=(pais&&COUNTRIES[pais].code)?COUNTRIES[pais].code:(d.moneda||'');
+  document.getElementById('f_pais_manual').value=(!pais&&d.pais)?d.pais:'';
+  onCountry();
+  document.getElementById('f_neto').value=num(d.neto);
+  document.getElementById('f_iva').value=num(d.iva);
+  document.getElementById('f_total').value=num(d.total);
+  let detail=d.texto_completo||'';
+  if(Array.isArray(d.items)&&d.items.length)
+    detail+='\n\n— Ítems —\n'+d.items.map(it=>`• ${it.descripcion||''}  x${it.cantidad??''}  = ${it.total??''}`).join('\n');
+  document.getElementById('rawText').textContent=detail.trim()||'(sin texto)';
+}
+function saveCurrent(){
+  const origen=(curImg&&curImg.origen)||document.getElementById('docTag').textContent;
+  const isPaper=origen==='Papel';
+  const row={
+    origen, clase:document.getElementById('f_clase').value.trim(),
+    desc:document.getElementById('f_desc').value.trim(),
+    pais:(function(){ let p=document.getElementById('f_pais').value.trim(); if(p==='Otro'){ const m=document.getElementById('f_pais_manual').value.trim(); if(m) p=m; } return p; })(),
+    moneda:document.getElementById('f_moneda').value.trim().toUpperCase(),
+    fecha:document.getElementById('f_fecha').value.trim(),
+    folio:document.getElementById('f_folio').value.trim(),
+    emisor:document.getElementById('f_emisor').value.trim(),
+    rut:document.getElementById('f_rut').value.trim(),
+    neto:num(document.getElementById('f_neto').value),
+    iva:num(document.getElementById('f_iva').value),
+    total:num(document.getElementById('f_total').value),
+    texto:document.getElementById('rawText').textContent,
+    img:isPaper&&curImg?curImg.dataUrl:'',
+    pdf:(!isPaper&&curImg&&curImg.isPdf)?curImg.dataUrl:'',
+    imgW:curImg?curImg.w:0, imgH:curImg?curImg.h:0, ts:Date.now()
+  };
+  if(!row.desc&&!row.emisor&&row.total===''){ banner('Completa al menos descripción, emisor o total.'); return; }
+  if(row.moneda&&rates[row.moneda]==null) rates[row.moneda]=''; // crea fila de tasa pendiente
+  history.push(row); history.sort(byDateAsc); persist(); persistRates();
+  renderRates(); renderHistory();
+  clearImage();
+  document.getElementById('resultCard').classList.add('hidden');
+  switchTab('history');
+  banner('Boleta guardada en el histórico.','ok');
+  if(!currentMobile()) document.getElementById('histCard').scrollIntoView({behavior:'smooth'});
+}
+
+/* ================= TASAS / USD ================= */
+function na(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function allPaises(){ const out=[]; const add=p=>{ if(p&&!out.includes(p)) out.push(p); }; history.forEach(r=>add(r.pais)); refRows.forEach(r=>add(r.pais)); return out; }
+function currenciesInUse(){ const s=new Set(); history.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); refRows.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); return [...s]; }
+function toUSD(r){
+  if(r.total===''||r.total==null) return null;
+  if(r.moneda==='USD') return r.total;
+  const rate=Number(rates[r.moneda]);
+  if(!rate||isNaN(rate)) return null;
+  return r.total/rate;
+}
+function renderRates(){
+  const cont=document.getElementById('ratesBody');
+  const curs=currenciesInUse().filter(c=>c!=='USD');
+  if(!curs.length){ cont.innerHTML='<p class="empty" style="padding:8px">Agrega boletas para configurar las tasas.</p>'; return; }
+  cont.innerHTML=curs.map(c=>{
+    const pais=CUR_COUNTRY[c]||''; const val=(rates[c]==null?'':rates[c]);
+    return `<div class="rate-row">
+      <div class="lbl">${c}<small>${pais}</small></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="eq">1 USD =</span>
+        <input type="number" inputmode="decimal" step="0.0001" min="0" value="${val}"
+          placeholder="tasa" oninput="setRate('${c}', this.value)">
+        <span class="eq">${c}</span>
+      </div></div>`;
+  }).join('');
+}
+function setRate(cur,val){ rates[cur]=(val===''?'':Number(val)); persistRates(); renderHistory(); }
+
+/* ================= HISTÓRICO ================= */
+function renderHistory(){
+  const head=document.getElementById('histHead');
+  const body=document.getElementById('histBody');
+  const foot=document.getElementById('histFoot');
+  const cards=document.getElementById('histCards');
+  document.getElementById('histCount').textContent=history.length;
+  const has=history.length>0;
+  const papers=history.filter(r=>r.origen==='Papel'&&r.img).length;
+  const pdfs=history.filter(r=>r.origen==='Digital'&&r.pdf).length;
+  document.getElementById('pdfBtn').disabled=!papers;
+  document.getElementById('zipBtn').disabled=!pdfs;
+  document.getElementById('xlsxBtn').disabled=!has;
+  document.getElementById('jsonBtn').disabled=!has;
+  document.getElementById('clrBtn').disabled=!has;
+  const paises=allPaises();   // unión histórico + referencia
+  const totalCols=paises.map(p=>na(p));
+  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
+    + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
+    + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
+  if(!has){
+    body.innerHTML='<tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr>';
+    foot.innerHTML=''; cards.innerHTML='<p class="empty">Aún no hay boletas guardadas.</p>';
+    document.getElementById('usdSum').textContent=''; return;
+  }
+  const ED='contenteditable="true" spellcheck="false" onkeydown="if(event.key===&apos;Enter&apos;){event.preventDefault();this.blur();}"';
+  let sum=0, anyUSD=false;
+  // --- Tabla (escritorio) ---
+  body.innerHTML=history.map((r,i)=>{
+    const u=toUSD(r); if(u!=null){ sum+=u; anyUSD=true; }
+    const pcls=r.origen==='Papel'?'paper':'digital';
+    const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
+    return `<tr>
+      <td class="num">${i+1}</td>
+      <td class="num">${esc(r.fecha)||'—'}</td>
+      <td class="cellwrap">${esc(r.emisor)||'—'}</td>
+      <td>${esc(na(r.pais))||'—'}</td>
+      ${totalCells}
+      <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
+      <td class="cellwrap"><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></td>
+      <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
+      <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+  // sumas por país
+  const sums={}; paises.forEach(p=>{ sums[p]=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
+  const totFootCells=paises.map(p=>`<td class="num">${fmt(sums[p])}</td>`).join('');
+  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td>${totFootCells}
+    <td class="usd"><span class="num">${anyUSD?usdFmt(sum):'—'}</span></td><td></td><td></td><td></td></tr>`;
+  // --- Tarjetas (móvil) ---
+  cards.innerHTML=history.map((r,i)=>{
+    const u=toUSD(r);
+    const pcls=r.origen==='Papel'?'paper':'digital';
+    return `<div class="bcard">
+      <div class="top"><span class="n">N°${i+1}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span>
+          <button class="btn ghost" style="padding:5px 9px;font-size:12px" onclick="delRow(${i})">✕</button>
+        </span></div>
+      <div class="emisor">${esc(r.emisor)||'—'}</div>
+      <div class="meta">${esc(r.fecha)||'—'} · ${esc(na(r.pais))||'—'}</div>
+      <div class="rowline"><span class="lab">Total</span><span class="val">${r.total!==''?fmt(r.total):'—'} ${esc(r.moneda)||''}</span></div>
+      <div class="rowline"><span class="lab">USD</span><span class="val usd">${u!=null?usdFmt(u):'—'}</span></div>
+      <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></div>
+    </div>`;
+  }).join('') + `<div class="btot"><h4>Totales por país</h4>
+      ${paises.map(p=>`<div class="rowline"><span>${esc(na(p))}</span><span class="val">${fmt(sums[p])} ${esc(curOf(p))}</span></div>`).join('')}
+      <div class="rowline usd"><span>Total USD</span><span class="val">${anyUSD?usdFmt(sum):'—'}</span></div>
+    </div>`;
+  document.getElementById('usdSum').innerHTML = anyUSD
+    ? `Total en USD ≈ <span>${usdFmt(sum)}</span>`
+    : 'Carga las tasas para ver el total en USD';
+  renderRefList();
+}
+function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
+function editDesc(i,val){ if(history[i]){ history[i].desc=(val||'').replace(/\s+/g,' ').trim(); persist(); } }
+function clearAll(){
+  if(!history.length) return;
+  if(!confirm('¿Borrar TODO el histórico? Esta acción no se puede deshacer.')) return;
+  history=[]; persist(); renderRates(); renderHistory(); banner('Histórico limpiado.','ok');
+}
+function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmt(n){ return typeof n==='number'?n.toLocaleString('es-CL'):n; }
+function usdFmt(u){ return '$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+/* ================= LISTA DE REFERENCIA (no se contabiliza) ================= */
+const REF_STOP=new Set(['spa','ltda','limitada','sas','eirl','sociedad','anonima','de','del','la','el','los','las','y','sa','con','por']);
+function loadRefList(){ try{ const r=localStorage.getItem(LS_REF); const o=r?JSON.parse(r):null; if(o&&Array.isArray(o.rows)){ refHeader=o.header||[]; refRows=o.rows; } }catch(e){} }
+function persistRef(){ if(!lsOK) return; try{ localStorage.setItem(LS_REF, JSON.stringify({header:refHeader,rows:refRows})); }catch(e){} }
+function refNums(cells){
+  const out=[];
+  cells.forEach(c=>{
+    if(typeof c==='number'){ out.push(c); return; }
+    (String(c).match(/\d[\d.,]*/g)||[]).forEach(t=>{
+      let x=t;
+      if(x.includes('.')&&x.includes(',')) x = x.lastIndexOf(',')>x.lastIndexOf('.') ? x.replace(/\./g,'').replace(',','.') : x.replace(/,/g,'');
+      else if(x.includes(',')){ const d=x.split(',').pop(); x = (d.length<=2) ? x.replace(',','.') : x.replace(/,/g,''); }
+      else if((x.match(/\./g)||[]).length===1 && x.split('.').pop().length===3) x=x.replace('.','');
+      const n=Number(x); if(!isNaN(n)&&x!=='') out.push(n);
+    });
+  });
+  return out;
+}
+function refText(cells){ return cells.filter(c=>typeof c==='string').map(c=>norm(c)).join(' '); }
+function bWords(b){ const w=[]; [b.emisor,b.desc].forEach(s=>norm(s).split(/[^a-z0-9]+/).forEach(x=>{ if(x.length>=4&&!REF_STOP.has(x)) w.push(x); })); return w; }
+function daysBetween(a,b){ const da=Date.parse(a), db=Date.parse(b); if(isNaN(da)||isNaN(db)) return null; return Math.abs(da-db)/86400000; }
+function refMatch(row){
+  for(const b of history){
+    if(typeof b.total!=='number') continue;
+    if(!row.nums.some(n=>Math.abs(n-b.total)<=Math.max(1,Math.abs(b.total)*0.002))) continue;  // valor (local) coincide
+    const d=daysBetween(row.fecha,b.fecha); const dateOk = d!=null && d<=3;                      // fecha cercana
+    const w=bWords(b); const textOk = !w.length || w.some(x=>row.text.includes(x));
+    if(dateOk || textOk) return b;
+  }
+  return null;
+}
+function toNum(v){ if(typeof v==='number') return v; const a=refNums([v]); return a.length?a[0]:''; }
+const CUR_CODES=['CLP','COP','PEN','USD','ARS','MXN','BOB','BRL','UYU','PYG','EUR'];
+function colCurrency(header){
+  const n=norm(header); if(!n) return null;
+  if(/^1\b/.test(n) || /1\s*(usd|dolar|dollar)/.test(n)) return null;   // columna de tasa "1 USD"
+  if(/^(dolar|dollar|usd)$/.test(n)) return 'USD';
+  const st=n.replace(/[^a-z]/g,'');
+  for(const c of CUR_CODES){ if(st===c.toLowerCase()) return c; }
+  return null;
+}
+function fmtDate(v){
+  if(v==null||v==='') return '';
+  if(v instanceof Date && !isNaN(v)){ const p=n=>String(n).padStart(2,'0'); return `${v.getFullYear()}-${p(v.getMonth()+1)}-${p(v.getDate())}`; }
+  if(typeof v==='number' && v>20000 && v<80000){ const d=new Date(Math.round((v-25569)*86400000)); if(!isNaN(d)){ const p=n=>String(n).padStart(2,'0'); return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}`; } }
+  const s=String(v).trim();
+  let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){ let y=m[3]; if(y.length===2) y='20'+y; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; }
+  m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  if(m){ return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; }
+  return s;
+}
+function buildRefList(aoa,quiet){
+  if(!aoa||!aoa.length){ return; }
+  const header=(aoa[0]||[]).map(x=>x);
+  const H=header.map(norm);
+  // columnas de moneda (una por país) + columna Dólar
+  const curCols=[]; let usdCol=-1;
+  header.forEach((h,i)=>{ const c=colCurrency(h); if(c==='USD'){ if(usdCol<0) usdCol=i; } else if(c){ curCols.push({i,code:c}); } });
+  // columnas de texto
+  let fecha=-1, doc=-1, monto=-1, moneda=-1, pais=-1, coment=-1; const descCols=[];
+  H.forEach((n,i)=>{
+    if(fecha<0 && /fecha|date/.test(n)) fecha=i;
+    else if(coment<0 && /comentario/.test(n)) coment=i;
+    else if(/descrip/.test(n)) descCols.push(i);
+    else if(doc<0 && (/^doc/.test(n)||/documento/.test(n))) doc=i;
+    else if(pais<0 && /pais|country/.test(n)) pais=i;
+    else if(!curCols.length && monto<0 && /monto|total|importe|valor|amount|precio|pago/.test(n)) monto=i;
+    else if(!curCols.length && moneda<0 && /moneda|currency|divisa/.test(n)) moneda=i;
+  });
+  const emisorCol = descCols.length?descCols[0]:-1;
+  const noteCol = coment>=0?coment : (descCols.length>1?descCols[1]:-1);
+  refHeader=header;
+  const data=aoa.slice(1).filter(r=>Array.isArray(r)&&r.some(c=>c!==''&&c!=null));
+  refRows=data.map(cells=>{
+    const g=i=> (i>=0&&i<cells.length) ? cells[i] : '';
+    const fechaV=fmtDate(g(fecha));
+    const emisor=String(g(emisorCol)||'').trim();
+    const desc=String(g(noteCol)||'').trim();
+    const tipo=String(g(doc)||'').trim();
+    let total='', mon='', pa='', usd='';
+    if(usdCol>=0){ const uv=toNum(cells[usdCol]); if(uv!=='') usd=uv; }
+    if(curCols.length){
+      for(const {i,code} of curCols){ const v=toNum(cells[i]); if(v!==''&&v!=null&&v!==0){ total=v; mon=code; pa=CUR_COUNTRY[code]||''; break; } }
+      if(total===''&&usd!==''){ total=usd; mon='USD'; }
+    } else {
+      total = monto>=0?toNum(cells[monto]):'';
+      mon = String(g(moneda)||'').toUpperCase().replace(/[^A-Z]/g,'');
+      pa = pais>=0?matchCountry(cells[pais]):'';
+      if(!pa&&mon) pa=CUR_COUNTRY[mon]||'';
+      if(!mon&&pa&&COUNTRIES[pa]) mon=COUNTRIES[pa].code;
+    }
+    return {fecha:fechaV, emisor, desc, tipo, pais:pa, moneda:mon, total, usd, cells, nums:refNums(cells), text:refText(cells)};
+  });
+  refRows.sort(byDateAsc);
+  persistRef(); renderHistory();   // re-render histórico: la unión de países puede cambiar; cascada a la referencia
+  if(!quiet) banner(`Lista cargada: ${refRows.length} filas de referencia.`,'ok');
+}
+async function buildRefListAI(aoa){
+  try{
+    const header=aoa[0]||[];
+    const sample=aoa.slice(1,300);
+    const prompt=`Tengo una planilla de gastos exportada de Excel. La primera fila son ENCABEZADOS (pueden venir con mayúsculas/minúsculas mezcladas, tildes o variaciones). Normalmente hay UNA COLUMNA POR MONEDA (p.ej. "CLP$", "COP$", "PEN$", "Moneda Origen") donde el monto va en la columna de su moneda; una columna "Dólar"/"USD" con el equivalente en dólares; la "Descripción" es el COMERCIO; el "Comentario" (o una segunda descripción) es la NOTA; y "Doc"/"Documento" es el tipo (Papel/Digital).
+Convierte CADA fila de datos en un objeto JSON con EXACTAMENTE estos campos:
+{"fecha":"AAAA-MM-DD","emisor":"comercio","pais":"Chile|Colombia|Perú|Argentina|México|Ecuador|Bolivia|Brasil|Uruguay|Paraguay|Panamá|Estados Unidos|Canadá|"(vacío si no se sabe),"moneda":"CLP|COP|PEN|ARS|MXN|USD|...","total":<monto en moneda local como número>,"usd":<monto en USD como número o null>,"desc":"nota","tipo":"Papel|Digital|"}
+Reglas: deduce el país por la moneda de la columna que tenga valor. Si SOLO hay valor en Dólar, usa moneda="USD", total=ese valor y pais="" (salvo que el texto lo indique). Los montos como número sin separador de miles ni símbolo. Ignora filas vacías o de totales/subtotales. Mantén el MISMO orden de las filas.
+ENCABEZADOS: ${JSON.stringify(header)}
+FILAS: ${JSON.stringify(sample)}
+Devuelve SOLO un arreglo JSON compacto, sin texto ni markdown.`;
+    const raw=await callClaudeText(prompt, 4096);
+    const arr=extractJSONArray(raw);
+    if(!arr||!arr.length) return false;
+    refHeader=header;
+    refRows=arr.map((o,idx)=>{
+      const cells=sample[idx]||[];
+      let total=(o.total==null||o.total==='')?'':Number(o.total); if(isNaN(total)) total='';
+      let usd=(o.usd==null||o.usd==='')?'':Number(o.usd); if(isNaN(usd)) usd='';
+      const pais=o.pais?(matchCountry(o.pais)||String(o.pais)):'';
+      const nums=refNums(cells); if(typeof total==='number') nums.push(total);
+      return {
+        fecha: fmtDate(o.fecha)||'',
+        emisor: String(o.emisor||'').trim(),
+        desc: String(o.desc||'').trim(),
+        tipo: String(o.tipo||'').trim(),
+        pais,
+        moneda: String(o.moneda||'').toUpperCase().replace(/[^A-Z]/g,''),
+        total, usd,
+        cells, nums, text:refText(cells)
+      };
+    });
+    refRows.sort(byDateAsc);
+    persistRef(); renderHistory();
+    banner(`Lista interpretada por IA: ${refRows.length} filas.`,'ok');
+    return true;
+  }catch(e){ return false; }
+}
+function handleRefFile(file){
+  if(!file) return; clearBanner();
+  const reader=new FileReader();
+  reader.onload=async ()=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(reader.result),{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false});
+      if(!aoa.length){ banner('El archivo no tiene filas.'); return; }
+      banner('Interpretando la lista con IA…');
+      const ok=await buildRefListAI(aoa);
+      if(!ok){ buildRefList(aoa, true); banner(`Lista cargada (modo local): ${refRows.length} filas.`,'ok'); }
+    }catch(e){ banner('No se pudo leer el archivo: '+e.message); }
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsArrayBuffer(file);
+}
+function clearRefList(){
+  if(!refRows.length) return;
+  if(!confirm('¿Quitar la lista de referencia?')) return;
+  refHeader=[]; refRows=[]; persistRef(); renderHistory(); banner('Lista de referencia quitada.','ok');
+}
+function renderRefList(){
+  const wrap=document.getElementById('refTableWrap');
+  const info=document.getElementById('refInfo');
+  const clr=document.getElementById('refClrBtn');
+  const ai=document.getElementById('refAiBtn');
+  const exp=document.getElementById('refExpBtn');
+  if(!wrap) return;
+  if(!refRows.length){ wrap.classList.add('hidden'); info.textContent=''; if(clr) clr.disabled=true; if(ai) ai.disabled=true; if(exp) exp.disabled=true; return; }
+  if(clr) clr.disabled=false;
+  if(exp) exp.disabled=false;
+  if(ai) ai.disabled = !history.length;
+  wrap.classList.remove('hidden');
+  const paises=allPaises();
+  const totalCols=paises.map(p=>na(p));
+  document.getElementById('refHead').innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
+    + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
+    + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th>Boleta</th></tr>';
+  const confColor={alta:'#2E8B57',media:'#B0762F',baja:'#8a8f98'};
+  let matched=0;
+  document.getElementById('refBody').innerHTML=refRows.map((r,i)=>{
+    // si la IA ya corrió para esta fila, usar su veredicto; si no, regla determinista (valor+fecha)
+    const mb = r.aiDone ? (r.aiBoletaTs!=null ? (history.find(b=>b.ts===r.aiBoletaTs)||null) : null) : refMatch(r);
+    if(mb) matched++;
+    const u=(r.usd!==''&&r.usd!=null)?r.usd:toUSD(r);
+    const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
+    let nLabel='';
+    if(mb){
+      const n=history.indexOf(mb)+1;
+      const conf=(r.aiDone&&r.aiConf)?` <small style="color:${confColor[r.aiConf]||'#8a8f98'}">${r.aiConf}</small>`:'';
+      nLabel=`✓ N°${n}${conf}`;
+    }
+    const tipoCell=r.tipo?`<span class="pill-mini ${/dig/i.test(r.tipo)?'digital':'paper'}">${esc(r.tipo)}</span>`:'—';
+    return `<tr class="${mb?'refhit':''}">
+      <td class="num">${i+1}</td>
+      <td class="num">${esc(r.fecha)||'—'}</td>
+      <td class="cellwrap">${esc(r.emisor)||'—'}</td>
+      <td>${esc(na(r.pais))||'—'}</td>
+      ${totalCells}
+      <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
+      <td class="cellwrap">${esc(r.desc)||'—'}</td>
+      <td>${tipoCell}</td>
+      <td class="num">${nLabel}</td>
+    </tr>`;
+  }).join('');
+  const aiNote = refRows.some(r=>r.aiDone)?' (IA)':'';
+  info.textContent=`${matched} / ${refRows.length} marcadas${aiNote}`;
+}
+async function reconcileAI(){
+  if(!history.length){ banner('Primero carga boletas en el histórico.'); return; }
+  if(!refRows.length){ banner('Primero sube una lista de referencia.'); return; }
+  const btn=document.getElementById('refAiBtn'); const old=btn.textContent;
+  btn.disabled=true; btn.textContent='🤖 Cuadrando…'; clearBanner();
+  try{
+    const boletas=history.map((r,i)=>({n:i+1,fecha:r.fecha,emisor:r.emisor,total:r.total,moneda:r.moneda,desc:r.desc}));
+    const referencia=refRows.map((r,i)=>({ref:i,fecha:r.fecha,emisor:r.emisor,total:r.total,moneda:r.moneda,desc:r.desc}));
+    const prompt=`Eres un conciliador de gastos. Tengo dos listas del mismo viaje/periodo.
+BOLETAS (ya cargadas, fuente de verdad):
+${JSON.stringify(boletas)}
+REFERENCIA (lista manual a cuadrar):
+${JSON.stringify(referencia)}
+Empareja cada fila de REFERENCIA con la BOLETA del MISMO gasto, priorizando: (1) fecha cercana, (2) monto/valor local igual o casi, (3) nombre del comercio (los nombres pueden venir truncados o sucios, p.ej. "UBER *TRIP HELP.UBE COMPRAS INT.VI" = Uber). Cada boleta se usa máximo una vez. Si no hay correspondencia clara, usa boleta=null.
+Devuelve SOLO un arreglo JSON, sin texto ni markdown:
+[{"ref": <id de referencia>, "boleta": <n de boleta o null>, "conf": "alta" | "media" | "baja"}]`;
+    const raw=await callClaudeText(prompt);
+    const arr=extractJSONArray(raw);
+    if(!arr||!Array.isArray(arr)) throw new Error('La IA no devolvió un resultado legible.');
+    refRows.forEach(r=>{ r.aiDone=true; r.aiBoletaTs=null; r.aiConf=''; });
+    let n=0; const usados={};
+    arr.forEach(m=>{ const r=refRows[m&&m.ref]; if(!r) return;
+      let bol=(m.boleta==null||m.boleta==='')?null:Number(m.boleta);
+      if(bol && (bol<1||bol>history.length||usados[bol])) bol=null;   // descarta fuera de rango o repetida
+      const bo=bol?history[bol-1]:null;
+      r.aiBoletaTs=bo?bo.ts:null; r.aiConf=(m.conf||'').toLowerCase();
+      if(bol){ usados[bol]=1; n++; }
+    });
+    persistRef(); renderRefList();
+    banner(`IA cuadró ${n} de ${refRows.length} filas.`,'ok');
+  }catch(e){ banner('No se pudo cuadrar con IA: '+(e.message||e)); }
+  finally{ btn.disabled=false; btn.textContent=old; }
+}
+
+/* ================= PDF BOLETAS EN PAPEL ================= */
+function exportPapelPDF(){
+  const papers=history.map((r,i)=>({r,n:i+1})).filter(x=>x.r.origen==='Papel'&&x.r.img);
+  if(!papers.length){ banner('No hay boletas en papel con foto.'); return; }
+  if(!window.jspdf||!window.jspdf.jsPDF){ banner('No se pudo cargar el generador de PDF (revisa tu conexión).'); return; }
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'pt',format:'a4'});
+    const pageW=doc.internal.pageSize.getWidth(), pageH=doc.internal.pageSize.getHeight();
+    const MX=30, MY=30, gap=14, capH=16;
+    const cw=pageW-2*MX, ch=pageH-2*MY;
+    const maxH=ch*0.46;                              // al menos 2 filas por hoja
+    let x=MX, y=MY, rowH=0;
+    papers.forEach(({r,n})=>{
+      const iw=r.imgW||1000, ih=r.imgH||1400;
+      const scale=Math.min(cw/iw, maxH/ih);
+      const dw=iw*scale, dh=ih*scale, blockH=dh+capH;
+      if(x+dw > MX+cw+0.5){ x=MX; y+=rowH+gap; rowH=0; }       // salto de fila
+      if(y+blockH > pageH-MY+0.5){ doc.addPage(); x=MX; y=MY; rowH=0; } // nueva hoja
+      try{ doc.addImage(r.img,'JPEG',x,y,dw,dh); }catch(e){ /* salta imagen corrupta */ }
+      const capY=y+dh+11;
+      const nLabel='N°'+n;
+      doc.setFontSize(9); doc.setTextColor(30,36,69); doc.setFont(undefined,'bold');
+      doc.text(nLabel, x, capY);
+      const nW=doc.getTextWidth(nLabel);
+      doc.setFont(undefined,'normal'); doc.setFontSize(8); doc.setTextColor(60,60,60);
+      doc.text('  '+(r.desc||'').substring(0,70), x+nW, capY);
+      x+=dw+gap; rowH=Math.max(rowH,blockH);
+    });
+    doc.save(`bill_boletas_papel_${stamp()}.pdf`);
+  }catch(e){ banner('No se pudo generar el PDF: '+e.message); }
+}
+
+/* ================= ZIP DE PDFs (Digital) ================= */
+function sanitizeName(s){ return String(s||'').replace(/[\/\\:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(); }
+async function exportPdfZip(){
+  const pdfs=history.map((r,i)=>({r,n:i+1})).filter(x=>x.r.origen==='Digital'&&x.r.pdf);
+  if(!pdfs.length){ banner('No hay PDFs digitales cargados.'); return; }
+  if(!window.JSZip){ banner('No se pudo cargar el compresor ZIP (revisa tu conexión).'); return; }
+  try{
+    const zip=new JSZip(); const used={};
+    pdfs.forEach(({r,n})=>{
+      const base=`${n} ${sanitizeName(r.desc)||'documento'}`;
+      let name=base+'.pdf', k=2;
+      while(used[name]){ name=`${base} (${k++}).pdf`; }
+      used[name]=1;
+      const b64=(r.pdf.split(',')[1])||'';
+      zip.file(name, b64, {base64:true});
+    });
+    const blob=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`bill_pdfs_${stamp()}.zip`; a.click(); URL.revokeObjectURL(a.href);
+    banner(`ZIP generado con ${pdfs.length} PDF(s).`,'ok');
+  }catch(e){ banner('No se pudo generar el ZIP: '+e.message); }
+}
+
+/* ================= EXPORT ================= */
+function curOf(p){ const rec=history.find(r=>r.pais===p&&r.moneda); return rec?rec.moneda:''; }
+function exportXlsx(){
+  if(!history.length) return;
+  try{
+    const paises=[...new Set(history.map(r=>r.pais).filter(Boolean))];        // Excel = países contabilizados (sin fantasmas de la referencia)
+    const totalKey=p=>na(p);
+    // Orden: N° · Fecha · Emisor · País · Total(por país) · USD · Descripción · Tipo
+    const rows=history.map((r,i)=>{
+      const o={'N°':i+1,'Fecha':r.fecha,'Emisor':r.emisor,'País':na(r.pais)};
+      paises.forEach(p=>{ o[totalKey(p)] = (r.pais===p && r.total!=='') ? r.total : ''; });
+      const u=toUSD(r);
+      o['USD']      = u!=null?Number(u.toFixed(2)):'';
+      o['Descripción']=r.desc;
+      o['Tipo']     = r.origen;
+      return o;
+    });
+    // fila de totales: suma por país + USD
+    const tot={'N°':'','Fecha':'','Emisor':'','País':'TOTAL'};
+    paises.forEach(p=>{ tot[totalKey(p)]=history.filter(r=>r.pais===p)
+      .reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
+    tot['USD']=Number(history.reduce((a,r)=>{const u=toUSD(r);return a+(u!=null?u:0);},0).toFixed(2));
+    tot['Descripción']=''; tot['Tipo']='';
+    rows.push(tot);
+    const ws=XLSX.utils.json_to_sheet(rows);
+    // Tabla de conversiones a USD, a la derecha (una columna de separación)
+    const startCol=(7+paises.length)+1;
+    XLSX.utils.sheet_add_aoa(ws,[['Conversión a USD']],{origin:{r:0,c:startCol}});
+    const ratesRows=paises.map(p=>({'País':na(p),'Moneda':curOf(p),
+      '1 USD =':(rates[curOf(p)]===''||rates[curOf(p)]==null)?'':Number(rates[curOf(p)])}));
+    XLSX.utils.sheet_add_json(ws,ratesRows,{origin:{r:1,c:startCol}});
+    ws['!cols']=[{wch:5},{wch:11},{wch:24},{wch:12},...paises.map(()=>({wch:18})),{wch:11},{wch:24},{wch:9},{wch:3},{wch:14},{wch:9},{wch:12}];
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Boletas');
+    XLSX.writeFile(wb,`bill_boletas_${stamp()}.xlsx`);
+  }catch(e){ banner('No se pudo exportar Excel: '+e.message); }
+}
+function exportJson(){
+  if(!history.length) return;
+  try{
+    // Respaldo COMPLETO (incluye fotos y PDFs) para mover entre dispositivos
+    const blob=new Blob([JSON.stringify({version:1,rates,boletas:history},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_respaldo_${stamp()}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){ banner('No se pudo exportar JSON: '+e.message); }
+}
+function importJson(file){
+  if(!file) return; clearBanner();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      const boletas=Array.isArray(obj)?obj:(obj.boletas||[]);
+      const inRates=(!Array.isArray(obj)&&obj.rates)?obj.rates:null;
+      if(!Array.isArray(boletas)) throw new Error('Formato no reconocido.');
+      const seen=new Set(history.map(r=>r.ts));
+      let added=0, dup=0;
+      boletas.forEach(b=>{ if(!b||typeof b!=='object') return;
+        if(b.ts&&seen.has(b.ts)){ dup++; return; }
+        if(b.ts==null) b.ts=Date.now()+Math.floor(Math.random()*1000);
+        history.push(b); seen.add(b.ts); added++; });
+      history.sort(byDateAsc);
+      if(inRates){ Object.keys(inRates).forEach(k=>{ if(rates[k]==null||rates[k]==='') rates[k]=inRates[k]; }); persistRates(); }
+      persist(); renderRates(); renderHistory();
+      banner(`Importadas ${added} boleta(s)${dup?`, ${dup} ya existían`:''}.`,'ok');
+    }catch(e){ banner('No se pudo importar: '+e.message); }
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsText(file);
+}
+function exportRefJson(){
+  if(!refRows.length){ banner('No hay lista de referencia que exportar.'); return; }
+  try{
+    const blob=new Blob([JSON.stringify({version:1,header:refHeader,rows:refRows},null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_referencia_${stamp()}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){ banner('No se pudo exportar: '+e.message); }
+}
+function importRefJson(file){
+  if(!file) return; clearBanner();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      if(!obj||!Array.isArray(obj.rows)) throw new Error('Formato no reconocido.');
+      refHeader=obj.header||[]; refRows=obj.rows;
+      refRows.forEach(r=>{ if(!Array.isArray(r.nums)) r.nums=refNums(r.cells||[]); if(typeof r.text!=='string') r.text=refText(r.cells||[]); });
+      persistRef(); renderHistory();
+      banner(`Referencia importada: ${refRows.length} filas.`,'ok');
+    }catch(e){ banner('No se pudo importar: '+e.message); }
+  };
+  reader.onerror=()=>banner('No se pudo leer el archivo.');
+  reader.readAsText(file);
+}
+function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
+
+/* ================= INIT ================= */
+function init(){
+  buildCountrySelect(); wireInputs(); loadHistory(); loadRates(); loadRefList();
+  if(DEMO){
+    appCode='demo'; enterApp();
+    if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); history.sort(byDateAsc); persist(); }
+    if(Object.keys(rates).length<=1){ rates=Object.assign({USD:1},DEMO_RATES); persistRates(); }
+    if(!refRows.length && DEMO_REF.length){ buildRefList(DEMO_REF, true); }
+  }
+  renderRates(); renderHistory(); switchTab('scan');
+}
+init();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>

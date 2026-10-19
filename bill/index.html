@@ -3255,6 +3255,28 @@ input,select,textarea{
   .tab-btn{min-height:49px!important}
 }
 
+/* ===== Recorte de foto (cropper) ===== */
+#cropper{position:fixed;inset:0;z-index:70;background:#10231A;display:flex;flex-direction:column;
+  padding:calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+.crop-top{width:100%;max-width:560px;margin:0 auto 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.crop-top h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:21px;color:#F5EFE2}
+.crop-x{background:rgba(245,239,226,.14);color:#F5EFE2;border:1px solid rgba(245,239,226,.28);
+  width:48px;height:48px;border-radius:50%;font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center;flex:none}
+.crop-stage{position:relative;flex:1;min-height:0;touch-action:none;overflow:hidden;border-radius:14px}
+#cropImg{position:absolute;user-select:none;-webkit-user-drag:none;pointer-events:none}
+#cropBox{position:absolute;border:2px solid var(--brote);box-shadow:0 0 0 9999px rgba(6,15,11,.62);touch-action:none;cursor:move}
+#cropBox:before{content:"";position:absolute;top:0;bottom:0;left:33.33%;right:33.33%;pointer-events:none;
+  border-left:1px solid rgba(245,239,226,.38);border-right:1px solid rgba(245,239,226,.38)}
+#cropBox:after{content:"";position:absolute;left:0;right:0;top:33.33%;bottom:33.33%;pointer-events:none;
+  border-top:1px solid rgba(245,239,226,.38);border-bottom:1px solid rgba(245,239,226,.38)}
+.ch{position:absolute;width:56px;height:56px;touch-action:none}
+.ch:after{content:"";position:absolute;width:26px;height:26px;border:5px solid #F5EFE2}
+.ch[data-h="nw"]{top:-28px;left:-28px}.ch[data-h="nw"]:after{top:25px;left:25px;border-right:0;border-bottom:0;border-top-left-radius:7px}
+.ch[data-h="ne"]{top:-28px;right:-28px}.ch[data-h="ne"]:after{top:25px;right:25px;border-left:0;border-bottom:0;border-top-right-radius:7px}
+.ch[data-h="sw"]{bottom:-28px;left:-28px}.ch[data-h="sw"]:after{bottom:25px;left:25px;border-right:0;border-top:0;border-bottom-left-radius:7px}
+.ch[data-h="se"]{bottom:-28px;right:-28px}.ch[data-h="se"]:after{bottom:25px;right:25px;border-left:0;border-top:0;border-bottom-right-radius:7px}
+.crop-actions{width:100%;max-width:560px;margin:12px auto 0;display:grid;grid-template-columns:1fr;gap:12px}
 </style>
 <script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
@@ -3306,6 +3328,7 @@ input,select,textarea{
         <div id="pdfPreview" class="pdfbox hidden"><span class="pdficon">📄</span><span id="pdfName"></span></div>
         <button class="preview-x" onclick="clearImage()" title="Quitar">×</button>
       </div>
+      <button id="recropBtn" class="btn ghost full hidden" style="margin-top:10px" onclick="reopenCrop()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6v34a6 6 0 0 0 6 6h34"/><path d="M6 18h34a6 6 0 0 1 6 6v34"/></svg><span>Recortar</span></button>
       <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
       <input id="fileIn" type="file" accept="image/*,application/pdf" class="hidden">
       <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
@@ -3405,9 +3428,29 @@ input,select,textarea{
   </div>
 </div>
 
+<div id="cropper" class="hidden">
+  <div class="crop-top">
+    <h3>Recorta la boleta</h3>
+    <button class="crop-x" type="button" onclick="cancelCrop()" title="Cerrar">×</button>
+  </div>
+  <div class="crop-stage" id="cropStage">
+    <img id="cropImg" alt="Foto a recortar">
+    <div id="cropBox">
+      <div class="ch" data-h="nw"></div>
+      <div class="ch" data-h="ne"></div>
+      <div class="ch" data-h="sw"></div>
+      <div class="ch" data-h="se"></div>
+    </div>
+  </div>
+  <div class="crop-actions">
+    <button class="btn salto" type="button" onclick="applyCrop()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6v34a6 6 0 0 0 6 6h34"/><path d="M6 18h34a6 6 0 0 1 6 6v34"/></svg><span>Usar recorte</span></button>
+    <button class="btn ghost" type="button" onclick="skipCrop()"><span>Usar foto completa</span></button>
+  </div>
+</div>
+
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v3)
+   Bill · Escáner de facturas — Ubicquia  (v4 · recorte de foto)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
@@ -3458,6 +3501,9 @@ Los montos como números sin separador de miles ni símbolo. Responde únicament
 
 let appCode = '';
 let curImg  = null;
+let origPhoto = null;   // foto original en resolución completa (para recortar / re-recortar)
+let cropGeo  = null;    // geometría del cropper en pantalla
+let cropDrag = null;
 let history = [];
 let rates   = {USD:1};
 let refHeader = [], refRows = [];
@@ -3539,7 +3585,7 @@ async function validateCode(code){
 let camIn,fileIn,drop;
 function wireInputs(){
   camIn=document.getElementById('camIn'); fileIn=document.getElementById('fileIn'); drop=document.getElementById('drop');
-  camIn.addEventListener('change', e=>handleFile(e.target.files[0]));
+  camIn.addEventListener('change', e=>handleFile(e.target.files[0], true));
   fileIn.addEventListener('change', e=>handleFile(e.target.files[0]));
   ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
@@ -3549,7 +3595,7 @@ function wireInputs(){
   document.getElementById('refJsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importRefJson(e.target.files[0]); e.target.value=''; });
   document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
 }
-function handleFile(file){
+function handleFile(file, fromCamera){
   if(!file) return;
   const isPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
   const isImg = file.type.startsWith('image/');
@@ -3562,6 +3608,8 @@ function handleFile(file){
     reader.onload=()=>{
       const dataUrl=reader.result;
       curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'application/pdf',isPdf:true,w:0,h:0,origen,name:file.name||'documento.pdf'};
+      origPhoto=null;
+      document.getElementById('recropBtn').classList.add('hidden');
       document.getElementById('preview').classList.add('hidden');
       const pp=document.getElementById('pdfPreview'); pp.classList.remove('hidden');
       document.getElementById('pdfName').textContent=curImg.name;
@@ -3576,22 +3624,9 @@ function handleFile(file){
   reader.onload=()=>{
     const img=new Image();
     img.onload=()=>{
-      try{
-        let {width:w,height:h}=img;
-        const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
-        w=Math.round(w*scale); h=Math.round(h*scale);
-        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
-        const dataUrl=cv.toDataURL('image/jpeg',0.85);
-        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
-      }catch(err){
-        const dataUrl=reader.result;
-        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:file.type,isPdf:false,w:0,h:0,origen};
-      }
-      const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
-      const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src=curImg.dataUrl;
-      document.getElementById('previewWrap').classList.remove('hidden');
-      document.getElementById('scanBtn').disabled=false;
+      origPhoto={img,origen,data:reader.result,type:file.type};
+      if(fromCamera) openCropper();        // foto de cámara → recortar al tiro
+      else processImageElement();          // adjuntar/arrastrar → flujo de siempre (botón Recortar disponible)
     };
     img.onerror=()=>banner('No se pudo leer la imagen.');
     img.src=reader.result;
@@ -3600,13 +3635,127 @@ function handleFile(file){
   reader.readAsDataURL(file);
 }
 function clearImage(){
-  curImg=null;
+  curImg=null; origPhoto=null; cropGeo=null; cropDrag=null;
+  document.getElementById('cropper').classList.add('hidden');
+  document.getElementById('recropBtn').classList.add('hidden');
   document.getElementById('previewWrap').classList.add('hidden');
   const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src='';
   const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
   document.getElementById('scanBtn').disabled=true;
   if(camIn) camIn.value=''; if(fileIn) fileIn.value='';
 }
+
+/* ================= RECORTE DE FOTO =================
+   No toca el motor: el resultado del recorte se procesa con el MISMO
+   pipeline de siempre (reescalado a MAX_EDGE + JPEG 0.85 → curImg),
+   solo que recortando primero sobre la resolución original. */
+function processImageElement(){
+  if(!origPhoto) return;
+  const {img,origen,data,type}=origPhoto;
+  try{
+    let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+    const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
+    w=Math.round(w*scale); h=Math.round(h*scale);
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    const dataUrl=cv.toDataURL('image/jpeg',0.85);
+    curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
+  }catch(err){
+    curImg={dataUrl:data,b64:(data||'').split(',')[1],mediaType:type,isPdf:false,w:0,h:0,origen};
+  }
+  showImagePreview();
+}
+function showImagePreview(){
+  const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
+  const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src=curImg.dataUrl;
+  document.getElementById('previewWrap').classList.remove('hidden');
+  const rb=document.getElementById('recropBtn'); if(rb&&origPhoto) rb.classList.remove('hidden');
+  document.getElementById('scanBtn').disabled=false;
+}
+function openCropper(){
+  if(!origPhoto) return;
+  document.getElementById('cropImg').src=origPhoto.data;
+  document.getElementById('cropper').classList.remove('hidden');
+  requestAnimationFrame(layoutCrop);
+}
+function layoutCrop(){
+  if(!origPhoto) return;
+  if(document.getElementById('cropper').classList.contains('hidden')) return;
+  const stage=document.getElementById('cropStage');
+  const img=origPhoto.img;
+  const natW=img.naturalWidth||img.width, natH=img.naturalHeight||img.height;
+  const sw=stage.clientWidth, sh=stage.clientHeight;
+  if(!sw||!sh||!natW||!natH){ requestAnimationFrame(layoutCrop); return; }
+  const s=Math.min(sw/natW, sh/natH);
+  const dw=Math.max(1,natW*s), dh=Math.max(1,natH*s);
+  const ox=(sw-dw)/2, oy=(sh-dh)/2;
+  const ci=document.getElementById('cropImg');
+  ci.style.width=dw+'px'; ci.style.height=dh+'px'; ci.style.left=ox+'px'; ci.style.top=oy+'px';
+  cropGeo={natW,natH,dw,dh,ox,oy,box:null};
+  setCropBox(ox+dw*0.04, oy+dh*0.04, dw*0.92, dh*0.92);
+}
+function setCropBox(x,y,w,h){
+  const b=document.getElementById('cropBox');
+  b.style.left=x+'px'; b.style.top=y+'px'; b.style.width=w+'px'; b.style.height=h+'px';
+  if(cropGeo) cropGeo.box={x,y,w,h};
+}
+function wireCropper(){
+  const box=document.getElementById('cropBox');
+  box.addEventListener('pointerdown', e=>{
+    if(!cropGeo||cropDrag) return;
+    e.preventDefault();
+    const h=(e.target.classList&&e.target.classList.contains('ch'))?e.target.dataset.h:'move';
+    cropDrag={h,px:e.clientX,py:e.clientY,box:Object.assign({},cropGeo.box)};
+    try{ box.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  box.addEventListener('pointermove', e=>{
+    if(!cropDrag||!cropGeo) return;
+    e.preventDefault();
+    const dx=e.clientX-cropDrag.px, dy=e.clientY-cropDrag.py;
+    const {ox,oy,dw,dh}=cropGeo, MIN=48, cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+    let {x,y,w,h}=cropDrag.box, x2=x+w, y2=y+h;
+    if(cropDrag.h==='move'){
+      x=cl(x+dx,ox,ox+dw-w); y=cl(y+dy,oy,oy+dh-h);
+    }else{
+      if(cropDrag.h.indexOf('w')>=0) x=cl(x+dx,ox,x2-MIN);
+      if(cropDrag.h.indexOf('e')>=0) x2=cl(x2+dx,x+MIN,ox+dw);
+      if(cropDrag.h.indexOf('n')>=0) y=cl(y+dy,oy,y2-MIN);
+      if(cropDrag.h.indexOf('s')>=0) y2=cl(y2+dy,y+MIN,oy+dh);
+      w=x2-x; h=y2-y;
+    }
+    setCropBox(x,y,w,h);
+  });
+  const end=()=>{ cropDrag=null; };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+  window.addEventListener('resize', ()=>{ if(cropGeo && !document.getElementById('cropper').classList.contains('hidden')) layoutCrop(); });
+}
+function applyCrop(){
+  if(!origPhoto||!cropGeo||!cropGeo.box) return;
+  const {natW,natH,dw,dh,ox,oy,box}=cropGeo;
+  const rx=natW/dw, ry=natH/dh;
+  const sx=Math.max(0,(box.x-ox)*rx), sy=Math.max(0,(box.y-oy)*ry);
+  const sw=Math.min(natW-sx,box.w*rx), sh=Math.min(natH-sy,box.h*ry);
+  try{
+    const scale=Math.min(1,MAX_EDGE/Math.max(sw,sh));
+    const cv=document.createElement('canvas');
+    cv.width=Math.max(1,Math.round(sw*scale)); cv.height=Math.max(1,Math.round(sh*scale));
+    cv.getContext('2d').drawImage(origPhoto.img,sx,sy,sw,sh,0,0,cv.width,cv.height);
+    const dataUrl=cv.toDataURL('image/jpeg',0.85);
+    curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w:cv.width,h:cv.height,origen:origPhoto.origen};
+    document.getElementById('cropper').classList.add('hidden');
+    showImagePreview();
+  }catch(e){ banner('No se pudo recortar: '+(e.message||e)); }
+}
+function skipCrop(){
+  document.getElementById('cropper').classList.add('hidden');
+  processImageElement();
+}
+function cancelCrop(){
+  document.getElementById('cropper').classList.add('hidden');
+  if(!curImg) clearImage();   // foto recién tomada y descartada; si venía de re-recorte, conserva la actual
+}
+function reopenCrop(){ if(origPhoto) openCropper(); }
 
 /* ================= ESCANEO ================= */
 async function runScan(){
@@ -3624,7 +3773,7 @@ async function runScan(){
     if(!currentMobile()) document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
     banner('Datos extraídos. Revísalos antes de guardar.','ok');
   }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
-  finally{ btn.disabled=false; lbl.textContent='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
+  finally{ btn.disabled=false; lbl.innerHTML='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
 }
 async function scan(b64,mediaType){
   try{
@@ -4241,7 +4390,7 @@ function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
 
 /* ================= INIT ================= */
 function init(){
-  buildCountrySelect(); wireInputs(); loadHistory(); loadRates(); loadRefList();
+  buildCountrySelect(); wireInputs(); wireCropper(); loadHistory(); loadRates(); loadRefList();
   if(DEMO){
     appCode='demo'; enterApp();
     if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); history.sort(byDateAsc); persist(); }
