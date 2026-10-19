@@ -3255,6 +3255,32 @@ input,select,textarea{
   .tab-btn{min-height:49px!important}
 }
 
+/* ===== Escritorio: histórico y referencia a ancho completo ===== */
+@media (min-width:821px){
+  .wrap{max-width:none;padding:18px 24px}          /* las cards de formulario siguen centradas a 720px */
+  td.cellwrap{max-width:420px}
+  #histCard .tbl-wrap,#refTableWrap{max-height:70vh;overflow:auto}
+  tfoot td{position:sticky;bottom:0;z-index:1}     /* TOTAL siempre visible; th ya es sticky arriba */
+}
+
+/* ===== Lote y selección masiva ===== */
+.batchbox{margin-top:12px;border:1px solid var(--ubi-line);border-radius:14px;padding:12px;background:var(--ubi-row)}
+.batchhead{margin-bottom:10px;color:var(--ubi-navy)}
+.sub2{font-size:12px;color:var(--ubi-muted)}
+.batchlist{display:flex;flex-wrap:wrap;gap:8px}
+.bchip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--ubi-line);
+  border-radius:999px;padding:6px 10px;font-size:13px;max-width:100%}
+.bchip i{font-style:normal;font-weight:900;color:var(--ubi-muted)}
+.bchip.ok i{color:var(--trebol)}
+.bchip.err{border-color:#d99a73;background:#FBF1EA}
+.bchip.err i{color:var(--cobre)}
+.bchip button{background:none;border:0;font-size:16px;line-height:1;color:var(--ubi-muted);padding:0 2px;cursor:pointer}
+.bulkbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--ubi-row);
+  border:1px solid var(--ubi-line);border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px}
+.bulkbar input{flex:1;min-width:120px;padding:9px 10px;border:1px solid var(--ubi-line);border-radius:9px}
+input.selck{width:24px!important;height:24px!important;min-height:0!important;padding:0!important;margin:0;
+  border-radius:6px!important;accent-color:var(--trebol);flex:none;cursor:pointer}
+
 /* ===== Histórico 100% editable ===== */
 .editable{border-bottom:1px dashed rgba(20,59,43,.28)}
 .editable:focus{border-bottom-color:transparent}
@@ -3339,13 +3365,21 @@ input,select,textarea{
 
     <div class="card form tab-section active-tab" id="captureCard" data-tab-section="scan">
       <h2>1 · Captura la boleta</h2>
-      <p class="sub">Fotos e imágenes → <b>Papel</b> (entran al PDF de boletas). PDF → <b>Digital</b>.</p>
+      <p class="sub">Fotos e imágenes → <b>Papel</b> (entran al PDF de boletas). PDF → <b>Digital</b>. <b>Puedes seleccionar o arrastrar varios archivos a la vez</b>: se escanean en lote y van directo al histórico.</p>
       <div id="drop" class="drop">
         <div class="icon">📄</div>
         <p>Arrastra una imagen o PDF, o usa los botones</p>
         <div class="btn-row">
           <button class="btn salto" onclick="startCamera()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="34" rx="10"/><path d="M22 18l5-8h10l5 8"/><circle cx="32" cy="35" r="11"/><circle cx="32" cy="35" r="4"/></svg><span>Tomar foto</span></button>
-          <button class="btn ghost" onclick="document.getElementById('fileIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M24 34l17-17a10 10 0 0 1 14 14L29 57A15 15 0 0 1 8 36l27-27a8 8 0 0 1 11 11L20 46a5 5 0 0 1-7-7l23-23"/></svg><span>Adjuntar imagen o PDF</span></button>
+          <button class="btn ghost" onclick="document.getElementById('fileIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M24 34l17-17a10 10 0 0 1 14 14L29 57A15 15 0 0 1 8 36l27-27a8 8 0 0 1 11 11L20 46a5 5 0 0 1-7-7l23-23"/></svg><span>Adjuntar imágenes o PDFs</span></button>
+        </div>
+      </div>
+      <div id="batchBox" class="batchbox hidden">
+        <div class="batchhead"><b>Lote de archivos</b> <span class="sub2">se escanean y van directo al histórico (sin recorte)</span></div>
+        <div id="batchList" class="batchlist"></div>
+        <div class="btn-row" style="margin-top:10px">
+          <button id="batchScanBtn" class="btn lime" onclick="runBatch()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span id="batchScanLbl">Escanear lote</span></button>
+          <button id="batchClrBtn" class="btn ghost" onclick="clearBatch()"><span>Quitar todos</span></button>
         </div>
       </div>
       <div id="previewWrap" class="preview-wrap hidden">
@@ -3355,7 +3389,7 @@ input,select,textarea{
       </div>
       <button id="recropBtn" class="btn ghost full hidden" style="margin-top:10px" onclick="reopenCrop()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6v34a6 6 0 0 0 6 6h34"/><path d="M6 18h34a6 6 0 0 1 6 6v34"/></svg><span>Recortar</span></button>
       <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
-      <input id="fileIn" type="file" accept="image/*,application/pdf" class="hidden">
+      <input id="fileIn" type="file" accept="image/*,application/pdf" multiple class="hidden">
       <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
         <span id="scanLabel"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span></span>
       </button>
@@ -3405,11 +3439,20 @@ input,select,textarea{
         <h2 style="margin:0">3 · Histórico</h2>
         <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
       </div>
-      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla.</p>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla. Marca varias con las casillas para editarlas o borrarlas en bloque.</p>
+      <div id="bulkBar" class="bulkbar hidden">
+        <span><b id="bulkCount">0</b> seleccionadas →</span>
+        <input id="bk_fecha" class="mono" placeholder="Fecha AAAA-MM-DD">
+        <input id="bk_pais" placeholder="País">
+        <input id="bk_mon" class="mono" placeholder="Moneda" maxlength="4">
+        <button class="btn" type="button" onclick="bulkApply()">Aplicar</button>
+        <button class="btn danger" type="button" onclick="bulkDelete()">Borrar</button>
+        <button class="btn ghost" type="button" onclick="clearSel()">Nada</button>
+      </div>
       <div class="tbl-wrap">
         <table id="histTbl">
           <thead id="histHead"></thead>
-          <tbody id="histBody"><tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr></tbody>
+          <tbody id="histBody"><tr><td colspan="9" class="empty">Aún no hay boletas guardadas.</td></tr></tbody>
           <tfoot id="histFoot"></tfoot>
         </table>
       </div>
@@ -3493,7 +3536,7 @@ input,select,textarea{
 
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v6 · cámara trasera in-app + recorte por lados)
+   Bill · Escáner de facturas — Ubicquia  (v8 · lote multi-archivo + edición masiva)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
@@ -3547,6 +3590,8 @@ let curImg  = null;
 let origPhoto = null;   // foto original en resolución completa (para recortar / re-recortar)
 let cropGeo  = null;    // geometría del cropper en pantalla
 let cropDrag = null;
+let batch = [];              // cola de archivos para escaneo en lote
+const selSet = new Set();    // ts de filas seleccionadas para edición masiva
 let history = [];
 let rates   = {USD:1};
 let refHeader = [], refRows = [];
@@ -3628,11 +3673,11 @@ async function validateCode(code){
 let camIn,fileIn,drop;
 function wireInputs(){
   camIn=document.getElementById('camIn'); fileIn=document.getElementById('fileIn'); drop=document.getElementById('drop');
-  camIn.addEventListener('change', e=>handleFile(e.target.files[0], true));
-  fileIn.addEventListener('change', e=>handleFile(e.target.files[0]));
+  camIn.addEventListener('change', e=>{ handleFiles(e.target.files, true); e.target.value=''; });
+  fileIn.addEventListener('change', e=>{ handleFiles(e.target.files, false); e.target.value=''; });
   ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
-  drop.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  drop.addEventListener('drop', e=>{ handleFiles(e.dataTransfer.files, false); });
   document.getElementById('refIn').addEventListener('change', e=>{ if(e.target.files[0]) handleRefFile(e.target.files[0]); e.target.value=''; });
   document.getElementById('jsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importJson(e.target.files[0]); e.target.value=''; });
   document.getElementById('refJsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importRefJson(e.target.files[0]); e.target.value=''; });
@@ -3692,21 +3737,151 @@ function clearImage(){
    No toca el motor: el resultado del recorte se procesa con el MISMO
    pipeline de siempre (reescalado a MAX_EDGE + JPEG 0.85 → curImg),
    solo que recortando primero sobre la resolución original. */
+function imgToJpeg(img){
+  let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+  const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
+  w=Math.round(w*scale); h=Math.round(h*scale);
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+  cv.getContext('2d').drawImage(img,0,0,w,h);
+  const dataUrl=cv.toDataURL('image/jpeg',0.85);
+  return {dataUrl,b64:dataUrl.split(',')[1],w,h};
+}
 function processImageElement(){
   if(!origPhoto) return;
   const {img,origen,data,type}=origPhoto;
   try{
-    let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
-    const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
-    w=Math.round(w*scale); h=Math.round(h*scale);
-    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-    cv.getContext('2d').drawImage(img,0,0,w,h);
-    const dataUrl=cv.toDataURL('image/jpeg',0.85);
-    curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
+    const j=imgToJpeg(img);
+    curImg={dataUrl:j.dataUrl,b64:j.b64,mediaType:'image/jpeg',isPdf:false,w:j.w,h:j.h,origen};
   }catch(err){
     curImg={dataUrl:data,b64:(data||'').split(',')[1],mediaType:type,isPdf:false,w:0,h:0,origen};
   }
   showImagePreview();
+}
+
+/* ================= LOTE (varios archivos a la vez) =================
+   1 archivo = flujo individual de siempre (recorte/revisión).
+   2+ archivos (o lote ya abierto) = cola: cada ítem se escanea con el
+   MISMO motor y se guarda directo al histórico editable. */
+function handleFiles(list, fromCamera){
+  const files=Array.from(list||[]).filter(Boolean);
+  if(!files.length) return;
+  if(files.length===1 && !batch.length){ handleFile(files[0], fromCamera); return; }
+  clearBanner();
+  files.forEach(queueFile);
+}
+function queueFile(file){
+  const isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name||'');
+  const isImg=file.type.startsWith('image/');
+  if(!isPdf&&!isImg){ banner('Se omitió "'+(file.name||'archivo')+'": no es imagen ni PDF.'); return; }
+  const it={name:file.name||(isPdf?'documento.pdf':'foto.jpg'),origen:isPdf?'Digital':'Papel',isPdf,status:'prep',err:''};
+  batch.push(it); renderBatch();
+  if(isPdf && file.size>3.3*1024*1024){ it.status='err'; it.err='PDF supera ~3 MB'; renderBatch(); return; }
+  const reader=new FileReader();
+  reader.onerror=()=>{ it.status='err'; it.err='no se pudo leer'; renderBatch(); };
+  reader.onload=()=>{
+    if(isPdf){
+      it.dataUrl=reader.result; it.b64=reader.result.split(',')[1];
+      it.mediaType='application/pdf'; it.w=0; it.h=0; it.status='pend'; renderBatch();
+    }else{
+      const img=new Image();
+      img.onload=()=>{
+        try{ const j=imgToJpeg(img); Object.assign(it,j,{mediaType:'image/jpeg'}); }
+        catch(e){ it.dataUrl=reader.result; it.b64=(reader.result||'').split(',')[1]; it.mediaType=file.type; it.w=0; it.h=0; }
+        it.status='pend'; renderBatch();
+      };
+      img.onerror=()=>{ it.status='err'; it.err='imagen ilegible'; renderBatch(); };
+      img.src=reader.result;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function renderBatch(){
+  const box=document.getElementById('batchBox'); if(!box) return;
+  if(!batch.length){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  const pend=batch.filter(b=>b.status==='pend'||b.status==='err').length;
+  const busy=batch.some(b=>b.status==='run'||b.status==='prep');
+  document.getElementById('batchList').innerHTML=batch.map((b,i)=>{
+    const st=b.status==='ok'?'✓':b.status==='run'?'…':b.status==='prep'?'⌛':b.status==='err'?'✕':'•';
+    const x=(b.status==='run'||b.status==='prep')?'':`<button type="button" onclick="removeBatch(${i})" title="Quitar">×</button>`;
+    return `<span class="bchip ${b.status}" title="${esc(b.err||b.name)}"><i>${st}</i>${esc(b.name).slice(0,30)}${x}</span>`;
+  }).join('');
+  const btn=document.getElementById('batchScanBtn');
+  btn.disabled=busy||!pend;
+  document.getElementById('batchScanLbl').textContent=busy?'Escaneando lote…':('Escanear lote ('+pend+')');
+  document.getElementById('batchClrBtn').disabled=busy;
+}
+function removeBatch(i){ const b=batch[i]; if(b&&b.status!=='run'&&b.status!=='prep'){ batch.splice(i,1); renderBatch(); } }
+function clearBatch(){ if(batch.some(b=>b.status==='run'||b.status==='prep')) return; batch=[]; renderBatch(); }
+async function scanBatchItem(it){
+  it.status='run'; it.err=''; renderBatch();
+  try{
+    const raw=await scan(it.b64,it.mediaType);
+    const d=extractJSON(raw);
+    if(!d) throw new Error('la IA no devolvió datos legibles');
+    const em=d.emisor||{};
+    const pais=matchCountry(d.pais)||(d.pais?String(d.pais):'');
+    const moneda=String((pais&&COUNTRIES[pais]&&COUNTRIES[pais].code)||d.moneda||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+    let texto=d.texto_completo||'';
+    if(Array.isArray(d.items)&&d.items.length)
+      texto+='\n\n— Ítems —\n'+d.items.map(x=>`• ${x.descripcion||''}  x${x.cantidad??''}  = ${x.total??''}`).join('\n');
+    const row={origen:it.origen,clase:d.tipo_documento||'',desc:d.descripcion||'',pais,moneda,
+      fecha:d.fecha_emision||'',folio:d.folio||'',emisor:em.nombre||'',rut:em.rut||'',
+      neto:num(d.neto),iva:num(d.iva),total:num(d.total),texto:texto.trim(),
+      img:it.origen==='Papel'?it.dataUrl:'', pdf:it.isPdf?it.dataUrl:'',
+      imgW:it.w||0,imgH:it.h||0,ts:Date.now()+Math.floor(Math.random()*999)};
+    if(row.moneda&&rates[row.moneda]==null) rates[row.moneda]='';
+    history.push(row); history.sort(byDateAsc); persist(); persistRates();
+    it.status='ok';
+  }catch(e){ it.status='err'; it.err=e.message||String(e); }
+}
+async function runBatch(){
+  const q=batch.filter(b=>b.status==='pend'||b.status==='err');
+  if(!q.length) return;
+  clearBanner(); renderBatch();
+  let i=0, okN=0;
+  const worker=async()=>{ for(;;){ const it=q[i++]; if(!it) return; await scanBatchItem(it); if(it.status==='ok') okN++; renderBatch(); } };
+  await Promise.all([worker(),worker()]);     // 2 escaneos en paralelo
+  renderRates(); renderHistory();
+  const errs=batch.filter(b=>b.status==='err').length;
+  batch=batch.filter(b=>b.status!=='ok'); renderBatch();
+  if(errs) banner(okN+' guardada(s), '+errs+' con error — reintenta con "Escanear lote" o quítalas.','info');
+  else { banner('Lote listo: '+okN+' boleta(s) guardadas en el histórico.','ok'); switchTab('history'); }
+}
+
+/* ================= SELECCIÓN / EDICIÓN MASIVA ================= */
+function toggleSel(ts,on){ if(on) selSet.add(ts); else selSet.delete(ts); syncBulk(); }
+function toggleSelAll(on){ selSet.clear(); if(on) history.forEach(r=>selSet.add(r.ts)); renderHistory(); }
+function clearSel(){ selSet.clear(); renderHistory(); }
+function syncBulk(){
+  const bar=document.getElementById('bulkBar'); if(!bar) return;
+  document.getElementById('bulkCount').textContent=selSet.size;
+  bar.classList.toggle('hidden',!selSet.size);
+  const hd=document.querySelector('#histHead input.selck');
+  if(hd) hd.checked = history.length>0 && history.every(r=>selSet.has(r.ts));
+}
+function bulkApply(){
+  if(!selSet.size) return;
+  const f=fmtDate(document.getElementById('bk_fecha').value.trim());
+  const p0=document.getElementById('bk_pais').value.trim();
+  const p=p0?(matchCountry(p0)||p0):'';
+  const m=document.getElementById('bk_mon').value.trim().toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+  if(!f&&!p&&!m){ banner('Escribe fecha, país o moneda para aplicar a las seleccionadas.'); return; }
+  let n=0;
+  history.forEach(r=>{ if(!selSet.has(r.ts)) return; n++;
+    if(f) r.fecha=f;
+    if(p) r.pais=p;
+    if(m){ r.moneda=m; if(rates[m]==null) rates[m]=''; } });
+  if(f) history.sort(byDateAsc);
+  persist(); persistRates(); renderRates(); renderHistory();
+  banner('Cambios aplicados a '+n+' boleta(s).','ok');
+}
+function bulkDelete(){
+  if(!selSet.size) return;
+  if(!confirm('¿Borrar '+selSet.size+' boleta(s) seleccionada(s)?')) return;
+  history=history.filter(r=>!selSet.has(r.ts));
+  selSet.clear(); persist(); renderRates(); renderHistory();
+  banner('Seleccionadas borradas.','ok');
 }
 function showImagePreview(){
   const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
@@ -4009,15 +4184,17 @@ function renderHistory(){
   document.getElementById('clrBtn').disabled=!has;
   const paises=allPaises();   // unión histórico + referencia
   const totalCols=paises.map(p=>na(p));
-  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th><th>Mon.</th>'
+  const allSel = has && history.every(r=>selSet.has(r.ts));
+  head.innerHTML='<tr><th><input type="checkbox" class="selck" '+(allSel?'checked ':'')+'onchange="toggleSelAll(this.checked)"></th><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th><th>Mon.</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
   if(!has){
-    body.innerHTML='<tr><td colspan="8" class="empty">Aún no hay boletas guardadas.</td></tr>';
+    body.innerHTML='<tr><td colspan="9" class="empty">Aún no hay boletas guardadas.</td></tr>';
     foot.innerHTML=''; cards.innerHTML='<p class="empty">Aún no hay boletas guardadas.</p>';
     document.getElementById('usdSum').textContent=''; return;
   }
   const ED='contenteditable="true" spellcheck="false" onkeydown="if(event.key===&apos;Enter&apos;){event.preventDefault();this.blur();}"';
+  const CK=ts=>`<input type="checkbox" class="selck" ${selSet.has(ts)?'checked ':''}onchange="toggleSel(${ts},this.checked)">`;
   let sum=0, anyUSD=false;
   // --- Tabla (escritorio) ---
   body.innerHTML=history.map((r,i)=>{
@@ -4025,6 +4202,7 @@ function renderHistory(){
     const pcls=r.origen==='Papel'?'paper':'digital';
     const totalCells=paises.map(p=>`<td class="num">${r.pais===p?`<span class="editable num" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span>`:''}</td>`).join('');
     return `<tr>
+      <td>${CK(r.ts)}</td>
       <td class="num">${i+1}</td>
       <td class="num"><span class="editable num" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span></td>
       <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></td>
@@ -4040,14 +4218,14 @@ function renderHistory(){
   // sumas por país
   const sums={}; paises.forEach(p=>{ sums[p]=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
   const totFootCells=paises.map(p=>`<td class="num">${fmt(sums[p])}</td>`).join('');
-  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td><td></td>${totFootCells}
+  foot.innerHTML=`<tr><td></td><td></td><td></td><td></td><td>TOTAL</td><td></td>${totFootCells}
     <td class="usd"><span class="num">${anyUSD?usdFmt(sum):'—'}</span></td><td></td><td></td><td></td></tr>`;
   // --- Tarjetas (móvil) ---
   cards.innerHTML=history.map((r,i)=>{
     const u=toUSD(r);
     const pcls=r.origen==='Papel'?'paper':'digital';
     return `<div class="bcard">
-      <div class="top"><span class="n">N°${i+1}</span>
+      <div class="top"><span style="display:flex;align-items:center;gap:8px">${CK(r.ts)}<span class="n">N°${i+1}</span></span>
         <span style="display:flex;align-items:center;gap:8px">
           <span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span>
           <button class="btn ghost" style="padding:5px 9px;font-size:12px" onclick="delRow(${i})">✕</button>
@@ -4065,9 +4243,11 @@ function renderHistory(){
   document.getElementById('usdSum').innerHTML = anyUSD
     ? `Total en USD ≈ <span>${usdFmt(sum)}</span>`
     : 'Carga las tasas para ver el total en USD';
+  selSet.forEach(ts=>{ if(!history.some(r=>r.ts===ts)) selSet.delete(ts); });
+  syncBulk();
   renderRefList();
 }
-function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
+function delRow(i){ const r=history[i]; if(r) selSet.delete(r.ts); history.splice(i,1); persist(); renderRates(); renderHistory(); }
 function editField(i,f,val){
   const r=history[i]; if(!r) return;
   const v=(val||'').replace(/\s+/g,' ').trim();
@@ -4086,7 +4266,7 @@ function toggleOrigen(i){ const r=history[i]; if(!r) return; r.origen=(r.origen=
 function clearAll(){
   if(!history.length) return;
   if(!confirm('¿Borrar TODO el histórico? Esta acción no se puede deshacer.')) return;
-  history=[]; persist(); renderRates(); renderHistory(); banner('Histórico limpiado.','ok');
+  history=[]; selSet.clear(); persist(); renderRates(); renderHistory(); banner('Histórico limpiado.','ok');
 }
 function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmt(n){ return typeof n==='number'?n.toLocaleString('es-CL'):n; }

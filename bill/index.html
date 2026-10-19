@@ -3284,6 +3284,11 @@ input.selck{width:24px!important;height:24px!important;min-height:0!important;pa
 /* ===== Histórico 100% editable ===== */
 .editable{border-bottom:1px dashed rgba(20,59,43,.28)}
 .editable:focus{border-bottom-color:transparent}
+td.usd .editable{border-bottom-color:rgba(255,255,255,.55);color:#fff}
+td.usd .editable:hover{background:rgba(255,255,255,.12)}
+td.usd .editable:focus{background:transparent;color:#fff;outline-color:#F5EFE2}
+td.usd .editable:empty:before{color:#CFE3D8}
+.bcard .n .editable{padding:0 2px}
 
 /* ===== Recorte de foto (cropper) ===== */
 #cropper{position:fixed;inset:0;z-index:70;background:#10231A;display:flex;flex-direction:column;
@@ -3439,7 +3444,7 @@ input.selck{width:24px!important;height:24px!important;min-height:0!important;pa
         <h2 style="margin:0">3 · Histórico</h2>
         <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
       </div>
-      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla. Marca varias con las casillas para editarlas o borrarlas en bloque.</p>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla. Marca varias con las casillas para editarlas o borrarlas en bloque. Toca un <b>N°</b> para elegir desde qué número parte el correlativo; el <b>USD</b> también se edita, pero la conversión por tasa de cambio manda.</p>
       <div id="bulkBar" class="bulkbar hidden">
         <span><b id="bulkCount">0</b> seleccionadas →</span>
         <input id="bk_fecha" class="mono" placeholder="Fecha AAAA-MM-DD">
@@ -3536,7 +3541,7 @@ input.selck{width:24px!important;height:24px!important;min-height:0!important;pa
 
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v8 · lote multi-archivo + edición masiva)
+   Bill · Escáner de facturas — Ubicquia  (v9 · correlativo configurable + USD manual de respaldo)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
@@ -3555,6 +3560,7 @@ const MAX_EDGE  = 1568;
 const LS_KEY    = 'bill_history_v3';
 const LS_RATES  = 'bill_rates_v3';
 const LS_REF    = 'bill_reflist_v3';
+const LS_NUM    = 'bill_numstart_v1';
 
 const COUNTRIES = {
   'Chile':{code:'CLP',sym:'$'},'Colombia':{code:'COP',sym:'$'},'Perú':{code:'PEN',sym:'S/'},
@@ -3592,6 +3598,7 @@ let cropGeo  = null;    // geometría del cropper en pantalla
 let cropDrag = null;
 let batch = [];              // cola de archivos para escaneo en lote
 const selSet = new Set();    // ts de filas seleccionadas para edición masiva
+let numStart = 1;            // primer número del correlativo (se fija tocando cualquier N°)
 let history = [];
 let rates   = {USD:1};
 let refHeader = [], refRows = [];
@@ -3627,6 +3634,15 @@ function persist(){ if(!lsOK) return; try{ localStorage.setItem(LS_KEY,JSON.stri
   catch(e){ lsOK=false; banner('No se pudo guardar en el dispositivo (espacio lleno). El histórico durará solo esta sesión.','info'); } }
 function loadRates(){ try{ const r=localStorage.getItem(LS_RATES); rates=r?JSON.parse(r):{USD:1}; }catch(e){ rates={USD:1}; } if(!rates.USD) rates.USD=1; }
 function persistRates(){ if(!lsOK) return; try{ localStorage.setItem(LS_RATES,JSON.stringify(rates)); }catch(e){} }
+function loadNum(){ try{ const n=Number(localStorage.getItem(LS_NUM)); if(!isNaN(n)&&n>=1) numStart=Math.round(n); }catch(e){} }
+function persistNum(){ if(!lsOK) return; try{ localStorage.setItem(LS_NUM,String(numStart)); }catch(e){} }
+function rowNum(i){ return numStart+i; }
+function setStartFrom(i,val){
+  const n=num(String(val||''));
+  if(n===''||isNaN(n)){ renderHistory(); return; }
+  numStart=Math.max(1,Math.round(n)-i);   // el número editado queda en esa fila y el resto corre
+  persistNum(); renderHistory();
+}
 
 /* ---------- País ---------- */
 function buildCountrySelect(){ const sel=document.getElementById('f_pais');
@@ -4143,11 +4159,14 @@ function na(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g
 function allPaises(){ const out=[]; const add=p=>{ if(p&&!out.includes(p)) out.push(p); }; history.forEach(r=>add(r.pais)); refRows.forEach(r=>add(r.pais)); return out; }
 function currenciesInUse(){ const s=new Set(); history.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); refRows.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); return [...s]; }
 function toUSD(r){
-  if(r.total===''||r.total==null) return null;
-  if(r.moneda==='USD') return r.total;
-  const rate=Number(rates[r.moneda]);
-  if(!rate||isNaN(rate)) return null;
-  return r.total/rate;
+  // 1° la conversión por moneda/tasa manda; el USD manual (r.usd) es respaldo
+  if(r.total!==''&&r.total!=null){
+    if(r.moneda==='USD') return r.total;
+    const rate=Number(rates[r.moneda]);
+    if(rate&&!isNaN(rate)) return r.total/rate;
+  }
+  if(r.usd!==''&&r.usd!=null&&!isNaN(Number(r.usd))) return Number(r.usd);
+  return null;
 }
 function renderRates(){
   const cont=document.getElementById('ratesBody');
@@ -4203,13 +4222,13 @@ function renderHistory(){
     const totalCells=paises.map(p=>`<td class="num">${r.pais===p?`<span class="editable num" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span>`:''}</td>`).join('');
     return `<tr>
       <td>${CK(r.ts)}</td>
-      <td class="num">${i+1}</td>
+      <td class="num"><span class="editable num" ${ED} onblur="setStartFrom(${i},this.innerText)" title="Toca para fijar desde qué número parte el correlativo">${rowNum(i)}</span></td>
       <td class="num"><span class="editable num" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span></td>
       <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></td>
       <td><span class="editable" ${ED} onblur="editField(${i},'pais',this.innerText)">${esc(na(r.pais))||''}</span></td>
       <td><span class="editable num" ${ED} onblur="editField(${i},'moneda',this.innerText)">${esc(r.moneda)||''}</span></td>
       ${totalCells}
-      <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
+      <td class="usd"><span class="editable num" ${ED} onblur="editField(${i},'usd',this.innerText)">${u!=null?usdFmt(u):''}</span></td>
       <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'desc',this.innerText)">${esc(r.desc)||''}</span></td>
       <td><span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span></td>
       <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
@@ -4225,7 +4244,7 @@ function renderHistory(){
     const u=toUSD(r);
     const pcls=r.origen==='Papel'?'paper':'digital';
     return `<div class="bcard">
-      <div class="top"><span style="display:flex;align-items:center;gap:8px">${CK(r.ts)}<span class="n">N°${i+1}</span></span>
+      <div class="top"><span style="display:flex;align-items:center;gap:8px">${CK(r.ts)}<span class="n">N°<span class="editable" ${ED} onblur="setStartFrom(${i},this.innerText)">${rowNum(i)}</span></span></span>
         <span style="display:flex;align-items:center;gap:8px">
           <span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span>
           <button class="btn ghost" style="padding:5px 9px;font-size:12px" onclick="delRow(${i})">✕</button>
@@ -4233,7 +4252,7 @@ function renderHistory(){
       <div class="emisor"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></div>
       <div class="meta"><span class="editable" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span> · <span class="editable" ${ED} onblur="editField(${i},'pais',this.innerText)">${esc(na(r.pais))||''}</span></div>
       <div class="rowline"><span class="lab">Total</span><span class="val"><span class="editable" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span> <span class="editable" ${ED} onblur="editField(${i},'moneda',this.innerText)">${esc(r.moneda)||''}</span></span></div>
-      <div class="rowline"><span class="lab">USD</span><span class="val usd">${u!=null?usdFmt(u):'—'}</span></div>
+      <div class="rowline"><span class="lab">USD</span><span class="val usd"><span class="editable" ${ED} onblur="editField(${i},'usd',this.innerText)">${u!=null?usdFmt(u):''}</span></span></div>
       <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editField(${i},'desc',this.innerText)">${esc(r.desc)||''}</span></div>
     </div>`;
   }).join('') + `<div class="btot"><h4>Totales por país</h4>
@@ -4256,7 +4275,12 @@ function editField(i,f,val){
   else if(f==='total') nv=num(v);
   else if(f==='moneda') nv=v.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
   else if(f==='pais') nv=v?(matchCountry(v)||v):'';
+  else if(f==='usd') nv=num(v);
   r[f]=nv;
+  if(f==='usd'&&nv!==''){
+    const calcRige = r.total!==''&&r.total!=null && (r.moneda==='USD' || Number(rates[r.moneda])>0);
+    if(calcRige) banner('El USD de esta fila lo fija la conversión por tasa (la moneda manda); tu valor queda como respaldo si quitas la tasa o la moneda.','info');
+  }
   if(f==='moneda'&&nv&&rates[nv]==null) rates[nv]='';   // crea fila de tasa pendiente
   if(f==='fecha') history.sort(byDateAsc);              // reordena y renumera
   persist(); persistRates(); renderRates(); renderHistory();
@@ -4457,7 +4481,7 @@ function renderRefList(){
     const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
     let nLabel='';
     if(mb){
-      const n=history.indexOf(mb)+1;
+      const n=rowNum(history.indexOf(mb));
       const conf=(r.aiDone&&r.aiConf)?` <small style="color:${confColor[r.aiConf]||'#8a8f98'}">${r.aiConf}</small>`:'';
       nLabel=`✓ N°${n}${conf}`;
     }
@@ -4513,7 +4537,7 @@ Devuelve SOLO un arreglo JSON, sin texto ni markdown:
 
 /* ================= PDF BOLETAS EN PAPEL ================= */
 function exportPapelPDF(){
-  const papers=history.map((r,i)=>({r,n:i+1})).filter(x=>x.r.origen==='Papel'&&x.r.img);
+  const papers=history.map((r,i)=>({r,n:rowNum(i)})).filter(x=>x.r.origen==='Papel'&&x.r.img);
   if(!papers.length){ banner('No hay boletas en papel con foto.'); return; }
   if(!window.jspdf||!window.jspdf.jsPDF){ banner('No se pudo cargar el generador de PDF (revisa tu conexión).'); return; }
   try{
@@ -4547,7 +4571,7 @@ function exportPapelPDF(){
 /* ================= ZIP DE PDFs (Digital) ================= */
 function sanitizeName(s){ return String(s||'').replace(/[\/\\:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim(); }
 async function exportPdfZip(){
-  const pdfs=history.map((r,i)=>({r,n:i+1})).filter(x=>x.r.origen==='Digital'&&x.r.pdf);
+  const pdfs=history.map((r,i)=>({r,n:rowNum(i)})).filter(x=>x.r.origen==='Digital'&&x.r.pdf);
   if(!pdfs.length){ banner('No hay PDFs digitales cargados.'); return; }
   if(!window.JSZip){ banner('No se pudo cargar el compresor ZIP (revisa tu conexión).'); return; }
   try{
@@ -4576,7 +4600,7 @@ function exportXlsx(){
     const totalKey=p=>na(p);
     // Orden: N° · Fecha · Emisor · País · Total(por país) · USD · Descripción · Tipo
     const rows=history.map((r,i)=>{
-      const o={'N°':i+1,'Fecha':r.fecha,'Emisor':r.emisor,'País':na(r.pais)};
+      const o={'N°':rowNum(i),'Fecha':r.fecha,'Emisor':r.emisor,'País':na(r.pais)};
       paises.forEach(p=>{ o[totalKey(p)] = (r.pais===p && r.total!=='') ? r.total : ''; });
       const u=toUSD(r);
       o['USD']      = u!=null?Number(u.toFixed(2)):'';
@@ -4607,7 +4631,7 @@ function exportJson(){
   if(!history.length) return;
   try{
     // Respaldo COMPLETO (incluye fotos y PDFs) para mover entre dispositivos
-    const blob=new Blob([JSON.stringify({version:1,rates,boletas:history},null,2)],{type:'application/json'});
+    const blob=new Blob([JSON.stringify({version:1,numStart,rates,boletas:history},null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bill_respaldo_${stamp()}.json`;
     a.click(); URL.revokeObjectURL(a.href);
   }catch(e){ banner('No se pudo exportar JSON: '+e.message); }
@@ -4629,6 +4653,7 @@ function importJson(file){
         history.push(b); seen.add(b.ts); added++; });
       history.sort(byDateAsc);
       if(inRates){ Object.keys(inRates).forEach(k=>{ if(rates[k]==null||rates[k]==='') rates[k]=inRates[k]; }); persistRates(); }
+      if(!Array.isArray(obj)&&obj.numStart!=null){ const nn=Number(obj.numStart); if(!isNaN(nn)&&nn>=1){ numStart=Math.round(nn); persistNum(); } }
       persist(); renderRates(); renderHistory();
       banner(`Importadas ${added} boleta(s)${dup?`, ${dup} ya existían`:''}.`,'ok');
     }catch(e){ banner('No se pudo importar: '+e.message); }
@@ -4665,7 +4690,7 @@ function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
 
 /* ================= INIT ================= */
 function init(){
-  buildCountrySelect(); wireInputs(); wireCropper(); loadHistory(); loadRates(); loadRefList();
+  buildCountrySelect(); wireInputs(); wireCropper(); loadHistory(); loadRates(); loadNum(); loadRefList();
   if(DEMO){
     appCode='demo'; enterApp();
     if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); history.sort(byDateAsc); persist(); }
