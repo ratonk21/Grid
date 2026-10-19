@@ -3255,6 +3255,10 @@ input,select,textarea{
   .tab-btn{min-height:49px!important}
 }
 
+/* ===== Histórico 100% editable ===== */
+.editable{border-bottom:1px dashed rgba(20,59,43,.28)}
+.editable:focus{border-bottom-color:transparent}
+
 /* ===== Recorte de foto (cropper) ===== */
 #cropper{position:fixed;inset:0;z-index:70;background:#10231A;display:flex;flex-direction:column;
   padding:calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
@@ -3380,7 +3384,7 @@ input,select,textarea{
         <h2 style="margin:0">3 · Histórico</h2>
         <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
       </div>
-      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas.</p>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla.</p>
       <div class="tbl-wrap">
         <table id="histTbl">
           <thead id="histHead"></thead>
@@ -3450,7 +3454,7 @@ input,select,textarea{
 
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v4 · recorte de foto)
+   Bill · Escáner de facturas — Ubicquia  (v5 · recorte + histórico editable)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
@@ -3929,7 +3933,7 @@ function renderHistory(){
   document.getElementById('clrBtn').disabled=!has;
   const paises=allPaises();   // unión histórico + referencia
   const totalCols=paises.map(p=>na(p));
-  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
+  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th><th>Mon.</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
   if(!has){
@@ -3943,23 +3947,24 @@ function renderHistory(){
   body.innerHTML=history.map((r,i)=>{
     const u=toUSD(r); if(u!=null){ sum+=u; anyUSD=true; }
     const pcls=r.origen==='Papel'?'paper':'digital';
-    const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
+    const totalCells=paises.map(p=>`<td class="num">${r.pais===p?`<span class="editable num" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span>`:''}</td>`).join('');
     return `<tr>
       <td class="num">${i+1}</td>
-      <td class="num">${esc(r.fecha)||'—'}</td>
-      <td class="cellwrap">${esc(r.emisor)||'—'}</td>
-      <td>${esc(na(r.pais))||'—'}</td>
+      <td class="num"><span class="editable num" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span></td>
+      <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></td>
+      <td><span class="editable" ${ED} onblur="editField(${i},'pais',this.innerText)">${esc(na(r.pais))||''}</span></td>
+      <td><span class="editable num" ${ED} onblur="editField(${i},'moneda',this.innerText)">${esc(r.moneda)||''}</span></td>
       ${totalCells}
       <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
-      <td class="cellwrap"><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></td>
-      <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
+      <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'desc',this.innerText)">${esc(r.desc)||''}</span></td>
+      <td><span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span></td>
       <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
     </tr>`;
   }).join('');
   // sumas por país
   const sums={}; paises.forEach(p=>{ sums[p]=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
   const totFootCells=paises.map(p=>`<td class="num">${fmt(sums[p])}</td>`).join('');
-  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td>${totFootCells}
+  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td><td></td>${totFootCells}
     <td class="usd"><span class="num">${anyUSD?usdFmt(sum):'—'}</span></td><td></td><td></td><td></td></tr>`;
   // --- Tarjetas (móvil) ---
   cards.innerHTML=history.map((r,i)=>{
@@ -3968,14 +3973,14 @@ function renderHistory(){
     return `<div class="bcard">
       <div class="top"><span class="n">N°${i+1}</span>
         <span style="display:flex;align-items:center;gap:8px">
-          <span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span>
+          <span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span>
           <button class="btn ghost" style="padding:5px 9px;font-size:12px" onclick="delRow(${i})">✕</button>
         </span></div>
-      <div class="emisor">${esc(r.emisor)||'—'}</div>
-      <div class="meta">${esc(r.fecha)||'—'} · ${esc(na(r.pais))||'—'}</div>
-      <div class="rowline"><span class="lab">Total</span><span class="val">${r.total!==''?fmt(r.total):'—'} ${esc(r.moneda)||''}</span></div>
+      <div class="emisor"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></div>
+      <div class="meta"><span class="editable" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span> · <span class="editable" ${ED} onblur="editField(${i},'pais',this.innerText)">${esc(na(r.pais))||''}</span></div>
+      <div class="rowline"><span class="lab">Total</span><span class="val"><span class="editable" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span> <span class="editable" ${ED} onblur="editField(${i},'moneda',this.innerText)">${esc(r.moneda)||''}</span></span></div>
       <div class="rowline"><span class="lab">USD</span><span class="val usd">${u!=null?usdFmt(u):'—'}</span></div>
-      <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></div>
+      <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editField(${i},'desc',this.innerText)">${esc(r.desc)||''}</span></div>
     </div>`;
   }).join('') + `<div class="btot"><h4>Totales por país</h4>
       ${paises.map(p=>`<div class="rowline"><span>${esc(na(p))}</span><span class="val">${fmt(sums[p])} ${esc(curOf(p))}</span></div>`).join('')}
@@ -3987,7 +3992,21 @@ function renderHistory(){
   renderRefList();
 }
 function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
-function editDesc(i,val){ if(history[i]){ history[i].desc=(val||'').replace(/\s+/g,' ').trim(); persist(); } }
+function editField(i,f,val){
+  const r=history[i]; if(!r) return;
+  const v=(val||'').replace(/\s+/g,' ').trim();
+  let nv=v;
+  if(f==='fecha') nv=fmtDate(v);
+  else if(f==='total') nv=num(v);
+  else if(f==='moneda') nv=v.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+  else if(f==='pais') nv=v?(matchCountry(v)||v):'';
+  r[f]=nv;
+  if(f==='moneda'&&nv&&rates[nv]==null) rates[nv]='';   // crea fila de tasa pendiente
+  if(f==='fecha') history.sort(byDateAsc);              // reordena y renumera
+  persist(); persistRates(); renderRates(); renderHistory();
+}
+function editDesc(i,val){ editField(i,'desc',val); }
+function toggleOrigen(i){ const r=history[i]; if(!r) return; r.origen=(r.origen==='Papel')?'Digital':'Papel'; persist(); renderHistory(); }
 function clearAll(){
   if(!history.length) return;
   if(!confirm('¿Borrar TODO el histórico? Esta acción no se puede deshacer.')) return;
