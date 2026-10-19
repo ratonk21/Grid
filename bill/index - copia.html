@@ -3255,6 +3255,53 @@ input,select,textarea{
   .tab-btn{min-height:49px!important}
 }
 
+/* ===== Histórico 100% editable ===== */
+.editable{border-bottom:1px dashed rgba(20,59,43,.28)}
+.editable:focus{border-bottom-color:transparent}
+
+/* ===== Recorte de foto (cropper) ===== */
+#cropper{position:fixed;inset:0;z-index:70;background:#10231A;display:flex;flex-direction:column;
+  padding:calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+.crop-top{width:100%;max-width:560px;margin:0 auto 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.crop-top h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:21px;color:#F5EFE2}
+.crop-x{background:rgba(245,239,226,.14);color:#F5EFE2;border:1px solid rgba(245,239,226,.28);
+  width:48px;height:48px;border-radius:50%;font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center;flex:none}
+.crop-stage{position:relative;flex:1;min-height:0;touch-action:none;overflow:hidden;border-radius:14px}
+#cropImg{position:absolute;user-select:none;-webkit-user-drag:none;pointer-events:none}
+#cropBox{position:absolute;border:2px solid var(--brote);box-shadow:0 0 0 9999px rgba(6,15,11,.62);touch-action:none;cursor:move}
+#cropBox:before{content:"";position:absolute;top:0;bottom:0;left:33.33%;right:33.33%;pointer-events:none;
+  border-left:1px solid rgba(245,239,226,.38);border-right:1px solid rgba(245,239,226,.38)}
+#cropBox:after{content:"";position:absolute;left:0;right:0;top:33.33%;bottom:33.33%;pointer-events:none;
+  border-top:1px solid rgba(245,239,226,.38);border-bottom:1px solid rgba(245,239,226,.38)}
+.ch{position:absolute;width:56px;height:56px;touch-action:none}
+.ch:after{content:"";position:absolute;width:26px;height:26px;border:5px solid #F5EFE2}
+.ch[data-h="nw"]{top:-28px;left:-28px}.ch[data-h="nw"]:after{top:25px;left:25px;border-right:0;border-bottom:0;border-top-left-radius:7px}
+.ch[data-h="ne"]{top:-28px;right:-28px}.ch[data-h="ne"]:after{top:25px;right:25px;border-left:0;border-bottom:0;border-top-right-radius:7px}
+.ch[data-h="sw"]{bottom:-28px;left:-28px}.ch[data-h="sw"]:after{bottom:25px;left:25px;border-right:0;border-top:0;border-bottom-left-radius:7px}
+.ch[data-h="se"]{bottom:-28px;right:-28px}.ch[data-h="se"]:after{bottom:25px;right:25px;border-left:0;border-top:0;border-bottom-right-radius:7px}
+/* lados: redimensionan un solo borde */
+.ch[data-h="n"]:after,.ch[data-h="s"]:after{width:32px;height:6px;background:#F5EFE2;border:0;border-radius:3px;left:12px}
+.ch[data-h="w"]:after,.ch[data-h="e"]:after{width:6px;height:32px;background:#F5EFE2;border:0;border-radius:3px;top:12px}
+.ch[data-h="n"]{top:-28px;left:calc(50% - 28px)}.ch[data-h="n"]:after{top:25px}
+.ch[data-h="s"]{bottom:-28px;left:calc(50% - 28px)}.ch[data-h="s"]:after{bottom:25px}
+.ch[data-h="w"]{left:-28px;top:calc(50% - 28px)}.ch[data-h="w"]:after{left:25px}
+.ch[data-h="e"]{right:-28px;top:calc(50% - 28px)}.ch[data-h="e"]:after{right:25px}
+
+/* ===== Cámara in-app (trasera por defecto) ===== */
+#camview{position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column;
+  padding:calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+.cam-stage{position:relative;flex:1;min-height:0;border-radius:14px;overflow:hidden;background:#000;
+  display:flex;align-items:center;justify-content:center}
+#camVideo{width:100%;height:100%;object-fit:contain}
+.cam-actions{width:100%;max-width:560px;margin:12px auto 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.shutter{grid-column:2;justify-self:center;width:78px;height:78px;border-radius:50%;background:#F5EFE2;
+  border:6px solid rgba(245,239,226,.35);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.shutter:active{transform:scale(.93)}
+.cam-flip{grid-column:3;justify-self:end;width:58px;height:58px;border-radius:50%;background:rgba(245,239,226,.14);
+  color:#F5EFE2;border:1px solid rgba(245,239,226,.28);display:flex;align-items:center;justify-content:center}
+.crop-actions{width:100%;max-width:560px;margin:12px auto 0;display:grid;grid-template-columns:1fr;gap:12px}
 </style>
 <script>(function(){try{var m=document.querySelector('meta[name=viewport]');if(!m){m=document.createElement('meta');m.setAttribute('name','viewport');document.head.appendChild(m);}m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover');var w=Math.min(screen.width||9999,screen.height||9999);if(w<=820)document.documentElement.classList.add('m');}catch(e){}})();</script>
 </head>
@@ -3297,7 +3344,7 @@ input,select,textarea{
         <div class="icon">📄</div>
         <p>Arrastra una imagen o PDF, o usa los botones</p>
         <div class="btn-row">
-          <button class="btn salto" onclick="document.getElementById('camIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="34" rx="10"/><path d="M22 18l5-8h10l5 8"/><circle cx="32" cy="35" r="11"/><circle cx="32" cy="35" r="4"/></svg><span>Tomar foto</span></button>
+          <button class="btn salto" onclick="startCamera()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="18" width="48" height="34" rx="10"/><path d="M22 18l5-8h10l5 8"/><circle cx="32" cy="35" r="11"/><circle cx="32" cy="35" r="4"/></svg><span>Tomar foto</span></button>
           <button class="btn ghost" onclick="document.getElementById('fileIn').click()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M24 34l17-17a10 10 0 0 1 14 14L29 57A15 15 0 0 1 8 36l27-27a8 8 0 0 1 11 11L20 46a5 5 0 0 1-7-7l23-23"/></svg><span>Adjuntar imagen o PDF</span></button>
         </div>
       </div>
@@ -3306,6 +3353,7 @@ input,select,textarea{
         <div id="pdfPreview" class="pdfbox hidden"><span class="pdficon">📄</span><span id="pdfName"></span></div>
         <button class="preview-x" onclick="clearImage()" title="Quitar">×</button>
       </div>
+      <button id="recropBtn" class="btn ghost full hidden" style="margin-top:10px" onclick="reopenCrop()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6v34a6 6 0 0 0 6 6h34"/><path d="M6 18h34a6 6 0 0 1 6 6v34"/></svg><span>Recortar</span></button>
       <input id="camIn" type="file" accept="image/*" capture="environment" class="hidden">
       <input id="fileIn" type="file" accept="image/*,application/pdf" class="hidden">
       <button id="scanBtn" class="btn lime full" style="margin-top:14px" onclick="runScan()" disabled>
@@ -3357,7 +3405,7 @@ input,select,textarea{
         <h2 style="margin:0">3 · Histórico</h2>
         <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
       </div>
-      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas.</p>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla.</p>
       <div class="tbl-wrap">
         <table id="histTbl">
           <thead id="histHead"></thead>
@@ -3405,9 +3453,47 @@ input,select,textarea{
   </div>
 </div>
 
+<div id="cropper" class="hidden">
+  <div class="crop-top">
+    <h3>Recorta la boleta</h3>
+    <button class="crop-x" type="button" onclick="cancelCrop()" title="Cerrar">×</button>
+  </div>
+  <div class="crop-stage" id="cropStage">
+    <img id="cropImg" alt="Foto a recortar">
+    <div id="cropBox">
+      <div class="ch" data-h="nw"></div>
+      <div class="ch" data-h="ne"></div>
+      <div class="ch" data-h="sw"></div>
+      <div class="ch" data-h="se"></div>
+      <div class="ch" data-h="n"></div>
+      <div class="ch" data-h="s"></div>
+      <div class="ch" data-h="w"></div>
+      <div class="ch" data-h="e"></div>
+    </div>
+  </div>
+  <div class="crop-actions">
+    <button class="btn salto" type="button" onclick="applyCrop()"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M18 6v34a6 6 0 0 0 6 6h34"/><path d="M6 18h34a6 6 0 0 1 6 6v34"/></svg><span>Usar recorte</span></button>
+    <button class="btn ghost" type="button" onclick="skipCrop()"><span>Usar foto completa</span></button>
+  </div>
+</div>
+
+<div id="camview" class="hidden">
+  <div class="crop-top">
+    <h3>Tomar foto</h3>
+    <button class="crop-x" type="button" onclick="cancelCam()" title="Cerrar">×</button>
+  </div>
+  <div class="cam-stage">
+    <video id="camVideo" autoplay playsinline muted></video>
+  </div>
+  <div class="cam-actions">
+    <button class="shutter" type="button" onclick="capturePhoto()" title="Capturar"></button>
+    <button class="cam-flip" type="button" onclick="flipCamera()" title="Cambiar cámara"><svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M50 26a20 20 0 0 0-36-6"/><path d="M14 10v10h10"/><path d="M14 38a20 20 0 0 0 36 6"/><path d="M50 54V44H40"/></svg></button>
+  </div>
+</div>
+
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v3)
+   Bill · Escáner de facturas — Ubicquia  (v6 · cámara trasera in-app + recorte por lados)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
@@ -3458,6 +3544,9 @@ Los montos como números sin separador de miles ni símbolo. Responde únicament
 
 let appCode = '';
 let curImg  = null;
+let origPhoto = null;   // foto original en resolución completa (para recortar / re-recortar)
+let cropGeo  = null;    // geometría del cropper en pantalla
+let cropDrag = null;
 let history = [];
 let rates   = {USD:1};
 let refHeader = [], refRows = [];
@@ -3539,7 +3628,7 @@ async function validateCode(code){
 let camIn,fileIn,drop;
 function wireInputs(){
   camIn=document.getElementById('camIn'); fileIn=document.getElementById('fileIn'); drop=document.getElementById('drop');
-  camIn.addEventListener('change', e=>handleFile(e.target.files[0]));
+  camIn.addEventListener('change', e=>handleFile(e.target.files[0], true));
   fileIn.addEventListener('change', e=>handleFile(e.target.files[0]));
   ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
@@ -3549,7 +3638,7 @@ function wireInputs(){
   document.getElementById('refJsonIn').addEventListener('change', e=>{ if(e.target.files[0]) importRefJson(e.target.files[0]); e.target.value=''; });
   document.getElementById('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
 }
-function handleFile(file){
+function handleFile(file, fromCamera){
   if(!file) return;
   const isPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
   const isImg = file.type.startsWith('image/');
@@ -3562,6 +3651,8 @@ function handleFile(file){
     reader.onload=()=>{
       const dataUrl=reader.result;
       curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'application/pdf',isPdf:true,w:0,h:0,origen,name:file.name||'documento.pdf'};
+      origPhoto=null;
+      document.getElementById('recropBtn').classList.add('hidden');
       document.getElementById('preview').classList.add('hidden');
       const pp=document.getElementById('pdfPreview'); pp.classList.remove('hidden');
       document.getElementById('pdfName').textContent=curImg.name;
@@ -3576,22 +3667,9 @@ function handleFile(file){
   reader.onload=()=>{
     const img=new Image();
     img.onload=()=>{
-      try{
-        let {width:w,height:h}=img;
-        const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
-        w=Math.round(w*scale); h=Math.round(h*scale);
-        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-        cv.getContext('2d').drawImage(img,0,0,w,h);
-        const dataUrl=cv.toDataURL('image/jpeg',0.85);
-        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
-      }catch(err){
-        const dataUrl=reader.result;
-        curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:file.type,isPdf:false,w:0,h:0,origen};
-      }
-      const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
-      const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src=curImg.dataUrl;
-      document.getElementById('previewWrap').classList.remove('hidden');
-      document.getElementById('scanBtn').disabled=false;
+      origPhoto={img,origen,data:reader.result,type:file.type};
+      if(fromCamera) openCropper();        // foto de cámara → recortar al tiro
+      else processImageElement();          // adjuntar/arrastrar → flujo de siempre (botón Recortar disponible)
     };
     img.onerror=()=>banner('No se pudo leer la imagen.');
     img.src=reader.result;
@@ -3600,13 +3678,164 @@ function handleFile(file){
   reader.readAsDataURL(file);
 }
 function clearImage(){
-  curImg=null;
+  curImg=null; origPhoto=null; cropGeo=null; cropDrag=null;
+  document.getElementById('cropper').classList.add('hidden');
+  document.getElementById('recropBtn').classList.add('hidden');
   document.getElementById('previewWrap').classList.add('hidden');
   const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src='';
   const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
   document.getElementById('scanBtn').disabled=true;
   if(camIn) camIn.value=''; if(fileIn) fileIn.value='';
 }
+
+/* ================= RECORTE DE FOTO =================
+   No toca el motor: el resultado del recorte se procesa con el MISMO
+   pipeline de siempre (reescalado a MAX_EDGE + JPEG 0.85 → curImg),
+   solo que recortando primero sobre la resolución original. */
+function processImageElement(){
+  if(!origPhoto) return;
+  const {img,origen,data,type}=origPhoto;
+  try{
+    let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+    const scale=Math.min(1,MAX_EDGE/Math.max(w,h));
+    w=Math.round(w*scale); h=Math.round(h*scale);
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    const dataUrl=cv.toDataURL('image/jpeg',0.85);
+    curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w,h,origen};
+  }catch(err){
+    curImg={dataUrl:data,b64:(data||'').split(',')[1],mediaType:type,isPdf:false,w:0,h:0,origen};
+  }
+  showImagePreview();
+}
+function showImagePreview(){
+  const pp=document.getElementById('pdfPreview'); if(pp) pp.classList.add('hidden');
+  const pv=document.getElementById('preview'); pv.classList.remove('hidden'); pv.src=curImg.dataUrl;
+  document.getElementById('previewWrap').classList.remove('hidden');
+  const rb=document.getElementById('recropBtn'); if(rb&&origPhoto) rb.classList.remove('hidden');
+  document.getElementById('scanBtn').disabled=false;
+}
+/* --- Cámara in-app: fuerza la trasera (facingMode environment); si falla, cae al input clásico --- */
+let camStream=null, camFacing='environment';
+async function startCamera(){
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ document.getElementById('camIn').click(); return; }
+  clearBanner();
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({audio:false,
+      video:{facingMode:{ideal:camFacing},width:{ideal:4096},height:{ideal:3072}}});
+    document.getElementById('camVideo').srcObject=camStream;
+    document.getElementById('camview').classList.remove('hidden');
+  }catch(e){
+    stopCam(); document.getElementById('camview').classList.add('hidden');
+    document.getElementById('camIn').click();   // sin permiso / sin https → flujo clásico (capture=environment)
+  }
+}
+function stopCam(){
+  if(camStream){ camStream.getTracks().forEach(t=>{ try{t.stop();}catch(_){} }); camStream=null; }
+  const v=document.getElementById('camVideo'); if(v) v.srcObject=null;
+}
+function cancelCam(){ stopCam(); document.getElementById('camview').classList.add('hidden'); }
+async function flipCamera(){ camFacing=(camFacing==='environment')?'user':'environment'; stopCam(); await startCamera(); }
+function capturePhoto(){
+  const v=document.getElementById('camVideo');
+  if(!camStream||!v.videoWidth){ banner('La cámara aún no está lista.'); return; }
+  try{
+    const cv=document.createElement('canvas'); cv.width=v.videoWidth; cv.height=v.videoHeight;
+    cv.getContext('2d').drawImage(v,0,0);
+    const data=cv.toDataURL('image/jpeg',0.92);
+    cancelCam();
+    const img=new Image();
+    img.onload=()=>{ origPhoto={img,origen:'Papel',data,type:'image/jpeg'}; openCropper(); };
+    img.onerror=()=>banner('No se pudo procesar la foto.');
+    img.src=data;
+  }catch(e){ banner('No se pudo capturar: '+(e.message||e)); }
+}
+document.addEventListener('visibilitychange',()=>{ if(document.hidden&&camStream) cancelCam(); });
+
+function openCropper(){
+  if(!origPhoto) return;
+  document.getElementById('cropImg').src=origPhoto.data;
+  document.getElementById('cropper').classList.remove('hidden');
+  requestAnimationFrame(layoutCrop);
+}
+function layoutCrop(){
+  if(!origPhoto) return;
+  if(document.getElementById('cropper').classList.contains('hidden')) return;
+  const stage=document.getElementById('cropStage');
+  const img=origPhoto.img;
+  const natW=img.naturalWidth||img.width, natH=img.naturalHeight||img.height;
+  const sw=stage.clientWidth, sh=stage.clientHeight;
+  if(!sw||!sh||!natW||!natH){ requestAnimationFrame(layoutCrop); return; }
+  const s=Math.min(sw/natW, sh/natH);
+  const dw=Math.max(1,natW*s), dh=Math.max(1,natH*s);
+  const ox=(sw-dw)/2, oy=(sh-dh)/2;
+  const ci=document.getElementById('cropImg');
+  ci.style.width=dw+'px'; ci.style.height=dh+'px'; ci.style.left=ox+'px'; ci.style.top=oy+'px';
+  cropGeo={natW,natH,dw,dh,ox,oy,box:null};
+  setCropBox(ox+dw*0.04, oy+dh*0.04, dw*0.92, dh*0.92);
+}
+function setCropBox(x,y,w,h){
+  const b=document.getElementById('cropBox');
+  b.style.left=x+'px'; b.style.top=y+'px'; b.style.width=w+'px'; b.style.height=h+'px';
+  if(cropGeo) cropGeo.box={x,y,w,h};
+}
+function wireCropper(){
+  const box=document.getElementById('cropBox');
+  box.addEventListener('pointerdown', e=>{
+    if(!cropGeo||cropDrag) return;
+    e.preventDefault();
+    const h=(e.target.classList&&e.target.classList.contains('ch'))?e.target.dataset.h:'move';
+    cropDrag={h,px:e.clientX,py:e.clientY,box:Object.assign({},cropGeo.box)};
+    try{ box.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  box.addEventListener('pointermove', e=>{
+    if(!cropDrag||!cropGeo) return;
+    e.preventDefault();
+    const dx=e.clientX-cropDrag.px, dy=e.clientY-cropDrag.py;
+    const {ox,oy,dw,dh}=cropGeo, MIN=48, cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+    let {x,y,w,h}=cropDrag.box, x2=x+w, y2=y+h;
+    if(cropDrag.h==='move'){
+      x=cl(x+dx,ox,ox+dw-w); y=cl(y+dy,oy,oy+dh-h);
+    }else{
+      if(cropDrag.h.indexOf('w')>=0) x=cl(x+dx,ox,x2-MIN);
+      if(cropDrag.h.indexOf('e')>=0) x2=cl(x2+dx,x+MIN,ox+dw);
+      if(cropDrag.h.indexOf('n')>=0) y=cl(y+dy,oy,y2-MIN);
+      if(cropDrag.h.indexOf('s')>=0) y2=cl(y2+dy,y+MIN,oy+dh);
+      w=x2-x; h=y2-y;
+    }
+    setCropBox(x,y,w,h);
+  });
+  const end=()=>{ cropDrag=null; };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+  window.addEventListener('resize', ()=>{ if(cropGeo && !document.getElementById('cropper').classList.contains('hidden')) layoutCrop(); });
+}
+function applyCrop(){
+  if(!origPhoto||!cropGeo||!cropGeo.box) return;
+  const {natW,natH,dw,dh,ox,oy,box}=cropGeo;
+  const rx=natW/dw, ry=natH/dh;
+  const sx=Math.max(0,(box.x-ox)*rx), sy=Math.max(0,(box.y-oy)*ry);
+  const sw=Math.min(natW-sx,box.w*rx), sh=Math.min(natH-sy,box.h*ry);
+  try{
+    const scale=Math.min(1,MAX_EDGE/Math.max(sw,sh));
+    const cv=document.createElement('canvas');
+    cv.width=Math.max(1,Math.round(sw*scale)); cv.height=Math.max(1,Math.round(sh*scale));
+    cv.getContext('2d').drawImage(origPhoto.img,sx,sy,sw,sh,0,0,cv.width,cv.height);
+    const dataUrl=cv.toDataURL('image/jpeg',0.85);
+    curImg={dataUrl,b64:dataUrl.split(',')[1],mediaType:'image/jpeg',isPdf:false,w:cv.width,h:cv.height,origen:origPhoto.origen};
+    document.getElementById('cropper').classList.add('hidden');
+    showImagePreview();
+  }catch(e){ banner('No se pudo recortar: '+(e.message||e)); }
+}
+function skipCrop(){
+  document.getElementById('cropper').classList.add('hidden');
+  processImageElement();
+}
+function cancelCrop(){
+  document.getElementById('cropper').classList.add('hidden');
+  if(!curImg) clearImage();   // foto recién tomada y descartada; si venía de re-recorte, conserva la actual
+}
+function reopenCrop(){ if(origPhoto) openCropper(); }
 
 /* ================= ESCANEO ================= */
 async function runScan(){
@@ -3624,7 +3853,7 @@ async function runScan(){
     if(!currentMobile()) document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
     banner('Datos extraídos. Revísalos antes de guardar.','ok');
   }catch(e){ banner('No se pudo escanear: '+(e.message||e)); }
-  finally{ btn.disabled=false; lbl.textContent='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
+  finally{ btn.disabled=false; lbl.innerHTML='<svg class="btn-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l-8 22h14L28 60l22-36H36z"/></svg><span>Escanear contenido</span>'; }
 }
 async function scan(b64,mediaType){
   try{
@@ -3780,7 +4009,7 @@ function renderHistory(){
   document.getElementById('clrBtn').disabled=!has;
   const paises=allPaises();   // unión histórico + referencia
   const totalCols=paises.map(p=>na(p));
-  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th>'
+  head.innerHTML='<tr><th>N°</th><th>Fecha</th><th>Emisor</th><th>País</th><th>Mon.</th>'
     + totalCols.map(t=>`<th class="num">${esc(t)}</th>`).join('')
     + '<th class="usd">USD</th><th>Descripción</th><th>Tipo</th><th></th></tr>';
   if(!has){
@@ -3794,23 +4023,24 @@ function renderHistory(){
   body.innerHTML=history.map((r,i)=>{
     const u=toUSD(r); if(u!=null){ sum+=u; anyUSD=true; }
     const pcls=r.origen==='Papel'?'paper':'digital';
-    const totalCells=paises.map(p=>`<td class="num">${(r.pais===p&&r.total!=='')?fmt(r.total):''}</td>`).join('');
+    const totalCells=paises.map(p=>`<td class="num">${r.pais===p?`<span class="editable num" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span>`:''}</td>`).join('');
     return `<tr>
       <td class="num">${i+1}</td>
-      <td class="num">${esc(r.fecha)||'—'}</td>
-      <td class="cellwrap">${esc(r.emisor)||'—'}</td>
-      <td>${esc(na(r.pais))||'—'}</td>
+      <td class="num"><span class="editable num" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span></td>
+      <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></td>
+      <td><span class="editable" ${ED} onblur="editField(${i},'pais',this.innerText)">${esc(na(r.pais))||''}</span></td>
+      <td><span class="editable num" ${ED} onblur="editField(${i},'moneda',this.innerText)">${esc(r.moneda)||''}</span></td>
       ${totalCells}
       <td class="usd"><span class="num">${u!=null?usdFmt(u):'—'}</span></td>
-      <td class="cellwrap"><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></td>
-      <td><span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span></td>
+      <td class="cellwrap"><span class="editable" ${ED} onblur="editField(${i},'desc',this.innerText)">${esc(r.desc)||''}</span></td>
+      <td><span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span></td>
       <td><button class="btn ghost" style="padding:6px 9px;font-size:12px" onclick="delRow(${i})">✕</button></td>
     </tr>`;
   }).join('');
   // sumas por país
   const sums={}; paises.forEach(p=>{ sums[p]=history.filter(r=>r.pais===p).reduce((a,r)=>a+(typeof r.total==='number'?r.total:0),0); });
   const totFootCells=paises.map(p=>`<td class="num">${fmt(sums[p])}</td>`).join('');
-  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td>${totFootCells}
+  foot.innerHTML=`<tr><td></td><td></td><td></td><td>TOTAL</td><td></td>${totFootCells}
     <td class="usd"><span class="num">${anyUSD?usdFmt(sum):'—'}</span></td><td></td><td></td><td></td></tr>`;
   // --- Tarjetas (móvil) ---
   cards.innerHTML=history.map((r,i)=>{
@@ -3819,14 +4049,14 @@ function renderHistory(){
     return `<div class="bcard">
       <div class="top"><span class="n">N°${i+1}</span>
         <span style="display:flex;align-items:center;gap:8px">
-          <span class="pill-mini ${pcls}">${esc(r.origen)||'—'}</span>
+          <span class="pill-mini ${pcls}" style="cursor:pointer" onclick="toggleOrigen(${i})" title="Cambiar Papel/Digital">${esc(r.origen)||'—'}</span>
           <button class="btn ghost" style="padding:5px 9px;font-size:12px" onclick="delRow(${i})">✕</button>
         </span></div>
-      <div class="emisor">${esc(r.emisor)||'—'}</div>
-      <div class="meta">${esc(r.fecha)||'—'} · ${esc(na(r.pais))||'—'}</div>
-      <div class="rowline"><span class="lab">Total</span><span class="val">${r.total!==''?fmt(r.total):'—'} ${esc(r.moneda)||''}</span></div>
+      <div class="emisor"><span class="editable" ${ED} onblur="editField(${i},'emisor',this.innerText)">${esc(r.emisor)||''}</span></div>
+      <div class="meta"><span class="editable" ${ED} onblur="editField(${i},'fecha',this.innerText)">${esc(r.fecha)||''}</span> · <span class="editable" ${ED} onblur="editField(${i},'pais',this.innerText)">${esc(na(r.pais))||''}</span></div>
+      <div class="rowline"><span class="lab">Total</span><span class="val"><span class="editable" ${ED} onblur="editField(${i},'total',this.innerText)">${r.total!==''?fmt(r.total):''}</span> <span class="editable" ${ED} onblur="editField(${i},'moneda',this.innerText)">${esc(r.moneda)||''}</span></span></div>
       <div class="rowline"><span class="lab">USD</span><span class="val usd">${u!=null?usdFmt(u):'—'}</span></div>
-      <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editDesc(${i},this.innerText)">${esc(r.desc)||''}</span></div>
+      <div class="desc"><span class="lab">Descripción</span><span class="editable" ${ED} onblur="editField(${i},'desc',this.innerText)">${esc(r.desc)||''}</span></div>
     </div>`;
   }).join('') + `<div class="btot"><h4>Totales por país</h4>
       ${paises.map(p=>`<div class="rowline"><span>${esc(na(p))}</span><span class="val">${fmt(sums[p])} ${esc(curOf(p))}</span></div>`).join('')}
@@ -3838,7 +4068,21 @@ function renderHistory(){
   renderRefList();
 }
 function delRow(i){ history.splice(i,1); persist(); renderRates(); renderHistory(); }
-function editDesc(i,val){ if(history[i]){ history[i].desc=(val||'').replace(/\s+/g,' ').trim(); persist(); } }
+function editField(i,f,val){
+  const r=history[i]; if(!r) return;
+  const v=(val||'').replace(/\s+/g,' ').trim();
+  let nv=v;
+  if(f==='fecha') nv=fmtDate(v);
+  else if(f==='total') nv=num(v);
+  else if(f==='moneda') nv=v.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+  else if(f==='pais') nv=v?(matchCountry(v)||v):'';
+  r[f]=nv;
+  if(f==='moneda'&&nv&&rates[nv]==null) rates[nv]='';   // crea fila de tasa pendiente
+  if(f==='fecha') history.sort(byDateAsc);              // reordena y renumera
+  persist(); persistRates(); renderRates(); renderHistory();
+}
+function editDesc(i,val){ editField(i,'desc',val); }
+function toggleOrigen(i){ const r=history[i]; if(!r) return; r.origen=(r.origen==='Papel')?'Digital':'Papel'; persist(); renderHistory(); }
 function clearAll(){
   if(!history.length) return;
   if(!confirm('¿Borrar TODO el histórico? Esta acción no se puede deshacer.')) return;
@@ -4241,7 +4485,7 @@ function stamp(){ const d=new Date(),p=n=>String(n).padStart(2,'0');
 
 /* ================= INIT ================= */
 function init(){
-  buildCountrySelect(); wireInputs(); loadHistory(); loadRates(); loadRefList();
+  buildCountrySelect(); wireInputs(); wireCropper(); loadHistory(); loadRates(); loadRefList();
   if(DEMO){
     appCode='demo'; enterApp();
     if(history.length===0 && DEMO_SEED.length){ history=DEMO_SEED.map(x=>Object.assign({},x)); history.sort(byDateAsc); persist(); }
