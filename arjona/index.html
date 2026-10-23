@@ -1,11 +1,11 @@
 <!-- ═══ ESTADO ═══
 herramienta : Desglose Potencia Accesorio (histórico transacción UbiVu)
-version     : v6 (anterior: v5)
+version     : v8 (anterior: v7)
 motor       : BASE byte-idéntica a v2–v5 — histBuildNodes · histHourly · quantile · inDay/inNight · ingesta. PIVOTE v6 (orden del usuario): la clasificación por clases/ventanas se reemplaza por % de tira en falla = 1 − P̃día/ideal, en buckets ~1/4 · ~1/2 · ~3/4 · 100 % + sobre consumo + sin dato
-ultima      : 2026-10-23 · v6 — un solo parámetro (P tira ideal, 60 W); % de falla continuo por nodo (30 W → 50 %); KPIs = filtros globales que sincronizan tabla, mapa, histograma de %, perfil horario, detalle y export; ZIP con fflate 0.8.2 EMBEBIDO (unzipSync + strFromU8 — reemplaza a JSZip, cuyo async() depende de un scheduler que no corre en todo runtime; decodificación sin TextDecoder); Chart.js embebido; UI podada (sin ventanas manuales ni clases antiguas)
+ultima      : 2026-10-23 · v8 — limpieza visual: contexto (lecturas/rango/ventanas/circuitos) y fórmula colapsados en «Datos del análisis»; eliminados los «Cómo leerlo» (la tarjeta Lectura cumple ese rol); gráficos (perfil horario e histograma) movidos al final. Orden: ideal → KPIs → Lectura → Mapa → Tabla → Detalle → gráficos. Hereda v7 — tarjeta «Lectura» protagonista: frase en lenguaje natural con los números reales del filtro activo (ej. «Considerando una potencia ideal de 60 W… 15 nodos… solo ≈31 W, ~50 % en falla») + tira LED dibujada con segmentos encendidos/apagados según el % del grupo. Hereda v6 — un solo parámetro (P tira ideal, 60 W); % de falla continuo por nodo (30 W → 50 %); KPIs = filtros globales que sincronizan tabla, mapa, histograma de %, perfil horario, detalle y export; ZIP con fflate 0.8.2 EMBEBIDO (unzipSync + strFromU8 — reemplaza a JSZip, cuyo async() depende de un scheduler que no corre en todo runtime; decodificación sin TextDecoder); Chart.js embebido; UI podada (sin ventanas manuales ni clases antiguas)
 arquitectura: 3 capas ingesta→motor→render · single-file · Chart.js + fflate inline · Leaflet/SheetJS por CDN con degradación · sin localStorage
 marca       : Ubicquia (--ubi-*)
-verificacion: hopper — node --check + harness node (buckets reconciliados: 263/7/15/0/184/3/2, nightOff 20) + jsdom (CSV directo, ZIP chico y ZIP completo, filtros sincronizando los 5 paneles)
+verificacion: hopper — node --check + harness node (buckets 263/7/15/0/184/3/2, nightOff 20) + jsdom (CSV, ZIPs, filtros sincronizando 6 paneles incl. tarjeta Lectura)
 datos_prueba: ubicquia_transacción_23-10-2026_131202.csv (+ .zip) · Arjona · 21→23-oct-2026 · CTO 1–7
 no_tocar    : motor base · parseTS2 · ventanas día 06:30–17:15 / noche 19:00–05:00 · dedupe serial+ts+P+Vacc · fórmula %falla y cortes 10/37.5/62.5/90 · sobre consumo >4/3× · noche OK ≥5/3×
 pendientes  : evolución día a día por nodo · lista de cuadrilla por circuito · export PDF de marca
@@ -15,7 +15,7 @@ pendientes  : evolución día a día por nodo · lista de cuadrilla por circuito
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Desglose Potencia Accesorio v6 — % tira en falla · Ubicquia</title>
+<title>Desglose Potencia Accesorio v8 — % tira en falla · Ubicquia</title>
 <meta name="description" content="Importa el histórico 'transacción' de UbiVu (CSV o ZIP) y calcula por nodo el % de tira LED en falla a partir de su potencia diurna frente al ideal.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -80,6 +80,9 @@ body.drag::after{content:"Suelta el CSV o ZIP de transacción aquí";position:fi
 .thr label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--ubi-muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
 .thr input{font-family:var(--mono);font-size:14px;padding:7px 9px;border:1px solid var(--ubi-line);border-radius:7px;width:92px;color:var(--ubi-ink)}
 .thr input:focus{outline:2px solid var(--ubi-blue);outline-offset:1px;border-color:var(--ubi-blue)}
+details.meta{margin-top:10px;border-top:1px dashed var(--ubi-line);padding-top:8px}
+details.meta summary{cursor:pointer;font-size:11.5px;font-weight:700;color:var(--ubi-muted);text-transform:uppercase;letter-spacing:.4px;user-select:none}
+details.meta[open] summary{margin-bottom:8px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:12px;margin-bottom:18px}
 .kpi{background:var(--ubi-surface);border:1px solid var(--ubi-line);border-left:5px solid var(--kc,var(--ubi-blue));border-radius:11px;padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit;transition:box-shadow .12s}
 .kpi:hover{box-shadow:0 2px 10px rgba(30,36,69,.10)}
@@ -87,6 +90,18 @@ body.drag::after{content:"Suelta el CSV o ZIP de transacción aquí";position:fi
 .kpi .n{font-size:25px;font-weight:900;color:var(--ubi-ink);font-family:var(--mono);line-height:1.1}
 .kpi .l{font-size:11.5px;font-weight:700;color:var(--ubi-deep);margin-top:2px}
 .kpi .p{font-size:11px;color:var(--ubi-muted);font-family:var(--mono)}
+/* tarjeta Lectura (protagonista) */
+#readCard{border-left:6px solid var(--rc,var(--ubi-blue));background:linear-gradient(180deg,#FBFDFF,#F3F8FC)}
+#readCard .rt{font-size:16px;line-height:1.55;color:var(--ubi-deep)}
+#readCard .rt b{color:var(--ubi-ink)}
+#readCard .rt .hl{color:var(--rc,var(--ubi-blue))}
+.ledwrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px}
+.readnum{font-family:var(--mono);font-weight:900;font-size:22px;color:var(--ubi-ink);line-height:1.1}
+.readnum small{display:block;font-size:11px;font-weight:700;color:var(--ubi-muted);letter-spacing:.4px;text-transform:uppercase}
+.readnum.bad{color:var(--rc,var(--ubi-orange))}
+.ledbar{flex:1;min-width:240px;display:flex;gap:4px;background:var(--ubi-navy);border-radius:10px;padding:8px;box-shadow:inset 0 2px 6px rgba(0,0,0,.35)}
+.ledbar .seg{flex:1;height:18px;border-radius:4px;background:#303754}
+.ledbar .seg.on{background:linear-gradient(180deg,#D7ED8C,var(--ubi-lime));box-shadow:0 0 7px rgba(174,204,83,.85)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 @media(max-width:980px){.g2{grid-template-columns:1fr}}
 .chartwrap{position:relative;height:290px}
@@ -131,7 +146,7 @@ footer .container{padding-block:16px;font-size:12px;display:flex;gap:14px;flex-w
 <header class="band band--navy">
   <div class="container topbar">
     <span class="logo"><span class="u1">ubi</span><span class="u2">cquia</span><span class="u1">.</span></span>
-    <span class="apptitle">Desglose Potencia Accesorio v6 · % tira en falla</span>
+    <span class="apptitle">Desglose Potencia Accesorio v8 · % tira en falla</span>
     <span class="pill"><span class="dot"></span><span id="pillTxt">sin datos — carga CSV o ZIP</span></span>
     <span class="spacer"></span>
     <button class="btn ghost" id="btnMore">Cargar más archivos</button>
@@ -169,35 +184,46 @@ footer .container{padding-block:16px;font-size:12px;display:flex;gap:14px;flex-w
     <section id="dash" class="hidden">
 
       <div class="card">
-        <div class="ctx" id="ctxRow"></div>
-        <div class="thr">
+        <div class="thr" style="margin-top:0;padding-top:0;border-top:none">
           <label>P tira LED ideal (W)<input id="thIdeal" type="number" step="1" min="5" value="60"></label>
-          <span id="bands" class="mono" style="font-size:12px;color:var(--ubi-deep)"></span>
         </div>
+        <details class="meta">
+          <summary>Datos del análisis</summary>
+          <div class="ctx" id="ctxRow"></div>
+          <div class="mono" id="bands" style="font-size:12px;color:var(--ubi-deep);margin-top:8px"></div>
+        </details>
       </div>
 
       <div class="kpis" id="kpis"></div>
 
-      <div class="g2">
-        <div class="card">
-          <h2>Perfil horario <span id="hTitleScope" style="font-weight:400;font-size:12px;color:var(--ubi-muted)"></span></h2>
-          <p class="sub">Mediana de potencia del accesorio por hora (banda P10–P90) de los nodos del filtro activo.</p>
-          <div class="chartwrap"><canvas id="chHourly"></canvas></div>
-          <p class="howto"><b>Cómo leerlo:</b> lo sano es meseta nocturna alta (luminaria) y meseta diurna pegada al ideal (tiras completas). Filtra un bucket arriba y verás su firma: "~1/2 en falla" muestra la meseta diurna a la mitad del ideal.</p>
-        </div>
-        <div class="card">
-          <h2>Histograma de % de tira en falla</h2>
-          <p class="sub">Un valor por nodo del filtro activo: % falla = 1 − P̃ diurna / ideal. Sobre-consumo y sin dato quedan fuera del eje (tienen su propio KPI).</p>
-          <div class="chartwrap"><canvas id="chHist"></canvas></div>
-          <p class="howto"><b>Cómo leerlo:</b> la masa debería estar en 0–10 % (tiras completas). Barras en 40–60 % = media tira caída por nodo; 90–100 % = tira apagada o desconectada.</p>
+      <div class="card" id="readCard">
+        <h2>Lectura <span id="readScope" style="font-weight:400;font-size:12px;color:var(--ubi-muted)"></span></h2>
+        <div class="rt" id="readTxt"></div>
+        <div class="ledwrap hidden" id="ledWrap">
+          <div class="readnum"><span id="ledW">—</span><small>potencia leída de día</small></div>
+          <div class="ledbar" id="ledBar" aria-hidden="true"></div>
+          <div class="readnum bad"><span id="ledPct">—</span><small>de la tira en falla</small></div>
         </div>
       </div>
+
 
       <div class="card">
         <h2>Mapa por % de falla</h2>
         <p class="sub">Un punto por nodo (última coordenada), coloreado por severidad. Capas: Calles (Esri) · Satélite (Esri) · respaldo OSM France. El filtro activo también aplica aquí.</p>
         <div id="map"></div>
-        <p class="howto"><b>Cómo leerlo:</b> amarillos/naranjas contiguos = tramo de tiras caído en un mismo sector; navy = tira apagada; naranjo intenso = sobre-consumo (luminaria encendida de día). Toca un punto para el detalle.</p>
+      </div>
+
+
+      <div class="card">
+        <h2>Nodos</h2>
+        <p class="sub">Una fila por nodo; <b>% de falla</b> manda (peores primero). Los filtros de arriba, el circuito y la búsqueda aplican aquí y al export.</p>
+        <div class="tbar">
+          <input id="search" type="search" placeholder="Buscar serial o ID de nodo…">
+          <select id="ctoSel"><option value="">Todos los circuitos</option></select>
+          <span id="tcount" class="mono" style="font-size:12px;color:var(--ubi-muted)"></span>
+          <button class="btn sec" id="btnClear">Quitar filtro</button>
+        </div>
+        <div class="tscroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
       </div>
 
       <div class="card">
@@ -214,19 +240,19 @@ footer .container{padding-block:16px;font-size:12px;display:flex;gap:14px;flex-w
           <span id="ndInfo" class="mono" style="font-size:12px;color:var(--ubi-muted)"></span>
         </div>
         <div class="chartwrap" style="height:260px"><canvas id="chNode"></canvas></div>
-        <p class="howto"><b>Cómo leerlo:</b> puntos azules = día, navy = noche. Tiras sanas: escalón diurno estable en el ideal. Tramos caídos: escalón diurno proporcionalmente más bajo con noche normal.</p>
       </div>
 
-      <div class="card">
-        <h2>Nodos</h2>
-        <p class="sub">Una fila por nodo; <b>% de falla</b> manda (peores primero). Los filtros de arriba, el circuito y la búsqueda aplican aquí y al export.</p>
-        <div class="tbar">
-          <input id="search" type="search" placeholder="Buscar serial o ID de nodo…">
-          <select id="ctoSel"><option value="">Todos los circuitos</option></select>
-          <span id="tcount" class="mono" style="font-size:12px;color:var(--ubi-muted)"></span>
-          <button class="btn sec" id="btnClear">Quitar filtro</button>
+      <div class="g2">
+        <div class="card">
+          <h2>Perfil horario <span id="hTitleScope" style="font-weight:400;font-size:12px;color:var(--ubi-muted)"></span></h2>
+          <p class="sub">Mediana de potencia del accesorio por hora (banda P10–P90) de los nodos del filtro activo.</p>
+          <div class="chartwrap"><canvas id="chHourly"></canvas></div>
         </div>
-        <div class="tscroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+        <div class="card">
+          <h2>Histograma de % de tira en falla</h2>
+          <p class="sub">Un valor por nodo del filtro activo: % falla = 1 − P̃ diurna / ideal. Sobre-consumo y sin dato quedan fuera del eje (tienen su propio KPI).</p>
+          <div class="chartwrap"><canvas id="chHist"></canvas></div>
+        </div>
       </div>
 
     </section>
@@ -236,7 +262,7 @@ footer .container{padding-block:16px;font-size:12px;display:flex;gap:14px;flex-w
 <footer class="band band--navy">
   <div class="container">
     <span class="logo" style="font-size:16px"><span class="u1">ubi</span><span class="u2">cquia</span><span class="u1">.</span></span>
-    <span style="opacity:.75">Desglose Potencia Accesorio v6 · % tira en falla · todo local en el navegador.</span>
+    <span style="opacity:.75">Desglose Potencia Accesorio v8 · % tira en falla · todo local en el navegador.</span>
   </div>
 </footer>
 
@@ -700,7 +726,7 @@ function renderAll(){
 }
 /* el filtro activo sincroniza TODO: tabla, mapa, gráficos, picker y export */
 function refreshFiltered(){
-  renderHourly();renderHist();renderMap();renderTable();renderNodeDetail();
+  renderRead();renderHourly();renderHist();renderMap();renderTable();renderNodeDetail();
 }
 $("thIdeal").addEventListener("change",function(){ if(S.started)rebuild(); });
 
@@ -762,6 +788,66 @@ function kpiCard(f,label,n,pct,hint,color){
   return "<button class='kpi"+act+"' style='--kc:"+color+"' "+(f?"data-cls='"+f+"'":"")+
     " title='"+escHTML(hint||"Quitar filtro")+"'><div class='n'>"+n+"</div><div class='l'>"+escHTML(label)+"</div>"+
     (pct?"<div class='p'>"+pct+"</div>":"<div class='p'>&nbsp;</div>")+"</button>";
+}
+
+/* ---------- tarjeta Lectura (frase + tira LED con los números del filtro) ---------- */
+function groupStats(list,key){
+  var v=list.map(function(N){return N[key];}).filter(function(x){return x!=null;}).sort(function(a,b){return a-b;});
+  return v.length?{n:v.length,med:quantile(v,0.5),min:v[0],max:v[v.length-1]}:null;
+}
+function fr0(x){return x==null?"—":Math.round(x).toString();}
+function renderRead(){
+  try{
+    var card=$("readCard"),txt=$("readTxt"),cfg=S.cfg,s=S.sum;
+    var list=filteredNodes();
+    var cto=S.ctoFilter?(" en <b>"+escHTML(S.ctoFilter)+"</b>"):"";
+    var meta=S.filter&&S.filter!=="flag:night"?FB_META[S.filter]:(S.filter==="flag:night"?NIGHT_META:null);
+    card.style.setProperty("--rc",meta?meta.color:"var(--ubi-blue)");
+    $("readScope").textContent=meta?("· "+meta.label):"· toda la flota";
+    var pS=groupStats(list,"pDiaMed"),fS=groupStats(list,"failPct");
+    var base="Considerando una potencia ideal de <b>"+cfg.ideal+" W</b> en la tira LED"+cto+", ";
+    var html="",showBar=false,pctForBar=null;
+    var n=list.length;
+    if(!n){
+      html=base+"no hay nodos con el filtro actual.";
+    }else if(!S.filter){
+      var c=s.counts,menos=(c.f25||0)+(c.f50||0)+(c.f75||0);
+      html=base+"de <b>"+s.nodes+" nodos</b>: <b class='hl'>"+(c.ok||0)+"</b> leen ≈"+cfg.ideal+" W de día (<b>tira completa</b>), "+
+        "<b>"+menos+"</b> leen menos de lo ideal ("+(c.f25||0)+" con ~1/4, "+(c.f50||0)+" con ~1/2"+((c.f75||0)?(", "+c.f75+" con ~3/4"):"")+" en falla), "+
+        "<b>"+(c.f100||0)+"</b> no registran consumo (<b>tira apagada</b>) y <b>"+(c.over||0)+"</b> consumen de más. "+
+        "Además, <b>"+s.nightOff+"</b> no encienden de noche. Toca una tarjeta para la lectura de ese grupo.";
+    }else if(S.filter==="flag:night"){
+      html=base+"<b class='hl'>"+n+" luminarias no encienden de noche</b>: su mediana nocturna queda bajo "+fr0(cfg.nocheOK)+" W. Es <b>falla de la luminaria</b>, independiente del estado de la tira.";
+    }else if(S.filter==="nodata"){
+      html=base+"<b>"+n+" nodos</b> no reportaron potencia dentro de la ventana diurna: <b>sin dato para evaluar la tira</b>.";
+    }else if(S.filter==="over"){
+      html=base+"<b class='hl'>"+n+" nodos</b> leen <b>≈"+fr0(pS&&pS.med)+" W</b> de día, por <b>encima</b> del ideal: no es falla de tira — la <b>luminaria queda consumiendo de día</b> (fotocélula/driver) o hay una carga anómala.";
+    }else{
+      var frase={ok:"la tira <b>completa</b>: sin acción necesaria",
+                 f25:"una falla de <b>alrededor de un cuarto</b> de la tira",
+                 f50:"una falla de <b>al menos la mitad</b> de la tira",
+                 f75:"una falla de <b>cerca de tres cuartos</b> de la tira",
+                 f100:"la tira <b>apagada, desconectada o 100 % en falla</b>"}[S.filter];
+      var pct=fS?fS.med:null,lee=pS?pS.med:null;
+      if(S.filter==="ok"){
+        html=base+"<b class='hl'>"+n+" nodos</b> presentan "+frase+": la potencia leída de día es <b>≈"+fr0(lee)+" W</b>, prácticamente el <b>"+fr0(100-(pct||0))+" %</b> del ideal.";
+      }else if(S.filter==="f100"){
+        html=base+"<b class='hl'>"+n+" nodos</b> presentan "+frase+": la potencia que es posible leer de día es <b>≈"+fr0(lee)+" W</b>, es decir un <b>"+fr0(pct)+" % en falla</b>.";
+      }else{
+        html=base+"<b class='hl'>"+n+" nodos</b> presentan "+frase+", porque la potencia que es posible leer de día es de solo <b>≈"+fr0(lee)+" W</b>, es decir el <b>"+fr0(100-pct)+" %</b> del total ideal (<b>"+fr0(pct)+" % en falla</b>).";
+      }
+      showBar=(pct!=null);pctForBar=pct;
+      $("ledW").textContent="≈"+fr0(lee)+" W";
+      $("ledPct").textContent=fr0(pct)+" %";
+    }
+    txt.innerHTML=html;
+    $("ledWrap").classList.toggle("hidden",!showBar);
+    if(showBar){
+      var SEG=20,on=Math.max(0,Math.min(SEG,Math.round((1-pctForBar/100)*SEG))),bar="";
+      for(var i=0;i<SEG;i++)bar+="<div class='seg"+(i<on?" on":"")+"'></div>";
+      $("ledBar").innerHTML=bar;
+    }
+  }catch(e){banner("warn","Lectura: "+escHTML(e.message));}
 }
 
 /* ---------- gráficos (sobre el filtro activo) ---------- */
