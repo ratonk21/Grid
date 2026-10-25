@@ -3255,12 +3255,21 @@ input,select,textarea{
   .tab-btn{min-height:49px!important}
 }
 
-/* ===== Escritorio: histórico y referencia a ancho completo ===== */
+/* ===== Escritorio: pestañas también en desktop + listas completas ===== */
 @media (min-width:821px){
   .wrap{max-width:none;padding:18px 24px}          /* las cards de formulario siguen centradas a 720px */
   td.cellwrap{max-width:420px}
-  #histCard .tbl-wrap,#refTableWrap{max-height:70vh;overflow:auto}
-  tfoot td{position:sticky;bottom:0;z-index:1}     /* TOTAL siempre visible; th ya es sticky arriba */
+  .app-header{flex-wrap:wrap;gap:10px 14px}
+  .app-tabs{order:3;width:100%;max-width:860px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:6px;background:rgba(245,239,226,.10);border:1px solid rgba(245,239,226,.16);border-radius:14px;padding:6px}
+  .tab-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;
+    border-radius:10px;background:transparent;border:1px solid transparent;color:#F5EFE2;font-weight:800;font-size:14px}
+  .tab-btn:hover{background:rgba(245,239,226,.12)}
+  .tab-btn.active{background:#F5EFE2;color:var(--tara);box-shadow:0 6px 14px rgba(0,0,0,.14)}
+  .app-ico{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .tab-section{display:none}
+  .tab-section.active-tab{display:block}
+  /* lista completa: el histórico crece con sus filas y scrollea la página, sin caja interna */
 }
 
 /* ===== Lote y selección masiva ===== */
@@ -3541,7 +3550,7 @@ td.usd .editable:empty:before{color:#CFE3D8}
 
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v9 · correlativo configurable + USD manual de respaldo)
+   Bill · Escáner de facturas — Ubicquia  (v10 · pestañas en escritorio + histórico sin scroll interno)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
