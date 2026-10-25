@@ -3453,7 +3453,7 @@ td.usd .editable:empty:before{color:#CFE3D8}
         <h2 style="margin:0">3 · Histórico</h2>
         <span class="tag mono" id="histCount" style="background:var(--ubi-navy)">0</span>
       </div>
-      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla. Marca varias con las casillas para editarlas o borrarlas en bloque. Toca un <b>N°</b> para elegir desde qué número parte el correlativo; el <b>USD</b> también se edita, pero la conversión por tasa de cambio manda.</p>
+      <p class="sub">Guardado en este dispositivo. Se limpia solo cuando tú lo hagas. <b>Toca cualquier dato para editarlo</b> (fecha, emisor, país, moneda, monto, descripción); la etiqueta Papel/Digital cambia al tocarla. Marca varias con las casillas para editarlas o borrarlas en bloque. Toca un <b>N°</b> para elegir desde qué número parte el correlativo; el <b>USD</b> trae el valor del escaneo/conversión y lo que escribas manda (bórralo para volver al automático). Montos con punto de miles y coma decimal.</p>
       <div id="bulkBar" class="bulkbar hidden">
         <span><b id="bulkCount">0</b> seleccionadas →</span>
         <input id="bk_fecha" class="mono" placeholder="Fecha AAAA-MM-DD">
@@ -3550,7 +3550,7 @@ td.usd .editable:empty:before{color:#CFE3D8}
 
 <script>
 /* =================================================================
-   Bill · Escáner de facturas — Ubicquia  (v10 · pestañas en escritorio + histórico sin scroll interno)
+   Bill · Escáner de facturas — Ubicquia  (v11 · USD manual manda + formato es-CL en montos)
    - Papel (cámara) / Digital (adjuntar).
    - Tabla de tasas por moneda + columna USD (monto ÷ tasa).
    - PDF de boletas en papel, empacando varias por hoja según tamaño.
@@ -4104,7 +4104,19 @@ function extractJSON(text){
 }
 
 /* ================= RESULTADO ================= */
-function num(v){ const n=Number(String(v??'').replace(/[^\d.-]/g,'')); return isNaN(n)?'':n; }
+/* Convención de montos escritos: punto = miles, coma = decimales (es-CL).
+   Los números que llegan como number (JSON de la IA, respaldos) pasan tal cual. */
+function num(v){
+  if(typeof v==='number') return isNaN(v)?'':v;
+  let s=String(v??'').trim().replace(/[^\d.,\-]/g,'');
+  if(!s||/^[-.,]+$/.test(s)) return '';
+  s=s.replace(/\./g,'');                       // puntos = separador de miles
+  const parts=s.split(',');
+  if(parts.length>2) s=parts.join('');         // 2+ comas no son decimales: estilo en-US pegado → miles
+  else s=s.replace(',','.');                   // una coma = decimales
+  const n=Number(s); return isNaN(n)?'':n;
+}
+function numToStr(n){ return (n===''||n==null)?'':String(n).replace('.',','); }
 function setTag(origen){
   const t=document.getElementById('docTag');
   t.textContent=origen||'documento';
@@ -4124,9 +4136,9 @@ function fillResult(d){
   document.getElementById('f_moneda').value=(pais&&COUNTRIES[pais].code)?COUNTRIES[pais].code:(d.moneda||'');
   document.getElementById('f_pais_manual').value=(!pais&&d.pais)?d.pais:'';
   onCountry();
-  document.getElementById('f_neto').value=num(d.neto);
-  document.getElementById('f_iva').value=num(d.iva);
-  document.getElementById('f_total').value=num(d.total);
+  document.getElementById('f_neto').value=numToStr(num(d.neto));
+  document.getElementById('f_iva').value=numToStr(num(d.iva));
+  document.getElementById('f_total').value=numToStr(num(d.total));
   let detail=d.texto_completo||'';
   if(Array.isArray(d.items)&&d.items.length)
     detail+='\n\n— Ítems —\n'+d.items.map(it=>`• ${it.descripcion||''}  x${it.cantidad??''}  = ${it.total??''}`).join('\n');
@@ -4168,13 +4180,14 @@ function na(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g
 function allPaises(){ const out=[]; const add=p=>{ if(p&&!out.includes(p)) out.push(p); }; history.forEach(r=>add(r.pais)); refRows.forEach(r=>add(r.pais)); return out; }
 function currenciesInUse(){ const s=new Set(); history.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); refRows.forEach(r=>{ if(r.moneda) s.add(r.moneda); }); return [...s]; }
 function toUSD(r){
-  // 1° la conversión por moneda/tasa manda; el USD manual (r.usd) es respaldo
+  // El USD editado a mano manda; si no hay, se calcula por moneda/tasa (valor inicial del escaneo).
+  // Borrar la celda USD (dejarla vacía) vuelve al cálculo automático.
+  if(r.usd!==''&&r.usd!=null&&!isNaN(Number(r.usd))) return Number(r.usd);
   if(r.total!==''&&r.total!=null){
     if(r.moneda==='USD') return r.total;
     const rate=Number(rates[r.moneda]);
     if(rate&&!isNaN(rate)) return r.total/rate;
   }
-  if(r.usd!==''&&r.usd!=null&&!isNaN(Number(r.usd))) return Number(r.usd);
   return null;
 }
 function renderRates(){
@@ -4286,10 +4299,6 @@ function editField(i,f,val){
   else if(f==='pais') nv=v?(matchCountry(v)||v):'';
   else if(f==='usd') nv=num(v);
   r[f]=nv;
-  if(f==='usd'&&nv!==''){
-    const calcRige = r.total!==''&&r.total!=null && (r.moneda==='USD' || Number(rates[r.moneda])>0);
-    if(calcRige) banner('El USD de esta fila lo fija la conversión por tasa (la moneda manda); tu valor queda como respaldo si quitas la tasa o la moneda.','info');
-  }
   if(f==='moneda'&&nv&&rates[nv]==null) rates[nv]='';   // crea fila de tasa pendiente
   if(f==='fecha') history.sort(byDateAsc);              // reordena y renumera
   persist(); persistRates(); renderRates(); renderHistory();
@@ -4303,7 +4312,7 @@ function clearAll(){
 }
 function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmt(n){ return typeof n==='number'?n.toLocaleString('es-CL'):n; }
-function usdFmt(u){ return '$ '+u.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function usdFmt(u){ return '$ '+u.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
 /* ================= LISTA DE REFERENCIA (no se contabiliza) ================= */
 const REF_STOP=new Set(['spa','ltda','limitada','sas','eirl','sociedad','anonima','de','del','la','el','los','las','y','sa','con','por']);
