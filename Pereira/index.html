@@ -143,12 +143,14 @@
       <div class="right">
         <div class="card">
           <h2>Seleccionados para reiniciar</h2>
-          <div class="sub">Haz clic en un nodo de la izquierda, o pega IDs/seriales. Máximo <b>5</b>.</div>
+          <div class="sub">Haz clic en un nodo, pega IDs/seriales o importa un CSV (columna "Número de serie"). Máximo <b>100</b>.</div>
           <div class="chips" id="chips"><span class="empty">Nada seleccionado.</span></div>
           <div class="field"><textarea id="tokens" placeholder="Pega IDs o seriales (coma, espacio o salto de línea)"></textarea></div>
           <div class="row"><button class="btn ghost" id="addBtn">Añadir pegados</button>
-            <span class="count" id="count">0 / 5</span></div>
-          <button class="btn warn block" id="rebootBtn" style="margin-top:14px" disabled>Reiniciar (0/5)</button>
+            <button class="btn ghost" id="csvBtn">Importar CSV</button>
+            <span class="count" id="count">0 / 100</span></div>
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+          <button class="btn warn block" id="rebootBtn" style="margin-top:14px" disabled>Reiniciar (0/100)</button>
           <div class="banner ok" id="okBanner"></div>
           <div class="banner err" id="appBanner"></div>
         </div>
@@ -166,7 +168,7 @@
      ENDPOINT: función propia (api/control-pereira.js). Credenciales en Vercel:
                UBICQUIA_779337_CLIENT_ID / _CLIENT_SECRET + APP_ACCESS_CODE_779337.
      TENANT:   se envía en TODAS las llamadas; la función rechaza otro tenant. */
-  const ENDPOINT='/api/control-pereira', TENANT='ut-ilumina-pereira', MAX=5;
+  const ENDPOINT='/api/control-pereira', TENANT='ut-ilumina-pereira', MAX=100;
 
   const $=id=>document.getElementById(id);
   let PANELS=[], PANEL=null, SUBPANEL='', ACCESS='', panelsLoaded=false, locked=true, busy=false;
@@ -335,14 +337,11 @@
     $('rebootBtn').textContent=`Reiniciar (${selected.length}/${MAX})`;
   }
 
-  // añadir pegados
-  $('addBtn').onclick=()=>{
-    banner($('appBanner'),'');
-    const toks=[...new Set(($('tokens').value||'').split(/[\s,;]+/).map(t=>t.trim().toLowerCase()).filter(Boolean))];
-    if(!toks.length){ banner($('appBanner'),'Pega IDs o seriales primero.'); return; }
-    let added=0, missing=[];
+  // añadir pegados / CSV
+  function addTokens(toks){
+    let added=0, missing=[], capped=false;
     for(const t of toks){
-      if(selected.length>=MAX){ banner($('appBanner'),`Máximo ${MAX} · no se añadieron todos.`); break; }
+      if(selected.length>=MAX){ capped=true; break; }
       let n=null;
       if(/^\d+$/.test(t)&&nodesById.has(Number(t))) n=nodesById.get(Number(t));
       else if(nodesBySerial.has(t)) n=nodesBySerial.get(t);
@@ -350,17 +349,63 @@
       if(selected.some(x=>x.id===Number(n.id))) continue;
       selected.push({id:Number(n.id), serial:n.serial}); added++;
     }
-    if(missing.length) banner($('appBanner'),'No encontrados en el subpanel: '+missing.join(', '));
-    if(added) $('tokens').value='';
     renderChips(); renderList();
+    return {added,missing,capped};
+  }
+  function missingMsg(missing){ return 'No encontrados en el subpanel: '+missing.slice(0,15).join(', ')+(missing.length>15?` … (+${missing.length-15})`:''); }
+
+  $('addBtn').onclick=()=>{
+    banner($('appBanner'),'');
+    const toks=[...new Set(($('tokens').value||'').split(/[\s,;]+/).map(t=>t.trim().toLowerCase()).filter(Boolean))];
+    if(!toks.length){ banner($('appBanner'),'Pega IDs o seriales primero.'); return; }
+    const r=addTokens(toks);
+    if(r.capped) banner($('appBanner'),`Máximo ${MAX} · no se añadieron todos.`);
+    else if(r.missing.length) banner($('appBanner'),missingMsg(r.missing));
+    if(r.added) $('tokens').value='';
   };
+
+  $('csvBtn').onclick=()=>$('csvFile').click();
+  $('csvFile').onchange=async e=>{
+    const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+    banner($('appBanner'),''); banner($('okBanner'),'');
+    try{
+      const text=(await f.text()).replace(/^﻿/,'');
+      const rows=parseCSV(text);
+      if(rows.length<2) throw new Error('CSV vacío o sin filas de datos');
+      const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toLowerCase();
+      const hi=rows[0].findIndex(h=>norm(h)==='numero de serie');
+      if(hi<0) throw new Error('no trae la columna "Número de serie"');
+      const toks=[...new Set(rows.slice(1).map(r=>String(r[hi]||'').trim().toLowerCase()).filter(t=>t&&t!=='n/a'))];
+      if(!toks.length) throw new Error('la columna "Número de serie" viene vacía');
+      const r=addTokens(toks);
+      logAdd(r.missing.length||r.capped?'warn':'ok',`CSV ${f.name}: ${toks.length} seriales · ${r.added} añadidos${r.missing.length?` · ${r.missing.length} no están en el subpanel`:''}${r.capped?' · corte por máximo':''}`);
+      if(r.capped) banner($('appBanner'),`Máximo ${MAX} · no se añadieron todos.`);
+      else if(r.missing.length) banner($('appBanner'),missingMsg(r.missing));
+      if(r.added) banner($('okBanner'),`CSV: ${r.added} nodo(s) añadidos a la selección.`,'ok');
+    }catch(err){ banner($('appBanner'),'CSV → '+err.message); logAdd('err','CSV → '+err.message); }
+  };
+  function parseCSV(text){
+    const rows=[]; let row=[], cur='', q=false;
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+      else if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=''; }
+      else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cur); cur='';
+        if(row.length>1||row[0].trim()!=='') rows.push(row); row=[]; }
+      else cur+=c;
+    }
+    row.push(cur); if(row.length>1||row[0].trim()!=='') rows.push(row);
+    return rows;
+  }
 
   // reinicio
   $('rebootBtn').onclick=async()=>{
     if(!selected.length||busy||locked) return;
     const ids=selected.map(s=>s.id);
     if(ids.length>MAX){ banner($('appBanner'),`Máximo ${MAX} dispositivos.`); return; }
-    const lbl=selected.map(s=>s.serial||('id '+s.id)).join(', ');
+    const lblArr=selected.map(s=>s.serial||('id '+s.id));
+    const lbl=lblArr.slice(0,10).join(', ')+(lblArr.length>10?` … y ${lblArr.length-10} más`:'');
     if(!confirm(`¿Reiniciar ${ids.length} unidad(es)?\n${lbl}\n\nLa unidad se desconectará y volverá a registrarse (puede tardar varios minutos).`)) return;
     busy=true; const btn=$('rebootBtn'); btn.disabled=true; btn.textContent='Reiniciando…'; banner($('okBanner'),'');
     try{
