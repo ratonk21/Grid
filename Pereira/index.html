@@ -124,7 +124,7 @@
     <div class="layout">
       <!-- IZQUIERDA: lista con estado (referencia) -->
       <div class="card nodes-panel">
-        <div class="ptitle"><span>Nodos del subpanel</span><button class="iconbtn" id="reloadBtn" title="Actualizar estado" style="font-size:14px">↻</button></div>
+        <div class="ptitle"><span>Nodos · carga fija</span><button class="iconbtn" id="reloadBtn" title="Recargar lista" style="font-size:14px">↻</button></div>
         <div class="filterrow">
           <div class="filter"><span style="color:#9cabb5">⌕</span><input id="filter" placeholder="Filtrar serial / id"></div>
           <select id="stFilter" class="stfilter" title="Filtrar por estado">
@@ -243,38 +243,20 @@
     return j;
   }
 
+  /* Lista desde la carga fija embebida (PRELOAD) · sin consulta de nodos ni estado a la API */
   async function loadNodes(){
-    $('nodelist').innerHTML='<div class="empty">Cargando nodos…</div>';
-    try{
-      const j=await api({action:'nodes'}); setConn('live');
-      allNodes=j.nodes||[]; BIG=!!j.big;
-      nodesById=new Map(); nodesBySerial=new Map(); statusById=new Map();
-      allNodes.forEach(n=>{ nodesById.set(Number(n.id),n); if(n.serial)nodesBySerial.set(String(n.serial).toLowerCase(),n); if(n.dev_eui)nodesBySerial.set(String(n.dev_eui).toLowerCase(),n);
-        if(n.live) statusById.set(Number(n.id), Object.assign({id:Number(n.id)}, n.live)); });
-      logAdd('ok',`${allNodes.length} nodos en el subpanel ${SUBPANEL}`);
-      const sf=$('stFilter'); if(sf){ sf.disabled=BIG; if(BIG){ sf.value=''; } }
-      if(BIG) logAdd('warn',`Subpanel grande (${allNodes.length}) · estado en vivo desactivado para no saturar la API · filtra por texto o pega IDs`);
-      renderList();
-      if(!BIG) await loadStates();
-    }catch(e){ setConn('err'); $('nodelist').innerHTML='<div class="empty">No se pudieron cargar los nodos.</div>'; logAdd('err','Nodos → '+e.message); }
+    allNodes=PRELOAD.split(';').map(p=>{ const k=p.indexOf('|'); return {id:Number(p.slice(0,k)), serial:p.slice(k+1)||null}; });
+    nodesById=new Map(); nodesBySerial=new Map(); statusById=new Map();
+    allNodes.forEach(n=>{ nodesById.set(n.id,n); if(n.serial)nodesBySerial.set(n.serial.toLowerCase(),n); });
+    const sf=$('stFilter'); if(sf){ sf.value=''; sf.disabled=true; }
+    logAdd('ok',`${allNodes.length} nodos de la carga fija (sin consulta a la API)`);
+    renderList();
   }
-
-  async function loadStates(){
-    const missing=allNodes.filter(n=>!statusById.has(Number(n.id))).map(n=>Number(n.id));
-    if(!missing.length){ logAdd('ok','Estado en vivo cargado desde el listado'); renderList(); return; }
-    try{
-      const j=await api({action:'states',ids:missing}); setConn('live');
-      (j.states||[]).forEach(s=>{ if(s&&s.id!=null) statusById.set(Number(s.id),s); });
-      if(j.capped) logAdd('warn',`Estado nodo-por-nodo solo de ${j.max} de los ${missing.length} sin estado en el listado`);
-      else logAdd('ok',`Estado de ${missing.length} nodos restantes`);
-      renderList();
-    }catch(e){ logAdd('warn','Estado en vivo → '+e.message); }
-  }
-  $('reloadBtn').onclick=()=>{ statusById=new Map(); loadNodes(); };
+  $('reloadBtn').onclick=()=>loadNodes();
 
   function stHtml(id){
     const s=statusById.get(Number(id));
-    if(!s) return '<span class="nst"><span class="sdot"></span>estado —</span>';
+    if(!s) return '';
     if(s.error||s.found===false) return '<span class="nst"><span class="sdot offline"></span>sin estado</span>';
     const online=String(s.nodeStatus||'').toUpperCase()==='ONLINE';
     const on=s.power===true, off=s.power===false;
