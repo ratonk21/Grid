@@ -18,7 +18,7 @@ const CLIENT_SEC  = env('CLIENT_SECRET');
 // Código propio de esta app; si no existe, cae al código global ya desplegado.
 const ACCESS_CODE = String(process.env[`APP_ACCESS_CODE_${PANEL_ID}`] ?? process.env.APP_ACCESS_CODE ?? '').trim();
 
-const MAX_REBOOT = 5;                                   // tope duro (el front dice 5; el server manda)
+const MAX_REBOOT = 100;                                 // tope duro (el front dice 100; el server manda)
 const BIG_LIMIT  = Number(env('BIG_LIMIT',  300));      // sobre esto no se piden estados en vivo
 const STATE_CAP  = Number(env('STATE_CAP',   60));      // lecturas de estado por llamada
 const PAGE_CAP   = Number(env('PAGE_CAP',    80));      // 80 x 250 = 20.000 nodos
@@ -195,14 +195,15 @@ export default async function handler(req, res) {
       const want = [...new Set((Array.isArray(b.ids) ? b.ids : []).map(Number).filter(Number.isFinite))];
       if (!want.length) return send(400, { ok: false, error: 'Sin unidades' });
       if (want.length > MAX_REBOOT) return send(400, { ok: false, error: `Máximo ${MAX_REBOOT} dispositivos por reinicio` });
+      // Allowlist a nivel de PANEL completo (no por subpanel): el front trabaja con la flota fija.
       const { nodes } = await loadAll();
-      const allow = new Set(nodes.filter(n => inSub(n, subpanel)).map(n => Number(n.id)));
+      const allow = new Set(nodes.map(n => Number(n.id)));
       const bad = want.filter(i => !allow.has(i));
-      if (bad.length) return send(403, { ok: false, error: 'Fuera del subpanel: ' + bad.join(', ') });
+      if (bad.length) return send(403, { ok: false, error: 'Fuera del panel: ' + bad.join(', ') });
 
       const r = await jfetch(`${API}/nodes/restartNode`, {
         method: 'POST',
-        headers: { ...(await H(subpanel)), 'Content-Type': 'application/json' },
+        headers: { ...(await H(null)), 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_list: want.map(id => ({ id })), value: 1, node_level_type_id: 1 })
       });
       const j = r.json || {};
