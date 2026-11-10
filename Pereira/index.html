@@ -148,6 +148,7 @@
           <div class="field"><textarea id="tokens" placeholder="Pega IDs o seriales (coma, espacio o salto de línea)"></textarea></div>
           <div class="row"><button class="btn ghost" id="addBtn">Añadir pegados</button>
             <button class="btn ghost" id="csvBtn">Importar CSV</button>
+            <button class="btn ghost" id="clearBtn" disabled>Quitar todos</button>
             <span class="count" id="count">0 / 100</span></div>
           <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
           <button class="btn warn block" id="rebootBtn" style="margin-top:14px" disabled>Reiniciar (0/100)</button>
@@ -338,6 +339,7 @@
     else C.innerHTML=selected.map(s=>`<span class="chip">${s.serial||('id '+s.id)}<button data-id="${s.id}">×</button></span>`).join('');
     C.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>toggleNode(Number(b.dataset.id)));
     $('count').textContent=`${selected.length} / ${MAX}`;
+    $('clearBtn').disabled=!selected.length||busy;
     $('rebootBtn').disabled=!selected.length||busy||locked;
     $('rebootBtn').textContent=`Reiniciar (${selected.length}/${MAX})`;
   }
@@ -372,6 +374,9 @@
     else if(r.missing.length) banner($('appBanner'),missingMsg(r.missing));
     if(r.added) $('tokens').value='';
   };
+
+  $('clearBtn').onclick=()=>{ if(!selected.length||busy) return; const n=selected.length; selected=[];
+    banner($('appBanner'),''); banner($('okBanner'),''); renderChips(); renderList(); logAdd('ok',`Selección vaciada (${n})`); };
 
   $('csvBtn').onclick=()=>$('csvFile').click();
   $('csvFile').onchange=async e=>{
