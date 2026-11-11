@@ -18,7 +18,7 @@ const CLIENT_SEC  = env('CLIENT_SECRET');
 // Código propio de esta app; si no existe, cae al código global ya desplegado.
 const ACCESS_CODE = String(process.env[`APP_ACCESS_CODE_${PANEL_ID}`] ?? process.env.APP_ACCESS_CODE ?? '').trim();
 
-const MAX_REBOOT = 5;                                   // tope duro (el front dice 5; el server manda)
+const MAX_REBOOT = 100;                                 // tope duro (el front dice 100; el server manda)
 const BIG_LIMIT  = Number(env('BIG_LIMIT',  300));      // sobre esto no se piden estados en vivo
 const STATE_CAP  = Number(env('STATE_CAP',   60));      // lecturas de estado por llamada
 const PAGE_CAP   = Number(env('PAGE_CAP',    80));      // 80 x 250 = 20.000 nodos
@@ -95,12 +95,25 @@ async function loadAll() {
   const last = Math.min(Number(first?.meta?.last_page || 1), PAGE_CAP);
   const pend = [];
   for (let p = 2; p <= last; p++) pend.push(p);
+  const failed = [];
   while (pend.length) {
     const batch = pend.splice(0, CONC);
-    const out = await Promise.all(batch.map(p => page(p).catch(() => null)));
+    const out = await Promise.all(batch.map(p => page(p).catch(() => { failed.push(p); return null; })));
     out.forEach(o => { if (o && Array.isArray(o.data)) rows.push(...o.data); });
   }
-  cache = { at: Date.now(), nodes: rows, partial: Number(first?.meta?.last_page || 1) > PAGE_CAP };
+  // Reintento secuencial y pausado de las páginas caídas (429/timeout bajo CONC):
+  // antes se descartaban en silencio y el panel quedaba corto (p. ej. 6.332 de 7.582).
+  for (const p of failed.splice(0, failed.length)) {
+    try { const o = await page(p); if (Array.isArray(o.data)) rows.push(...o.data); else failed.push(p); }
+    catch { failed.push(p); }
+    await sleep(400);
+  }
+  // Dedupe por id (sort_by=id con inserciones concurrentes puede repetir bordes de página).
+  const seenIds = new Set(); const uniq = [];
+  for (const n of rows) { const i = Number(n.id); if (!seenIds.has(i)) { seenIds.add(i); uniq.push(n); } }
+  const lost = failed.length;
+  cache = { at: Date.now(), nodes: uniq, partial: Number(first?.meta?.last_page || 1) > PAGE_CAP || lost > 0, lost };
+  if (lost) cache.at = Date.now() - (NODES_TTL - 60 * 1000); // listado incompleto: el caché expira en 1 min, no en 5
   return cache;
 }
 
@@ -176,9 +189,9 @@ export default async function handler(req, res) {
     }
 
     if (action === 'nodes') {
-      const { nodes, partial } = await loadAll();
+      const { nodes, partial, lost } = await loadAll();
       const list = nodes.filter(n => inSub(n, subpanel)).map(normNode);
-      return send(200, { ok: true, nodes: list, big: list.length > BIG_LIMIT, partial });
+      return send(200, { ok: true, nodes: list, big: list.length > BIG_LIMIT, partial, lost: lost || 0 });
     }
 
     if (action === 'states') {
@@ -195,14 +208,15 @@ export default async function handler(req, res) {
       const want = [...new Set((Array.isArray(b.ids) ? b.ids : []).map(Number).filter(Number.isFinite))];
       if (!want.length) return send(400, { ok: false, error: 'Sin unidades' });
       if (want.length > MAX_REBOOT) return send(400, { ok: false, error: `Máximo ${MAX_REBOOT} dispositivos por reinicio` });
+      // Allowlist a nivel de PANEL completo (no por subpanel): el front trabaja con la flota fija.
       const { nodes } = await loadAll();
-      const allow = new Set(nodes.filter(n => inSub(n, subpanel)).map(n => Number(n.id)));
+      const allow = new Set(nodes.map(n => Number(n.id)));
       const bad = want.filter(i => !allow.has(i));
-      if (bad.length) return send(403, { ok: false, error: 'Fuera del subpanel: ' + bad.join(', ') });
+      if (bad.length) return send(403, { ok: false, error: 'Fuera del panel: ' + bad.join(', ') });
 
       const r = await jfetch(`${API}/nodes/restartNode`, {
         method: 'POST',
-        headers: { ...(await H(subpanel)), 'Content-Type': 'application/json' },
+        headers: { ...(await H(null)), 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_list: want.map(id => ({ id })), value: 1, node_level_type_id: 1 })
       });
       const j = r.json || {};
