@@ -95,12 +95,25 @@ async function loadAll() {
   const last = Math.min(Number(first?.meta?.last_page || 1), PAGE_CAP);
   const pend = [];
   for (let p = 2; p <= last; p++) pend.push(p);
+  const failed = [];
   while (pend.length) {
     const batch = pend.splice(0, CONC);
-    const out = await Promise.all(batch.map(p => page(p).catch(() => null)));
+    const out = await Promise.all(batch.map(p => page(p).catch(() => { failed.push(p); return null; })));
     out.forEach(o => { if (o && Array.isArray(o.data)) rows.push(...o.data); });
   }
-  cache = { at: Date.now(), nodes: rows, partial: Number(first?.meta?.last_page || 1) > PAGE_CAP };
+  // Reintento secuencial y pausado de las páginas caídas (429/timeout bajo CONC):
+  // antes se descartaban en silencio y el panel quedaba corto (p. ej. 6.332 de 7.582).
+  for (const p of failed.splice(0, failed.length)) {
+    try { const o = await page(p); if (Array.isArray(o.data)) rows.push(...o.data); else failed.push(p); }
+    catch { failed.push(p); }
+    await sleep(400);
+  }
+  // Dedupe por id (sort_by=id con inserciones concurrentes puede repetir bordes de página).
+  const seenIds = new Set(); const uniq = [];
+  for (const n of rows) { const i = Number(n.id); if (!seenIds.has(i)) { seenIds.add(i); uniq.push(n); } }
+  const lost = failed.length;
+  cache = { at: Date.now(), nodes: uniq, partial: Number(first?.meta?.last_page || 1) > PAGE_CAP || lost > 0, lost };
+  if (lost) cache.at = Date.now() - (NODES_TTL - 60 * 1000); // listado incompleto: el caché expira en 1 min, no en 5
   return cache;
 }
 
@@ -176,9 +189,9 @@ export default async function handler(req, res) {
     }
 
     if (action === 'nodes') {
-      const { nodes, partial } = await loadAll();
+      const { nodes, partial, lost } = await loadAll();
       const list = nodes.filter(n => inSub(n, subpanel)).map(normNode);
-      return send(200, { ok: true, nodes: list, big: list.length > BIG_LIMIT, partial });
+      return send(200, { ok: true, nodes: list, big: list.length > BIG_LIMIT, partial, lost: lost || 0 });
     }
 
     if (action === 'states') {
