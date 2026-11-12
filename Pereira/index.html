@@ -148,6 +148,7 @@
           <div class="field"><textarea id="tokens" placeholder="Pega IDs o seriales (coma, espacio o salto de línea)"></textarea></div>
           <div class="row"><button class="btn ghost" id="addBtn">Añadir pegados</button>
             <button class="btn ghost" id="csvBtn">Importar CSV</button>
+            <button class="btn ghost" id="onBtn" title="Consulta la API y añade los nodos que reportan encendido ahora">Traer encendidos</button>
             <button class="btn ghost" id="clearBtn" disabled>Quitar todos</button>
             <span class="count" id="count">0 / 100</span></div>
           <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
@@ -7975,6 +7976,34 @@
 
   $('clearBtn').onclick=()=>{ if(!selected.length||busy) return; const n=selected.length; selected=[];
     banner($('appBanner'),''); banner($('okBanner'),''); renderChips(); renderList(); logAdd('ok',`Selección vaciada (${n})`); };
+
+  // traer encendidos: un refresh del listado (action nodes); nodo-a-nodo solo si el subpanel no es grande
+  $('onBtn').onclick=async()=>{
+    if(busy||locked) return;
+    busy=true; const b=$('onBtn'); const o=b.textContent; b.disabled=true; b.textContent='Buscando\u2026'; renderChips();
+    try{
+      const j=await api({action:'nodes'}); setConn('live');
+      allNodes=j.nodes||[]; BIG=!!j.big;
+      nodesById=new Map(); nodesBySerial=new Map(); statusById=new Map();
+      allNodes.forEach(n=>{ nodesById.set(Number(n.id),n); if(n.serial)nodesBySerial.set(String(n.serial).toLowerCase(),n); if(n.dev_eui)nodesBySerial.set(String(n.dev_eui).toLowerCase(),n);
+        if(n.live) statusById.set(Number(n.id), Object.assign({id:Number(n.id)}, n.live)); });
+      if(!BIG) await loadStates();
+      let on=0, added=0, capped=false, noState=0;
+      for(const n of allNodes){
+        const s=statusById.get(Number(n.id));
+        if(!s||s.error||s.found===false){ noState++; continue; }
+        if(s.power!==true) continue;
+        on++;
+        if(selected.some(x=>x.id===Number(n.id))) continue;
+        if(selected.length>=MAX){ capped=true; continue; }
+        selected.push({id:Number(n.id), serial:n.serial||null}); added++;
+      }
+      renderChips(); renderList();
+      logAdd(added?'ok':'warn',`Encendidos ahora: ${on} \u00b7 a\u00f1adidos ${added}${capped?` \u00b7 tope ${MAX} alcanzado`:''}${noState?` \u00b7 ${noState} sin estado en vivo (no evaluados)`:''}`);
+      if(!on) banner($('appBanner'),'Ning\u00fan nodo reporta encendido en el listado en vivo.');
+    }catch(e){ setConn('err'); logAdd('err','Encendidos \u2192 '+e.message); }
+    finally{ busy=false; b.disabled=locked; b.textContent=o; renderChips(); }
+  };
 
   $('csvBtn').onclick=()=>$('csvFile').click();
   $('csvFile').onchange=async e=>{
