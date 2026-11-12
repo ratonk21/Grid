@@ -148,7 +148,6 @@
           <div class="field"><textarea id="tokens" placeholder="Pega IDs o seriales (coma, espacio o salto de línea)"></textarea></div>
           <div class="row"><button class="btn ghost" id="addBtn">Añadir pegados</button>
             <button class="btn ghost" id="csvBtn">Importar CSV</button>
-            <button class="btn ghost" id="onBtn" title="Consulta la API y añade los nodos que reportan encendido ahora">Traer encendidos</button>
             <button class="btn ghost" id="clearBtn" disabled>Quitar todos</button>
             <span class="count" id="count">0 / 100</span></div>
           <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
@@ -7976,51 +7975,6 @@
 
   $('clearBtn').onclick=()=>{ if(!selected.length||busy) return; const n=selected.length; selected=[];
     banner($('appBanner'),''); banner($('okBanner'),''); renderChips(); renderList(); logAdd('ok',`Selección vaciada (${n})`); };
-
-  // traer encendidos: barrido real contra la API (action states por tandas), solo al apretar el boton
-  let sweepOn=false, sweepStop=false;
-  $('onBtn').onclick=async()=>{
-    if(locked) return;
-    if(sweepOn){ sweepStop=true; return; }
-    if(busy) return;
-    if(!allNodes.length){ logAdd('err','Encendidos \u2192 primero debe cargar el listado del subpanel'); return; }
-    sweepOn=true; sweepStop=false; busy=true;
-    const b=$('onBtn'); b.textContent='Detener'; renderChips();
-    const ids=allNodes.map(n=>Number(n.id));
-    let scanned=0,on=0,added=0,noState=0,chunk=40;
-    logAdd('ok',`Barrido de encendidos: consultando a la API el estado de ${ids.length} nodos\u2026`);
-    try{
-      let i=0;
-      while(i<ids.length && !sweepStop){
-        const part=ids.slice(i,i+chunk);
-        const j=await api({action:'states',ids:part}); setConn('live');
-        const got=j.states||[];
-        got.forEach(s=>{ if(s&&s.id!=null) statusById.set(Number(s.id),s); });
-        if(j.capped&&j.max&&Number(j.max)<chunk) chunk=Math.max(1,Number(j.max));
-        const step=j.capped?Math.min(part.length,(got.length||chunk)):part.length;
-        if(step<=0){ logAdd('warn','Barrido detenido: la API no devolvi\u00f3 estados en esta tanda'); break; }
-        for(const s of got){
-          if(!s||s.id==null) continue;
-          if(s.error||s.found===false){ noState++; continue; }
-          if(s.power!==true) continue;
-          on++;
-          const id=Number(s.id);
-          if(selected.some(x=>x.id===id)) continue;
-          if(selected.length>=MAX){ sweepStop=true; break; }
-          const n=nodesById.get(id); selected.push({id, serial:(n&&n.serial)||null}); added++;
-        }
-        i+=step; scanned=Math.min(i,ids.length);
-        renderChips();
-        b.textContent=`Detener (${scanned}/${ids.length} \u00b7 ON ${on})`;
-        if(selected.length>=MAX){ logAdd('warn',`Tope ${MAX} alcanzado \u00b7 barrido detenido en ${scanned}/${ids.length}`); break; }
-        await new Promise(r=>setTimeout(r,150));
-      }
-      renderList();
-      logAdd(added?'ok':'warn',`Barrido ${scanned<ids.length?'parcial':'completo'}: ${scanned}/${ids.length} consultados \u00b7 encendidos ${on} \u00b7 a\u00f1adidos ${added}${noState?` \u00b7 ${noState} sin estado`:''}`);
-      if(scanned>=ids.length&&!on) banner($('appBanner'),'Ning\u00fan nodo report\u00f3 encendido en el barrido.');
-    }catch(e){ setConn('err'); logAdd('err','Encendidos \u2192 '+e.message+` \u00b7 barrido detenido en ${scanned}/${ids.length}`); }
-    finally{ sweepOn=false; sweepStop=false; busy=false; b.textContent='Traer encendidos'; renderChips(); }
-  };
 
   $('csvBtn').onclick=()=>$('csvFile').click();
   $('csvFile').onchange=async e=>{
